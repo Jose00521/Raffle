@@ -39,56 +39,73 @@ export class NumberStatusRepository {
   }
 
   /**
-   * Reserva números específicos para um usuário
+   * Atribui automaticamente e reserva números disponíveis para um usuário
+   * Esta função seleciona automaticamente os primeiros números disponíveis
    */
-  static async reserveNumbers(
+  static async autoReserveNumbers(
     rifaId: string,
-    numbers: number[],
+    quantity: number,
     userId: string,
     expirationMinutes: number = 15
   ): Promise<{
     success: boolean;
-    reservedCount: number;
-    failedNumbers: number[];
+    reservedNumbers: number[];
+    message?: string;
   }> {
     try {
-      // Primeiro verificar se os números estão disponíveis
-      const availableStatus = await NumberStatus!.find({
-        rifaId,
-        number: { $in: numbers },
-        status: NumberStatusEnum.AVAILABLE
-      }).lean();
-
-      const availableNumbers = availableStatus.map(status => status.number);
-      const failedNumbers = numbers.filter(num => !availableNumbers.includes(num));
+      // Verificar se há números suficientes disponíveis
+      const availableCount = await this.getAvailableCount(rifaId);
       
-      if (availableNumbers.length === 0) {
+      if (availableCount < quantity) {
         return {
           success: false,
-          reservedCount: 0,
-          failedNumbers: numbers
+          reservedNumbers: [],
+          message: `Apenas ${availableCount} números disponíveis, mas foram solicitados ${quantity}`
         };
       }
-
-      // Reservar os números disponíveis
-      const result = await NumberStatus!.reserveNumbers(
-        rifaId,
-        availableNumbers,
-        userId,
-        expirationMinutes
+      
+      // Buscar os primeiros 'quantity' números disponíveis
+      const availableNumbers = await NumberStatus!.find(
+        { rifaId, status: NumberStatusEnum.AVAILABLE },
+        { number: 1, _id: 0 }
+      )
+        .sort({ number: 1 })
+        .limit(quantity)
+        .lean();
+      
+      const selectedNumbers = availableNumbers.map(item => item.number);
+      
+      // Configurar a expiração
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + expirationMinutes);
+      
+      // Reservar os números para o usuário
+      await NumberStatus!.updateMany(
+        { 
+          rifaId, 
+          number: { $in: selectedNumbers },
+          status: NumberStatusEnum.AVAILABLE
+        },
+        {
+          $set: {
+            status: NumberStatusEnum.RESERVED,
+            userId,
+            reservedAt: new Date(),
+            expiresAt
+          }
+        }
       );
-
+      
       return {
         success: true,
-        reservedCount: availableNumbers.length,
-        failedNumbers
+        reservedNumbers: selectedNumbers
       };
     } catch (error) {
-      console.error('Error reserving numbers:', error);
+      console.error('Error auto-reserving numbers:', error);
       return {
         success: false,
-        reservedCount: 0,
-        failedNumbers: numbers
+        reservedNumbers: [],
+        message: 'Erro ao reservar números automaticamente'
       };
     }
   }
@@ -337,77 +354,5 @@ export class NumberStatusRepository {
       : 0;
     
     return result;
-  }
-
-  /**
-   * Atribui automaticamente e reserva números disponíveis para um usuário
-   * Esta função seleciona automaticamente os primeiros números disponíveis
-   */
-  static async autoReserveNumbers(
-    rifaId: string,
-    quantity: number,
-    userId: string,
-    expirationMinutes: number = 15
-  ): Promise<{
-    success: boolean;
-    reservedNumbers: number[];
-    message?: string;
-  }> {
-    try {
-      // Verificar se há números suficientes disponíveis
-      const availableCount = await this.getAvailableCount(rifaId);
-      
-      if (availableCount < quantity) {
-        return {
-          success: false,
-          reservedNumbers: [],
-          message: `Apenas ${availableCount} números disponíveis, mas foram solicitados ${quantity}`
-        };
-      }
-      
-      // Buscar os primeiros 'quantity' números disponíveis
-      const availableNumbers = await NumberStatus!.find(
-        { rifaId, status: NumberStatusEnum.AVAILABLE },
-        { number: 1, _id: 0 }
-      )
-        .sort({ number: 1 })
-        .limit(quantity)
-        .lean();
-      
-      const selectedNumbers = availableNumbers.map(item => item.number);
-      
-      // Configurar a expiração
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + expirationMinutes);
-      
-      // Reservar os números para o usuário
-      await NumberStatus!.updateMany(
-        { 
-          rifaId, 
-          number: { $in: selectedNumbers },
-          status: NumberStatusEnum.AVAILABLE
-        },
-        {
-          $set: {
-            status: NumberStatusEnum.RESERVED,
-            userId,
-            reservedAt: new Date(),
-            expiresAt
-          }
-        }
-      );
-      
-      return {
-        success: true,
-        reservedNumbers: selectedNumbers
-      };
-    } catch (error) {
-      console.error('Error auto-reserving numbers:', error);
-      return {
-        success: false,
-        reservedNumbers: [],
-        message: 'Erro ao reservar números automaticamente'
-      };
-    }
   }
 } 

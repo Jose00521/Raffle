@@ -64,7 +64,6 @@ const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
 // Interface para o modelo com métodos estáticos
 interface NumberStatusModel extends mongoose.Model<INumberStatus> {
   initializeForRifa(rifaId: string, totalNumbers: number): Promise<INumberStatus[]>;
-  reserveNumbers(rifaId: string, numbers: number[], userId: string, expirationMinutes?: number): Promise<any>;
   confirmPayment(rifaId: string, numbers: number[], userId: string): Promise<any>;
   countByStatus(rifaId: string): Promise<Array<{ status: string, count: number }>>;
 }
@@ -99,35 +98,6 @@ if (isServer && NumberStatusSchema) {
     
     // Usar insertMany com ordered: false para maior performance
     return this.insertMany(batch, { ordered: false });
-  };
-
-  /**
-   * Método estático para reservar números
-   */
-  NumberStatusSchema.statics.reserveNumbers = async function(
-    rifaId: string,
-    numbers: number[],
-    userId: string,
-    expirationMinutes: number = 15
-  ) {
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + expirationMinutes);
-
-    return this.updateMany(
-      { 
-        rifaId, 
-        number: { $in: numbers },
-        status: NumberStatusEnum.AVAILABLE
-      },
-      {
-        $set: {
-          status: NumberStatusEnum.RESERVED,
-          userId,
-          reservedAt: new Date(),
-          expiresAt
-        }
-      }
-    );
   };
 
   /**

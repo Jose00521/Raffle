@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import Layout from '../../components/layout/Layout';
+import Layout from '../../../components/layout/Layout';
 import styled from 'styled-components';
-import CampaignGrid from '../../components/campaign/CampaignGrid';
-import { IRifa } from '../../models/Rifa';
+import CampaignGrid from '../../../components/campaign/CampaignGrid';
+import { IRifa } from '../../../models/Rifa';
 
 // Dados de exemplo para as campanhas
 const campanhasExemplo: IRifa[] = [

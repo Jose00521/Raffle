@@ -1,6 +1,5 @@
 import { NumberStatusRepository } from '../repositories/NumberStatusRepository';
-import { INumberStatus } from '../../models/NumberStatus';
-import dbConnect from '../../lib/dbConnect';
+import dbConnect from '../lib/dbConnect';
 
 /**
  * Serviço para gerenciamento de número de rifas
@@ -49,19 +48,6 @@ export class NumberStatusService {
   ) {
     await this.ensureDbConnection();
     return NumberStatusRepository.autoReserveNumbers(rifaId, quantity, userId, expirationMinutes);
-  }
-
-  /**
-   * Reserva números específicos para um usuário
-   */
-  static async reserveNumbers(
-    rifaId: string,
-    numbers: number[],
-    userId: string,
-    expirationMinutes: number = 15
-  ) {
-    await this.ensureDbConnection();
-    return NumberStatusRepository.reserveNumbers(rifaId, numbers, userId, expirationMinutes);
   }
 
   /**

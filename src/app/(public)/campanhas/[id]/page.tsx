@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import Layout from '../../../components/layout/Layout';
+import Layout from '../../../../components/layout/Layout';
 import CampanhaDetalhes from '@/components/campaign/CampanhaDetalhes';
-import { IRifa } from '../../../models/Rifa';
+import { IRifa } from '../../../../models/Rifa';
 
 // Dados de exemplo para a campanha
 const campanhaExemplo: IRifa = {

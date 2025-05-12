@@ -2,12 +2,13 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
+const { default: dbConnect } = require('./src/server/lib/dbConnect.ts');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
@@ -15,6 +16,14 @@ app.prepare().then(() => {
 
   // Initialize Socket.io
   const io = new Server(server);
+  
+  try {
+    await dbConnect();
+    console.log('✅ MongoDB conectado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao conectar ao MongoDB:', error);
+  }
+
 
   // Socket.io event handlers
   io.on('connection', (socket) => {

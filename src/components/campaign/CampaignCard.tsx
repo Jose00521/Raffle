@@ -184,8 +184,11 @@ interface CampaignCardProps {
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
-  const soldCount = campaign.totalNumbers - campaign.availableNumbers.length;
-  const progressPercentage = (soldCount / campaign.totalNumbers) * 100;
+  // Usar stats fornecidos pela API, ou calcular a partir do total se stats não estiver disponível
+  const soldCount = campaign.stats ? campaign.stats.sold : 0;
+  const progressPercentage = campaign.stats 
+    ? campaign.stats.percentComplete 
+    : (soldCount / campaign.totalNumbers) * 100;
   
   // Determine campaign status
   const today = new Date();
@@ -193,7 +196,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const daysUntilDraw = Math.ceil((drawDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   
   let status: 'active' | 'completed' | 'ending' = 'active';
-  if (!campaign.isActive || campaign.winner !== undefined) {
+  if (!campaign.isActive || campaign.winnerNumber !== undefined) {
     status = 'completed';
   } else if (daysUntilDraw <= 3 || progressPercentage >= 90) {
     status = 'ending';

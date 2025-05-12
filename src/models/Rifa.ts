@@ -15,6 +15,13 @@ export interface IRifa {
   winnerNumber?: number;
   createdAt: Date;
   updatedAt: Date;
+  // Estatísticas calculadas
+  stats?: {
+    available: number;
+    reserved: number;
+    sold: number;
+    percentComplete: number;
+  };
   // Propriedades adicionais para a página de detalhes
   instantPrizes?: Array<{
     number: string;
