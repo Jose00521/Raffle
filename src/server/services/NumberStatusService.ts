@@ -1,5 +1,5 @@
 import { NumberStatusRepository } from '../repositories/NumberStatusRepository';
-import { INumberStatus } from '../models/NumberStatus';
+import { INumberStatus } from '../../models/NumberStatus';
 import dbConnect from '../../lib/dbConnect';
 
 /**
