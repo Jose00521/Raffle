@@ -1,0 +1,81 @@
+import { DefaultTheme } from 'styled-components';
+
+export const theme: DefaultTheme = {
+  colors: {
+    // Cores principais - Roxo/Azul vibrantes
+    primary: '#6a11cb',
+    primaryDark: '#4509a0',
+    secondary: '#2575fc',
+    secondaryDark: '#1555c5',
+    accent: '#FF9800',
+    orange:"#FF416C",
+    accentSecondary: '#FF416C',
+    gradients: {
+      gold: 'linear-gradient(135deg, #F2C94C 0%, #D4AF37 100%)',
+      dark: 'linear-gradient(135deg, #111111 0%, #333333 100%)',
+      purple: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+      action: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
+    },
+    background: '#f0f2f5',
+    backgroundDark: '#1A1A1A',
+    white: '#FFFFFF',
+    black: '#222222',
+    gray: {
+      light: '#F5F5F5',
+      medium: '#E0E0E0',
+      dark: '#777777',
+    },
+    text: {
+      primary: '#333333',
+      secondary: '#666666',
+      light: '#999999',
+      gold: '#D4AF37',
+      white: '#FFFFFF',
+    },
+    success: '#4CAF50',
+    error: '#F44336',
+    warning: '#FF9800',
+    info: '#2196F3',
+  },
+  fontSizes: {
+    xs: '0.75rem',
+    sm: '0.875rem',
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '1.875rem',
+    '4xl': '2.25rem',
+    '5xl': '3rem',
+  },
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+    '2xl': '3rem',
+    '3xl': '4rem',
+  },
+  borderRadius: {
+    sm: '0.125rem',
+    md: '0.375rem',
+    lg: '0.75rem',
+    xl: '1.5rem',
+    full: '9999px',
+  },
+  shadows: {
+    sm: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+    md: '0 4px 8px rgba(0,0,0,0.15)',
+    lg: '0 10px 20px rgba(0,0,0,0.15)',
+    xl: '0 20px 30px rgba(0,0,0,0.2)',
+    gold: '0 5px 15px rgba(106, 17, 203, 0.4)',
+  },
+  breakpoints: {
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    '2xl': '1536px',
+  },
+}; 
