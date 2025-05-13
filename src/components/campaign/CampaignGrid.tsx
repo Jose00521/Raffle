@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import CampaignCard from './CampaignCard';
-import { IRifa } from '../../models/Rifa';
+import { IRifa } from '../../models/Campaign';
 
 const Grid = styled.div`
   display: grid;

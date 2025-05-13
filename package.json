@@ -6,7 +6,13 @@
     "dev": "node server.js",
     "build": "next build",
     "start": "set NODE_ENV=production && node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate:list": "npx migrate list",
+    "migrate:up": "npx migrate up",
+    "migrate:down": "npx migrate down",
+    "migrate:create": "npx migrate create",
+    "migrate:reset-db": "npx mongosh \"mongodb+srv://strongunderfed490:HYV8Gsu3MyxcLQYJ@cluster0.72eltg2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0\" --eval \"db.dropDatabase();\"",
+    "migrate:fresh": "npm run migrate:reset-db && npx migrate up"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -24,6 +30,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.18",
+    "ts-migrate-mongoose": "^4.0.8",
     "zod": "^3.24.4"
   },
   "devDependencies": {
@@ -35,6 +42,7 @@
     "babel-plugin-styled-components": "^2.1.4",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   }
 }

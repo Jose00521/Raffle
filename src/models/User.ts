@@ -1,9 +1,16 @@
 import mongoose from 'mongoose';
 
 export interface IUser {
+  _id?: string;
   name: string;
   email: string;
   phone: string;
+  cpf: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  password: string;
   purchasedNumbers: {
     rifaId: string;
     numbers: number[];

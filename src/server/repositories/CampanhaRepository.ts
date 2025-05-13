@@ -1,5 +1,5 @@
 import dbConnect from '@/server/lib/dbConnect';
-import Rifa from '@/models/Rifa';
+import Rifa from '@/models/Campaign';
 import NumberStatus, { NumberStatusEnum } from '@/models/NumberStatus';
 import mongoose from 'mongoose';
 

@@ -3,7 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { IRifa } from '../../models/Rifa';
+import { ICampaign } from '../../models/Campaign';
 
 const Card = styled.div`
   display: flex;
@@ -180,7 +180,7 @@ const DateText = styled.span`
 `;
 
 interface CampaignCardProps {
-  campaign: IRifa;
+  campaign: ICampaign;
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
@@ -196,7 +196,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const daysUntilDraw = Math.ceil((drawDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   
   let status: 'active' | 'completed' | 'ending' = 'active';
-  if (!campaign.isActive || campaign.winnerNumber !== undefined) {
+  if (!campaign.isActive || campaign.winnerUser !== undefined) {
     status = 'completed';
   } else if (daysUntilDraw <= 3 || progressPercentage >= 90) {
     status = 'ending';

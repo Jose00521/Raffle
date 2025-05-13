@@ -4,7 +4,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import CampaignGrid from '../campaign/CampaignGrid';
-import { IRifa } from '../../models/Rifa';
+import { IRifa } from '../../models/Campaign';
 
 const SectionContainer = styled.section`
   padding: 5rem 2rem;

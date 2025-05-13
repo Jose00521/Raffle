@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import NumberStatus from './NumberStatus';
+import { IUser } from './User';
 
 // Interface principal da Rifa
-export interface IRifa {
+export interface ICampaign {
   _id?: string;
   title: string;
   description: string;
@@ -12,29 +13,45 @@ export interface IRifa {
   totalNumbers: number;
   drawDate: Date;
   isActive: boolean;
-  winnerNumber?: number;
+  winnerNumber: number | null;
+  winnerUser?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
   // Estatísticas calculadas
-  stats?: {
-    available: number;
-    reserved: number;
-    sold: number;
-    percentComplete: number;
-  };
+  // stats?: {
+  //   available: number;
+  //   reserved: number;
+  //   sold: number;
+  //   percentComplete: number;
+  // };
   // Propriedades adicionais para a página de detalhes
-  instantPrizes?: Array<{
+  instantPrizes: Array<{
     number: string;
     value: number;
     winner: string | null;
   }>;
-  regulamento?: string;
-  codigoSorteio?: string;
-  premiacaoPrincipal?: string;
-  valorPremio?: string;
+  
+  regulation?: string;
+  campaignCode?: string;
+  mainPrize?: string;
+  valuePrize?: string;
+  returnExpected?: string;
 }
 
-const RifaSchema = new mongoose.Schema(
+const subSchema = new mongoose.Schema({
+  number: {
+    type: String
+  },
+  value: {
+    type: Number
+  },
+  winner: {
+    type: String,
+    default: null
+  }
+});
+
+const CampaignSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -72,29 +89,43 @@ const RifaSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    winnerUser: {
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User',
+      default: null
+    },
     // Campos adicionais para detalhes da campanha
-    instantPrizes: [{
-      number: String,
-      value: Number,
-      winner: {
-        type: String,
-        default: null
-      }
-    }],
-    regulamento: String,
-    codigoSorteio: String,
-    premiacaoPrincipal: String,
-    valorPremio: String
+    instantPrizes: {
+      type: Array,
+      default: []
+    },
+    regulation: {
+      type: String,
+    },
+    campaignCode: {
+      type: String,
+    },
+    mainPrize: {
+      type: String,
+    },
+    valuePrize: {
+      type: String,
+    },
+    returnExpected: {
+      type: String,
+    }
   },
   {
     timestamps: true,
+    collection: 'campaigns',
+    strict: false
   }
 );
 
 // Hook para inicializar todos os números na coleção NumberStatus após salvar uma nova rifa
-RifaSchema.post('save', async function(doc) {
+CampaignSchema.post('save', async function(doc) {
   // Verificar se é um documento novo comparando timestamps
-  if (doc.createdAt.getTime() === doc.updatedAt.getTime()) {
+  if (doc.createdAt && doc.updatedAt && doc.createdAt.getTime() === doc.updatedAt.getTime()) {
     try {
       await NumberStatus!.initializeForRifa(doc._id.toString(), doc.totalNumbers);
       console.log(`Initialized ${doc.totalNumbers} numbers for Rifa ${doc._id}`);
@@ -105,12 +136,10 @@ RifaSchema.post('save', async function(doc) {
 });
 
 // Método adicional para obter estatísticas sobre números disponíveis/reservados/pagos
-RifaSchema.methods.getNumbersStats = async function() {
+CampaignSchema.methods.getNumbersStats = async function() {
   return await NumberStatus!.countByStatus(this._id);
 };
 
 // Criando ou obtendo o modelo já existente
 // @ts-ignore - Ignorando verificações de tipo para simplificar
-const RifaModel = mongoose.models.Rifa || mongoose.model('Rifa', RifaSchema);
-
-export default RifaModel; 
+export default mongoose.models.Campaign || mongoose.model('Campaign', CampaignSchema);

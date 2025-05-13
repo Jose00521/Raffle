@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { IRifa } from '../../models/Rifa';
+import { IRifa } from '../../models/Campaign';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
 import rifaAPI from '../../services/rifaAPI';

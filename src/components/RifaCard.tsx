@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { IRifa } from '../models/Rifa';
+import { IRifa } from '../models/Campaign';
 
 const StyledCard = styled.div`
   display: flex;
