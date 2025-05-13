@@ -186,9 +186,7 @@ interface CampaignCardProps {
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   // Use default values for stats if not provided
   const soldCount = campaign.stats?.sold || 0;
-  const progressPercentage = campaign.stats 
-    ? campaign.stats.percentComplete 
-    : (soldCount / campaign.totalNumbers) * 100;
+  const progressPercentage = campaign.stats?.percentComplete || 0;
   
   // Determine campaign status
   const today = new Date();

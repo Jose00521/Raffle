@@ -31,6 +31,31 @@ ul, ol {
   list-style: none;
 }
 
+/* Fixed input text color for dashboard */
+input, 
+textarea, 
+select {
+  color: #333 !important;
+  font-family: 'Poppins', sans-serif;
+}
+
+input::placeholder, 
+textarea::placeholder {
+  color: #666 !important;
+  opacity: 0.7;
+}
+
+/* Responsive utility classes */
+.desktop-hidden {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-hidden {
+    display: block;
+  }
+}
+
 /* Utility classes */
 .container {
   max-width: 1280px;
