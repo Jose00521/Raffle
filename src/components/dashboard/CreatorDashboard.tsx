@@ -19,11 +19,25 @@ const creatorMenuItems = [
     icon: <FaTicketAlt />
   },
   {
+    id: 'nova-rifa',
+    label: 'Nova Rifa',
+    path: '/dashboard/criador/nova-rifa',
+    icon: <FaTicketAlt />
+  },
+  {
     id: 'vendas',
     label: 'Vendas',
     path: '/dashboard/criador/vendas',
     icon: <FaChartLine />
-  }
+  },
+  // {
+  //   id: 'premios',
+  //   label: 'Prêmios',
+  //   disabled: true,
+  //   path: '/dashboard/criador/premios',
+  //   icon: <FaChartLine />,
+  // }
+
 ];
 
 interface CreatorDashboardProps {

@@ -25,6 +25,8 @@ const LoadingContainer = styled.div<{ $overlay?: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
+  height: ${({ $overlay }) => ($overlay ? '100%' : 'auto')};
+  min-height: ${({ $overlay }) => ($overlay ? 'inherit' : '200px')};
   background-color: ${({ $overlay }) => ($overlay ? 'rgba(255, 255, 255, 0.8)' : 'transparent')};
   z-index: ${({ $overlay }) => ($overlay ? 10 : 1)};
   backdrop-filter: ${({ $overlay }) => ($overlay ? 'blur(2px)' : 'none')};

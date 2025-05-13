@@ -259,64 +259,63 @@ export default function RifasPage() {
     <ParticipantDashboard>
       <PageHeader>
         <SearchBar>
-          <FaSearch size={16} />
+          <FaSearch />
           <SearchInput 
-            type="text" 
-            placeholder="Buscar rifas..." 
+            placeholder="Pesquisar rifas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </SearchBar>
       </PageHeader>
       
-      {isLoading ? (
-        <EmptyState>Carregando rifas disponíveis...</EmptyState>
-      ) : (
-        <RifaGrid>
-          {filteredRifas.length > 0 ? (
-            filteredRifas.map((rifa) => {
-              const status = getRifaStatus(rifa) as 'active' | 'completed' | 'ending';
-              const progressPercent = rifa.stats?.percentComplete || 0;
-              const available = rifa.stats?.available || rifa.totalNumbers;
-              
-              return (
-                <RifaCard key={rifa._id}>
-                  <RifaImage $imageUrl={rifa.image}>
-                    <RifaBadge $status={status}>
-                      {status === 'active' && 'Ativo'}
-                      {status === 'completed' && 'Concluído'}
-                      {status === 'ending' && 'Finalizando'}
-                    </RifaBadge>
-                  </RifaImage>
+      <RifaGrid>
+        {isLoading ? (
+          <EmptyState>Carregando rifas disponíveis...</EmptyState>
+        ) : filteredRifas.length > 0 ? (
+          filteredRifas.map((rifa) => {
+            const status = getRifaStatus(rifa) as 'active' | 'completed' | 'ending';
+            const progressPercent = rifa.stats?.percentComplete || 0;
+            const available = rifa.stats?.available || rifa.totalNumbers;
+            
+            return (
+              <RifaCard key={rifa._id}>
+                <RifaImage $imageUrl={rifa.image}>
+                  <RifaBadge $status={status}>
+                    {status === 'active' && 'Ativo'}
+                    {status === 'completed' && 'Concluído'}
+                    {status === 'ending' && 'Finalizando'}
+                  </RifaBadge>
+                </RifaImage>
+                
+                <RifaContent>
+                  <RifaTitle>{rifa.title}</RifaTitle>
+                  <RifaPrice>R$ {rifa.price.toFixed(2)} por número</RifaPrice>
                   
-                  <RifaContent>
-                    <RifaTitle>{rifa.title}</RifaTitle>
-                    <RifaPrice>R$ {rifa.price.toFixed(2)} por número</RifaPrice>
-                    
-                    <ProgressBar>
-                      <Progress $percent={progressPercent} />
-                    </ProgressBar>
-                    
-                    <ProgressLabel>
-                      <span>{progressPercent}% vendido</span>
-                      <span>{available} disponíveis</span>
-                    </ProgressLabel>
-                    
-                    <RifaDetails>
-                      <div>Sorteio: {new Date(rifa.drawDate).toLocaleDateString('pt-BR')}</div>
-                      <div>{rifa.totalNumbers} números</div>
-                    </RifaDetails>
-                    
-                    <RifaButton>Participar</RifaButton>
-                  </RifaContent>
-                </RifaCard>
-              );
-            })
-          ) : (
-            <EmptyState>Nenhuma rifa encontrada com o termo &quot;{searchTerm}&quot;</EmptyState>
-          )}
-        </RifaGrid>
-      )}
+                  <ProgressBar>
+                    <Progress $percent={progressPercent} />
+                  </ProgressBar>
+                  
+                  <ProgressLabel>
+                    <span>{progressPercent}% vendido</span>
+                    <span>{available} disponíveis</span>
+                  </ProgressLabel>
+                  
+                  <RifaDetails>
+                    <div>Sorteio: {new Date(rifa.drawDate).toLocaleDateString('pt-BR')}</div>
+                    <div>{rifa.totalNumbers} números</div>
+                  </RifaDetails>
+                  
+                  <RifaButton>Participar</RifaButton>
+                </RifaContent>
+              </RifaCard>
+            );
+          })
+        ) : (
+          <EmptyState>
+            Nenhuma rifa encontrada. Tente com outros termos de pesquisa.
+          </EmptyState>
+        )}
+      </RifaGrid>
     </ParticipantDashboard>
   );
 } 

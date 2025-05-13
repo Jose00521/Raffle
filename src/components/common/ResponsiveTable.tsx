@@ -220,6 +220,16 @@ const NoDataCell = styled.td`
   font-size: 0.9rem;
 `;
 
+const MobileNoDataContainer = styled.div`
+  padding: 30px 20px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-size: 0.9rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+`;
+
 const MobileTableContainer = styled.div`
   display: none;
   
@@ -560,11 +570,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
               );
             })
           ) : (
-            <NoDataContainer>
-              <NoDataCell>
-                {noDataMessage}
-              </NoDataCell>
-            </NoDataContainer>
+            <MobileNoDataContainer>
+              {noDataMessage}
+            </MobileNoDataContainer>
           )}
         </MobileTableWrapper>
       </MobileTableContainer>

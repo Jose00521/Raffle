@@ -123,6 +123,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   return (
     <ModalOverlay>
       <ModalContainer ref={modalRef}>
+        
         <ModalDecoration />
         <CloseButton onClick={onClose}>&times;</CloseButton>
         
@@ -840,6 +841,67 @@ const SecurityDot = styled.div`
   @media (max-width: 375px) {
     width: 6px;
     height: 6px;
+  }
+`;
+
+const ButtonsRow = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+  
+  @media (max-width: 375px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+`;
+
+const LoginButton = styled(Button)`
+  flex: 3;
+  margin-bottom: 0;
+`;
+
+const DemoButton = styled.button`
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(106, 17, 203, 0.1);
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 12px;
+  padding: 0 10px;
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(106, 17, 203, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    padding: 0 8px;
+    border-radius: 10px;
+  }
+  
+  @media (max-width: 375px) {
+    padding: 12px 8px;
+    font-size: 0.9rem;
   }
 `;
 

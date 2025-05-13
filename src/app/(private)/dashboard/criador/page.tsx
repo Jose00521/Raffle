@@ -15,7 +15,7 @@ const PageContent = styled.div`
   gap: 16px;
   
   @media (min-width: 480px) {
-    grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   }
   
   @media (min-width: 1024px) {
@@ -113,7 +113,7 @@ const Section = styled.section`
   margin-top: 24px;
   
   @media (min-width: 768px) {
-    margin-top: 30px;
+  margin-top: 30px;
   }
 `;
 
@@ -124,7 +124,7 @@ const SectionHeader = styled.div`
   margin-bottom: 12px;
   
   @media (min-width: 768px) {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
   }
 `;
 
@@ -209,7 +209,7 @@ const SearchBar = styled.div`
   
   @media (max-width: 768px) {
     max-width: 100%;
-    width: 100%;
+  width: 100%;
   }
 `;
 
@@ -283,6 +283,32 @@ const ViewButton = styled.button`
   }
 `;
 
+// Add a new styled component for the mobile details button
+const MobileViewButton = styled.button`
+  padding: 4px 8px;
+  background-color: rgba(106, 17, 203, 0.1);
+  color: #6a11cb;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  @media (max-width: 768px) {
+    display: inline-flex;
+  }
+`;
+
 const StatusTag = styled.span<{ $status: string }>`
   display: inline-flex;
   align-items: center;
@@ -347,7 +373,7 @@ const mockSales = [
     campaign: 'iPhone 15 Pro Max - 256GB',
     numbers: 5,
     payment: {
-      amount: 100.0,
+    amount: 100.0,
       method: 'Cartão de Crédito',
       status: 'success'
     },
@@ -362,7 +388,7 @@ const mockSales = [
     campaign: 'MacBook Pro 16" M3 Pro',
     numbers: 3,
     payment: {
-      amount: 75.0,
+    amount: 75.0,
       method: 'PIX',
       status: 'success'
     },
@@ -377,7 +403,7 @@ const mockSales = [
     campaign: 'Playstation 5 + 2 Controles',
     numbers: 10,
     payment: {
-      amount: 150.0,
+    amount: 150.0,
       method: 'Boleto',
       status: 'pending'
     },
@@ -392,7 +418,7 @@ const mockSales = [
     campaign: 'iPhone 15 Pro Max - 256GB',
     numbers: 2,
     payment: {
-      amount: 40.0,
+    amount: 40.0,
       method: 'Cartão de Crédito',
       status: 'refunded'
     },
@@ -407,7 +433,7 @@ const mockSales = [
     campaign: 'MacBook Pro 16" M3 Pro',
     numbers: 8,
     payment: {
-      amount: 200.0,
+    amount: 200.0,
       method: 'PIX',
       status: 'success'
     },
@@ -454,18 +480,19 @@ const activeCampaigns = [
 ];
 
 export default function CreatorDashboardHome() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [campaignFilter, setCampaignFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('all');
+  const [dateRange, setDateRange] = useState('todas');
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
     // Simulate data loading
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 1500);
     
     return () => clearTimeout(timer);
   }, []);
@@ -483,12 +510,12 @@ export default function CreatorDashboardHome() {
       );
     })
     .filter(sale => {
-      if (campaignFilter === 'all') return true;
-      return sale.campaign === campaignFilter;
+      if (activeTab === 'all') return true;
+      return sale.campaign === activeTab;
     })
     .filter(sale => {
-      if (statusFilter === 'all') return true;
-      return sale.payment.status === statusFilter;
+      if (viewMode === 'all') return true;
+      return sale.payment.status === viewMode;
     });
   
   // Calculate statistics
@@ -545,7 +572,14 @@ export default function CreatorDashboardHome() {
     {
       id: 'customer',
       header: 'Cliente',
-      accessor: (row) => row.customer,
+      accessor: (row) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>{row.customer}</div>
+          <MobileViewButton onClick={() => openBuyerModal(row)}>
+            <FaEye size={10} /> Ver detalhes
+          </MobileViewButton>
+        </div>
+      ),
       sortable: true,
       priority: 1,
       mobileLabel: 'Cliente'
@@ -617,21 +651,17 @@ export default function CreatorDashboardHome() {
   
   return (
     <CreatorDashboard>
-      {isLoading ? (
-        <EmptyState>Carregando dados do dashboard...</EmptyState>
-      ) : (
-        <>
           <PageContent>
             <StatCard>
               <CardHeader>
-                <CardTitle>Rifas Criadas</CardTitle>
+            <CardTitle>Total de Rifas</CardTitle>
                 <CardIcon $color="#6a11cb">
                   <FaTicketAlt />
                 </CardIcon>
               </CardHeader>
-              <CardValue>7</CardValue>
+          <CardValue>24</CardValue>
               <CardTrend $positive={true}>
-                +2 desde o mês passado
+            +5 desde o mês passado
               </CardTrend>
             </StatCard>
             
@@ -688,79 +718,79 @@ export default function CreatorDashboardHome() {
             </ChartContainer>
           </Section>
           
-          <Section>
-            <SectionHeader>
-              <SectionTitle>Vendas Recentes</SectionTitle>
-              <SectionLink href="/dashboard/criador/vendas">
-                Ver todas
-              </SectionLink>
-            </SectionHeader>
-            
-            <FiltersContainer>
-              <SearchBar>
-                <SearchIcon>
-                  <FaSearch />
-                </SearchIcon>
-                <SearchInput 
-                  type="text" 
-                  placeholder="Buscar por cliente, campanha, email..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </SearchBar>
+            <Section>
+              <SectionHeader>
+                <SectionTitle>Vendas Recentes</SectionTitle>
+                <SectionLink href="/dashboard/criador/vendas">
+                  Ver todas
+                </SectionLink>
+              </SectionHeader>
               
-              <FilterGroup>
-                <CustomDropdown
-                  options={campaignOptions}
-                  value={campaignFilter}
-                  onChange={setCampaignFilter}
-                  placeholder="Todas as Campanhas"
-                  width="200px"
-                />
-                
-                <CustomDropdown
-                  options={statusOptions}
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  placeholder="Todos os Status"
-                  width="200px"
-                />
-              </FilterGroup>
-            </FiltersContainer>
-            
-            <ResponsiveTable
-              columns={columns}
-              data={filteredSales}
-              expandableContent={(sale) => (
-                <div>
-                  <DetailRow>
-                    <DetailLabel>Email:</DetailLabel>
-                    <DetailValue>{sale.email}</DetailValue>
-                  </DetailRow>
-                  <DetailRow>
-                    <DetailLabel>Números:</DetailLabel>
-                    <DetailValue>{sale.numbers} números adquiridos</DetailValue>
-                  </DetailRow>
-                  <DetailRow>
-                    <DetailLabel>Método:</DetailLabel>
-                    <DetailValue>{sale.payment.method}</DetailValue>
-                  </DetailRow>
-                </div>
-              )}
-              rowKeyField="id"
-              initialSortBy={{ id: 'date', desc: true }}
-              noDataMessage="Nenhuma venda encontrada"
-              stickyHeader
-              zebra
+        <FiltersContainer>
+          <SearchBar>
+            <SearchIcon>
+              <FaSearch />
+            </SearchIcon>
+            <SearchInput 
+              type="text" 
+              placeholder="Buscar por cliente, campanha, email..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </Section>
+          </SearchBar>
           
-          <BuyerDetailsModal 
-            isOpen={isModalOpen}
-            onClose={closeBuyerModal}
-            buyer={selectedBuyer}
-          />
-        </>
+          <FilterGroup>
+            <CustomDropdown
+              options={campaignOptions}
+              value={activeTab}
+              onChange={setActiveTab}
+              placeholder="Todas as Campanhas"
+              width="200px"
+            />
+            
+            <CustomDropdown
+              options={statusOptions}
+              value={viewMode}
+              onChange={setViewMode}
+              placeholder="Todos os Status"
+              width="200px"
+            />
+          </FilterGroup>
+        </FiltersContainer>
+        
+        <ResponsiveTable
+          columns={columns}
+          data={filteredSales}
+          expandableContent={(sale) => (
+            <div>
+              <DetailRow>
+                <DetailLabel>Email:</DetailLabel>
+                <DetailValue>{sale.email}</DetailValue>
+              </DetailRow>
+              <DetailRow>
+                <DetailLabel>Números:</DetailLabel>
+                <DetailValue>{sale.numbers} números adquiridos</DetailValue>
+              </DetailRow>
+              <DetailRow>
+                <DetailLabel>Método:</DetailLabel>
+                <DetailValue>{sale.payment.method}</DetailValue>
+              </DetailRow>
+            </div>
+          )}
+          rowKeyField="id"
+          initialSortBy={{ id: 'date', desc: true }}
+          noDataMessage="Nenhuma venda encontrada"
+          stickyHeader
+          zebra
+        />
+            </Section>
+      
+      {isModalOpen && selectedBuyer && (
+        <BuyerDetailsModal 
+          isOpen={isModalOpen}
+          buyer={selectedBuyer} 
+          onClose={closeBuyerModal} 
+        />
       )}
     </CreatorDashboard>
   );

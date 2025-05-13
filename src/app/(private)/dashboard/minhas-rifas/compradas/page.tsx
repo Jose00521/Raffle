@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { FaTicketAlt, FaSearch, FaFilter } from 'react-icons/fa';
@@ -289,6 +289,16 @@ const mockRifas = [
 export default function MinhasRifasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Filter rifas based on search term and status
   const filteredRifas = mockRifas
@@ -303,26 +313,19 @@ export default function MinhasRifasPage() {
       return rifa.status === statusFilter;
     });
     
-  const statusOptions = [
-    { value: 'all', label: 'Todos os Status' },
-    { value: 'active', label: 'Ativos' },
-    { value: 'completed', label: 'Concluídos' },
-  ];
-  
   return (
     <ParticipantDashboard>
       <PageHeader>
-        <PageTitle>Minhas Rifas</PageTitle>
+        <PageTitle>Meus Bilhetes</PageTitle>
       </PageHeader>
       
       <FiltersContainer>
         <SearchContainer>
           <SearchIcon>
-            <FaSearch />
+            <FaSearch size={14} />
           </SearchIcon>
           <SearchInput 
-            type="text" 
-            placeholder="Buscar rifas..." 
+            placeholder="Buscar por nome da rifa..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -330,18 +333,25 @@ export default function MinhasRifasPage() {
         
         <FilterDropdownContainer>
           <CustomDropdown
-            options={statusOptions}
+            options={[
+              { value: 'all', label: 'Todos os Status' },
+              { value: 'active', label: 'Em Andamento' },
+              { value: 'completed', label: 'Finalizadas' }
+            ]}
             value={statusFilter}
             onChange={setStatusFilter}
-            placeholder="Filtrar por status"
-            icon={<FaFilter />}
+            placeholder="Filtrar por Status"
           />
         </FilterDropdownContainer>
       </FiltersContainer>
       
-      {filteredRifas.length > 0 ? (
-        <RifaList>
-          {filteredRifas.map(rifa => (
+      <RifaList>
+        {isLoading ? (
+          <NoResultsContainer>
+            <NoResultsText>Carregando seus bilhetes...</NoResultsText>
+          </NoResultsContainer>
+        ) : filteredRifas.length > 0 ? (
+          filteredRifas.map(rifa => (
             <RifaCard key={rifa.id}>
               <RifaImage style={{ backgroundImage: `url(${rifa.image})` }} />
               <RifaContent>
@@ -382,21 +392,21 @@ export default function MinhasRifasPage() {
                 </ViewButton>
               </RifaContent>
             </RifaCard>
-          ))}
-        </RifaList>
-      ) : (
-        <NoResultsContainer>
-          <NoResultsIcon>
-            <FaTicketAlt />
-          </NoResultsIcon>
-          <NoResultsTitle>Nenhuma rifa encontrada</NoResultsTitle>
-          <NoResultsText>
-            {searchTerm 
-              ? `Não encontramos rifas correspondentes a "${searchTerm}"`
-              : 'Você ainda não adquiriu números em nenhuma rifa. Veja rifas disponíveis.'}
-          </NoResultsText>
-        </NoResultsContainer>
-      )}
+          ))
+        ) : (
+          <NoResultsContainer>
+            <NoResultsIcon>
+              <FaTicketAlt />
+            </NoResultsIcon>
+            <NoResultsTitle>
+              Nenhum bilhete encontrado
+            </NoResultsTitle>
+            <NoResultsText>
+              Você ainda não comprou bilhetes de rifas ou não existem rifas que correspondam aos critérios de pesquisa.
+            </NoResultsText>
+          </NoResultsContainer>
+        )}
+      </RifaList>
     </ParticipantDashboard>
   );
 } 

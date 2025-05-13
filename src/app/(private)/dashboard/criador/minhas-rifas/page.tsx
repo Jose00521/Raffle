@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt } from 'react-icons/fa';
+import Link from 'next/link';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -67,6 +68,14 @@ const ActionButton = styled.button`
   @media (max-width: 768px) {
     flex: 1;
     justify-content: center;
+  }
+  
+  a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
   }
 `;
 
@@ -179,6 +188,7 @@ const RifaCard = styled.div`
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
+  height: 100%;
   
   &:hover {
     transform: translateY(-5px);
@@ -256,10 +266,18 @@ const RifaContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
+  justify-content: space-between;
   
   @media (max-width: 768px) {
     padding: 12px;
   }
+`;
+
+const RifaUpperContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-bottom: 15px;
 `;
 
 const RifaTitle = styled.h3`
@@ -336,7 +354,8 @@ const ProgressText = styled.div`
 const RifaActions = styled.div`
   display: flex;
   gap: 10px;
-  margin-top: 15px;
+  min-height: 38px;
+  margin-top: auto;
 `;
 
 const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
@@ -353,7 +372,14 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
   justify-content: center;
   gap: 6px;
   transition: all 0.2s ease;
-  flex: ${props => props.$variant === 'icon' ? '0' : '1'};
+  height: 38px;
+  
+  ${props => {
+    if (props.$variant === 'icon') {
+      return `width: 38px; min-width: 38px;`;
+    }
+    return `flex: 1;`;
+  }}
   
   &:hover {
     transform: translateY(-2px);
@@ -365,6 +391,8 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
 
 const PopoverContainer = styled.div`
   position: relative;
+  display: flex;
+  height: 38px;
 `;
 
 const Popover = styled.div<{ $visible: boolean }>`
@@ -506,14 +534,24 @@ const mockCampaigns = [
 ];
 
 export default function MinhasRifasPage() {
-  const [activeTab, setActiveTab] = useState('todas');
+  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [activePopover, setActivePopover] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Filter campaigns based on active tab and search term
   const filteredCampaigns = mockCampaigns
     .filter(campaign => {
-      if (activeTab === 'todas') return true;
+      if (activeTab === 'all') return true;
       return campaign.status === activeTab;
     })
     .filter(campaign => {
@@ -523,17 +561,17 @@ export default function MinhasRifasPage() {
   
   // Toggle popover
   const togglePopover = (id: string) => {
-    if (openPopoverId === id) {
-      setOpenPopoverId(null);
+    if (activePopover === id) {
+      setActivePopover(null);
     } else {
-      setOpenPopoverId(id);
+      setActivePopover(id);
     }
   };
   
   // Close popover when clicking elsewhere
   const handleClickOutside = () => {
-    if (openPopoverId) {
-      setOpenPopoverId(null);
+    if (activePopover) {
+      setActivePopover(null);
     }
   };
   
@@ -544,18 +582,21 @@ export default function MinhasRifasPage() {
           <Title>Minhas Rifas</Title>
           <ActionButtons>
             <ActionButton>
-              <FaPlus />
-              Criar Nova Rifa
+              <Link href="/dashboard/criador/nova-rifa">
+                <FaPlus size={14} />
+                Nova Rifa
+              </Link>
             </ActionButton>
           </ActionButtons>
         </PageHeader>
         
         <FiltersContainer>
           <SearchBar>
-            <SearchIcon><FaSearch /></SearchIcon>
+            <SearchIcon>
+              <FaSearch size={14} />
+            </SearchIcon>
             <SearchInput 
-              type="text" 
-              placeholder="Pesquisar rifas..." 
+              placeholder="Buscar rifa..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -564,32 +605,36 @@ export default function MinhasRifasPage() {
         
         <TabsContainer>
           <Tab 
-            $active={activeTab === 'todas'}
-            onClick={() => setActiveTab('todas')}
+            $active={activeTab === 'all'} 
+            onClick={() => setActiveTab('all')}
           >
             Todas
           </Tab>
           <Tab 
-            $active={activeTab === 'ativa'}
+            $active={activeTab === 'ativa'} 
             onClick={() => setActiveTab('ativa')}
           >
             Ativas
           </Tab>
           <Tab 
-            $active={activeTab === 'futura'}
+            $active={activeTab === 'futura'} 
             onClick={() => setActiveTab('futura')}
           >
             Futuras
           </Tab>
           <Tab 
-            $active={activeTab === 'finalizada'}
+            $active={activeTab === 'finalizada'} 
             onClick={() => setActiveTab('finalizada')}
           >
             Finalizadas
           </Tab>
         </TabsContainer>
         
-        {filteredCampaigns.length > 0 ? (
+        {isLoading ? (
+          <EmptyState>
+            <EmptyStateText>Carregando suas rifas...</EmptyStateText>
+          </EmptyState>
+        ) : (
           <RifaCardsGrid>
             {filteredCampaigns.map((campaign) => (
               <RifaCard key={campaign.id}>
@@ -603,41 +648,43 @@ export default function MinhasRifasPage() {
                 </RifaImageContainer>
                 
                 <RifaContent>
-                  <RifaTitle>{campaign.title}</RifaTitle>
-                  
-                  <RifaMeta>
-                    <div>Criada em {campaign.createdAt.toLocaleDateString('pt-BR')}</div>
-                    <div>R$ {campaign.price.toFixed(2)}</div>
-                  </RifaMeta>
-                  
-                  <RifaStats>
-                    <StatRow>
-                      <StatLabel>Data do Sorteio:</StatLabel>
-                      <StatValue>{campaign.drawDate.toLocaleDateString('pt-BR')}</StatValue>
-                    </StatRow>
-                    <StatRow>
-                      <StatLabel>Números Totais:</StatLabel>
-                      <StatValue>{campaign.totalNumbers}</StatValue>
-                    </StatRow>
-                    <StatRow>
-                      <StatLabel>Vendas Totais:</StatLabel>
-                      <StatValue>R$ {campaign.totalSales.toFixed(2)}</StatValue>
-                    </StatRow>
-                    {campaign.status === 'finalizada' && campaign.winnerNumber && (
+                  <RifaUpperContent>
+                    <RifaTitle>{campaign.title}</RifaTitle>
+                    
+                    <RifaMeta>
+                      <div>Criada em {campaign.createdAt.toLocaleDateString('pt-BR')}</div>
+                      <div>R$ {campaign.price.toFixed(2)}</div>
+                    </RifaMeta>
+                    
+                    <RifaStats>
                       <StatRow>
-                        <StatLabel>Número Vencedor:</StatLabel>
-                        <StatValue>{campaign.winnerNumber}</StatValue>
+                        <StatLabel>Data do Sorteio:</StatLabel>
+                        <StatValue>{campaign.drawDate.toLocaleDateString('pt-BR')}</StatValue>
                       </StatRow>
-                    )}
-                  </RifaStats>
-                  
-                  <ProgressBar>
-                    <ProgressFill $percent={campaign.stats.percentSold} />
-                  </ProgressBar>
-                  <ProgressText>
-                    <span>{campaign.stats.percentSold}% vendido</span>
-                    <span>{campaign.stats.sold}/{campaign.totalNumbers} números</span>
-                  </ProgressText>
+                      <StatRow>
+                        <StatLabel>Números Totais:</StatLabel>
+                        <StatValue>{campaign.totalNumbers}</StatValue>
+                      </StatRow>
+                      <StatRow>
+                        <StatLabel>Vendas Totais:</StatLabel>
+                        <StatValue>R$ {campaign.totalSales.toFixed(2)}</StatValue>
+                      </StatRow>
+                      {campaign.status === 'finalizada' && campaign.winnerNumber && (
+                        <StatRow>
+                          <StatLabel>Número Vencedor:</StatLabel>
+                          <StatValue>{campaign.winnerNumber}</StatValue>
+                        </StatRow>
+                      )}
+                    </RifaStats>
+                    
+                    <ProgressBar>
+                      <ProgressFill $percent={campaign.stats.percentSold} />
+                    </ProgressBar>
+                    <ProgressText>
+                      <span>{campaign.stats.percentSold}% vendido</span>
+                      <span>{campaign.stats.sold}/{campaign.totalNumbers} números</span>
+                    </ProgressText>
+                  </RifaUpperContent>
                   
                   <RifaActions>
                     <RifaActionButton>
@@ -659,7 +706,7 @@ export default function MinhasRifasPage() {
                         <FaEllipsisV />
                       </RifaActionButton>
                       
-                      <Popover $visible={openPopoverId === campaign.id}>
+                      <Popover $visible={activePopover === campaign.id}>
                         <PopoverItem>
                           <FaEdit /> Editar
                         </PopoverItem>
@@ -678,22 +725,6 @@ export default function MinhasRifasPage() {
               </RifaCard>
             ))}
           </RifaCardsGrid>
-        ) : (
-          <EmptyState>
-            <EmptyStateIcon>
-              <FaTicketAlt />
-            </EmptyStateIcon>
-            <EmptyStateTitle>Nenhuma rifa encontrada</EmptyStateTitle>
-            <EmptyStateText>
-              {searchTerm 
-                ? `Nenhuma rifa correspondente a "${searchTerm}" foi encontrada.` 
-                : 'Crie sua primeira rifa para começar a vender números!'}
-            </EmptyStateText>
-            <ActionButton>
-              <FaPlus />
-              Criar Nova Rifa
-            </ActionButton>
-          </EmptyState>
         )}
       </div>
     </CreatorDashboard>

@@ -180,110 +180,111 @@ const EmptyState = styled.div`
 `;
 
 export default function DashboardHome() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   
+  // Check if this is the first visit in the session
   useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
+    if (hasSeenWelcome) {
+      setShowWelcome(false);
+    } else {
+      sessionStorage.setItem('hasSeenWelcome', 'true');
+    }
   }, []);
+  
+  const handleAnimationComplete = () => {
+    setShowWelcome(false);
+  };
   
   return (
     <ParticipantDashboard>
-      {isLoading ? (
-        <EmptyState>Carregando dados do dashboard...</EmptyState>
-      ) : (
-        <>
-          <PageContent>
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Total de Rifas</CardTitle>
-                <CardIcon $color="#6a11cb">
-                  <FaTicketAlt />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>12</CardValue>
-              <CardTrend $positive={true}>
-                +3 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Rifas Ativas</CardTitle>
-                <CardIcon $color="#0ea5e9">
-                  <FaCalendarAlt />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>8</CardValue>
-              <CardTrend $positive={true}>
-                +2 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Prêmios Ganhos</CardTitle>
-                <CardIcon $color="#10b981">
-                  <FaTrophy />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>2</CardValue>
-              <CardTrend $positive={true}>
-                +1 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Valor Investido</CardTitle>
-                <CardIcon $color="#f59e0b">
-                  <FaChartLine />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>R$ 650</CardValue>
-              <CardTrend $positive={false}>
-                -R$ 50 desde o mês passado
-              </CardTrend>
-            </StatCard>
-          </PageContent>
-          
-          <Section>
-            <SectionHeader>
-              <SectionTitle>Rifas Recentes</SectionTitle>
-              <SectionLink href="/dashboard/rifas">
-                Ver todas
-              </SectionLink>
-            </SectionHeader>
-            
-            <RecentList>
-              {/* Aqui poderia ser um componente de lista de rifas recentes */}
-              <EmptyState>
-                Nenhuma rifa recente para mostrar. Explore as rifas disponíveis!
-              </EmptyState>
-            </RecentList>
-          </Section>
-          
-          <Section>
-            <SectionHeader>
-              <SectionTitle>Próximos Sorteios</SectionTitle>
-              <SectionLink href="/dashboard/rifas">
-                Ver todos
-              </SectionLink>
-            </SectionHeader>
-            
-            <RecentList>
-              {/* Aqui poderia ser um componente de lista de próximos sorteios */}
-              <EmptyState>
-                Nenhum sorteio programado para breve.
-              </EmptyState>
-            </RecentList>
-          </Section>
-        </>
-      )}
+      
+      <PageContent>
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Total de Rifas</CardTitle>
+            <CardIcon $color="#6a11cb">
+              <FaTicketAlt />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>12</CardValue>
+          <CardTrend $positive={true}>
+            +3 desde o mês passado
+          </CardTrend>
+        </StatCard>
+        
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Rifas Ativas</CardTitle>
+            <CardIcon $color="#0ea5e9">
+              <FaCalendarAlt />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>8</CardValue>
+          <CardTrend $positive={true}>
+            +2 desde o mês passado
+          </CardTrend>
+        </StatCard>
+        
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Prêmios Ganhos</CardTitle>
+            <CardIcon $color="#10b981">
+              <FaTrophy />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>2</CardValue>
+          <CardTrend $positive={true}>
+            +1 desde o mês passado
+          </CardTrend>
+        </StatCard>
+        
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Valor Investido</CardTitle>
+            <CardIcon $color="#f59e0b">
+              <FaChartLine />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>R$ 650</CardValue>
+          <CardTrend $positive={false}>
+            -R$ 50 desde o mês passado
+          </CardTrend>
+        </StatCard>
+      </PageContent>
+      
+      <Section>
+        <SectionHeader>
+          <SectionTitle>Rifas Recentes</SectionTitle>
+          <SectionLink href="/dashboard/rifas">
+            Ver todas
+          </SectionLink>
+        </SectionHeader>
+        
+        <RecentList>
+          {/* Aqui poderia ser um componente de lista de rifas recentes */}
+          <EmptyState>
+            Nenhuma rifa recente para mostrar. Explore as rifas disponíveis!
+          </EmptyState>
+        </RecentList>
+      </Section>
+      
+      <Section>
+        <SectionHeader>
+          <SectionTitle>Próximos Sorteios</SectionTitle>
+          <SectionLink href="/dashboard/rifas">
+            Ver todos
+          </SectionLink>
+        </SectionHeader>
+        
+        <RecentList>
+          {/* Aqui poderia ser um componente de lista de próximos sorteios */}
+          <EmptyState>
+            Nenhum sorteio programado para breve.
+          </EmptyState>
+        </RecentList>
+      </Section>
     </ParticipantDashboard>
   );
 } 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope } from 'react-icons/fa';
@@ -140,7 +140,7 @@ const SearchInput = styled.input`
   position: relative;
   
   &:focus {
-    outline: none;
+  outline: none;
     border-color: #6a11cb;
     box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
   }
@@ -186,7 +186,7 @@ const StatCard = styled.div`
   
   @media (min-width: 768px) {
     padding: 18px;
-    border-radius: 12px;
+  border-radius: 12px;
   }
 `;
 
@@ -299,8 +299,8 @@ const ViewButton = styled.button`
 // Add a new styled component for the mobile details button
 const MobileViewButton = styled.button`
   padding: 4px 8px;
-  background-color: rgba(106, 17, 203, 0.1);
-  color: #6a11cb;
+    background-color: rgba(106, 17, 203, 0.1);
+    color: #6a11cb;
   border: none;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -405,8 +405,19 @@ export default function VendasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateRange, setDateRange] = useState('todas');
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Filter sales based on search and filters
   const filteredSales = mockSales
@@ -583,20 +594,12 @@ export default function VendasPage() {
   return (
     <CreatorDashboard>
       <PageHeader>
-        <Title>Vendas</Title>
+        <Title>Registro de Vendas</Title>
         <ActionButtons>
           <SecondaryButton>
-            <FaCalendarAlt />
-            Período
-          </SecondaryButton>
-          <SecondaryButton>
-            <FaFilter />
-            Filtros
-          </SecondaryButton>
-          <ActionButton>
-            <FaDownload />
+            <FaDownload size={14} />
             Exportar
-          </ActionButton>
+          </SecondaryButton>
         </ActionButtons>
       </PageHeader>
       
@@ -656,22 +659,30 @@ export default function VendasPage() {
         </StatCard>
       </StatsContainer>
       
-      <ResponsiveTable
-        columns={columns}
-        data={filteredSales}
-        expandableContent={expandableContent}
-        rowKeyField="id"
-        initialSortBy={{ id: 'date', desc: true }}
-        noDataMessage="Nenhuma venda encontrada"
-        stickyHeader
-        zebra
-      />
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+          Carregando dados de vendas...
+        </div>
+      ) : (
+        <ResponsiveTable
+          columns={columns}
+          data={filteredSales}
+          expandableContent={expandableContent}
+          rowKeyField="id"
+          initialSortBy={{ id: 'date', desc: true }}
+          noDataMessage="Nenhuma venda encontrada"
+          stickyHeader
+          zebra
+        />
+      )}
       
-      <BuyerDetailsModal 
-        isOpen={isModalOpen}
-        onClose={closeBuyerModal}
-        buyer={selectedBuyer}
-      />
+      {isModalOpen && selectedBuyer && (
+        <BuyerDetailsModal
+          isOpen={isModalOpen}
+          buyer={selectedBuyer}
+          onClose={closeBuyerModal}
+        />
+      )}
     </CreatorDashboard>
   );
-}
+} 
