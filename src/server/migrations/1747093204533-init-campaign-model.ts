@@ -12,7 +12,7 @@ export async function up (connection: Connection): Promise<void> {
   // Importar o modelo Campaign do projeto
   try {
     // Tentar importar diretamente
-    const { default: CampaignModel } = await import('../src/models/Campaign');
+    const { default: CampaignModel } = await import('../../models/Campaign');
     
     // Obter o schema do modelo
     const CampaignSchema = CampaignModel.schema;

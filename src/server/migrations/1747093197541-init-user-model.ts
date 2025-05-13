@@ -13,7 +13,7 @@ export async function up (connection: Connection): Promise<void> {
   // Importar o modelo User do projeto
   try {
     // Tentar importar diretamente
-    const { default: UserModel } = await import('../src/models/User');
+    const { default: UserModel } = await import('../../models/User');
     
     // Obter o schema do modelo
     const UserSchema = UserModel.schema;

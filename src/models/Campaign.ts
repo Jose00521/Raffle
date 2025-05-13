@@ -38,19 +38,6 @@ export interface ICampaign {
   returnExpected?: string;
 }
 
-const subSchema = new mongoose.Schema({
-  number: {
-    type: String
-  },
-  value: {
-    type: Number
-  },
-  winner: {
-    type: String,
-    default: null
-  }
-});
-
 const CampaignSchema = new mongoose.Schema(
   {
     title: {

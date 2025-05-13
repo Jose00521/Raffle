@@ -12,7 +12,7 @@ export async function up (connection: Connection): Promise<void> {
   // Importar o modelo NumberStatus do projeto
   try {
     // Tentar importar diretamente
-    const { default: NumberStatusModel } = await import('../src/models/NumberStatus');
+    const { default: NumberStatusModel } = await import('../../models/NumberStatus');
     // Obter o schema do modelo
     const NumberStatusSchema = NumberStatusModel?.schema;
     
