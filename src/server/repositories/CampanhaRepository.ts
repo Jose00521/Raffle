@@ -10,10 +10,24 @@ export class CampanhaRepository {
   static async buscarCampanhasAtivas() {
     try {
       await dbConnect();
-      return Rifa.find({ isActive: true })
-        .select('_id title description price image totalNumbers drawDate')
-        .sort({ createdAt: -1 })
-        .lean();
+      const campaigns = await Rifa.find({ isActive: true }).exec();
+
+      const campaingStats = campaigns.map(campaign=>{
+        return {
+          ...campaign.toObject(),
+          stats: {
+            available: 1000,
+            reserved: 10,
+            sold: 200,
+            percentComplete: ((campaign.stats?.sold || 0) / campaign.totalNumbers) * 100  
+          }
+        }
+      })
+
+      return {
+        success: true,
+        data: campaingStats
+      };
     } catch (error) {
       console.error('Erro ao buscar campanhas ativas:', error);
       throw error;

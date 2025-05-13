@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import CampaignCard from './CampaignCard';
-import { IRifa } from '../../models/Campaign';
+import { ICampaign } from '../../models/Campaign';
 
 const Grid = styled.div`
   display: grid;
@@ -47,7 +47,7 @@ const EmptyIcon = styled.div`
 `;
 
 interface CampaignGridProps {
-  campaigns: IRifa[];
+  campaigns: ICampaign[];
   emptyMessage?: string;
 }
 

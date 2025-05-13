@@ -18,14 +18,14 @@ export interface ICampaign {
   createdAt: Date;
   updatedAt: Date;
   // Estatísticas calculadas
-  // stats?: {
-  //   available: number;
-  //   reserved: number;
-  //   sold: number;
-  //   percentComplete: number;
-  // };
+  stats?: {
+    available: number;
+    reserved: number;
+    sold: number;
+    percentComplete: number;
+  };
   // Propriedades adicionais para a página de detalhes
-  instantPrizes: Array<{
+  instantPrizes?: Array<{
     number: string;
     value: number;
     winner: string | null;

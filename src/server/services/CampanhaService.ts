@@ -10,22 +10,22 @@ export class CampanhaService {
       const campanhas = await CampanhaRepository.buscarCampanhasAtivas();
       
       // Para cada campanha, processar estatísticas
-      const campanhasComStats = await Promise.all(
-        campanhas.map(async (campanha) => {
-          //const stats = await this.obterEstatisticasCampanha(campanha._id!.toString());
+      // const campanhasComStats = await Promise.all(
+      //   campanhas.map(async (campanha) => {
+      //     const stats = await this.obterEstatisticasCampanha(campanha._id!.toString());
 
-          return campanha;
+         
           
-        //   return {
-        //     ...campanha,
-        //     stats
-        //   };
-        })
-      );
+      //     return {
+      //       ...campanha,
+      //       stats
+      //     };
+      //   })
+      // );
       
       return {
         success: true,
-        data: campanhasComStats
+        data: campanhas
       };
     } catch (error) {
       console.error('Erro ao listar campanhas ativas:', error);

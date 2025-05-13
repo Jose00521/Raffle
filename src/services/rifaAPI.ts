@@ -1,4 +1,5 @@
 // API client para operações com rifas e números
+import { ICampaign } from '@/models/Campaign';
 
 /**
  * Interface para estatísticas de números
@@ -15,6 +16,30 @@ export interface RifaStats {
  * Funções da API para interagir com rifas e seus números
  */
 const rifaAPI = {
+    /**
+   * Obtém todas as campanhas ativas
+   */
+    getCampanhasAtivas: async (): Promise<ICampaign[]> => {
+      try {
+        const response = await fetch('/api/campanhas');
+        const result = await response.json();
+        
+        console.log("API response:", result);
+        
+        // Handle both formats: direct array or {success:true, data:[...]}
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        } else if (Array.isArray(result)) {
+          return result;
+        } else {
+          console.error("Unexpected API response format:", result);
+          return [];
+        }
+      } catch (error) {
+        console.error('Erro ao buscar campanhas ativas:', error);
+        return [];
+      }
+    },
   /**
    * Obtém estatísticas dos números de uma rifa
    */

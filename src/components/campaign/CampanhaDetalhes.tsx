@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { IRifa } from '../../models/Campaign';
+import { ICampaign } from '../../models/Campaign';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
 import rifaAPI from '../../services/rifaAPI';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
-  campanha: IRifa & {
+  campanha: ICampaign & {
     instantPrizes?: Array<{
       number: string;
       value: number;
@@ -321,7 +321,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                   transition: isDragging ? 'none' : 'transform 0.5s ease'
                 }}
               >
-                {carouselImages.map((img, index) => (
+                {carouselImages.map((img: string, index: number) => (
                   <CarrosselSlide key={index}>
                     <CarrosselImagem 
                       src={img} 
@@ -361,7 +361,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               </CarrosselSetas>
               
               <IndicadoresPontos>
-                {carouselImages.map((_, index) => (
+                {carouselImages.map((_:string, index:number) => (
                   <PontoIndicador 
                     key={index} 
                     className="navegacao-seta"
@@ -378,7 +378,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             
             {/* Miniaturas das imagens */}
             <MiniaturasContainer>
-              {carouselImages.map((img, index) => (
+              {carouselImages.map((img: string, index: number) => (
                 <MiniaturaBotao
                   key={index}
                   $ativo={index === currentImageIndex}
