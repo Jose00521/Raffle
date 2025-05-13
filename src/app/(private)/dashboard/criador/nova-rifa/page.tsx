@@ -12,20 +12,25 @@ import Link from 'next/link';
 const Container = styled.div`
   max-width: 1200px;
   width: 100%;
-  padding: 12px;
+  padding: 32px 12px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  justify-content: flex-start;
 `;
 
 const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
   }
 `;
 
@@ -61,15 +66,17 @@ const BackLink = styled(Link)`
 `;
 
 const TopTipsContainer = styled.div`
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   background: linear-gradient(120deg, rgba(106, 17, 203, 0.08) 0%, rgba(37, 117, 252, 0.08) 100%);
   border-radius: 16px;
-  padding: 28px;
+  padding: 32px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 2;
   
   @media (max-width: 768px) {
-    margin-bottom: 32px;
     padding: 24px;
+    margin-bottom: 16px;
   }
 `;
 
@@ -97,7 +104,8 @@ const TopTipsTitle = styled.h2`
 const TopTipsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 28px;
+  padding-top: 8px;
   
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
@@ -112,12 +120,13 @@ const TopTipsGrid = styled.div`
 const TipCard = styled.div`
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
   
   &:hover {
     transform: translateY(-3px);
@@ -125,21 +134,28 @@ const TipCard = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 16px;
+    padding: 20px;
   }
 `;
 
+const TipContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`;
+
 const TipIconWrapper = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
+  margin-bottom: 8px;
 `;
 
 const TipTitle = styled.h4`
@@ -159,10 +175,27 @@ const TipText = styled.p`
 const PageContent = styled.div`
   display: flex;
   gap: 40px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 40px;
   
   @media (max-width: 1024px) {
     flex-direction: column;
     gap: 32px;
+    margin-bottom: 32px;
+  }
+`;
+
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    gap: 24px;
   }
 `;
 
@@ -171,8 +204,12 @@ const FormContainer = styled.div`
   background: white;
   border-radius: 16px;
   background-color: transparent;
-  position: relative;
+  position: relative;;
+
   
+  @media (max-width: 768px) {
+    
+  }
 `;
 
 const SideTipsContainer = styled.div`
@@ -184,12 +221,12 @@ const SideTipsContainer = styled.div`
   align-self: flex-start;
   position: sticky;
   top: 32px;
+  height: fit-content;
   
   @media (max-width: 1024px) {
     width: 100%;
     position: static;
     padding: 24px;
-    margin-top: -16px;
     margin-bottom: 16px;
   }
 `;
@@ -225,14 +262,14 @@ const TipsList = styled.ul`
 `;
 
 const ButtonContainer = styled.div`
-  margin-top: 40px;
+  margin-top: 48px;
   display: flex;
   justify-content: flex-end;
   padding: 0 16px 16px;
   
   @media (max-width: 768px) {
     justify-content: center;
-    margin-top: 32px;
+    margin-top: 40px;
     padding: 0 8px 8px;
   }
 `;
@@ -245,7 +282,7 @@ const SubmitButton = styled.button`
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 16px 32px;
+  padding: 18px 36px;
   font-weight: 600;
   font-size: 1.05rem;
   cursor: pointer;
@@ -266,7 +303,7 @@ const SubmitButton = styled.button`
   @media (max-width: 768px) {
     width: 100%;
     justify-content: center;
-    padding: 14px 28px;
+    padding: 16px 28px;
   }
 `;
 
@@ -405,99 +442,101 @@ export default function NovaRifaPage() {
   return (
     <CreatorDashboard>
       <Container>
-        <PageHeader>
-          <HeaderTitle>
-            <BackLink href="/dashboard/criador/minhas-rifas">
-              <FaArrowLeft />
-            </BackLink>
-            <Title>Nova Rifa</Title>
-          </HeaderTitle>
-        </PageHeader>
-        
-        <TopTipsContainer>
-          <TopTipsTitle>
-            <FaLightbulb /> Dicas para criar rifas de sucesso
-          </TopTipsTitle>
-          <TopTipsGrid>
-            <TipCard>
-              <TipIconWrapper>
-                <FaImage />
-              </TipIconWrapper>
-              <div>
-                <TipTitle>Imagens de Qualidade</TipTitle>
-                <TipText>
-                  Use fotos bem iluminadas e de alta resolução do prêmio. Múltiplas imagens mostrando diferentes ângulos aumentam a confiança dos participantes.
-                </TipText>
-              </div>
-            </TipCard>
-            
-            <TipCard>
-              <TipIconWrapper>
-                <FaPen />
-              </TipIconWrapper>
-              <div>
-                <TipTitle>Descrição Detalhada</TipTitle>
-                <TipText>
-                  Explique claramente as características do prêmio, seu valor e por que é desejável. Textos bem escritos geram mais engajamento.
-                </TipText>
-              </div>
-            </TipCard>
-            
-            <TipCard>
-              <TipIconWrapper>
-                <FaTrophy />
-              </TipIconWrapper>
-              <div>
-                <TipTitle>Prêmios Atrativos</TipTitle>
-                <TipText>
-                  Escolha prêmios que sua audiência realmente deseja. Adicione prêmios instantâneos para aumentar o interesse e a participação.
-                </TipText>
-              </div>
-            </TipCard>
-          </TopTipsGrid>
-        </TopTipsContainer>
-        
-        <PageContent>
-          <FormContainer>
-            <RaffleFormFields 
-              onSubmit={handleFormSubmit}
-              isSubmitting={isSubmitting}
-            />
-            
-            <ButtonContainer>
-              <SubmitButton 
-                onClick={() => document.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true }))} 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner /> Criando rifa...
-                  </>
-                ) : (
-                  <>
-                    <FaSave /> Criar Rifa
-                  </>
-                )}
-              </SubmitButton>
-            </ButtonContainer>
-          </FormContainer>
+        <MainContent>
+          <PageHeader>
+            <HeaderTitle>
+              <BackLink href="/dashboard/criador/minhas-rifas">
+                <FaArrowLeft />
+              </BackLink>
+              <Title>Nova Rifa</Title>
+            </HeaderTitle>
+          </PageHeader>
           
-          <SideTipsContainer>
-            <SideTipsTitle>
-              <FaLightbulb /> Checklist de Sucesso
-            </SideTipsTitle>
-            <TipsList>
-              <li>Defina um preço competitivo para os números</li>
-              <li>Seja transparente sobre as regras do sorteio</li>
-              <li>Inclua todas as especificações técnicas do prêmio</li>
-              <li>Se for um produto novo, mencione a garantia</li>
-              <li>Adicione informações sobre o envio do prêmio</li>
-              <li>Compartilhe nas redes sociais para alcançar mais participantes</li>
-              <li>Crie um regulamento claro para evitar mal-entendidos</li>
-              <li>Estabeleça uma data de sorteio atrativa e viável</li>
-            </TipsList>
-          </SideTipsContainer>
-        </PageContent>
+          <TopTipsContainer>
+            <TopTipsTitle>
+              <FaLightbulb /> Dicas para criar rifas de sucesso
+            </TopTipsTitle>
+            <TopTipsGrid>
+              <TipCard>
+                <TipIconWrapper>
+                  <FaImage />
+                </TipIconWrapper>
+                <TipContent>
+                  <TipTitle>Imagens de Qualidade</TipTitle>
+                  <TipText>
+                    Use fotos bem iluminadas e de alta resolução do prêmio. Múltiplas imagens mostrando diferentes ângulos aumentam a confiança dos participantes.
+                  </TipText>
+                </TipContent>
+              </TipCard>
+              
+              <TipCard>
+                <TipIconWrapper>
+                  <FaPen />
+                </TipIconWrapper>
+                <TipContent>
+                  <TipTitle>Descrição Detalhada</TipTitle>
+                  <TipText>
+                    Explique claramente as características do prêmio, seu valor e por que é desejável. Textos bem escritos geram mais engajamento.
+                  </TipText>
+                </TipContent>
+              </TipCard>
+              
+              <TipCard>
+                <TipIconWrapper>
+                  <FaTrophy />
+                </TipIconWrapper>
+                <TipContent>
+                  <TipTitle>Prêmios Atrativos</TipTitle>
+                  <TipText>
+                    Escolha prêmios que sua audiência realmente deseja. Adicione prêmios instantâneos para aumentar o interesse e a participação.
+                  </TipText>
+                </TipContent>
+              </TipCard>
+            </TopTipsGrid>
+          </TopTipsContainer>
+          
+          <PageContent>
+            <FormContainer>
+              <RaffleFormFields 
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSubmitting}
+              />
+              
+              <ButtonContainer>
+                <SubmitButton 
+                  onClick={() => document.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true }))} 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner /> Criando rifa...
+                    </>
+                  ) : (
+                    <>
+                      <FaSave /> Criar Rifa
+                    </>
+                  )}
+                </SubmitButton>
+              </ButtonContainer>
+            </FormContainer>
+            
+            <SideTipsContainer>
+              <SideTipsTitle>
+                <FaLightbulb /> Checklist de Sucesso
+              </SideTipsTitle>
+              <TipsList>
+                <li>Defina um preço competitivo para os números</li>
+                <li>Seja transparente sobre as regras do sorteio</li>
+                <li>Inclua todas as especificações técnicas do prêmio</li>
+                <li>Se for um produto novo, mencione a garantia</li>
+                <li>Adicione informações sobre o envio do prêmio</li>
+                <li>Compartilhe nas redes sociais para alcançar mais participantes</li>
+                <li>Crie um regulamento claro para evitar mal-entendidos</li>
+                <li>Estabeleça uma data de sorteio atrativa e viável</li>
+              </TipsList>
+            </SideTipsContainer>
+          </PageContent>
+        </MainContent>
         
         {showSuccess && (
           <SuccessOverlay>

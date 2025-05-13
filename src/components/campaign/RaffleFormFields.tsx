@@ -47,21 +47,36 @@ interface RaffleFormFieldsProps {
 }
 
 // Styled components
-const FormContainer = styled.div`
+const   FormContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 40px;
   width: 100%;
-  padding: 20px 0;
+  background-color: transparent !important;
+
+  .agendamento {
+    overflow: visible !important;
+
+    &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: transparent;
+    opacity: 0.8;
+  }
+  }
   
   @media (max-width: 768px) {
     gap: 36px;
-    padding: 16px 0;
+
   }
   
   @media (max-width: 480px) {
     gap: 32px;
-    padding: 12px 0;
+
   }
 `;
 
@@ -770,7 +785,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         </FormSection>
         
         {/* Additional Options */}
-        <FormSection>
+        <FormSection className='agendamento'>
           <SectionTitle>
             <FaCalendarAlt /> Agendamento e Prêmios Instantâneos
           </SectionTitle>

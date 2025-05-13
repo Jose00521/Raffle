@@ -137,6 +137,7 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
     padding: 0.5rem;
     background: white;
     z-index: 100;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
     
     @media (max-width: 480px) {
       width: 290px;
@@ -241,6 +242,27 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
     font-size: 0.85rem;
     font-weight: 500;
     z-index: 5;
+  }
+  
+  /* Direct styling for SELECT elements */
+  .react-datepicker__month-select,
+  .react-datepicker__year-select {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    color: white;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    
+    &:focus {
+      outline: none;
+    }
+    
+    option {
+      background-color: white;
+      color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    }
   }
   
   .react-datepicker__year-read-view,
@@ -359,6 +381,11 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
       background-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
     }
   }
+  
+  /* Fix for popper positioning */
+  .datepicker-popper {
+    z-index: 9999 !important;
+  }
 `;
 
 const ErrorText = styled.div`
@@ -459,4 +486,4 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
   );
 };
 
-export default FormDatePicker; 
+export default FormDatePicker;
