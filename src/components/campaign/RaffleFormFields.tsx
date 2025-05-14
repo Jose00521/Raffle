@@ -22,6 +22,8 @@ import MultipleImageUploader from '../upload/MultipleImageUploader';
 import FormInput from '../common/FormInput';
 import FormTextArea from '../common/FormTextArea';
 import FormDatePicker from '../common/FormDatePicker';
+import AdvancedDateTimePicker from '../common/AdvancedDateTimePicker';
+import WysiwygEditor from '../common/WysiwygEditor';
 
 // Interface for form data
 export interface RaffleFormData {
@@ -768,7 +770,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             <FaListOl /> Regulamento
           </SectionTitle>
           
-          <FormTextArea
+          <WysiwygEditor
             id="regulation"
             label="Regulamento da Rifa"
             icon={<FaListOl />}
@@ -777,10 +779,11 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             onChange={handleChange}
             disabled={isSubmitting}
             fullWidth
-            rows={8}
+            minHeight="250px"
           />
           <HelpText>
-            Descreva as regras claras para evitar mal-entendidos com os participantes.
+            Descreva as regras de forma clara e detalhada para evitar mal-entendidos com os participantes.
+            Você pode usar as opções de formatação para destacar pontos importantes.
           </HelpText>
         </FormSection>
         
@@ -807,23 +810,16 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           </ToggleContainer>
           
           {formData.isScheduled && (
-            <FormDatePicker
-              id="scheduledDate"
+            <AdvancedDateTimePicker
+              value={selectedScheduledDate}
+              onChange={handleScheduledDateChange}
+              minDate={new Date()}
               label="Data de Publicação"
               icon={<FaRegCalendarAlt />}
               placeholder="Selecione a data e hora"
-              selected={selectedScheduledDate}
-              onChange={handleScheduledDateChange}
+              required={formData.isScheduled}
               error={errors.scheduledDate}
               disabled={isSubmitting}
-              required={formData.isScheduled}
-              minDate={new Date()}
-              showYearDropdown
-              showMonthDropdown
-              dateFormat="dd/MM/yyyy"
-              showTimeSelect={true}
-              timeFormat="HH:mm"
-              isClearable
             />
           )}
           
