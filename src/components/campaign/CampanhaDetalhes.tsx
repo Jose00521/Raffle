@@ -76,7 +76,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
     })),
     ...Array.from({ length: 50 }, (_, index) => ({
       number: String(1201 + index).padStart(6, '0'),
-      value: 500,
+    value: 500,
       winner: null,
       category: 'premiado',
       chance: '75%',
@@ -393,6 +393,50 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
     console.log("Meus Números clicado");
   };
 
+  const MobileContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    
+    @media (min-width: 992px) {
+      display: none; // Hide on desktop
+    }
+  `;
+
+  // Add a desktop container with the new layout
+  const DesktopContainer = styled.div`
+    display: none; // Hidden on mobile
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    
+    @media (min-width: 992px) {
+      display: flex;
+    }
+  `;
+
+  // Create a row container for the promotional packages and quantity selector
+  const SelectionRowContainer = styled.div`
+    display: flex;
+    gap: 1.5rem;
+    
+    > * {
+      flex: 1; // Make both children take equal space
+    }
+  `;
+
+  // Add styled component for desktop purchase container
+  const CompraDesktop = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background-color: ${({ theme }) => theme.colors.white};
+    padding: 1.5rem;
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    box-shadow: ${({ theme }) => theme.shadows.md};
+  `;
+  
   return (
     <Container>
       {/* Banner da campanha */}
@@ -443,6 +487,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
       
       {/* Conteúdo principal */}
       <Conteudo>
+        {/* Mobile layout - hide on desktop */}
         <MobileContainer>
           <PainelImagem>
             {/* Novo componente de carrossel de imagens com suporte a swipe */}
@@ -534,7 +579,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             </MiniaturasContainer>
           </PainelImagem>
           
-          {/* Painel de compra */}
+          {/* Mobile purchase container */}
           <CompraContainer>
             {/* Mensagem incentivo */}
             <MensagemIncentivo>
@@ -621,6 +666,182 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             </SegurancaInfo>
           </CompraContainer>
         </MobileContainer>
+        
+        {/* Desktop layout - with the structure requested */}
+        <DesktopContainer>
+          {/* Images at the top */}
+          <PainelImagem>
+            {/* New carousel de imagens with swipe support */}
+            <CarrosselContainer 
+              onClick={handleUserInteraction}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove as any}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleTouchStart}
+              onMouseMove={handleTouchMove as any}
+              onMouseUp={handleTouchEnd}
+              onMouseLeave={handleMouseLeave}
+            >
+              <CarrosselWrapper 
+                style={{ 
+                  transform: `translateX(calc(-${currentImageIndex * 100}% + ${isDragging ? dragOffset : 0}px))`,
+                  transition: isDragging ? 'none' : 'transform 0.5s ease'
+                }}
+              >
+                {carouselImages.map((img: string, index: number) => (
+                  <CarrosselSlide key={index}>
+                    <CarrosselImagem 
+                      src={img} 
+                      alt={`${campanha.title} - imagem ${index+1}`}
+                      draggable={false}
+                    />
+                    {!isMobile && <ZoomIndicator><i className="fas fa-search-plus"></i></ZoomIndicator>}
+                  </CarrosselSlide>
+                ))}
+              </CarrosselWrapper>
+              
+              <CarrosselSetas>
+                <SetaNavegacao 
+                  className="navegacao-seta"
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    prevImage();
+                  }}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </SetaNavegacao>
+                <SetaNavegacao 
+                  className="navegacao-seta"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    nextImage();
+                  }}
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </SetaNavegacao>
+              </CarrosselSetas>
+              
+              <IndicadoresPontos>
+                {carouselImages.map((_:string, index:number) => (
+                  <PontoIndicador 
+                    key={index} 
+                    className="navegacao-seta"
+                    $ativo={index === currentImageIndex}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                      handleUserInteraction();
+                    }}
+                  />
+                ))}
+              </IndicadoresPontos>
+            </CarrosselContainer>
+            
+            {/* Miniaturas das imagens */}
+            <MiniaturasContainer>
+              {carouselImages.map((img: string, index: number) => (
+                <MiniaturaBotao
+                  key={index}
+                  $ativo={index === currentImageIndex}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    handleUserInteraction();
+                  }}
+                >
+                  <MiniaturaImagem src={img} alt={`Miniatura ${index + 1}`} />
+                </MiniaturaBotao>
+              ))}
+            </MiniaturasContainer>
+          </PainelImagem>
+          
+          {/* Row layout below the images */}
+          <SelectionRowContainer>
+            {/* Left side - Promotional packages */}
+            <PacotesPromocionaisContainer>
+              <PacotesPromocionaisTitulo>
+                <i className="fas fa-tags"></i> Pacotes promocionais
+              </PacotesPromocionaisTitulo>
+              
+              <PacotesPromocionaisGrid>
+                {pacotesPromocionais.map((pacote) => (
+                  <PacotePromocional 
+                    key={pacote.quantidade} 
+                    $melhorOferta={pacote.melhorOferta}
+                    $ativo={activePacote === pacote.quantidade}
+                    onClick={() => selecionarPacote(pacote.quantidade)}
+                  >
+                    {pacote.melhorOferta && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    <PacoteQuantidade>{pacote.quantidade} cotas</PacoteQuantidade>
+                    <PacotePreco>R$ {pacote.preco.toFixed(2)}</PacotePreco>
+                    <PacoteDescricaoValor>Valor unitário: R$ {pacote.valorUnitario.toFixed(2)}</PacoteDescricaoValor>
+                    <PacoteEconomia>Economia de R$ {pacote.economia.toFixed(2)}</PacoteEconomia>
+                  </PacotePromocional>
+                ))}
+              </PacotesPromocionaisGrid>
+            </PacotesPromocionaisContainer>
+            
+            {/* Right side - Quantity selector */}
+            <CompraDesktop>
+              <MensagemIncentivo>
+                <i className="fas fa-trophy"></i> Quanto mais títulos, mais chances de ganhar!
+              </MensagemIncentivo>
+              
+              <QuantidadeSelector>
+                <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
+                <QuantidadeControle>
+                  <BotoesEsquerda>
+                    <BotaoReset onClick={resetarQuantidade} disabled={quantidadeSelecionada <= numeroMinimo}>
+                      <i className="fas fa-undo-alt"></i>
+                    </BotaoReset>
+                    <BotaoMenos onClick={decrementar} disabled={quantidadeSelecionada <= numeroMinimo}>
+                      <span>−</span>
+                    </BotaoMenos>
+                  </BotoesEsquerda>
+                  <QuantidadeNumero>
+                    <span>{quantidadeSelecionada}</span>
+                  </QuantidadeNumero>
+                  <BotaoMais onClick={incrementar}>
+                    <span>+</span>
+                  </BotaoMais>
+                </QuantidadeControle>
+                
+                {/* Opções de lotes */}
+                <SeletorLotes>
+                  {opcoes.map((opcao) => (
+                    <OpcaoLote 
+                      key={opcao} 
+                      onClick={() => adicionarLote(opcao)}
+                      $popular={opcao === 100}
+                    >
+                      +{opcao}
+                      {opcao === 100 && <PopularTag>Mais Popular</PopularTag>}
+                      <TextoSelecionar>Adicionar</TextoSelecionar>
+                    </OpcaoLote>
+                  ))}
+                </SeletorLotes>
+                
+                {/* Valor total */}
+                <ValorTotalContainer>
+                  <ValorTotalLabel>Total:</ValorTotalLabel>
+                  <ValorTotal>
+                    R$ {valorTotal}
+                  </ValorTotal>
+                </ValorTotalContainer>
+              </QuantidadeSelector>
+              
+              {/* Botão de participar */}
+              <BotaoParticipar id="botao-comprar-desktop">
+                Participar agora
+                <i className="fas fa-chevron-right"></i>
+              </BotaoParticipar>
+              
+              {/* Informação de segurança */}
+              <SegurancaInfo onClick={() => setShowSecurityModal(true)}>
+                <i className="fas fa-shield-alt"></i> Compra 100% segura e criptografada
+              </SegurancaInfo>
+            </CompraDesktop>
+          </SelectionRowContainer>
+        </DesktopContainer>
         
         {/* Modal de Segurança */}
         <SecurityModal 
@@ -858,6 +1079,10 @@ const Titulo = styled.h1`
   margin-bottom: 0.5rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   
+  @media (min-width: 768px) and (max-width: 1200px) {
+    font-size: 2rem;
+  }
+  
   @media (min-width: 768px) {
     font-size: 2.5rem;
   }
@@ -869,6 +1094,11 @@ const SubTitulo = styled.h2`
   opacity: 0.9;
   margin-bottom: 1.5rem;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  
+  @media (min-width: 768px) and (max-width: 1200px) {
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
+  }
   
   @media (min-width: 768px) {
     font-size: 1.5rem;
@@ -993,18 +1223,6 @@ const Conteudo = styled.div`
   
   @media (min-width: 768px) {
     padding: 2rem;
-  }
-`;
-
-const MobileContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  
-  @media (min-width: 992px) {
-    flex-direction: row;
-    align-items: flex-start;
   }
 `;
 
@@ -1152,7 +1370,7 @@ const MiniaturasContainer = styled.div`
   /* Para desktop, volta para grid em vez de scroll horizontal */
   @media (min-width: 768px) {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     overflow-x: visible;
   }
 `;
@@ -1167,7 +1385,7 @@ const MiniaturaBotao = styled.button<{ $ativo: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   aspect-ratio: 16/9;
-  min-width: 200px; /* Tamanho reduzido para manter como miniatura */
+  min-width: 200px ; /* Tamanho reduzido para manter como miniatura */
   max-width: 200px; /* Tamanho máximo fixo */
   width: 20%; /* Aproximadamente 5 itens visíveis */
   flex-shrink: 0;
@@ -1250,6 +1468,7 @@ const PacotesPromocionaisContainer = styled.div`
   flex-direction: column;
   gap: 1.25rem;
   margin-bottom: 2rem;
+  height: fit-content;
   padding: 1.75rem;
   border-radius: 14px;
   background-color: white;
@@ -1272,7 +1491,10 @@ const PacotesPromocionaisContainer = styled.div`
     padding: 1.5rem;
     gap: 1rem;
   }
-
+  
+  @media (min-width: 992px) {
+    margin-bottom: 0;
+  }
 `;
 
 // Refine the title with a more premium, sophisticated style
@@ -1310,6 +1532,10 @@ const PacotesPromocionaisGrid = styled.div`
 
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
     gap: 1rem;
   }
 `;
@@ -1396,6 +1622,11 @@ const PacoteQuantidade = styled.div`
   @media (max-width: 576px) {
     font-size: 1.4rem;
   }
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+  }
 `;
 
 // More premium price styling
@@ -1425,6 +1656,10 @@ const PacotePreco = styled.div`
 
   @media (max-width: 576px) {
     font-size: 1.25rem;
+  }
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
+    font-size: 1.2rem;
   }
 `;
 
@@ -1512,6 +1747,10 @@ const QuantidadeSelector = styled.div`
   @media (max-width: 576px) {
     padding: 1.5rem;
     gap: 1.5rem;
+  }
+  
+  @media (min-width: 992px) {
+    margin-bottom: 0;
   }
 `;
 
@@ -1740,6 +1979,10 @@ const SeletorLotes = styled.div`
     grid-template-columns: repeat(2, 1fr);
     gap: 0.85rem;
   }
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
+    gap: 0.8rem;
+  }
 `;
 
 // Better contrast for lot options
@@ -1766,6 +2009,11 @@ const OpcaoLote = styled.div<{ $popular?: boolean }>`
   ${({ $popular }) => $popular && `
     transform: scale(1.05);
   `}
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
+    padding: 0.8rem 0.4rem;
+    font-size: 1.25rem;
+  }
   
   &:hover {
     transform: translateY(-4px) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
@@ -1831,9 +2079,13 @@ const ValorTotal = styled.div`
   color: ${({ theme }) => theme.colors.primary};
   transition: transform 0.15s ease;
   text-shadow: 0 1px 1px rgba(106, 17, 203, 0.15);
-
+  
   @media (max-width: 576px) {
     font-size: 1.6rem;
+  }
+
+  @media (min-width: 577px) and (max-width: 1200px) {
+    font-size: 1.5rem;
   }
 `;
 
@@ -1857,6 +2109,12 @@ const BotaoParticipar = styled.button`
   gap: 0.5rem;
   position: relative;
   overflow: hidden;
+  
+  @media (min-width: 577px) and (max-width: 1200px) {
+    padding: 1.15rem;
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+  }
   
   &::before {
     content: '';
@@ -1886,8 +2144,8 @@ const BotaoParticipar = styled.button`
     i {
       transform: translateX(4px);
     }
-    
-    &::before {
+  
+  &::before {
       transform: translateX(100%);
     }
   }
@@ -2085,6 +2343,11 @@ const ListaPremiosGrid = styled.div`
     grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
   }
+  
+  @media (min-width: 769px) and (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.65rem;
+  }
 `;
 
 // Make the prize cards more compact
@@ -2227,6 +2490,10 @@ const CardPrize = styled.div<{ $category: string }>`
   transition: transform 0.3s ease;
   letter-spacing: -0.02em;
   margin: 0.1rem 0;
+  
+  @media (min-width: 769px) and (max-width: 1200px) {
+    font-size: 1.1rem;
+  }
   
   background: ${({ $category }) => {
     switch($category) {

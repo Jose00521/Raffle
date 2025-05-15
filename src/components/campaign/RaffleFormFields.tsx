@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   FaInfo, 
@@ -24,6 +24,21 @@ import FormTextArea from '../common/FormTextArea';
 import FormDatePicker from '../common/FormDatePicker';
 import AdvancedDateTimePicker from '../common/AdvancedDateTimePicker';
 import WysiwygEditor from '../common/WysiwygEditor';
+import PrizeConfigForm from '../raffle/PrizeConfigForm';
+
+// Prize category interface
+interface PrizeCategory {
+  active: boolean;
+  quantity: number;
+  value: number;
+}
+
+// Prize categories configuration interface
+interface PrizeCategoriesConfig {
+  diamante: PrizeCategory;
+  master: PrizeCategory;
+  premiado: PrizeCategory;
+}
 
 // Interface for form data
 export interface RaffleFormData {
@@ -39,6 +54,7 @@ export interface RaffleFormData {
   returnExpected: string;
   isScheduled: boolean;
   scheduledDate?: string;
+  prizeCategories?: PrizeCategoriesConfig;
   instantPrizes: Array<{id: string, number: string, value: number}>;
 }
 
@@ -454,6 +470,11 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     returnExpected: initialData.returnExpected || '',
     isScheduled: initialData.isScheduled || false,
     scheduledDate: initialData.scheduledDate || '',
+    prizeCategories: initialData.prizeCategories || {
+      diamante: { active: false, quantity: 10, value: 2000 },
+      master: { active: false, quantity: 20, value: 1000 },
+      premiado: { active: false, quantity: 50, value: 500 }
+    },
     instantPrizes: initialData.instantPrizes || []
   });
   
@@ -468,6 +489,42 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   const [selectedScheduledDate, setSelectedScheduledDate] = useState<Date | null>(
     formData.scheduledDate ? new Date(formData.scheduledDate) : null
   );
+  
+  // Effect para atualizar o formulário quando totalNumbers muda
+  useEffect(() => {
+    if (formData.totalNumbers && formData.prizeCategories) {
+      // Verificar se alguma categoria excede o total de números
+      const totalAssigned = Object.values(formData.prizeCategories).reduce((sum, category) => 
+        category.active ? sum + category.quantity : sum, 0
+      );
+      
+      // Se o total atribuído excede o total disponível, ajustar proporcionalmente
+      if (totalAssigned > formData.totalNumbers) {
+        const ratio = formData.totalNumbers / totalAssigned;
+        
+        const updatedCategories = { ...formData.prizeCategories };
+        let needsUpdate = false;
+        
+        Object.keys(updatedCategories).forEach(key => {
+          const categoryKey = key as keyof PrizeCategoriesConfig;
+          if (updatedCategories[categoryKey].active) {
+            const newQuantity = Math.floor(updatedCategories[categoryKey].quantity * ratio);
+            if (updatedCategories[categoryKey].quantity !== newQuantity) {
+              updatedCategories[categoryKey].quantity = Math.max(1, newQuantity);
+              needsUpdate = true;
+            }
+          }
+        });
+        
+        if (needsUpdate) {
+          setFormData({
+            ...formData,
+            prizeCategories: updatedCategories
+          });
+        }
+      }
+    }
+  }, [formData.totalNumbers]);
   
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -532,7 +589,15 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     }
   };
   
-  // Handle add instant prize
+  // Handle Prize Config Change
+  const handlePrizeConfigChange = (config: PrizeCategoriesConfig) => {
+    setFormData({
+      ...formData,
+      prizeCategories: config
+    });
+  };
+  
+  // Manter handlers originais para compatibilidade
   const handleAddInstantPrize = () => {
     const newPrize = {
       id: `prize-${Date.now()}`,
@@ -546,7 +611,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     });
   };
   
-  // Handle instant prize change
   const handleInstantPrizeChange = (id: string, field: 'number' | 'value', value: string) => {
     const updatedPrizes = formData.instantPrizes.map(prize => {
       if (prize.id === id) {
@@ -561,7 +625,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     setFormData({ ...formData, instantPrizes: updatedPrizes });
   };
   
-  // Handle remove instant prize
   const handleRemoveInstantPrize = (id: string) => {
     const updatedPrizes = formData.instantPrizes.filter(prize => prize.id !== id);
     setFormData({ ...formData, instantPrizes: updatedPrizes });
@@ -599,6 +662,16 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       newErrors.scheduledDate = 'A data de agendamento é obrigatória quando agendado';
     }
     
+    // Validar que pelo menos uma categoria de prêmio está ativa
+    const hasActivePrizeCategory = formData.prizeCategories && 
+      (formData.prizeCategories.diamante.active || 
+       formData.prizeCategories.master.active || 
+       formData.prizeCategories.premiado.active);
+       
+    if (!hasActivePrizeCategory && formData.instantPrizes.length === 0) {
+      newErrors.prizeCategories = 'Pelo menos uma categoria de prêmio deve estar ativa';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -608,13 +681,67 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
+      // Converter dados antes de enviar para a API
+      const apiFormData = prepareFormDataForApi(formData);
+      onSubmit(apiFormData);
     } else {
       // Scroll to first error
       const firstError = Object.keys(errors)[0];
       const element = document.getElementsByName(firstError)[0];
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  };
+  
+  // Prepara os dados do formulário para a API
+  const prepareFormDataForApi = (data: RaffleFormData): RaffleFormData => {
+    const apiData = { ...data };
+    
+    // Converter categorias de prêmios para o formato de instantPrizes se necessário
+    if (apiData.prizeCategories) {
+      const { diamante, master, premiado } = apiData.prizeCategories;
+      const newInstantPrizes = [...apiData.instantPrizes];
+      
+      // Incluir prêmios das categorias ativas
+      // Diamante
+      if (diamante.active) {
+        const startNumber = 1001; // Número inicial para categoria diamante
+        for (let i = 0; i < diamante.quantity; i++) {
+          newInstantPrizes.push({
+            id: `prize-diamante-${i}`,
+            number: String(startNumber + i).padStart(6, '0'),
+            value: diamante.value
+          });
+        }
+      }
+      
+      // Master
+      if (master.active) {
+        const startNumber = 1101; // Número inicial para categoria master
+        for (let i = 0; i < master.quantity; i++) {
+          newInstantPrizes.push({
+            id: `prize-master-${i}`,
+            number: String(startNumber + i).padStart(6, '0'),
+            value: master.value
+          });
+        }
+      }
+      
+      // Premiado
+      if (premiado.active) {
+        const startNumber = 1201; // Número inicial para categoria premiado
+        for (let i = 0; i < premiado.quantity; i++) {
+          newInstantPrizes.push({
+            id: `prize-premiado-${i}`,
+            number: String(startNumber + i).padStart(6, '0'),
+            value: premiado.value
+          });
+        }
+      }
+      
+      apiData.instantPrizes = newInstantPrizes;
+    }
+    
+    return apiData;
   };
   
   return (
@@ -790,7 +917,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         {/* Additional Options */}
         <FormSection className='agendamento'>
           <SectionTitle>
-            <FaCalendarAlt /> Agendamento e Prêmios Instantâneos
+            <FaCalendarAlt /> Agendamento
           </SectionTitle>
           
           <ToggleContainer>
@@ -822,59 +949,23 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
               disabled={isSubmitting}
             />
           )}
+        </FormSection>
+        
+        {/* Prize Configuration Section */}
+        <FormSection>
+          <SectionTitle>
+            <FaGift /> Configuração de Prêmios
+          </SectionTitle>
           
-          <SubSectionDivider />
-          
-          <InstantPrizeHeader>
-            <InstantPrizeTitle>
-              <FaGift /> Prêmios Instantâneos
-            </InstantPrizeTitle>
-            <AddButton 
-              type="button" 
-              onClick={handleAddInstantPrize}
-              disabled={isSubmitting}
-            >
-              + Adicionar Prêmio
-            </AddButton>
-          </InstantPrizeHeader>
-          
-          {formData.instantPrizes.map((prize, index) => (
-            <InstantPrizeItem key={prize.id}>
-              <FormInput
-                id={`number-${prize.id}`}
-                label="Número Premiado"
-                icon={<FaHashtag />}
-                placeholder="Número premiado"
-                value={prize.number}
-                onChange={(e) => handleInstantPrizeChange(prize.id, 'number', e.target.value)}
-                disabled={isSubmitting}
-              />
-              <FormInput
-                id={`value-${prize.id}`}
-                label="Valor do Prêmio"
-                icon={<FaMoneyBillWave />}
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="Valor do prêmio"
-                value={prize.value || ''}
-                onChange={(e) => handleInstantPrizeChange(prize.id, 'value', e.target.value)}
-                disabled={isSubmitting}
-              />
-              <RemoveButton
-                type="button"
-                onClick={() => handleRemoveInstantPrize(prize.id)}
-                disabled={isSubmitting}
-              >
-                <FaTrashAlt />
-              </RemoveButton>
-            </InstantPrizeItem>
-          ))}
-          
-          {formData.instantPrizes.length === 0 && (
-            <HelpText>
-              Adicione prêmios instantâneos para aumentar o engajamento dos participantes.
-            </HelpText>
+          <PrizeConfigForm
+            totalNumbers={formData.totalNumbers}
+            onPrizeConfigChange={handlePrizeConfigChange}
+            disabled={isSubmitting}
+          />
+          {errors.prizeCategories && (
+            <ErrorText>
+              <FaExclamationTriangle /> {errors.prizeCategories}
+            </ErrorText>
           )}
         </FormSection>
       </form>

@@ -32,7 +32,7 @@ export const theme: DefaultTheme = {
       white: '#FFFFFF',
     },
     gradients: {
-      primary: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+      primary: 'linear-gradient(135deg,rgb(0, 0, 0) 0%, #2575fc 100%)',
       secondary: 'linear-gradient(135deg, #2575fc 0%, #4899f7 100%)',
       accent: 'linear-gradient(135deg, #FF9800 0%, #FFB74D 100%)',
       dark: 'linear-gradient(135deg, #111111 0%, #333333 100%)',
