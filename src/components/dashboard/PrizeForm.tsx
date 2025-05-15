@@ -1,0 +1,603 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { IPrize } from '@/models/Prize';
+
+interface PrizeFormProps {
+  initialData?: Partial<IPrize>;
+  onSubmit: (data: Partial<IPrize>) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+}
+
+const FormWrapper = styled.div`
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+  margin: 0 auto;
+  
+  @media (max-width: 640px) {
+    padding: 16px;
+  }
+`;
+
+const FormTitle = styled.h2`
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 24px;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+  }
+  
+  &:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+`;
+
+const FormTextArea = styled.textarea`
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+  min-height: 100px;
+  resize: vertical;
+  
+  &:focus {
+    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 4px;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+`;
+
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  ${({ $variant }) => {
+    switch ($variant) {
+      case 'primary':
+        return `
+          background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+          color: white;
+          border: none;
+          box-shadow: 0 4px 6px rgba(106, 17, 203, 0.1);
+          
+          &:hover {
+            box-shadow: 0 6px 10px rgba(106, 17, 203, 0.2);
+            transform: translateY(-1px);
+          }
+          
+          &:active {
+            transform: translateY(0);
+          }
+          
+          &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+        `;
+      case 'danger':
+        return `
+          background-color: #fee2e2;
+          color: #ef4444;
+          border: 1px solid #fecaca;
+          
+          &:hover {
+            background-color: #fecaca;
+          }
+        `;
+      default:
+        return `
+          background-color: #f3f4f6;
+          color: #374151;
+          border: 1px solid #e5e7eb;
+          
+          &:hover {
+            background-color: #e5e7eb;
+          }
+        `;
+    }
+  }}
+`;
+
+const ImageUploadContainer = styled.div`
+  margin-bottom: 24px;
+`;
+
+const UploadArea = styled.div<{ $isDragActive?: boolean }>`
+  border: 2px dashed ${({ $isDragActive, theme }) => 
+    $isDragActive 
+      ? theme.colors?.primary || '#6a11cb' 
+      : 'rgba(0, 0, 0, 0.15)'
+  };
+  border-radius: 8px;
+  padding: 32px 24px;
+  text-align: center;
+  transition: all 0.2s ease;
+  background-color: ${({ $isDragActive }) => 
+    $isDragActive ? 'rgba(106, 17, 203, 0.05)' : 'transparent'
+  };
+  cursor: pointer;
+  
+  &:hover {
+    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+    background-color: rgba(106, 17, 203, 0.03);
+  }
+`;
+
+const UploadIcon = styled.div`
+  font-size: 2rem;
+  color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+  margin-bottom: 12px;
+`;
+
+const UploadText = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-bottom: 8px;
+`;
+
+const UploadHint = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#999'};
+`;
+
+const ImagePreviewContainer = styled.div`
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ImagePreview = styled.div`
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const PreviewImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+`;
+
+const PrizeForm: React.FC<PrizeFormProps> = ({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading = false
+}) => {
+  const [formData, setFormData] = useState<Partial<IPrize>>({
+    name: '',
+    description: '',
+    value: '',
+    image: '',
+    images: [],
+    ...initialData
+  });
+  
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDragActive, setIsDragActive] = useState(false);
+  
+  // Preview URLs for uploaded images
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(
+    formData.image || null
+  );
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
+    formData.images || []
+  );
+  
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Update preview when main image file changes
+  useEffect(() => {
+    if (!mainImageFile) return;
+    
+    const objectUrl = URL.createObjectURL(mainImageFile);
+    setMainImagePreview(objectUrl);
+    
+    // Clean up the preview URL when component unmounts
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [mainImageFile]);
+  
+  // Update previews when additional image files change
+  useEffect(() => {
+    const objectUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
+    setAdditionalImagePreviews(prev => {
+      // Keep existing URLs for images that were already in formData
+      const originalUrls = formData.images || [];
+      return [...originalUrls, ...objectUrls];
+    });
+    
+    // Clean up preview URLs when component unmounts
+    return () => {
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [additionalImageFiles]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field if it exists
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+  
+  const handleMainImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setMainImageFile(file);
+      
+      // Clear error for image if it exists
+      if (errors.image) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.image;
+          return newErrors;
+        });
+      }
+    }
+  };
+  
+  const handleAdditionalImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setAdditionalImageFiles(prev => [...prev, ...filesArray]);
+    }
+  };
+  
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+  };
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      setMainImageFile(file);
+      
+      // Clear error for image if it exists
+      if (errors.image) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.image;
+          return newErrors;
+        });
+      }
+    }
+  };
+  
+  const handleRemoveMainImage = () => {
+    setMainImageFile(null);
+    setMainImagePreview(null);
+    setFormData(prev => ({ ...prev, image: '' }));
+  };
+  
+  const handleRemoveAdditionalImage = (index: number) => {
+    const newPreviews = [...additionalImagePreviews];
+    newPreviews.splice(index, 1);
+    setAdditionalImagePreviews(newPreviews);
+    
+    // If it's a newly added file
+    if (index >= (formData.images?.length || 0)) {
+      const newIndex = index - (formData.images?.length || 0);
+      const newFiles = [...additionalImageFiles];
+      newFiles.splice(newIndex, 1);
+      setAdditionalImageFiles(newFiles);
+    } 
+    // If it's an existing image from formData
+    else {
+      const newImages = [...(formData.images || [])];
+      newImages.splice(index, 1);
+      setFormData(prev => ({ ...prev, images: newImages }));
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.name) {
+      newErrors.name = 'O nome do prêmio é obrigatório';
+    }
+    
+    if (!formData.value) {
+      newErrors.value = 'O valor do prêmio é obrigatório';
+    }
+    
+    if (!mainImagePreview && !formData.image) {
+      newErrors.image = 'Uma imagem principal é obrigatória';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    // In a real application, you would upload the images to your server/cloud storage
+    // and get back URLs to store in the database
+    // For this demonstration, we'll just pass the current state
+
+    // Create submission data
+    const submissionData: Partial<IPrize> = {
+      ...formData,
+      // In a real app, you would replace these with actual uploaded URLs
+      image: mainImagePreview || formData.image,
+      images: additionalImagePreviews
+    };
+    
+    onSubmit(submissionData);
+  };
+  
+  return (
+    <FormWrapper>
+      <FormTitle>
+        {initialData?._id ? 'Editar Prêmio' : 'Adicionar Novo Prêmio'}
+      </FormTitle>
+      
+      <form onSubmit={handleSubmit}>
+        <ImageUploadContainer>
+          <FormLabel>Imagem Principal</FormLabel>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleMainImageUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+          
+          {!mainImagePreview ? (
+            <UploadArea
+              $isDragActive={isDragActive}
+              onClick={() => fileInputRef.current?.click()}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <UploadIcon>
+                <FaCloudUploadAlt />
+              </UploadIcon>
+              <UploadText>
+                Clique para fazer upload ou arraste e solte
+              </UploadText>
+              <UploadHint>
+                PNG, JPG ou WEBP (max. 5MB)
+              </UploadHint>
+            </UploadArea>
+          ) : (
+            <ImagePreviewContainer>
+              <ImagePreview>
+                <PreviewImage src={mainImagePreview} alt="Preview" />
+                <RemoveImageButton 
+                  type="button" 
+                  onClick={handleRemoveMainImage}
+                  aria-label="Remove image"
+                >
+                  <FaTimes />
+                </RemoveImageButton>
+              </ImagePreview>
+            </ImagePreviewContainer>
+          )}
+          
+          {errors.image && (
+            <ErrorMessage>{errors.image}</ErrorMessage>
+          )}
+        </ImageUploadContainer>
+        
+        <FormGroup>
+          <FormLabel>Imagens Adicionais (opcional)</FormLabel>
+          
+          <input
+            type="file"
+            onChange={handleAdditionalImagesUpload}
+            accept="image/*"
+            multiple
+            style={{ display: 'none' }}
+            id="additional-images"
+          />
+          
+          <UploadArea
+            $isDragActive={false}
+            onClick={() => document.getElementById('additional-images')?.click()}
+          >
+            <UploadIcon>
+              <FaCloudUploadAlt />
+            </UploadIcon>
+            <UploadText>
+              Clique para adicionar mais imagens
+            </UploadText>
+            <UploadHint>
+              Você pode selecionar múltiplas imagens
+            </UploadHint>
+          </UploadArea>
+          
+          {additionalImagePreviews.length > 0 && (
+            <ImagePreviewContainer>
+              {additionalImagePreviews.map((url, index) => (
+                <ImagePreview key={index}>
+                  <PreviewImage src={url} alt={`Imagem adicional ${index + 1}`} />
+                  <RemoveImageButton 
+                    type="button" 
+                    onClick={() => handleRemoveAdditionalImage(index)}
+                    aria-label="Remove image"
+                  >
+                    <FaTimes />
+                  </RemoveImageButton>
+                </ImagePreview>
+              ))}
+            </ImagePreviewContainer>
+          )}
+        </FormGroup>
+        
+        <FormGroup>
+          <FormLabel htmlFor="name">Nome do Prêmio</FormLabel>
+          <FormInput
+            id="name"
+            name="name"
+            value={formData.name || ''}
+            onChange={handleChange}
+            placeholder="Ex: iPhone 14 Pro Max"
+            disabled={isLoading}
+          />
+          {errors.name && (
+            <ErrorMessage>{errors.name}</ErrorMessage>
+          )}
+        </FormGroup>
+        
+        <FormGroup>
+          <FormLabel htmlFor="description">Descrição</FormLabel>
+          <FormTextArea
+            id="description"
+            name="description"
+            value={formData.description || ''}
+            onChange={handleChange}
+            placeholder="Descreva o prêmio em detalhes..."
+            disabled={isLoading}
+          />
+        </FormGroup>
+        
+        <FormGroup>
+          <FormLabel htmlFor="value">Valor</FormLabel>
+          <FormInput
+            id="value"
+            name="value"
+            value={formData.value || ''}
+            onChange={handleChange}
+            placeholder="Ex: R$ 5.000,00"
+            disabled={isLoading}
+          />
+          {errors.value && (
+            <ErrorMessage>{errors.value}</ErrorMessage>
+          )}
+        </FormGroup>
+        
+        <ButtonGroup>
+          <Button 
+            type="button" 
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            <FaTimes />
+            Cancelar
+          </Button>
+          
+          <Button 
+            type="submit" 
+            $variant="primary"
+            disabled={isLoading}
+          >
+            <FaSave />
+            {isLoading ? 'Salvando...' : 'Salvar Prêmio'}
+          </Button>
+        </ButtonGroup>
+      </form>
+    </FormWrapper>
+  );
+};
+
+export default PrizeForm; 

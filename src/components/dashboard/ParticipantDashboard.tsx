@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { FaHome, FaTicketAlt, FaClipboardList } from 'react-icons/fa';
+import { FaHome, FaTicketAlt, FaClipboardList, FaTrophy } from 'react-icons/fa';
 
 // Define the menu items specific to participant dashboard
 const participantMenuItems = [
@@ -31,6 +31,12 @@ const participantMenuItems = [
         icon: <FaTicketAlt /> 
       }
     ]
+  },
+  {
+    id: 'premios',
+    label: 'Prêmios',
+    path: '/dashboard/premios',
+    icon: <FaTrophy />
   }
 ];
 
