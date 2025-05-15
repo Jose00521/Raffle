@@ -8,34 +8,38 @@ declare module 'styled-components' {
       secondary: string;
       secondaryDark: string;
       accent: string;
-      orange:string;
+      orange: string;
       accentSecondary: string;
-      gradients: {
-        gold: string;
-        dark: string;
-        purple: string;
-        action: string;
-      };
       background: string;
-      backgroundDark: string;
+      backgroundDark?: string;
       white: string;
       black: string;
+      dark: string;
+      success: string;
+      error?: string;
+      warning: string;
+      info: string;
+      text: {
+        primary: string;
+        secondary: string;
+        white: string;
+        light?: string;
+        gold?: string;
+      };
       gray: {
         light: string;
         medium: string;
         dark: string;
       };
-      text: {
+      gradients: {
         primary: string;
         secondary: string;
-        light: string;
-        gold: string;
-        white: string;
+        accent: string;
+        dark: string;
+        purple: string;
+        action: string;
+        gold?: string;
       };
-      success: string;
-      error: string;
-      warning: string;
-      info: string;
     };
     fontSizes: {
       xs: string;
@@ -62,14 +66,14 @@ declare module 'styled-components' {
       md: string;
       lg: string;
       xl: string;
-      full: string;
+      full?: string;
     };
     shadows: {
       sm: string;
       md: string;
       lg: string;
       xl: string;
-      gold: string;
+      gold?: string;
     };
     breakpoints: {
       sm: string;

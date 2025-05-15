@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { FaHome, FaTicketAlt, FaChartLine } from 'react-icons/fa';
+import { FaHome, FaTicketAlt, FaChartLine ,FaTrophy, FaPlusCircle} from 'react-icons/fa';
 
 // Define the menu items specific to creator dashboard
 const creatorMenuItems = [
@@ -19,24 +19,23 @@ const creatorMenuItems = [
     icon: <FaTicketAlt />
   },
   {
-    id: 'nova-rifa',
-    label: 'Nova Rifa',
-    path: '/dashboard/criador/nova-rifa',
-    icon: <FaTicketAlt />
-  },
-  {
     id: 'vendas',
     label: 'Vendas',
     path: '/dashboard/criador/vendas',
     icon: <FaChartLine />
   },
-  // {
-  //   id: 'premios',
-  //   label: 'Prêmios',
-  //   disabled: true,
-  //   path: '/dashboard/criador/premios',
-  //   icon: <FaChartLine />,
-  // }
+    {
+    id: 'premios',
+    label: 'Prêmios',
+    path: '/dashboard/criador/premios',
+    icon: <FaTrophy />,
+  },
+  {
+    id: 'nova-rifa',
+    label: 'Nova Rifa',
+    path: '/dashboard/criador/nova-rifa',
+    icon: <FaPlusCircle />
+  },
 
 ];
 

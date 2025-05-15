@@ -7,6 +7,7 @@ import { ICampaign } from '../../models/Campaign';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
 import rifaAPI from '../../services/rifaAPI';
+import PremioCategory from './PremioCategory';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
@@ -44,15 +45,47 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   // Estado para controle de paginação dos títulos premiados
   const [visiblePrizes, setVisiblePrizes] = useState(20);
   
-  // Criando 100 títulos premiados fixos de R$500,00 cada
-  const fixedPrizes = Array.from({ length: 100 }, (_, index) => ({
-    number: String(1000 + index).padStart(6, '0'),
-    value: 500,
-    winner: null
-  }));
+  // Estado para guardar o pacote promocional ativo
+  const [activePacote, setActivePacote] = useState<number | null>(null);
+  
+  // Pacotes promocionais disponíveis
+  const pacotesPromocionais = [
+    { quantidade: 100, preco: 17.90, valorUnitario: 0.18, economia: 82.10 },
+    { quantidade: 300, preco: 49.90, valorUnitario: 0.17, economia: 250.10 },
+    { quantidade: 500, preco: 79.90, valorUnitario: 0.16, economia: 420.10 },
+    { quantidade: 1000, preco: 149.90, valorUnitario: 0.15, economia: 850.10, melhorOferta: true }
+  ];
+  
+  // First, enhance the fixedPrizes array with additional information for a more luxurious display
+  const fixedPrizes = [
+    ...Array.from({ length: 20 }, (_, index) => ({
+      number: String(1001 + index).padStart(6, '0'),
+      value: 2000,
+      winner: null,
+      category: 'diamante',
+      chance: '98%',
+      emoji: '💎'
+    })),
+    ...Array.from({ length: 30 }, (_, index) => ({
+      number: String(1101 + index).padStart(6, '0'),
+      value: 1000,
+      winner: null,
+      category: 'master',
+      chance: '85%',
+      emoji: '🏆'
+    })),
+    ...Array.from({ length: 50 }, (_, index) => ({
+      number: String(1201 + index).padStart(6, '0'),
+      value: 500,
+      winner: null,
+      category: 'premiado',
+      chance: '75%',
+      emoji: '🎖️'
+    }))
+  ];
   
   // Imagens do carrossel (usando a imagem principal como primeira e adicionando imagens extras se disponíveis)
-  const carouselImages = campanha.images;
+  const carouselImages = campanha.images || [];
   
   // Função para trocar para a próxima imagem
   const nextImage = () => {
@@ -96,7 +129,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   // Função para incrementar quantidade
   const incrementar = () => {
     setAnimateValue(true);
-    setQuantidadeSelecionada(prev => prev + 1);
+    setQuantidadeSelecionada(prev => {
+      const newValue = prev + 1;
+      // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
+      if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
+        setActivePacote(null);
+      }
+      return newValue;
+    });
     setTimeout(() => setAnimateValue(false), 300);
   };
   
@@ -104,7 +144,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   const decrementar = () => {
     if (quantidadeSelecionada > numeroMinimo) {
       setAnimateValue(true);
-      setQuantidadeSelecionada(prev => prev - 1);
+      setQuantidadeSelecionada(prev => {
+        const newValue = prev - 1;
+        // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
+        if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
+          setActivePacote(null);
+        }
+        return newValue;
+      });
       setTimeout(() => setAnimateValue(false), 300);
     }
   };
@@ -112,14 +159,41 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   // Função para adicionar quantidade em lote
   const adicionarLote = (quantidade: number) => {
     setAnimateValue(true);
-    setQuantidadeSelecionada(prev => prev + quantidade);
+    setQuantidadeSelecionada(prev => {
+      const newValue = prev + quantidade;
+      // Verificar se a nova quantidade corresponde a algum pacote promocional
+      const matchingPacote = pacotesPromocionais.find(p => p.quantidade === newValue);
+      if (matchingPacote) {
+        setActivePacote(matchingPacote.quantidade);
+      } else {
+        setActivePacote(null);
+      }
+      return newValue;
+    });
     setTimeout(() => setAnimateValue(false), 300);
+  };
+  
+  // Função para selecionar pacote promocional
+  const selecionarPacote = (quantidade: number) => {
+    setAnimateValue(true);
+    setQuantidadeSelecionada(quantidade);
+    setActivePacote(quantidade);
+    
+    // Rolar para o botão de compra
+    setTimeout(() => {
+      const botaoComprar = document.getElementById('botao-comprar');
+      if (botaoComprar) {
+        botaoComprar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setAnimateValue(false);
+    }, 300);
   };
   
   // Função para resetar a quantidade para o mínimo
   const resetarQuantidade = () => {
     setAnimateValue(true);
     setQuantidadeSelecionada(numeroMinimo);
+    setActivePacote(null);
     setTimeout(() => setAnimateValue(false), 300);
   };
   
@@ -251,16 +325,83 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
     }
   };
   
-  // Função para carregar mais prêmios
-  const loadMorePrizes = () => {
-    // Adiciona mais 20 prêmios ou até o limite máximo de 100 prêmios
-    setVisiblePrizes(prev => Math.min(prev + 20, 100));
+  // Add state variables for each category's visible items
+  // Add this inside the CampanhaDetalhes component function, near other state variables
+  const [visibleDiamante, setVisibleDiamante] = useState(10);
+  const [visibleMaster, setVisibleMaster] = useState(10);
+  const [visiblePremiado, setVisiblePremiado] = useState(10);
+  
+  // Verificar a distribuição das categorias
+  useEffect(() => {
+    const diamante = fixedPrizes.filter(p => p.category === 'diamante').length;
+    const master = fixedPrizes.filter(p => p.category === 'master').length;
+    const premiado = fixedPrizes.filter(p => p.category === 'premiado').length;
+    
+    console.log('Total de prêmios por categoria:', { diamante, master, premiado });
+  }, []);
+  
+  // Modify the original loadMorePrizes function to be per-category
+  const loadMoreDiamante = () => {
+    const diamantePrizes = fixedPrizes.filter(p => p.category === 'diamante').length;
+    setVisibleDiamante(prev => Math.min(prev + 10, diamantePrizes));
   };
   
+  const loadMoreMaster = () => {
+    const masterPrizes = fixedPrizes.filter(p => p.category === 'master').length;
+    setVisibleMaster(prev => Math.min(prev + 10, masterPrizes));
+  };
+  
+  const loadMorePremiado = () => {
+    const premiadoPrizes = fixedPrizes.filter(p => p.category === 'premiado').length;
+    setVisiblePremiado(prev => Math.min(prev + 10, premiadoPrizes));
+  };
+  
+  // Create styled component for a more subtle "ver mais" button
+  const VerMaisButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    padding: 0.5rem 1rem;
+    margin: 0.75rem auto;
+    background: transparent;
+    color: ${({ theme }) => theme.colors.primary};
+    border: 1px dashed ${({ theme }) => `${theme.colors.primary}30`};
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: ${({ theme }) => `${theme.colors.primary}08`};
+      border: 1px dashed ${({ theme }) => `${theme.colors.primary}60`};
+    }
+    
+    i {
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
+    }
+  `;
+
+  // Componente para renderizar uma categoria de prêmios
+  // const PremioCategory = ({ ... entire component implementation ... }) => { ... }
+
+  // Handler para o botão "Meus Números"
+  const handleMeusNumerosClick = () => {
+    // Implementar a lógica para mostrar os números do usuário
+    console.log("Meus Números clicado");
+  };
+
   return (
     <Container>
       {/* Banner da campanha */}
-      <Banner style={{ backgroundImage: `url(${campanha.image})` }}>
+      <Banner style={{ backgroundImage: `url(${campanha.images?.[0] || ''})` }}>
+        {/* Botão Meus Números */}
+        <MeusTitulosButton onClick={handleMeusNumerosClick}>
+          <i className="fas fa-ticket-alt"></i> Meus Números
+        </MeusTitulosButton>
+        
         {/* Código do sorteio */}
         <BannerOverlay>
           <CodigoSorteio>
@@ -281,7 +422,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             <BotaoFavorito>
               <i className="fas fa-heart"></i>
             </BotaoFavorito>
-            <PulsingTag>Adquira já</PulsingTag>
+            
           </BotoesAcao>
         </BannerOverlay>
       </Banner>
@@ -400,18 +541,48 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               <i className="fas fa-trophy"></i> Quanto mais títulos, mais chances de ganhar!
             </MensagemIncentivo>
             
+            {/* Pacotes Promocionais - Nova seção */}
+            <PacotesPromocionaisContainer>
+              <PacotesPromocionaisTitulo>
+                <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
+              </PacotesPromocionaisTitulo>
+              
+              <PacotesPromocionaisGrid>
+                {pacotesPromocionais.map((pacote) => (
+                  <PacotePromocional 
+                    key={pacote.quantidade} 
+                    $melhorOferta={pacote.melhorOferta}
+                    $ativo={activePacote === pacote.quantidade}
+                    onClick={() => selecionarPacote(pacote.quantidade)}
+                  >
+                    {pacote.melhorOferta && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    <PacoteQuantidade>{pacote.quantidade} cotas</PacoteQuantidade>
+                    <PacotePreco>R$ {pacote.preco.toFixed(2)}</PacotePreco>
+                    <PacoteDescricaoValor>Valor unitário: R$ {pacote.valorUnitario.toFixed(2)}</PacoteDescricaoValor>
+                    <PacoteEconomia>Economia de R$ {pacote.economia.toFixed(2)}</PacoteEconomia>
+                  </PacotePromocional>
+                ))}
+              </PacotesPromocionaisGrid>
+            </PacotesPromocionaisContainer>
+            
             {/* Seletor de quantidade estilo moderno */}
             <QuantidadeSelector>
               <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
               <QuantidadeControle>
                 <BotoesEsquerda>
                   <BotaoReset onClick={resetarQuantidade} disabled={quantidadeSelecionada <= numeroMinimo}>
-                    <i className="fas fa-times"></i>
+                    <i className="fas fa-undo-alt"></i>
                   </BotaoReset>
-                  <BotaoMenos onClick={decrementar} disabled={quantidadeSelecionada <= numeroMinimo}>-</BotaoMenos>
+                  <BotaoMenos onClick={decrementar} disabled={quantidadeSelecionada <= numeroMinimo}>
+                    <span>−</span>
+                  </BotaoMenos>
                 </BotoesEsquerda>
-                <QuantidadeNumero >{quantidadeSelecionada}</QuantidadeNumero>
-                <BotaoMais onClick={incrementar}>+</BotaoMais>
+                <QuantidadeNumero>
+                  <span>{quantidadeSelecionada}</span>
+                </QuantidadeNumero>
+                <BotaoMais onClick={incrementar}>
+                  <span>+</span>
+                </BotaoMais>
               </QuantidadeControle>
               
               {/* Opções de lotes */}
@@ -432,14 +603,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               {/* Valor total */}
               <ValorTotalContainer>
                 <ValorTotalLabel>Total:</ValorTotalLabel>
-                <ValorTotal >
+                <ValorTotal>
                   R$ {valorTotal}
                 </ValorTotal>
               </ValorTotalContainer>
             </QuantidadeSelector>
             
             {/* Botão de participar */}
-            <BotaoParticipar>
+            <BotaoParticipar id="botao-comprar">
               Participar agora
               <i className="fas fa-chevron-right"></i>
             </BotaoParticipar>
@@ -531,26 +702,49 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                 </PremiadosInfoBox>
               </TitulosPremiadosLista>
               
-              <ListaPremios>
-                {/* Exibe apenas os prêmios visíveis com base no estado atual */}
-                {fixedPrizes.slice(0, visiblePrizes).map((premio, index) => (
-                  <ItemPremio key={index}>
-                    <NumeroPremio>{premio.number}</NumeroPremio>
-                    <ValorPremio>R$ {premio.value.toFixed(2)}</ValorPremio>
-                    <StatusPremio>
-                      <StatusIndicator />
-                      Disponível
-                    </StatusPremio>
-                  </ItemPremio>
-                ))}
-              </ListaPremios>
+              {/* Categoria Diamante */}
+              <PremiosCategoryTitle>Títulos Premium</PremiosCategoryTitle>
               
-              {/* Botão "Ver mais" que aparece apenas se houver mais itens para mostrar */}
-              {visiblePrizes < 100 && (
-                <BotaoVerMais onClick={loadMorePrizes}>
-                  Ver mais <span>({Math.min(20, 100 - visiblePrizes)} de {100 - visiblePrizes} restantes)</span>
-                </BotaoVerMais>
-              )}
+              <PremioCategory 
+                category="diamante"
+                title="Diamante"
+                icon="fa-gem"
+                prizeValue={2000}
+                quantity={20}
+                prizes={fixedPrizes}
+                visibleItems={visibleDiamante}
+                onLoadMore={loadMoreDiamante}
+                foundTitles={foundTitles}
+              />
+              
+              {/* Categoria Master */}
+              <PremioCategory 
+                category="master"
+                title="Master"
+                icon="fa-trophy"
+                prizeValue={1000}
+                quantity={30}
+                prizes={fixedPrizes}
+                visibleItems={visibleMaster}
+                onLoadMore={loadMoreMaster}
+                foundTitles={foundTitles}
+              />
+              
+              {/* Categoria Premiados */}
+              <PremioCategory 
+                category="premiado"
+                title="Premiado"
+                icon="fa-award"
+                prizeValue={500}
+                quantity={50}
+                prizes={fixedPrizes}
+                visibleItems={visiblePremiado}
+                onLoadMore={loadMorePremiado}
+                foundTitles={foundTitles}
+              />
+              
+              {/* Títulos Encontrados Section */}
+             
             </TitulosPremiadosInfo>
           </TabContent>
         </Abas>
@@ -612,6 +806,36 @@ const BannerOverlay = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+`;
+
+const MeusTitulosButton = styled.button`
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: ${({ theme }) => theme.colors.gradients.purple};
+  color: ${({ theme }) => theme.colors.white};
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+  z-index: 10;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 const CodigoSorteio = styled.div`
@@ -1020,330 +1244,690 @@ const MensagemIncentivo = styled.div`
   }
 `;
 
+// Create a more sophisticated, premium look for PacotesPromocionaisContainer
+const PacotesPromocionaisContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  padding: 1.75rem;
+  border-radius: 14px;
+  background-color: white;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+    border-radius: 14px 14px 0 0;
+  }
+
+  @media (max-width: 576px) {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+`;
+
+// Refine the title with a more premium, sophisticated style
+const PacotesPromocionaisTitulo = styled.div`
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FBFBFD;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border-left: 4px solid ${({ theme }) => theme.colors.primary};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  i {
+    color: ${({ theme }) => theme.colors.warning};
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 576px) {
+    font-size: 1.05rem;
+  }
+`;
+
+// Add more separation between packages
+const PacotesPromocionaisGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  position: relative;
+  padding-top: 10px;
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+`;
+
+// Create premium package style with better distinction
+const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: boolean }>`
+  padding: 1.5rem 1.25rem;
+  border-radius: 12px;
+  overflow:hidden;
+  background: ${({ $melhorOferta, $ativo, theme }) => {
+    if ($ativo) return `linear-gradient(120deg, rgba(106, 17, 203, 0.07), rgba(106, 17, 203, 0.12))`;
+    return $melhorOferta 
+      ? `linear-gradient(120deg, rgba(255, 255, 255, 1), rgba(252, 248, 240, 1))`
+      : 'white';
+  }};
+  border: 2px solid ${({ $melhorOferta, $ativo, theme }) => {
+    if ($ativo) return `rgba(106, 17, 203, 0.5)`;
+    return $melhorOferta ? `rgba(255, 184, 0, 0.3)` : `rgba(0, 0, 0, 0.08)`;
+  }};
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: ${({ $melhorOferta, $ativo }) => {
+    if ($ativo) return `0 8px 20px rgba(106, 17, 203, 0.15), 0 2px 6px rgba(106, 17, 203, 0.1)`;
+    return $melhorOferta 
+      ? '0 8px 20px rgba(255, 184, 0, 0.12), 0 2px 6px rgba(255, 184, 0, 0.06)' 
+      : '0 4px 12px rgba(0, 0, 0, 0.03)';
+  }};
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: ${({ $ativo, $melhorOferta }) => $ativo || $melhorOferta ? '4px' : '0'};
+    background: ${({ $ativo, $melhorOferta, theme }) => 
+      $ativo 
+        ? `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` 
+        : $melhorOferta 
+          ? `linear-gradient(90deg, ${theme.colors.warning}, #FFDA44)` 
+          : 'transparent'
+    };
+    border-radius: 0 0 12px 12px;
+    transition: height 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: ${({ $melhorOferta, $ativo }) => {
+      if ($ativo) return `0 12px 28px rgba(106, 17, 203, 0.2), 0 4px 8px rgba(106, 17, 203, 0.15)`;
+      return $melhorOferta 
+        ? '0 12px 28px rgba(255, 184, 0, 0.15), 0 4px 8px rgba(255, 184, 0, 0.08)' 
+        : '0 8px 20px rgba(0, 0, 0, 0.08)';
+    }};
+    border-color: ${({ $melhorOferta, $ativo, theme }) => {
+      if ($ativo) return `rgba(106, 17, 203, 0.6)`;
+      return $melhorOferta ? `rgba(255, 184, 0, 0.5)` : `rgba(106, 17, 203, 0.3)`;
+    }};
+
+    &::after {
+      height: ${({ $ativo, $melhorOferta }) => $ativo || $melhorOferta ? '6px' : '3px'};
+      background: ${({ $ativo, $melhorOferta, theme }) => 
+        $ativo 
+          ? `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` 
+          : `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})`
+      };
+    }
+  }
+`;
+
+// Refine quantity styling
+const PacoteQuantidade = styled.div`
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+
+  @media (max-width: 576px) {
+    font-size: 1.4rem;
+  }
+`;
+
+// More premium price styling
+const PacotePreco = styled.div`
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.5rem;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+    transition: width 0.3s ease;
+  }
+
+  @media (max-width: 576px) {
+    font-size: 1.25rem;
+  }
+`;
+
+// Enhanced visual separation for economy badge
+const PacoteEconomia = styled.div`
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  background-color: ${({ theme }) => theme.colors.success};
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  margin-top: 0.7rem;
+  box-shadow: 0 3px 8px rgba(40, 167, 69, 0.15);
+  letter-spacing: 0.02em;
+
+  @media (max-width: 576px) {
+    font-size: 0.75rem;
+  }
+`;
+
+// Improved "best offer" badge
+const PacoteMelhorOferta = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.warning}, #FFDA44);
+  color: #1A1A1A;
+  padding: 0.3rem 0.8rem;
+  border-radius: 0 10px 0 10px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  box-shadow: 0 4px 10px rgba(255, 184, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+  z-index: 5;
+  
+  i {
+    font-size: 0.7rem;
+    color: #1A1A1A;
+  }
+
+  @media (max-width: 576px) {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+  }
+`;
+
+// More distinct unit price info
+const PacoteDescricaoValor = styled.div`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-top: 0.25rem;
+  font-weight: 500;
+  opacity: 0.9;
+  padding-top: 0.25rem;
+`;
+
+// Enhanced quantity selector container
 const QuantidadeSelector = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
   margin-bottom: 2rem;
+  padding: 1.75rem;
+  border-radius: 14px;
+  background-color: white;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, ${({ theme }) => theme.colors.secondary}, ${({ theme }) => theme.colors.accent || theme.colors.primary});
+    border-radius: 14px 14px 0 0;
+  }
+
+  @media (max-width: 576px) {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
 `;
 
+// More premium section label
 const QuantidadeLabel = styled.div`
-  font-size: 1rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  letter-spacing: -0.01em;
+
+  @media (max-width: 576px) {
+    font-size: 1.05rem;
+  }
 `;
 
+// Improved quantity control with better contrast
 const QuantidadeControle = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem;
-  border: 2px solid ${({ theme }) => theme.colors.gray.light};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  background-color: ${({ theme }) => theme.colors.background};
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  background: #FBFBFD;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(106, 17, 203, 0.08);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.04);
+  }
+
+  @media (max-width: 576px) {
+    padding: 1rem 1.25rem;
+  }
 `;
 
-const BotoesEsquerda = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
+// Enhance the quantity number display
 const QuantidadeNumero = styled.div`
-  font-size: 2rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
-  min-width: 80px;
-  text-align: center;
-  transition: transform 0.15s ease, color 0.15s ease;
-  
-
-`;
-
-const BotaoMais = styled.button`
-  width: 40px;
-  height: 40px;
-  background: ${({ theme }) => theme.colors.gradients.purple};
-  color: ${({ theme }) => theme.colors.white};
-  border: none;
-  border-radius: 50%;
-  font-size: 1.4rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: ${({ theme }) => theme.shadows.gold};
-  
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 5px 20px rgba(106, 17, 203, 0.5);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
-`;
-
-const BotaoMenos = styled(BotaoMais)<{ disabled: boolean }>`
-  background: ${({ disabled, theme }) => disabled ? 
-    '#e0e0e0' : 
-    theme.colors.gradients.purple
-  };
-  box-shadow: ${({ disabled, theme }) => disabled ? 
-    'none' : 
-    theme.shadows.gold
-  };
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-  
-  &:hover {
-    transform: ${({ disabled }) => disabled ? 'none' : 'scale(1.1)'};
-    box-shadow: ${({ disabled }) => disabled ? 
-      'none' : 
-      '0 5px 20px rgba(106, 17, 203, 0.5)'
-    };
-  }
-`;
-
-const BotaoReset = styled(BotaoMais)<{ disabled: boolean }>`
-  background: ${({ disabled, theme }) => disabled ? 
-    '#e0e0e0' : 
-    theme.colors.gradients.action
-  };
-  box-shadow: ${({ disabled, theme }) => disabled ? 
-    'none' : 
-    '0 5px 15px rgba(255, 65, 108, 0.3)'
-  };
-  width: 32px;
-  height: 32px;
-  font-size: 0.9rem;
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-  
-  &:hover {
-    transform: ${({ disabled }) => disabled ? 'none' : 'scale(1.1)'};
-    box-shadow: ${({ disabled }) => disabled ? 
-      'none' : 
-      '0 5px 20px rgba(255, 65, 108, 0.5)'
-    };
-  }
-`;
-
-const SeletorLotes = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-`;
-
-const OpcaoLote = styled.div<{ $popular?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.75rem 0.5rem;
-  border: 2px solid ${({ theme, $popular }) => $popular 
-    ? theme.colors.success 
-    : theme.colors.gray.light};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 700;
-  font-size: 1.2rem;
-  background-color: ${({ theme, $popular }) => $popular 
-    ? 'rgba(76, 175, 80, 0.1)' 
-    : theme.colors.background};
-  position: relative;
-  ${({ $popular }) => $popular && `
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
-  `}
-  
-  &:hover {
-    transform: translateY(-3px) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
-    box-shadow: ${({ theme, $popular }) => $popular 
-      ? '0 8px 20px rgba(76, 175, 80, 0.5)' 
-      : theme.shadows.md};
-    border-color: ${({ theme, $popular }) => $popular 
-      ? theme.colors.success
-      : theme.colors.primary};
-    color: ${({ theme, $popular }) => $popular 
-      ? theme.colors.success
-      : theme.colors.primary};
-  }
-  
-  &:active {
-    transform: translateY(0) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
-  }
-`;
-
-const TextoSelecionar = styled.span`
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  margin-top: 0.25rem;
-`;
-
-const ValorTotalContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  border: 2px solid ${({ theme }) => theme.colors.gray.light};
-`;
-
-const ValorTotalLabel = styled.div`
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 1.1rem;
-`;
-
-const ValorTotal = styled.div`
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   font-weight: 800;
-  color: ${({ theme }) => theme.colors.primary};
-  transition: transform 0.15s ease;
+  min-width: 100px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.primary}; /* Fallback color */
+  position: relative;
+  padding: 0 1rem;
   
-
-`;
-
-const BotaoParticipar = styled.button`
-  width: 100%;
-  padding: 1.25rem;
-  background: ${({ theme }) => theme.colors.gradients.action};
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 700;
-  border: none;
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 1rem;
-  box-shadow: 0 8px 20px rgba(255, 65, 108, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  
-  i {
-    font-size: 1rem;
-    transition: transform 0.3s ease;
-  }
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 25px rgba(255, 65, 108, 0.4);
+  span {
+    position: relative;
+    display: inline-block;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* Standard syntax */
     
-    i {
-      transform: translateX(3px);
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, 
+        ${({ theme }) => theme.colors.primary}88,
+        ${({ theme }) => theme.colors.secondary}88
+      );
     }
   }
+
+  @media (max-width: 576px) {
+    font-size: 2.2rem;
+    min-width: 80px;
+  }
+`;
+
+// Make the control buttons more distinct
+const ControlButton = styled.button`
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.1);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  
+
   
   &:active {
     transform: translateY(-1px);
   }
+  
+  span {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 600;
+  }
+  
+  i {
+    position: relative;
+    z-index: 2;
+    font-size: 0.9rem;
+  }
 `;
 
-const PulsingTag = styled.div`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+const BotaoMais = styled(ControlButton)`
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
   color: white;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.5rem 1.2rem;
-  border-radius: 50px;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.3);
-  animation: pulse-glow 2s infinite ease-in-out;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 1.8rem;
+  
+  border: 1px solid rgba(255,255,255,0.4);
+  
+
+  
+  &:active {
+    box-shadow: 0 4px 12px rgba(106, 17, 203, 0.25);
+  }
+
+  @media (max-width: 576px) {
+    width: 42px;
+    height: 42px;
+    font-size: 1.6rem;
+  }
+`;
+
+// Enhance BotaoMenos with better contrast
+const BotoesEsquerda = styled.div`
   display: flex;
   align-items: center;
+  gap: 0.85rem;
+
+  @media (max-width: 576px) {
+    gap: 0.7rem;
+  }
+`;
+
+const BotaoMenos = styled(ControlButton)<{ disabled: boolean }>`
+  width: 42px;
+  height: 42px;
+  font-size: 1.8rem;
+  background: ${({ disabled }) => disabled ? 
+    'linear-gradient(135deg, #f0f0f0, #e2e2e2)' : 
+    'linear-gradient(135deg, #f8f8ff, #efefff)'
+  };
+  color: ${({ disabled, theme }) => disabled ? 
+    '#aaa' : 
+    theme.colors.primary
+  };
+
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
+  border: 1px solid ${({ disabled }) => disabled ? 
+    'rgba(0,0,0,0.05)' : 
+    'rgba(106, 17, 203, 0.2)'
+  };
+  
+
+
+  @media (max-width: 576px) {
+    width: 38px;
+    height: 38px;
+    font-size: 1.6rem;
+  }
+`;
+
+// Better contrast for reset button
+const BotaoReset = styled(ControlButton)<{ disabled: boolean }>`
+  width: 36px;
+  height: 36px;
+  font-size: 0.95rem;
+  background: ${({ disabled }) => disabled ? 
+    'linear-gradient(135deg, #f0f0f0, #e2e2e2)' : 
+    'linear-gradient(135deg, #fff0f0, #ffebeb)'
+  };
+  color: ${({ disabled }) => disabled ? 
+    '#aaa' : 
+    '#e74c3c'
+  };
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
+  border: 1px solid ${({ disabled }) => disabled ? 
+    'rgba(0,0,0,0.05)' : 
+    'rgba(231, 76, 60, 0.2)'
+  };
+
+
+  @media (max-width: 576px) {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+`;
+
+// Enhanced lot options
+const SeletorLotes = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 0.5rem;
+  
+  @media (max-width: 576px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+`;
+
+// Better contrast for lot options
+const OpcaoLote = styled.div<{ $popular?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.5rem;
+  border: 1px solid ${({ theme, $popular }) => $popular 
+    ? `rgba(106, 17, 203, 0.4)` 
+    : `rgba(0, 0, 0, 0.08)`};
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 700;
+  font-size: 1.4rem;
   position: relative;
-  margin-left: 10px;
-  backdrop-filter: blur(3px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background-color: ${({ $popular }) => $popular 
+    ? `rgba(106, 17, 203, 0.04)` 
+    : 'white'};
+  box-shadow: ${({ $popular }) => $popular 
+    ? '0 6px 18px rgba(106, 17, 203, 0.1)' 
+    : '0 3px 10px rgba(0, 0, 0, 0.04)'};
+  ${({ $popular }) => $popular && `
+    transform: scale(1.05);
+  `}
+  
+  &:hover {
+    transform: translateY(-4px) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
+    box-shadow: 0 8px 24px rgba(106, 17, 203, 0.15);
+    border-color: rgba(106, 17, 203, 0.4);
+    background-color: rgba(106, 17, 203, 0.04);
+  }
+  
+  &:active {
+    transform: translateY(-1px) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
+  }
+
+  @media (max-width: 576px) {
+    padding: 0.85rem 0.5rem;
+    font-size: 1.3rem;
+  }
+`;
+
+const TextoSelecionar = styled.span`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(106, 17, 203, 0.08);
+  border-radius: 15px;
+
+  @media (max-width: 576px) {
+    font-size: 0.8rem;
+  }
+`;
+
+// Better contrast for total value display
+const ValorTotalContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.75rem;
+  background-color: #F8F8FE;
+  border-radius: 12px;
+  border-left: 4px solid ${({ theme }) => theme.colors.primary};
+  box-shadow: 0 4px 12px rgba(106, 17, 203, 0.12);
+  margin-top: 0.75rem;
+
+  @media (max-width: 576px) {
+    padding: 1.25rem 1.5rem;
+  }
+`;
+
+const ValorTotalLabel = styled.div`
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 1.15rem;
+
+  @media (max-width: 576px) {
+    font-size: 1.05rem;
+  }
+`;
+
+const ValorTotal = styled.div`
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.primary};
+  transition: transform 0.15s ease;
+  text-shadow: 0 1px 1px rgba(106, 17, 203, 0.15);
+
+  @media (max-width: 576px) {
+    font-size: 1.6rem;
+  }
+`;
+
+// More premium CTA button
+const BotaoParticipar = styled.button`
+  width: 100%;
+  padding: 1.35rem;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
+  color: white;
+  font-size: 1.35rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 25px rgba(106, 17, 203, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
   
   &::before {
     content: '';
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #fff;
-    border-radius: 50%;
-    margin-right: 8px;
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0.7);
-    animation: pulse-dot 2s infinite;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
   }
   
-  @keyframes pulse-glow {
-    0% { 
-      opacity: 0.85; 
-      transform: scale(0.98); 
-      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
-    }
-    50% { 
-      opacity: 1; 
-      transform: scale(1); 
-      box-shadow: 0 7px 20px rgba(40, 167, 69, 0.6), inset 0 1px 3px rgba(255, 255, 255, 0.5);
-    }
-    100% { 
-      opacity: 0.85; 
-      transform: scale(0.98); 
-      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
-    }
+  i {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
   }
   
-  @keyframes pulse-dot {
-    0% {
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(106, 17, 203, 0.4);
+    
+    i {
+      transform: translateX(4px);
     }
-    70% {
-      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    
+    &::before {
+      transform: translateX(100%);
     }
   }
   
-  @media (max-width: 480px) {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.9rem;
+  &:active {
+    transform: translateY(-2px);
   }
 `;
 
+// Enhanced security info
 const SegurancaInfo = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #28a745;
-  background-color: rgba(40, 167, 69, 0.1);
+  font-size: 0.95rem;
+  color: #1a5928;
+  background-color: rgba(40, 167, 69, 0.08);
   border: 1px solid rgba(40, 167, 69, 0.2);
-  border-radius: 8px;
-  padding: 0.75rem;
+  border-radius: 10px;
+  padding: 0.85rem;
   width: 100%;
   margin-top: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 600;
   
   &:hover {
-    background-color: rgba(40, 167, 69, 0.15);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+    background-color: rgba(40, 167, 69, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
   }
   
   &:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
   }
   
   i {
-    color: #28a745;
-    font-size: 1rem;
+    color: #1a5928;
+    font-size: 1.1rem;
   }
 `;
 
@@ -1490,58 +2074,385 @@ const PremiadosValor = styled.div`
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
-const ListaPremios = styled.div`
+// Adjust the ListaPremiosGrid for a smaller, tighter layout with 2 columns on mobile
+const ListaPremiosGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 0.75rem;
+  margin-bottom: 1.25rem;
   
-  @media (min-width: 640px) {
+  @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
   }
 `;
 
-const ItemPremio = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  align-items: center;
-  padding: 1rem;
-  background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  border: 1px solid ${({ theme }) => theme.colors.gray.light};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+// Make the prize cards more compact
+const PremioCard = styled.div<{ $category: string; $found?: boolean }>`
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: ${({ $found }) => $found ? '#f9f9f9' : 'white'};
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  // More subtle shadow for a cleaner look
+  box-shadow: ${({ $category, $found }) => {
+    const baseStyle = $found ? '0 2px 8px rgba(0, 0, 0, 0.05)' : '';
+    
+    switch($category) {
+      case 'diamante':
+        return $found 
+          ? `${baseStyle}, inset 0 0 0 1px rgba(153, 33, 232, 0.2)`
+          : '0 4px 12px rgba(153, 33, 232, 0.08), 0 2px 6px rgba(153, 33, 232, 0.04)';
+      case 'master':
+        return $found 
+          ? `${baseStyle}, inset 0 0 0 1px rgba(244, 107, 69, 0.2)`
+          : '0 4px 12px rgba(244, 107, 69, 0.08), 0 2px 6px rgba(244, 107, 69, 0.04)';
+      default:
+        return $found 
+          ? `${baseStyle}, inset 0 0 0 1px rgba(17, 153, 142, 0.2)`
+          : '0 4px 12px rgba(17, 153, 142, 0.08), 0 2px 6px rgba(17, 153, 142, 0.04)';
+    }
+  }};
+  
+  transform: perspective(800px) rotateX(0) rotateY(0);
+  transform-style: preserve-3d;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.shadows.md};
+    transform: ${({ $found }) => $found ? 'none' : 'perspective(800px) rotateX(1deg) rotateY(-2deg) translateY(-2px)'};
+    box-shadow: ${({ $category, $found }) => {
+      if ($found) return; // No hover effect for found titles
+      
+      switch($category) {
+        case 'diamante':
+          return '0 10px 20px rgba(153, 33, 232, 0.12), 0 6px 10px rgba(153, 33, 232, 0.08)';
+        case 'master':
+          return '0 10px 20px rgba(244, 107, 69, 0.12), 0 6px 10px rgba(244, 107, 69, 0.08)';
+        default:
+          return '0 10px 20px rgba(17, 153, 142, 0.12), 0 6px 10px rgba(17, 153, 142, 0.08)';
+      }
+    }};
+    
+    .card-shine {
+      opacity: ${({ $found }) => $found ? 0 : 0.6};
+    }
+    
+    .card-prize {
+      transform: ${({ $found }) => $found ? 'none' : 'translateZ(12px)'};
+    }
   }
 `;
 
-const NumeroPremio = styled.div`
-  font-weight: 700;
+// Thinner top bar
+const CardTopBar = styled.div<{ $category: string }>`
+  height: 3px;
+  background: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'linear-gradient(90deg, #9921e8, #5f72bd)';
+      case 'master':
+        return 'linear-gradient(90deg, #f46b45, #eea849)';
+      default:
+        return 'linear-gradient(90deg, #11998e, #38ef7d)';
+    }
+  }};
+`;
+
+// More compact content layout
+const CardContent = styled.div`
+  padding: 0.6rem;
+  display: grid;
+  grid-template-areas: 
+    "number tag"
+    "prize prize"
+    "status status";
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.25rem;
+  position: relative;
+`;
+
+// Remove the sparkle for a cleaner layout
+const CardSparkle = styled.div`
+  display: none;
+`;
+
+const CardShine = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+`;
+
+// Smaller number text
+const CardNumber = styled.div`
+  grid-area: number;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0;
   color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-const ValorPremio = styled.div`
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.primary};
-  text-align: center;
-`;
-
-const StatusPremio = styled.div`
-  font-size: 0.875rem;
-  color: ${({ theme }) => theme.colors.success};
-  text-align: right;
+  transition: transform 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  padding: 0.25rem 0.4rem;
+  background: #f7f7ff;
+  border-radius: 6px;
+  border: 1px dashed rgba(106, 17, 203, 0.2);
 `;
 
-const StatusIndicator = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: ${({ theme }) => theme.colors.success};
+// Smaller emoji
+const CardEmoji = styled.span`
+  font-size: 0.9rem;
+  margin-right: 0.3rem;
+  flex-shrink: 0;
+`;
+
+// Smaller prize amount text
+const CardPrize = styled.div<{ $category: string }>`
+  grid-area: prize;
+  font-size: 1.2rem;
+  font-weight: 800;
+  transition: transform 0.3s ease;
+  letter-spacing: -0.02em;
+  margin: 0.1rem 0;
+  
+  background: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'linear-gradient(135deg, #9921e8, #5f72bd)';
+      case 'master':
+        return 'linear-gradient(135deg, #f46b45, #eea849)';
+      default:
+        return 'linear-gradient(135deg, #11998e, #38ef7d)';
+    }
+  }};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+`;
+
+// Combined status and chance into one row
+const CardStatus = styled.div`
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2ecc71;
+  
+  i {
+    font-size: 0.8rem;
+    margin-right: 0.2rem;
+  }
+  
+  span {
+    color: ${({ theme }) => theme.colors.text.secondary};
+    background: ${({ theme }) => theme.colors.background};
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.65rem;
+  }
+`;
+
+// Smaller tag
+const CardTag = styled.div<{ $category: string }>`
+  grid-area: tag;
+  position: relative;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: white;
+  z-index: 2;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  background: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'linear-gradient(135deg, #9921e8, #5f72bd)';
+      case 'master':
+        return 'linear-gradient(135deg, #f46b45, #eea849)';
+      default:
+        return 'linear-gradient(135deg, #11998e, #38ef7d)';
+    }
+  }};
+`;
+
+// More compact category headers
+const CategoryHeader = styled.div<{ $category: string }>`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  
+  ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return `
+          background: linear-gradient(135deg, rgba(153, 33, 232, 0.05), rgba(95, 114, 189, 0.08));
+        `;
+      case 'master':
+        return `
+          background: linear-gradient(135deg, rgba(244, 107, 69, 0.05), rgba(238, 168, 73, 0.08));
+        `;
+      default:
+        return `
+          background: linear-gradient(135deg, rgba(17, 153, 142, 0.05), rgba(56, 239, 125, 0.08));
+        `;
+    }
+  }}
+  
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+`;
+
+const CategoryIconWrapper = styled.div<{ $category: string }>`
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  
+  // Glass effect
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  
+  // Inner glow effect
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 19px;
+    padding: 1.5px;
+    background: ${({ $category }) => {
+      switch($category) {
+        case 'diamante':
+          return 'linear-gradient(135deg, #9921e8, #5f72bd)';
+        case 'master':
+          return 'linear-gradient(135deg, #f46b45, #eea849)';
+        default:
+          return 'linear-gradient(135deg, #11998e, #38ef7d)';
+      }
+    }};
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+  }
+  
+  i {
+    font-size: 1.1rem;
+    z-index: 2;
+    background: ${({ $category }) => {
+      switch($category) {
+        case 'diamante':
+          return 'linear-gradient(135deg, #9921e8, #5f72bd)';
+        case 'master':
+          return 'linear-gradient(135deg, #f46b45, #eea849)';
+        default:
+          return 'linear-gradient(135deg, #11998e, #38ef7d)';
+      }
+    }};
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+`;
+
+// Smaller, more compact category info
+const CategoryInfo = styled.div`
+  flex: 1;
+`;
+
+const CategoryName = styled.div<{ $category: string }>`
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'linear-gradient(135deg, #9921e8, #5f72bd)';
+      case 'master':
+        return 'linear-gradient(135deg, #f46b45, #eea849)';
+      default:
+        return 'linear-gradient(135deg, #11998e, #38ef7d)';
+    }
+  }};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.01em;
+`;
+
+const CategoryMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+`;
+
+const CategoryMetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  
+  i {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+`;
+
+const PremiosCategoryTitle = styled.div`
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 1.5rem 0 1rem;
+  letter-spacing: -0.02em;
+  padding-bottom: 0.75rem;
+  position: relative;
+  
+  &:first-of-type {
+    margin-top: 0.5rem;
+  }
+  
+  // Elegant underline with gradient
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: ${({ theme }) => theme.colors.primary};
+    transition: width 0.3s ease;
+  }
+  
+  &:hover::after {
+    width: 100px;
+  }
 `;
 
 const BotaoVerMais = styled.button`
@@ -1605,13 +2516,21 @@ const InformacoesLegais = styled.div`
 const PopularTag = styled.span`
   position: absolute;
   top: -10px;
-  background-color: ${({ theme }) => theme.colors.success};
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
   color: white;
   font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  box-shadow: 0 3px 8px rgba(76, 175, 80, 0.4);
+  box-shadow: 0 3px 8px rgba(106, 17, 203, 0.25);
+  white-space: nowrap;
+
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+  }
 `;
 
 const ZoomIndicator = styled.div`
@@ -1633,6 +2552,164 @@ const ZoomIndicator = styled.div`
   
   ${CarrosselSlide}:hover & {
     opacity: 0.8;
+  }
+`;
+
+// Create mock data for found titles
+const foundTitles = [
+  // Examples from Diamante category (using actual numbers from fixedPrizes)
+  { number: '001003', name: 'Maria Oliveira', value: 2000, date: '12/05/2023', category: 'diamante' },
+  { number: '001008', name: 'Pedro Santos', value: 2000, date: '15/05/2023', category: 'diamante' },
+  
+  // Examples from Master category (using actual numbers from fixedPrizes)
+  { number: '001103', name: 'João Silva', value: 1000, date: '18/05/2023', category: 'master' },
+  { number: '001107', name: 'Ana Ferreira', value: 1000, date: '22/05/2023', category: 'master' },
+  
+  // Examples from Premiado category (using actual numbers from fixedPrizes)
+  { number: '001203', name: 'Carlos Souza', value: 500, date: '01/06/2023', category: 'premiado' },
+  { number: '001210', name: 'Fernanda Costa', value: 500, date: '05/06/2023', category: 'premiado' },
+];
+
+// Create styled components for the found titles section
+const FoundTitlesContainer = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const FoundTitlesHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+`;
+
+const FoundTitlesIcon = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
+`;
+
+const FoundTitlesTitle = styled.div`
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const FoundTitlesList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.75rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FoundTitleCard = styled.div<{ $category: string }>`
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return '#9921e8';
+      case 'master':
+        return '#f46b45';
+      default:
+        return '#11998e';
+    }
+  }};
+`;
+
+const FoundTitleNumber = styled.div<{ $category: string }>`
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  margin-right: 0.75rem;
+  background: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'rgba(153, 33, 232, 0.05)';
+      case 'master':
+        return 'rgba(244, 107, 69, 0.05)';
+      default:
+        return 'rgba(17, 153, 142, 0.05)';
+    }
+  }};
+  border-radius: 8px;
+  font-weight: 700;
+  color: ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return '#9921e8';
+      case 'master':
+        return '#f46b45';
+      default:
+        return '#11998e';
+    }
+  }};
+  font-size: 1.1rem;
+  min-width: 70px;
+  text-align: center;
+  border: 1px dashed ${({ $category }) => {
+    switch($category) {
+      case 'diamante':
+        return 'rgba(153, 33, 232, 0.3)';
+      case 'master':
+        return 'rgba(244, 107, 69, 0.3)';
+      default:
+        return 'rgba(17, 153, 142, 0.3)';
+    }
+  }};
+  
+  span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #7f8c8d;
+    margin-top: 0.25rem;
+  }
+`;
+
+const FoundTitleName = styled.div`
+  grid-column: 2;
+  grid-row: 1;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const FoundTitleDetails = styled.div`
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    
+    i {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
   }
 `;
 

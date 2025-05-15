@@ -60,7 +60,7 @@ export default function CampanhaPage() {
   const campanha = campanhaExemplo;
   
   return (
-    <Layout>
+    <Layout hideHeader={true}>
       <CampanhaDetalhes campanha={campanha} />
     </Layout>
   );

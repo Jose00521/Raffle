@@ -29,7 +29,7 @@ const HeaderContent = styled.div`
 `;
 
 const Logo = styled(Link)`
-  font-size: ${({ theme }) => theme.fontSizes['2xl']};
+  font-size: ${({ theme }) => theme.fontSizes.large};
   font-weight: 800;
   color: ${({ theme }) => theme.colors.white};
   text-decoration: none;
@@ -315,8 +315,8 @@ const Header: React.FC = () => {
           <StyledNavLink $active={isActive('/como-funciona')}>
             <Link href="/como-funciona">Comunicados</Link>
           </StyledNavLink>
-          <StyledNavLink $active={isActive('/cadastro')}>
-            <Link href="/cadastro">Cadastrar</Link>
+          <StyledNavLink $active={isActive('/cadastro-tipo') || isActive('/cadastro') || isActive('/cadastro-criador')}>
+            <Link href="/cadastro-tipo">Cadastrar</Link>
           </StyledNavLink>
           <StyledNavLink $active={isActive('/meus-titulos')}>
             <Link href="/meus-titulos">Meus títulos</Link>
@@ -350,8 +350,8 @@ const Header: React.FC = () => {
         <MobileNavLink $active={isActive('/comunicados')}>
             <Link href="/comunicados">Comunicados</Link>
         </MobileNavLink>
-        <MobileNavLink $active={isActive('/cadastro')}>
-            <Link href="/cadastro">Cadastrar</Link>
+        <MobileNavLink $active={isActive('/cadastro-tipo') || isActive('/cadastro') || isActive('/cadastro-criador')}>
+            <Link href="/cadastro-tipo">Cadastrar</Link>
         </MobileNavLink>
         <MobileNavLink $active={isActive('/meus-titulos')}>
             <Link href="/meus-titulos">Meus títulos</Link>

@@ -68,12 +68,16 @@ const RequiredMark = styled.span`
 const EditorWrapper = styled.div<{ $minHeight?: string; $fixedWidth?: string }>`
   position: relative;
   width: ${props => props.$fixedWidth || '100%'};
+  max-width: ${props => props.$fixedWidth || '100%'};
+  min-width: ${props => props.$fixedWidth || '100%'};
   border-radius: 10px;
   border: 2px solid rgba(106, 17, 203, 0.1);
   background-color: white !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   overflow: hidden;
+  flex-shrink: 0;
+  overflow-x: hidden;
   
   &:focus-within {
     border-color: #6a11cb;
@@ -129,14 +133,19 @@ const ToolbarDivider = styled.div`
 
 const EditorContent = styled.div<{ $minHeight?: string; $disabled?: boolean }>`
   min-height: ${props => props.$minHeight || '250px'};
-  max-height: ${props => props.$minHeight || '250px'};
-  height: ${props => props.$minHeight || '250px'};
+  max-height: none;
+  height: auto;
+  width: 100%;
+  max-width: 100%;
   padding: 16px;
   font-size: 0.95rem;
   line-height: 1.6;
   color: #333 !important;
   background-color: white !important;
-  overflow-y: auto;
+  overflow-y: visible;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
   outline: none;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'text'};
   border-bottom: 1px solid transparent;
@@ -148,21 +157,7 @@ const EditorContent = styled.div<{ $minHeight?: string; $disabled?: boolean }>`
   }
   
   &:after {
-    content: "";
-    display: block;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 15px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.9), transparent);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  
-  &:hover:after {
-    opacity: 1;
+    display: none;
   }
   
   /* Scrollbar estilizada */
@@ -331,7 +326,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         {required && <RequiredMark>*</RequiredMark>}
       </EditorLabel>
       
-      <EditorWrapper $minHeight={minHeight} $fixedWidth={fixedWidth}>
+      <EditorWrapper  $fixedWidth={fixedWidth}>
         <Toolbar>
           <ToolbarButton 
             type="button" 

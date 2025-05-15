@@ -8,18 +8,17 @@ export const theme: DefaultTheme = {
     secondary: '#2575fc',
     secondaryDark: '#1555c5',
     accent: '#FF9800',
-    orange:"#FF416C",
+    orange: "#FF416C",
     accentSecondary: '#FF416C',
-    gradients: {
-      gold: 'linear-gradient(135deg, #F2C94C 0%, #D4AF37 100%)',
-      dark: 'linear-gradient(135deg, #111111 0%, #333333 100%)',
-      purple: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
-      action: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
-    },
     background: '#f0f2f5',
     backgroundDark: '#1A1A1A',
     white: '#FFFFFF',
     black: '#222222',
+    dark: '#222222',
+    success: '#4CAF50',
+    error: '#F44336',
+    warning: '#FF9800',
+    info: '#2196F3',
     gray: {
       light: '#F5F5F5',
       medium: '#E0E0E0',
@@ -32,10 +31,15 @@ export const theme: DefaultTheme = {
       gold: '#D4AF37',
       white: '#FFFFFF',
     },
-    success: '#4CAF50',
-    error: '#F44336',
-    warning: '#FF9800',
-    info: '#2196F3',
+    gradients: {
+      primary: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+      secondary: 'linear-gradient(135deg, #2575fc 0%, #4899f7 100%)',
+      accent: 'linear-gradient(135deg, #FF9800 0%, #FFB74D 100%)',
+      dark: 'linear-gradient(135deg, #111111 0%, #333333 100%)',
+      purple: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+      action: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+      gold: 'linear-gradient(135deg, #F2C94C 0%, #D4AF37 100%)'
+    }
   },
   fontSizes: {
     xs: '0.75rem',

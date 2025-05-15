@@ -5,8 +5,6 @@ import styled from 'styled-components';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import ReactDatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
 import { 
   FaUser, 
@@ -25,6 +23,41 @@ import {
   FaEye,
   FaEyeSlash
 } from 'react-icons/fa';
+import FormDatePicker from '../common/FormDatePicker';
+
+// Custom styling for FormDatePicker
+const StyledFormDatePickerWrapper = styled.div`
+  .react-datepicker-wrapper {
+    width: 100%;
+  }
+
+  .react-datepicker__input-container input {
+    width: 100%;
+    height: 100%;
+    padding: 1rem 1rem 1rem 2.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #f5f5f5;
+    border: 2px solid transparent;
+    color: #333;
+    
+    &:focus {
+      outline: none;
+      background-color: white;
+      border-color: #6a11cb;
+    }
+    
+    &::placeholder {
+      color: #a0aec0;
+      opacity: 0.7;
+    }
+    
+    &:hover:not(:focus) {
+      background-color: #f0f0f0;
+    }
+  }
+`;
 
 // Estilização dos componentes
 const FormContainer = styled.div`
@@ -39,7 +72,7 @@ const FormContainer = styled.div`
 `;
 
 const FormHeader = styled.div`
-  background: ${({ theme }) => theme.colors.gradients.purple};
+  background: linear-gradient(135deg, #6a11cb 0%, #8e44ad 100%);
   padding: 2rem;
   color: white;
   text-align: center;
@@ -73,8 +106,8 @@ const SectionTitle = styled.h3`
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
-  color: ${({ theme }) => theme.colors.primary};
-  border-bottom: 2px solid ${({ theme }) => theme.colors.gray.medium};
+  color: #6a11cb;
+  border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.5rem;
 `;
 
@@ -103,7 +136,7 @@ const InputLabel = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: #666;
   font-size: 0.9rem;
   transition: color 0.2s ease;
 `;
@@ -117,7 +150,7 @@ const InputIcon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: ${({ theme }) => theme.colors.primary};
+  color: #6a11cb;
   opacity: 0.7;
   z-index: 1;
 `;
@@ -130,7 +163,7 @@ const TogglePasswordButton = styled.button`
   background: transparent;
   border: none;
   cursor: pointer;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: #666;
   opacity: 0.8;
   z-index: 1;
   padding: 0;
@@ -140,7 +173,7 @@ const TogglePasswordButton = styled.button`
   transition: color 0.2s;
   
   &:hover {
-    color: ${({ theme }) => theme.colors.primary};
+    color: #6a11cb;
     opacity: 1;
   }
   
@@ -150,7 +183,7 @@ const TogglePasswordButton = styled.button`
 `;
 
 const ErrorMessage = styled.p`
-  color: ${({ theme }) => theme.colors.error};
+  color: #ef4444;
   font-size: 0.75rem;
   margin-top: 0.25rem;
   margin-left: 0.5rem;
@@ -160,7 +193,7 @@ const ErrorMessage = styled.p`
 const PasswordStrengthMeter = styled.div`
   height: 4px;
   width: 100%;
-  background-color: ${({ theme }) => theme.colors.gray.light};
+  background-color: #e2e8f0;
   margin-top: 0.5rem;
   border-radius: 2px;
   overflow: hidden;
@@ -169,11 +202,11 @@ const PasswordStrengthMeter = styled.div`
 const PasswordStrengthIndicator = styled.div<{ $strength: number }>`
   height: 100%;
   width: ${({ $strength }) => `${$strength * 25}%`};
-  background-color: ${({ $strength, theme }) => {
-    if ($strength <= 1) return theme.colors.error;
-    if ($strength === 2) return theme.colors.warning;
-    if ($strength === 3) return theme.colors.info;
-    return theme.colors.success;
+  background-color: ${({ $strength }) => {
+    if ($strength <= 1) return '#ef4444';
+    if ($strength === 2) return '#f59e0b';
+    if ($strength === 3) return '#3b82f6';
+    return '#10b981';
   }};
   transition: width 0.3s ease, background-color 0.3s ease;
 `;
@@ -181,11 +214,11 @@ const PasswordStrengthIndicator = styled.div<{ $strength: number }>`
 const PasswordStrengthText = styled.p<{ $strength: number }>`
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: ${({ $strength, theme }) => {
-    if ($strength <= 1) return theme.colors.error;
-    if ($strength === 2) return theme.colors.warning;
-    if ($strength === 3) return theme.colors.info;
-    return theme.colors.success;
+  color: ${({ $strength }) => {
+    if ($strength <= 1) return '#ef4444';
+    if ($strength === 2) return '#f59e0b';
+    if ($strength === 3) return '#3b82f6';
+    return '#10b981';
   }};
 `;
 
@@ -197,22 +230,22 @@ const StyledInput = styled.input<{ $hasError?: boolean; $isFocused?: boolean }>`
   transition: all 0.2s ease;
   background-color: #f5f5f5;
   border: 2px solid transparent;
-  box-shadow: ${({ $hasError, $isFocused, theme }) => 
+  box-shadow: ${({ $hasError, $isFocused }) => 
     $hasError 
-      ? `0 0 0 1px ${theme.colors.error}` 
+      ? `0 0 0 1px #ef4444` 
       : $isFocused 
-        ? `0 0 0 2px ${theme.colors.primary}` 
+        ? `0 0 0 2px #6a11cb` 
         : 'none'};
   color: #333;
   
   &:focus {
     outline: none;
     background-color: white;
-    border-color: ${({ theme }) => theme.colors.primary};
+    border-color: #6a11cb;
   }
   
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text.light};
+    color: #a0aec0;
     opacity: 0.7;
   }
   
@@ -220,160 +253,13 @@ const StyledInput = styled.input<{ $hasError?: boolean; $isFocused?: boolean }>`
     background-color: #f0f0f0;
   }
   
-  ${({ $hasError, theme }) => $hasError && `
-    border-color: ${theme.colors.error};
+  ${({ $hasError }) => $hasError && `
+    border-color: #ef4444;
   `}
 `;
 
-const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean }>`
-  .react-datepicker-wrapper {
-    width: 100%;
-  }
-  
-  .react-datepicker__input-container input {
-    width: 100%;
-    padding: 1rem 1rem 1rem 2.75rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-    background-color: #f5f5f5;
-    border: 2px solid transparent;
-    box-shadow: ${({ $hasError, $isFocused, theme }) => 
-      $hasError 
-        ? `0 0 0 1px ${theme.colors.error}` 
-        : $isFocused 
-          ? `0 0 0 2px ${theme.colors.primary}` 
-          : 'none'};
-    color: #333;
-    cursor: pointer;
-    
-    &:focus {
-      outline: none;
-      background-color: white;
-      border-color: ${({ theme }) => theme.colors.primary};
-    }
-    
-    &::placeholder {
-      color: ${({ theme }) => theme.colors.text.light};
-      opacity: 0.7;
-    }
-    
-    &:hover:not(:focus) {
-      background-color: #f0f0f0;
-    }
-  }
-  
-  .react-datepicker {
-    font-family: inherit;
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    padding: 0.5rem;
-    background: white;
-    z-index: 10;
-  }
-  
-  .react-datepicker__triangle {
-    display: none;
-  }
-  
-  .react-datepicker__header {
-    background-color: ${({ theme }) => theme.colors.primary};
-    border-bottom: none;
-    padding: 1rem 0 0.5rem;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-  }
-  
-  .react-datepicker__current-month {
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .react-datepicker__day-name {
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
-    width: 2rem;
-    margin: 0.2rem;
-  }
-  
-  .react-datepicker__month {
-    margin: 0.4rem 0;
-    padding: 0.4rem;
-  }
-  
-  .react-datepicker__day {
-    width: 2rem;
-    height: 2rem;
-    line-height: 2rem;
-    margin: 0.2rem;
-    border-radius: 50%;
-    
-    &:hover {
-      background-color: ${({ theme }) => `${theme.colors.primary}20`};
-      color: ${({ theme }) => theme.colors.primary};
-    }
-  }
-  
-  .react-datepicker__day--selected,
-  .react-datepicker__day--keyboard-selected {
-    background-color: ${({ theme }) => theme.colors.primary};
-    color: white;
-    font-weight: 600;
-    
-    &:hover {
-      background-color: ${({ theme }) => theme.colors.primary};
-      opacity: 0.9;
-    }
-  }
-  
-  .react-datepicker__navigation {
-    top: 1.2rem;
-  }
-  
-  .react-datepicker__navigation-icon::before {
-    border-color: white;
-    border-width: 2px 2px 0 0;
-    height: 8px;
-    width: 8px;
-  }
-  
-  .react-datepicker__year-dropdown-container,
-  .react-datepicker__month-dropdown-container {
-    background-color: white;
-    border-radius: 8px;
-    padding: 0.5rem;
-  }
-  
-  .react-datepicker__year-dropdown,
-  .react-datepicker__month-dropdown {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-  
-  .react-datepicker__year-option,
-  .react-datepicker__month-option {
-    padding: 0.5rem;
-    
-    &:hover {
-      background-color: ${({ theme }) => `${theme.colors.primary}20`};
-      color: ${({ theme }) => theme.colors.primary};
-    }
-  }
-  
-  .react-datepicker__year-option--selected,
-  .react-datepicker__month-option--selected {
-    background-color: ${({ theme }) => theme.colors.primary};
-    color: white;
-  }
-`;
-
 const SubmitButton = styled.button`
-  background: ${({ theme }) => theme.colors.gradients.purple};
+  background: linear-gradient(135deg, #6a11cb 0%, #8e44ad 100%);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -384,7 +270,7 @@ const SubmitButton = styled.button`
   width: 100%;
   margin-top: 1.5rem;
   transition: all 0.3s ease;
-  box-shadow: ${({ theme }) => theme.shadows.md};
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   
@@ -406,7 +292,7 @@ const SubmitButton = styled.button`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.shadows.lg};
+    box-shadow: 0 6px 15px rgba(106, 17, 203, 0.2);
     
     &::before {
       left: 100%;
@@ -418,7 +304,7 @@ const SubmitButton = styled.button`
   }
   
   &:disabled {
-    background: ${({ theme }) => theme.colors.gray.medium};
+    background: #cbd5e0;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -559,7 +445,6 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 const RegistrationForm = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [datePickerFocused, setDatePickerFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
@@ -765,40 +650,27 @@ const RegistrationForm = () => {
             />
             
             <FormGroup>
-              <InputLabel htmlFor="dataNascimento">Data de Nascimento *</InputLabel>
-              <InputContainer>
-                <InputIcon><FaCalendarAlt /></InputIcon>
-                <DatePickerWrapper $hasError={!!errors.dataNascimento} $isFocused={datePickerFocused}>
-                  <Controller
-                    name="dataNascimento"
-                    control={control}
-                    render={({ field }) => (
-                      <ReactDatePicker
-                        selected={field.value}
-                        onChange={(date: Date | null) => {
-                          field.onChange(date);
-                          // Close automatically after selection
-                          (document.activeElement as HTMLElement)?.blur();
-                        }}
-                        onFocus={() => setDatePickerFocused(true)}
-                        onBlur={() => setDatePickerFocused(false)}
-                        dateFormat="dd/MM/yyyy"
-                        placeholderText="DD/MM/AAAA"
-                        showYearDropdown
-                        yearDropdownItemNumber={100}
-                        scrollableYearDropdown
-                        maxDate={new Date()}
-                        calendarClassName="custom-datepicker-calendar"
-                        popperClassName="datepicker-popper"
-                        shouldCloseOnSelect={true}
-                      />
-                    )}
-                  />
-                </DatePickerWrapper>
-              </InputContainer>
-              {errors.dataNascimento && (
-                <ErrorMessage>{errors.dataNascimento.message}</ErrorMessage>
-              )}
+              <Controller
+                name="dataNascimento"
+                control={control}
+                render={({ field }) => (
+                  <StyledFormDatePickerWrapper>
+                    <FormDatePicker
+                      id="dataNascimento"
+                      label="Data de Nascimento"
+                      icon={<FaCalendarAlt />}
+                      selected={field.value}
+                      onChange={field.onChange}
+                      error={errors.dataNascimento?.message}
+                      placeholder="DD/MM/AAAA"
+                      required
+                      showYearDropdown
+                      showMonthDropdown
+                      maxDate={new Date()}
+                    />
+                  </StyledFormDatePickerWrapper>
+                )}
+              />
             </FormGroup>
           </FormRow>
           
