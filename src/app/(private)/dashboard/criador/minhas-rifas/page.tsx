@@ -380,12 +380,12 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' 
   font-weight: 600;
   cursor: pointer;
   display: flex;
-  text-align: center;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
   transition: all 0.2s ease;
   height: 38px;
+  text-align: center;
   
   ${props => {
     if (props.$variant === 'icon' || props.$variant === 'edit') {
@@ -401,6 +401,17 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' 
       if (props.$variant === 'edit') return '0 4px 12px rgba(99, 102, 241, 0.3)';
       return '0 4px 12px rgba(106, 17, 203, 0.3)';
     }};
+  }
+  
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
   }
 `;
 
@@ -760,7 +771,7 @@ export default function MinhasRifasPage() {
                   <RifaActions>
                     {/* Botão Ver */}
                     <RifaActionButton>
-                      <Link href={`/dashboard/criador/campanha/${campaign.id}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none', width: '100%' }}>
+                      <Link href={`/dashboard/criador/campanha/${campaign.id}`}>
                         <FaEye size={14} /> Ver
                       </Link>
                     </RifaActionButton>
@@ -768,7 +779,7 @@ export default function MinhasRifasPage() {
                     {/* Botão Sortear (apenas se não estiver finalizada e não estiver cancelada) */}
                     {campaign.status !== 'finalizada' && !campaign.canceled && (
                       <RifaActionButton $variant="outline">
-                        <Link href={`/dashboard/criador/campanha/${campaign.id}/sortear`} style={{ display: 'flex', alignItems: 'center !important', gap: '6px', color: 'inherit', textDecoration: 'none', width: '100%', justifyContent: 'center !important' }}>
+                        <Link href={`/dashboard/criador/campanha/${campaign.id}/sortear`}>
                           <FaTicketAlt size={14} /> Sortear
                         </Link>
                       </RifaActionButton>
@@ -776,7 +787,7 @@ export default function MinhasRifasPage() {
                     
                     {/* Botão Editar */}
                     <RifaActionButton $variant="edit">
-                      <Link href={`/dashboard/criador/campanha/${campaign.id}/editar`} style={{ color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                      <Link href={`/dashboard/criador/campanha/${campaign.id}/editar`}>
                         <FaEdit size={14} />
                       </Link>
                     </RifaActionButton>

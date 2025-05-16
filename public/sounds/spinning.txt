@@ -1,0 +1,7 @@
+This is a placeholder file. 
+
+Please download a slot machine spinning/rolling sound effect and rename it to spinning.mp3.
+
+Recommended sources:
+- https://freesound.org/people/milton./sounds/69128/
+- https://www.freesoundslibrary.com/slot-machine-sound-effect/ 

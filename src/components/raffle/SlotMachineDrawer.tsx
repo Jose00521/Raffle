@@ -255,9 +255,9 @@ const SlotMask = styled.div`
 
 const CloseModalButton = styled.button`
   position: absolute;
-  top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.2);
+  top: 20px;
+  background: rgba(0, 0, 0, 0.3);
   border: none;
   width: 40px;
   height: 40px;
@@ -266,21 +266,14 @@ const CloseModalButton = styled.button`
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 1.2rem;
   z-index: 10;
+  transition: all 0.2s ease;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
     transform: scale(1.1);
-  }
-  
-  @media (max-width: 480px) {
-    top: 15px;
-    right: 15px;
-    width: 36px;
-    height: 36px;
   }
 `;
 
@@ -306,11 +299,127 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
   const confettiInstance = useRef<any>(null);
   const hasInitializedRef = useRef<boolean>(false);
   
+  // Audio refs
+  const spinningAudioRef = useRef<HTMLAudioElement | null>(null);
+  const stopDigitAudioRef = useRef<HTMLAudioElement | null>(null);
+  const winnerAudioRef = useRef<HTMLAudioElement | null>(null);
+  
   // Estados
   const [animationText, setAnimationText] = useState('');
   const [digitAnimations, setDigitAnimations] = useState<number[]>([]);
   const [spinCompleted, setSpinCompleted] = useState(false);
   const [digitStopDelay, setDigitStopDelay] = useState(0);
+  
+  // Initialize audio elements on component mount
+  useEffect(() => {
+    // Create audio elements if they don't exist
+    try {
+      console.log('Tentando carregar arquivos de áudio...');
+      if (!spinningAudioRef.current) {
+        spinningAudioRef.current = new Audio('/sounds/spinning.mp3');
+        spinningAudioRef.current.loop = true;
+        spinningAudioRef.current.volume = 0.6;
+        console.log('Arquivo spinning.mp3 carregado');
+      }
+      
+      if (!stopDigitAudioRef.current) {
+        stopDigitAudioRef.current = new Audio('/sounds/stop-digit.mp3');
+        stopDigitAudioRef.current.volume = 0.7;
+        console.log('Arquivo stop-digit.mp3 carregado');
+      }
+      
+      if (!winnerAudioRef.current) {
+        winnerAudioRef.current = new Audio('/sounds/winner.mp3');
+        winnerAudioRef.current.volume = 0.8;
+        console.log('Arquivo winner.mp3 carregado');
+      }
+
+      // Preload the audio files
+      spinningAudioRef.current.load();
+      stopDigitAudioRef.current.load();
+      winnerAudioRef.current.load();
+    } catch (error) {
+      console.warn('Error loading audio files:', error);
+      // Reset audio refs to null if they couldn't be loaded
+      spinningAudioRef.current = null;
+      stopDigitAudioRef.current = null;
+      winnerAudioRef.current = null;
+    }
+    
+    // Cleanup function to stop and release audio
+    return () => {
+      if (spinningAudioRef.current) {
+        spinningAudioRef.current.pause();
+        spinningAudioRef.current.currentTime = 0;
+      }
+      
+      if (stopDigitAudioRef.current) {
+        stopDigitAudioRef.current.pause();
+        stopDigitAudioRef.current.currentTime = 0;
+      }
+      
+      if (winnerAudioRef.current) {
+        winnerAudioRef.current.pause();
+        winnerAudioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+  
+  // Handle visibility changes to start/stop audio
+  useEffect(() => {
+    if (isVisible) {
+      // If drawer becomes visible, play the spinning sound
+      if (drawMethod === 'automatic' && spinningAudioRef.current) {
+        spinningAudioRef.current.play().catch(err => {
+          console.warn('Could not play spinning sound:', err);
+          // Silently fail - sound isn't critical to the user experience
+        });
+      }
+    } else {
+      // If drawer is hidden, pause all sounds
+      if (spinningAudioRef.current) {
+        spinningAudioRef.current.pause();
+        spinningAudioRef.current.currentTime = 0;
+      }
+      
+      if (stopDigitAudioRef.current) {
+        stopDigitAudioRef.current.pause();
+        stopDigitAudioRef.current.currentTime = 0;
+      }
+      
+      if (winnerAudioRef.current) {
+        winnerAudioRef.current.pause();
+        winnerAudioRef.current.currentTime = 0;
+      }
+    }
+  }, [isVisible, drawMethod]);
+  
+  // Play digit stop sound when digitStopDelay changes
+  useEffect(() => {
+    if (digitStopDelay > 0 && stopDigitAudioRef.current) {
+      // Clone the audio for overlapping sounds
+      try {
+        const clonedAudio = stopDigitAudioRef.current.cloneNode(true) as HTMLAudioElement;
+        
+        // Increase pitch slightly for each subsequent digit to create tension
+        const rate = 1 + (digitStopDelay * 0.05);
+        clonedAudio.playbackRate = rate;
+        
+        // Play the sound
+        clonedAudio.play().catch(err => {
+          console.warn('Could not play stop digit sound:', err);
+          // Silently fail - sound isn't critical to the user experience
+        });
+        
+        // Cleanup the cloned audio after it plays
+        clonedAudio.addEventListener('ended', () => {
+          clonedAudio.remove();
+        });
+      } catch (error) {
+        console.warn('Error cloning audio:', error);
+      }
+    }
+  }, [digitStopDelay]);
   
   // Mock winner (em produção seria buscado do backend)
   const mockWinner: WinnerInfo = {
@@ -510,6 +619,12 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
                     gravity: 0.7
                   });
                 }
+                
+                // Stop the spinning sound when the last digit stops
+                if (spinningAudioRef.current) {
+                  spinningAudioRef.current.pause();
+                  spinningAudioRef.current.currentTime = 0;
+                }
               } else if (i === digitCount - 2) {
                 setAnimationText('Penúltimo dígito definido!');
                 
@@ -551,6 +666,14 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
                   setTimeout(() => {
                     // Explosão final de confetti em várias direções
                     triggerWinnerConfetti();
+                    
+                    // Play winner sound
+                    if (winnerAudioRef.current) {
+                      winnerAudioRef.current.play().catch(err => {
+                        console.warn('Could not play winner sound:', err);
+                        // Silently fail - sound isn't critical to the user experience
+                      });
+                    }
                     
                     // Notificar a página sobre o ganhador e fechar a animação
                     setTimeout(() => {
@@ -599,6 +722,17 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
       const verifyDigitsSequence = () => {
         for (let i = 0; i < digitCount; i++) {
           setTimeout(() => {
+            // Play stop digit sound for each digit verification
+            if (stopDigitAudioRef.current) {
+              const clonedAudio = stopDigitAudioRef.current.cloneNode(true) as HTMLAudioElement;
+              clonedAudio.volume = 0.5; // Slightly lower volume for manual mode
+              clonedAudio.playbackRate = 1 + (i * 0.1); // Increasing pitch
+              clonedAudio.play().catch(err => {
+                console.warn('Could not play winner sound:', err);
+                // Silently fail - sound isn't critical to the user experience
+              });
+            }
+            
             if (i === 0) {
               setAnimationText('Verificando primeiro dígito...');
             } else if (i === digitCount - 1) {
@@ -641,6 +775,14 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
                 setTimeout(() => {
                   // Grande explosão de confetti para o resultado final
                   triggerWinnerConfetti();
+                  
+                  // Play winner sound
+                  if (winnerAudioRef.current) {
+                    winnerAudioRef.current.play().catch(err => {
+                      console.warn('Could not play winner sound:', err);
+                      // Silently fail - sound isn't critical to the user experience
+                    });
+                  }
                   
                   // Notificar a página sobre o ganhador e fechar a animação
                   setTimeout(() => {
