@@ -72,6 +72,7 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   font-size: 0.9rem;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  color: #333;
   
   &:focus {
     outline: none;
@@ -85,8 +86,8 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   }
   
   &::placeholder {
-    color: #a0aec0;
-    opacity: 0.7;
+    color: #6d7280;
+    opacity: 0.8;
   }
   
   @media (max-width: 768px) {

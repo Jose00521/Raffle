@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags } from 'react-icons/fa';
 import { IPrize } from '@/models/Prize';
+import InputWithIcon from '@/components/common/InputWithIcon';
+import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
+import CustomDropdown from '@/components/common/CustomDropdown';
+import mongoose from 'mongoose';
+import FormInput from '../common/FormInput';
+import FormTextArea from '../common/FormTextArea';
 
 interface PrizeFormProps {
   initialData?: Partial<IPrize>;
@@ -42,43 +48,6 @@ const FormLabel = styled.label`
   font-weight: 600;
   margin-bottom: 8px;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
-`;
-
-const FormInput = styled.input`
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s ease;
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
-    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
-  }
-  
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const FormTextArea = styled.textarea`
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s ease;
-  min-height: 100px;
-  resize: vertical;
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
-    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
-  }
 `;
 
 const ErrorMessage = styled.div`
@@ -238,12 +207,58 @@ const RemoveImageButton = styled.button`
   }
 `;
 
+// Styled component that extends MultipleImageUploader
+const ProductImagesUploader = styled(MultipleImageUploader)`
+  h3 {
+    &:first-child {
+      &::after {
+        
+        display: inline;
+      }
+      span:first-child {
+        display: none;
+      }
+    }
+  }
+`;
+
+// Styled component for the banner image uploader
+const BannerImageUploader = styled(MultipleImageUploader)`
+  h3 {
+    &:first-child {
+      &::after {
+        
+        display: inline;
+      }
+      span:first-child {
+        display: none;
+      }
+    }
+  }
+`;
+
+// Mock category data
+const MOCK_CATEGORIES = [
+  { value: "electronics", label: "Eletrônicos" },
+  { value: "home", label: "Casa e Decoração" },
+  { value: "vehicle", label: "Veículos" },
+  { value: "travel", label: "Viagens" },
+  { value: "services", label: "Serviços" },
+  { value: "others", label: "Outros" }
+];
+
 const PrizeForm: React.FC<PrizeFormProps> = ({
   initialData,
   onSubmit,
   onCancel,
   isLoading = false
 }) => {
+  // Helper function to convert MongoDB ObjectId to string if needed
+  const getCategoryIdAsString = (category?: mongoose.Types.ObjectId | string): string => {
+    if (!category) return '';
+    return category.toString();
+  };
+  
   const [formData, setFormData] = useState<Partial<IPrize>>({
     name: '',
     description: '',
@@ -253,10 +268,15 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     ...initialData
   });
   
+  // Keep track of the selected category as a string for the dropdown
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    getCategoryIdAsString(initialData?.category)
+  );
+  
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [bannerImageFiles, setBannerImageFiles] = useState<File[]>([]);
   const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isDragActive, setIsDragActive] = useState(false);
   
   // Preview URLs for uploaded images
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(
@@ -265,8 +285,6 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
     formData.images || []
   );
-  
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Update preview when main image file changes
   useEffect(() => {
@@ -308,10 +326,10 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     }
   };
   
-  const handleMainImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMainImageFile(file);
+  const handleBannerImageChange = (files: File[]) => {
+    // If files array is not empty, use the first file as main image
+    if (files.length > 0) {
+      setMainImageFile(files[0]);
       
       // Clear error for image if it exists
       if (errors.image) {
@@ -321,77 +339,26 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           return newErrors;
         });
       }
+    } else {
+      // If files array is empty, clear the main image
+      setMainImageFile(null);
+      setMainImagePreview(null);
     }
   };
   
-  const handleAdditionalImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
-      setAdditionalImageFiles(prev => [...prev, ...filesArray]);
-    }
+  const handleAdditionalImagesChange = (files: File[]) => {
+    setAdditionalImageFiles(files);
   };
   
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(true);
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    // We'll handle the actual category creation at submission time
   };
   
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-  };
-  
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-  
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      setMainImageFile(file);
-      
-      // Clear error for image if it exists
-      if (errors.image) {
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors.image;
-          return newErrors;
-        });
-      }
-    }
-  };
-  
-  const handleRemoveMainImage = () => {
-    setMainImageFile(null);
-    setMainImagePreview(null);
-    setFormData(prev => ({ ...prev, image: '' }));
-  };
-  
-  const handleRemoveAdditionalImage = (index: number) => {
-    const newPreviews = [...additionalImagePreviews];
-    newPreviews.splice(index, 1);
-    setAdditionalImagePreviews(newPreviews);
-    
-    // If it's a newly added file
-    if (index >= (formData.images?.length || 0)) {
-      const newIndex = index - (formData.images?.length || 0);
-      const newFiles = [...additionalImageFiles];
-      newFiles.splice(newIndex, 1);
-      setAdditionalImageFiles(newFiles);
-    } 
-    // If it's an existing image from formData
-    else {
-      const newImages = [...(formData.images || [])];
-      newImages.splice(index, 1);
-      setFormData(prev => ({ ...prev, images: newImages }));
-    }
+  const handleRemoveExistingImage = (index: number) => {
+    const newImages = [...(formData.images || [])];
+    newImages.splice(index, 1);
+    setFormData(prev => ({ ...prev, images: newImages }));
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -408,7 +375,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       newErrors.value = 'O valor do prêmio é obrigatório';
     }
     
-    if (!mainImagePreview && !formData.image) {
+    if (!mainImageFile && !mainImagePreview) {
       newErrors.image = 'Uma imagem principal é obrigatória';
     }
     
@@ -421,13 +388,32 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     // and get back URLs to store in the database
     // For this demonstration, we'll just pass the current state
 
+    // Create temporary URLs for the banner image (if new)
+    let bannerImageUrl = mainImagePreview;
+    if (mainImageFile) {
+      bannerImageUrl = URL.createObjectURL(mainImageFile);
+    }
+
+    // Create temporary URLs for the new additional images
+    const newImageUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
+    
     // Create submission data
     const submissionData: Partial<IPrize> = {
       ...formData,
       // In a real app, you would replace these with actual uploaded URLs
-      image: mainImagePreview || formData.image,
-      images: additionalImagePreviews
+      image: bannerImageUrl || '',
+      // Combine existing images with new ones
+      images: [...(formData.images || []), ...newImageUrls],
     };
+    
+    // Add category if selected
+    if (selectedCategory) {
+      // In a real app with MongoDB:
+      // submissionData.category = new mongoose.Types.ObjectId(selectedCategory);
+      
+      // For mock version (type casting for TypeScript):
+      submissionData.category = selectedCategory as unknown as mongoose.Types.ObjectId;
+    }
     
     onSubmit(submissionData);
   };
@@ -440,140 +426,110 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       
       <form onSubmit={handleSubmit}>
         <ImageUploadContainer>
-          <FormLabel>Imagem Principal</FormLabel>
           
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleMainImageUpload}
-            accept="image/*"
-            style={{ display: 'none' }}
+          <BannerImageUploader
+            maxImages={1}
+            onChange={handleBannerImageChange}
+            value={mainImageFile ? [mainImageFile] : []}
+            label="Imagem Banner"
+            maxSizeInMB={5}
+            allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
           />
-          
-          {!mainImagePreview ? (
-            <UploadArea
-              $isDragActive={isDragActive}
-              onClick={() => fileInputRef.current?.click()}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <UploadIcon>
-                <FaCloudUploadAlt />
-              </UploadIcon>
-              <UploadText>
-                Clique para fazer upload ou arraste e solte
-              </UploadText>
-              <UploadHint>
-                PNG, JPG ou WEBP (max. 5MB)
-              </UploadHint>
-            </UploadArea>
-          ) : (
-            <ImagePreviewContainer>
-              <ImagePreview>
-                <PreviewImage src={mainImagePreview} alt="Preview" />
-                <RemoveImageButton 
-                  type="button" 
-                  onClick={handleRemoveMainImage}
-                  aria-label="Remove image"
-                >
-                  <FaTimes />
-                </RemoveImageButton>
-              </ImagePreview>
-            </ImagePreviewContainer>
-          )}
           
           {errors.image && (
             <ErrorMessage>{errors.image}</ErrorMessage>
           )}
         </ImageUploadContainer>
         
+        
         <FormGroup>
-          <FormLabel>Imagens Adicionais (opcional)</FormLabel>
-          
-          <input
-            type="file"
-            onChange={handleAdditionalImagesUpload}
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            id="additional-images"
+          <ProductImagesUploader 
+            maxImages={8}
+            onChange={handleAdditionalImagesChange}
+            value={additionalImageFiles}
+            label="Imagens da Rifa"
+            maxSizeInMB={5}
+            allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
           />
-          
-          <UploadArea
-            $isDragActive={false}
-            onClick={() => document.getElementById('additional-images')?.click()}
-          >
-            <UploadIcon>
-              <FaCloudUploadAlt />
-            </UploadIcon>
-            <UploadText>
-              Clique para adicionar mais imagens
-            </UploadText>
-            <UploadHint>
-              Você pode selecionar múltiplas imagens
-            </UploadHint>
-          </UploadArea>
-          
-          {additionalImagePreviews.length > 0 && (
-            <ImagePreviewContainer>
-              {additionalImagePreviews.map((url, index) => (
-                <ImagePreview key={index}>
-                  <PreviewImage src={url} alt={`Imagem adicional ${index + 1}`} />
-                  <RemoveImageButton 
-                    type="button" 
-                    onClick={() => handleRemoveAdditionalImage(index)}
-                    aria-label="Remove image"
-                  >
-                    <FaTimes />
-                  </RemoveImageButton>
-                </ImagePreview>
-              ))}
-            </ImagePreviewContainer>
+          {formData.images && formData.images.length > 0 && (
+            <div style={{ marginTop: '16px' }}>
+              <FormLabel>Imagens existentes</FormLabel>
+              <ImagePreviewContainer>
+                {formData.images.map((url, index) => (
+                  <ImagePreview key={index}>
+                    <PreviewImage src={url} alt={`Imagem adicional ${index + 1}`} />
+                    <RemoveImageButton 
+                      type="button" 
+                      onClick={() => handleRemoveExistingImage(index)}
+                      aria-label={`Remove image ${index + 1}`}
+                    >
+                      <FaTimes />
+                    </RemoveImageButton>
+                  </ImagePreview>
+                ))}
+              </ImagePreviewContainer>
+              <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+                Estas são as imagens já salvas. Novas imagens serão adicionadas a estas quando salvar.
+              </div>
+            </div>
           )}
         </FormGroup>
         
         <FormGroup>
-          <FormLabel htmlFor="name">Nome do Prêmio</FormLabel>
           <FormInput
             id="name"
-            name="name"
+            label="Nome do Prêmio"
+            icon={<FaGift />}
             value={formData.name || ''}
             onChange={handleChange}
             placeholder="Ex: iPhone 14 Pro Max"
             disabled={isLoading}
+            error={errors.name}
+            required
+            fullWidth
           />
-          {errors.name && (
-            <ErrorMessage>{errors.name}</ErrorMessage>
-          )}
         </FormGroup>
         
         <FormGroup>
-          <FormLabel htmlFor="description">Descrição</FormLabel>
+          <FormLabel htmlFor="category">Categoria</FormLabel>
+          <CustomDropdown
+            options={MOCK_CATEGORIES}
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            placeholder="Selecione uma categoria"
+            icon={<FaTags />}
+            disabled={isLoading}
+          />
+        </FormGroup>
+        
+        <FormGroup>
           <FormTextArea
             id="description"
-            name="description"
+            label="Descrição"
+            icon={<FaFileAlt />}
             value={formData.description || ''}
             onChange={handleChange}
             placeholder="Descreva o prêmio em detalhes..."
             disabled={isLoading}
+            error={errors.description}
+            fullWidth
+            rows={5}
           />
         </FormGroup>
         
         <FormGroup>
-          <FormLabel htmlFor="value">Valor</FormLabel>
           <FormInput
             id="value"
-            name="value"
+            label="Valor"
+            icon={<FaMoneyBillWave />}
             value={formData.value || ''}
             onChange={handleChange}
             placeholder="Ex: R$ 5.000,00"
             disabled={isLoading}
+            error={errors.value}
+            required
+            fullWidth
           />
-          {errors.value && (
-            <ErrorMessage>{errors.value}</ErrorMessage>
-          )}
         </FormGroup>
         
         <ButtonGroup>

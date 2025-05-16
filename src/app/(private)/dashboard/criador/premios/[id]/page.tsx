@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy, FaSpinner, FaTrash } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
@@ -10,6 +10,7 @@ import { IPrize } from '@/models/Prize';
 
 // Mock data for demonstration purposes
 import { MOCK_PRIZES } from '../../premios/page';
+import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 
 const PageHeader = styled.div`
   display: flex;
@@ -180,7 +181,7 @@ interface EditPrizePageProps {
 
 export default function EditPrizePage({ params }: EditPrizePageProps) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams();
   
   const [prize, setPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -229,7 +230,7 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Redirect back to prizes page on success
-      router.push('/dashboard/premios');
+      router.push('/dashboard/criador/premios');
       
     } catch (error) {
       console.error('Error updating prize:', error);
@@ -239,7 +240,7 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
   };
   
   const handleCancel = () => {
-    router.push('/dashboard/premios');
+    router.push('/dashboard/criador/premios');
   };
   
   const handleShowDeleteConfirmation = () => {
@@ -262,7 +263,7 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Redirect back to prizes page on success
-      router.push('/dashboard/premios');
+      router.push('/dashboard/criador/premios');
       
     } catch (error) {
       console.error('Error deleting prize:', error);
@@ -273,7 +274,7 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
   };
   
   return (
-    <ParticipantDashboard>
+    <CreatorDashboard>
       <PageHeader>
         <BackButton onClick={handleCancel}>
           <FaArrowLeft />
@@ -341,6 +342,6 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
           </ModalContent>
         </ConfirmationModal>
       )}
-    </ParticipantDashboard>
+    </CreatorDashboard>
   );
 } 

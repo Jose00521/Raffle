@@ -80,6 +80,7 @@ const StyledTextArea = styled.textarea<{ $hasIcon: boolean; $hasError?: boolean 
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
   resize: vertical;
   font-family: inherit;
+  color: #333;
   
   &:focus {
     outline: none;
@@ -96,8 +97,8 @@ const StyledTextArea = styled.textarea<{ $hasIcon: boolean; $hasError?: boolean 
   }
   
   &::placeholder {
-    color: #a0aec0;
-    opacity: 0.7;
+    color: #6d7280;
+    opacity: 0.8;
   }
   
   @media (max-width: 768px) {

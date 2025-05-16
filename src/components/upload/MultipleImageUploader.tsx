@@ -18,6 +18,7 @@ interface MultipleImageUploaderProps {
   maxImages: number;
   onChange: (files: File[]) => void;
   value?: File[];
+  label?: string;
   className?: string;
   maxSizeInMB?: number;
   allowedTypes?: string[];
@@ -271,6 +272,7 @@ const AddMoreButton = styled.div`
 const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   maxImages = 10,
   onChange,
+  label = 'Imagens da Rifa',
   value = [],
   className,
   maxSizeInMB = 5,
@@ -378,7 +380,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   return (
     <UploaderContainer className={className}>
       <UploaderHeader>
-        <UploaderTitle>Imagens da Rifa</UploaderTitle>
+        <UploaderTitle>{label}</UploaderTitle>
         <ImageCount>
           {images.length} / {maxImages} imagens
         </ImageCount>

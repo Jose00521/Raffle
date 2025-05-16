@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { IPrize } from '@/models/Prize';
 
 // Mock data for demonstration purposes
-import { MOCK_PRIZES } from '../../../premios/page';
+import { MOCK_PRIZES } from '../../page';
+import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 
 const PageHeader = styled.div`
   display: flex;
@@ -244,7 +245,7 @@ interface DetailPageProps {
 
 export default function PrizeDetailPage({ params }: DetailPageProps) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams();
   
   const [prize, setPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -281,17 +282,17 @@ export default function PrizeDetailPage({ params }: DetailPageProps) {
   }, [id]);
   
   const handleBack = () => {
-    router.push('/dashboard/premios');
+    router.push('/dashboard/criador/premios');
   };
   
   const handleEdit = () => {
-    router.push(`/dashboard/premios/${id}`);
+    router.push(`/dashboard/criador/premios/${id}`);
   };
   
   const handleDelete = () => {
     // In a real app, you would navigate to the edit page and open the delete confirmation
     // or implement the delete functionality directly here
-    router.push(`/dashboard/premios/${id}`);
+    router.push(`/dashboard/criador/premios/${id}`);
   };
   
   const handleSelectImage = (image: string) => {
@@ -302,7 +303,7 @@ export default function PrizeDetailPage({ params }: DetailPageProps) {
   const allImages = prize ? [prize.image, ...(prize.images || [])] : [];
   
   return (
-    <ParticipantDashboard>
+    <CreatorDashboard>
       <PageHeader>
         <BackButton onClick={handleBack}>
           <FaArrowLeft />
@@ -398,6 +399,6 @@ export default function PrizeDetailPage({ params }: DetailPageProps) {
       ) : (
         <div>Prêmio não encontrado</div>
       )}
-    </ParticipantDashboard>
+    </CreatorDashboard>
   );
 } 

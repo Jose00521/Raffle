@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
-import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt, FaPowerOff } from 'react-icons/fa';
 import Link from 'next/link';
 
 // Styled Components
@@ -280,11 +280,19 @@ const RifaUpperContent = styled.div`
   margin-bottom: 15px;
 `;
 
+const RifaTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+`;
+
 const RifaTitle = styled.h3`
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  flex: 1;
   
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -358,9 +366,13 @@ const RifaActions = styled.div`
   margin-top: auto;
 `;
 
-const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
-  padding: ${props => props.$variant === 'icon' ? '8px' : '8px 12px'};
-  background: ${props => props.$variant === 'outline' ? 'transparent' : 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)'};
+const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' }>`
+  padding: ${props => (props.$variant === 'icon' || props.$variant === 'edit') ? '8px' : '8px 12px'};
+  background: ${props => {
+    if (props.$variant === 'outline') return 'transparent';
+    if (props.$variant === 'edit') return '#6366f1';
+    return 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+  }};
   color: ${props => props.$variant === 'outline' ? '#6a11cb' : 'white'};
   border: ${props => props.$variant === 'outline' ? '1px solid #6a11cb' : 'none'};
   border-radius: 6px;
@@ -368,14 +380,15 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
   font-weight: 600;
   cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
+  align-items: center !important;
+  justify-content: center !important;
   gap: 6px;
   transition: all 0.2s ease;
   height: 38px;
   
   ${props => {
-    if (props.$variant === 'icon') {
+    if (props.$variant === 'icon' || props.$variant === 'edit') {
       return `width: 38px; min-width: 38px;`;
     }
     return `flex: 1;`;
@@ -383,14 +396,16 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' }>`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.$variant === 'outline' 
-      ? '0 4px 12px rgba(106, 17, 203, 0.15)'
-      : '0 4px 12px rgba(106, 17, 203, 0.3)'};
+    box-shadow: ${props => {
+      if (props.$variant === 'outline') return '0 4px 12px rgba(106, 17, 203, 0.15)';
+      if (props.$variant === 'edit') return '0 4px 12px rgba(99, 102, 241, 0.3)';
+      return '0 4px 12px rgba(106, 17, 203, 0.3)';
+    }};
   }
 `;
 
 const PopoverContainer = styled.div`
-  position: relative;
+  position: static;
   display: flex;
   height: 38px;
 `;
@@ -403,12 +418,13 @@ const Popover = styled.div<{ $visible: boolean }>`
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   padding: 8px 0;
-  z-index: 10;
+  z-index: 100;
   min-width: 180px;
   opacity: ${props => props.$visible ? 1 : 0};
   visibility: ${props => props.$visible ? 'visible' : 'hidden'};
   transform: ${props => props.$visible ? 'translateY(0)' : 'translateY(-10px)'};
   transition: all 0.2s ease;
+  pointer-events: ${props => props.$visible ? 'auto' : 'none'};
 `;
 
 const PopoverItem = styled.button<{ $danger?: boolean }>`
@@ -460,6 +476,34 @@ const EmptyStateText = styled.p`
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
 `;
 
+const StatusToggle = styled.button<{ $active: boolean, $canceled: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background-color: ${props => 
+    props.$canceled 
+      ? '#ef4444' 
+      : (props.$active ? '#10b981' : '#9ca3af')};
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  flex-shrink: 0;
+  
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 // Mock data for demonstration
 const mockCampaigns = [
   {
@@ -467,6 +511,8 @@ const mockCampaigns = [
     title: 'iPhone 15 Pro Max - 256GB',
     image: 'https://placehold.co/600x400/6a11cb/FFFFFF/png?text=iPhone+15',
     status: 'ativa',
+    previousStatus: 'ativa',
+    canceled: false,
     createdAt: new Date(2025, 3, 10),
     drawDate: new Date(2025, 6, 15),
     price: 20,
@@ -484,6 +530,8 @@ const mockCampaigns = [
     title: 'MacBook Pro 16" M3 Pro',
     image: 'https://placehold.co/600x400/2575fc/FFFFFF/png?text=MacBook+Pro',
     status: 'ativa',
+    previousStatus: 'ativa',
+    canceled: false,
     createdAt: new Date(2025, 4, 5),
     drawDate: new Date(2025, 7, 20),
     price: 25,
@@ -501,6 +549,8 @@ const mockCampaigns = [
     title: 'PlayStation 5 + 2 Controles',
     image: 'https://placehold.co/600x400/10b981/FFFFFF/png?text=PS5',
     status: 'finalizada',
+    previousStatus: 'finalizada',
+    canceled: false,
     createdAt: new Date(2025, 2, 15),
     drawDate: new Date(2025, 4, 30),
     price: 15,
@@ -519,6 +569,8 @@ const mockCampaigns = [
     title: 'Samsung S24 Ultra',
     image: 'https://placehold.co/600x400/6a11cb/FFFFFF/png?text=S24+Ultra',
     status: 'futura',
+    previousStatus: 'futura',
+    canceled: false,
     createdAt: new Date(2025, 5, 1),
     drawDate: new Date(2025, 8, 10),
     price: 18,
@@ -536,8 +588,8 @@ const mockCampaigns = [
 export default function MinhasRifasPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activePopover, setActivePopover] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState(mockCampaigns);
   
   useEffect(() => {
     // Simulate data loading
@@ -549,35 +601,35 @@ export default function MinhasRifasPage() {
   }, []);
   
   // Filter campaigns based on active tab and search term
-  const filteredCampaigns = mockCampaigns
+  const filteredCampaigns = campaigns
     .filter(campaign => {
       if (activeTab === 'all') return true;
-      return campaign.status === activeTab;
+      if (activeTab === 'cancelada') return campaign.canceled;
+      return campaign.status === activeTab && !campaign.canceled;
     })
     .filter(campaign => {
       if (!searchTerm.trim()) return true;
       return campaign.title.toLowerCase().includes(searchTerm.toLowerCase());
     });
   
-  // Toggle popover
-  const togglePopover = (id: string) => {
-    if (activePopover === id) {
-      setActivePopover(null);
-    } else {
-      setActivePopover(id);
-    }
-  };
-  
-  // Close popover when clicking elsewhere
-  const handleClickOutside = () => {
-    if (activePopover) {
-      setActivePopover(null);
-    }
+  // Função para alternar o status cancelado/ativo da campanha
+  const toggleCampaignStatus = (id: string) => {
+    setCampaigns(prev => prev.map(campaign => {
+      if (campaign.id === id) {
+        // Se a campanha estiver cancelada, restaura para o status anterior
+        // Caso contrário, marca como cancelada
+        return {
+          ...campaign,
+          canceled: !campaign.canceled
+        };
+      }
+      return campaign;
+    }));
   };
   
   return (
     <CreatorDashboard>
-      <div onClick={handleClickOutside}>
+      <div>
         <PageHeader>
           <Title>Minhas Rifas</Title>
           <ActionButtons>
@@ -628,6 +680,12 @@ export default function MinhasRifasPage() {
           >
             Finalizadas
           </Tab>
+          <Tab 
+            $active={activeTab === 'cancelada'} 
+            onClick={() => setActiveTab('cancelada')}
+          >
+            Canceladas
+          </Tab>
         </TabsContainer>
         
         {isLoading ? (
@@ -640,16 +698,29 @@ export default function MinhasRifasPage() {
               <RifaCard key={campaign.id}>
                 <RifaImageContainer>
                   <RifaImage $imageUrl={campaign.image} />
-                  <RifaBadge $status={campaign.status}>
-                    {campaign.status === 'ativa' && 'Ativa'}
-                    {campaign.status === 'finalizada' && 'Finalizada'}
-                    {campaign.status === 'futura' && 'Agendada'}
+                  <RifaBadge $status={campaign.canceled ? 'cancelada' : campaign.status}>
+                    {campaign.canceled && 'Cancelada'}
+                    {!campaign.canceled && campaign.status === 'ativa' && 'Ativa'}
+                    {!campaign.canceled && campaign.status === 'finalizada' && 'Finalizada'}
+                    {!campaign.canceled && campaign.status === 'futura' && 'Agendada'}
                   </RifaBadge>
                 </RifaImageContainer>
                 
                 <RifaContent>
                   <RifaUpperContent>
-                    <RifaTitle>{campaign.title}</RifaTitle>
+                    <RifaTitleRow>
+                      <RifaTitle>{campaign.title}</RifaTitle>
+                      {campaign.status !== 'finalizada' && (
+                        <StatusToggle 
+                          $active={!campaign.canceled}
+                          $canceled={campaign.canceled}
+                          onClick={() => toggleCampaignStatus(campaign.id)}
+                          title={campaign.canceled ? 'Ativar campanha' : 'Cancelar campanha'}
+                        >
+                          <FaPowerOff size={14} />
+                        </StatusToggle>
+                      )}
+                    </RifaTitleRow>
                     
                     <RifaMeta>
                       <div>Criada em {campaign.createdAt.toLocaleDateString('pt-BR')}</div>
@@ -687,39 +758,28 @@ export default function MinhasRifasPage() {
                   </RifaUpperContent>
                   
                   <RifaActions>
+                    {/* Botão Ver */}
                     <RifaActionButton>
-                      <FaEye size={14} /> Ver
+                      <Link href={`/dashboard/criador/campanha/${campaign.id}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none', width: '100%' }}>
+                        <FaEye size={14} /> Ver
+                      </Link>
                     </RifaActionButton>
                     
-                    <RifaActionButton $variant="outline">
-                      <FaChartLine size={14} /> Estatísticas
-                    </RifaActionButton>
-                    
-                    <PopoverContainer>
-                      <RifaActionButton 
-                        $variant="icon" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePopover(campaign.id);
-                        }}
-                      >
-                        <FaEllipsisV />
+                    {/* Botão Sortear (apenas se não estiver finalizada e não estiver cancelada) */}
+                    {campaign.status !== 'finalizada' && !campaign.canceled && (
+                      <RifaActionButton $variant="outline">
+                        <Link href={`/dashboard/criador/campanha/${campaign.id}/sortear`} style={{ display: 'flex', alignItems: 'center !important', gap: '6px', color: 'inherit', textDecoration: 'none', width: '100%', justifyContent: 'center !important' }}>
+                          <FaTicketAlt size={14} /> Sortear
+                        </Link>
                       </RifaActionButton>
-                      
-                      <Popover $visible={activePopover === campaign.id}>
-                        <PopoverItem>
-                          <FaEdit /> Editar
-                        </PopoverItem>
-                        {campaign.status !== 'finalizada' && (
-                          <PopoverItem>
-                            <FaChartLine /> Realizar sorteio
-                          </PopoverItem>
-                        )}
-                        <PopoverItem $danger>
-                          <FaTrash /> Excluir
-                        </PopoverItem>
-                      </Popover>
-                    </PopoverContainer>
+                    )}
+                    
+                    {/* Botão Editar */}
+                    <RifaActionButton $variant="edit">
+                      <Link href={`/dashboard/criador/campanha/${campaign.id}/editar`} style={{ color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                        <FaEdit size={14} />
+                      </Link>
+                    </RifaActionButton>
                   </RifaActions>
                 </RifaContent>
               </RifaCard>

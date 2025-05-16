@@ -6,6 +6,8 @@ import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortA
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { IPrize } from '@/models/Prize';
 import { motion } from 'framer-motion';
+import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import InputWithIcon from '@/components/common/InputWithIcon';
 
 // Mock data for initial development
 export const MOCK_PRIZES: IPrize[] = [
@@ -106,30 +108,6 @@ const SearchContainer = styled.div`
   @media (max-width: 768px) {
     width: 100%;
   }
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  padding: 10px 16px 10px 40px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  font-size: 0.9rem;
-  outline: none;
-  transition: all 0.2s ease;
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
-    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
-  }
-`;
-
-const SearchIcon = styled.div`
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  font-size: 0.9rem;
 `;
 
 const AddButton = styled.button`
@@ -331,9 +309,18 @@ const cardVariants = {
 
 export default function PrizesDashboard() {
   const [prizes, setPrizes] = useState<IPrize[]>(MOCK_PRIZES);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortByValue, setSortByValue] = useState<'asc' | 'desc' | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [sortDesc, setSortDesc] = useState(false);
+  
+  useEffect(() => {
+    // Simulando carregamento de dados da API
+    setLoading(true);
+    setTimeout(() => {
+      setPrizes(MOCK_PRIZES);
+      setLoading(false);
+    }, 800);
+  }, []);
   
   // Filter prizes based on search query
   const filteredPrizes = prizes.filter(prize => 
@@ -341,51 +328,48 @@ export default function PrizesDashboard() {
     prize.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Sort prizes if sortByValue is set
+  // Sort prizes by value
   const sortedPrizes = [...filteredPrizes].sort((a, b) => {
-    if (!sortByValue) return 0;
-    
     const valueA = parseInt(a.value.replace(/[^\d]/g, ''));
     const valueB = parseInt(b.value.replace(/[^\d]/g, ''));
     
-    return sortByValue === 'asc' ? valueA - valueB : valueB - valueA;
+    return sortDesc ? valueB - valueA : valueA - valueB;
   });
   
   const handleSortToggle = () => {
-    if (sortByValue === null) setSortByValue('desc');
-    else if (sortByValue === 'desc') setSortByValue('asc');
-    else setSortByValue(null);
+    setSortDesc(!sortDesc);
   };
   
   const handleAddPrize = () => {
     // Navigate to add prize page
-    window.location.href = '/dashboard/premios/adicionar';
+    window.location.href = '/dashboard/criador/premios/adicionar';
   };
   
   const handleEditPrize = (prizeId: string) => {
     // Navigate to edit prize page
-    window.location.href = `/dashboard/premios/${prizeId}`;
+    window.location.href = `/dashboard/criador/premios/${prizeId}`;
   };
   
   const handleViewPrizeDetails = (prizeId: string) => {
     // Navigate to prize detail page
-    window.location.href = `/dashboard/premios/detalhe/${prizeId}`;
+    window.location.href = `/dashboard/criador/premios/detalhes/${prizeId}`;
   };
   
   return (
-    <ParticipantDashboard>
+    <CreatorDashboard>
       <PageHeader>
         <PageTitle>
-          <FaTrophy size={28} style={{ color: '#f59e0b' }} />
-          Gerenciamento de Prêmios
+          <FaTrophy style={{ color: '#f59e0b' }} />
+          Prêmios
         </PageTitle>
         
         <HeaderActions>
           <SearchContainer>
-            <SearchIcon>
-              <FaSearch />
-            </SearchIcon>
-            <SearchInput 
+            <InputWithIcon
+              id="search-prizes"
+              name="search"
+              label=""
+              icon={<FaSearch />}
               placeholder="Buscar prêmios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -394,7 +378,7 @@ export default function PrizesDashboard() {
           
           <AddButton onClick={handleAddPrize}>
             <FaPlus />
-            Novo Prêmio
+            Adicionar
           </AddButton>
         </HeaderActions>
       </PageHeader>
@@ -407,10 +391,10 @@ export default function PrizesDashboard() {
           </FilterButton>
           
           <FilterButton 
-            $active={sortByValue !== null}
+            $active={true}
             onClick={handleSortToggle}
           >
-            {sortByValue === 'asc' ? <FaSortAmountUp size={12} /> : <FaSortAmountDown size={12} />}
+            {sortDesc ? <FaSortAmountDown size={12} /> : <FaSortAmountUp size={12} />}
             Ordenar por valor
           </FilterButton>
         </FilterGroup>
@@ -422,7 +406,7 @@ export default function PrizesDashboard() {
         </div>
       </FiltersBar>
       
-      {isLoading ? (
+      {loading ? (
         <div>Carregando...</div>
       ) : sortedPrizes.length > 0 ? (
         <PrizesGrid>
@@ -466,6 +450,6 @@ export default function PrizesDashboard() {
           </AddButton>
         </EmptyState>
       )}
-    </ParticipantDashboard>
+    </CreatorDashboard>
   );
 } 

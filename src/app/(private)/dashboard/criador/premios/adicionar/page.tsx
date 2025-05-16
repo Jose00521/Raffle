@@ -7,6 +7,7 @@ import { FaArrowLeft, FaTrophy } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import PrizeForm from '@/components/dashboard/PrizeForm';
 import { IPrize } from '@/models/Prize';
+import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 
 const PageHeader = styled.div`
   display: flex;
@@ -64,7 +65,7 @@ export default function AddPrizePage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Redirect back to prizes page on success
-      router.push('/dashboard/premios');
+      router.push('/dashboard/criador/premios');
       
     } catch (error) {
       console.error('Error adding prize:', error);
@@ -74,11 +75,11 @@ export default function AddPrizePage() {
   };
   
   const handleCancel = () => {
-    router.push('/dashboard/premios');
+    router.push('/dashboard/criador/premios');
   };
   
   return (
-    <ParticipantDashboard>
+    <CreatorDashboard>
       <PageHeader>
         <BackButton onClick={handleCancel}>
           <FaArrowLeft />
@@ -94,6 +95,6 @@ export default function AddPrizePage() {
         onCancel={handleCancel}
         isLoading={isSubmitting}
       />
-    </ParticipantDashboard>
+    </CreatorDashboard>
   );
 } 

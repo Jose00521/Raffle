@@ -58,6 +58,9 @@ const IconWrapper = styled.div`
   color: #666;
   font-size: 1rem;
   margin-right: 10px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 `;
 
 const StyledInput = styled.input`

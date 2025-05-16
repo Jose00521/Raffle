@@ -1,22 +1,28 @@
 import mongoose from 'mongoose';
 import NumberStatus from './NumberStatus';
 import { IUser } from './User';
+import { IPrize } from './Prize';
 
 // Interface principal da Rifa
 export interface ICampaign {
   _id?: string;
+  campaignCode?: string;
+  createdBy: mongoose.Types.ObjectId | null;
   title: string;
   description: string;
   price: number;
-  image: string;
-  images: string[]
+  prizes: Array<IPrize>;
+  returnExpected?: string;
   totalNumbers: number;
   drawDate: Date;
-  isActive: boolean;
+  canceled:Boolean;
+  status: string; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED", "CANCELED"
+  scheduledActivationDate: Date | null;
   winnerNumber: number | null;
   winnerUser?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
+  activatedAt: Date | null;
   // Estatísticas calculadas
   stats?: {
     available: number;
@@ -25,26 +31,30 @@ export interface ICampaign {
     percentComplete: number;
   };
   // Propriedades adicionais para a página de detalhes
-  instantPrizes?: Array<{
+  instantPrizes?: Array<{ 
     number: string;
     value: number;
     winner: string | null;
   }>;
   
   regulation?: string;
-  campaignCode?: string;
-  mainPrize?: string;
-  valuePrize?: string;
-  returnExpected?: string;
 }
 
 const CampaignSchema = new mongoose.Schema(
   {
+    campaignCode: {
+      type: String,
+    },
     title: {
       type: String,
       required: [true, 'Please provide a title for the raffle'],
       trim: true,
-    },  
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     description: {
       type: String,
       required: [true, 'Please provide a description'],
@@ -53,13 +63,10 @@ const CampaignSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Please provide a price per number'],
     },
-    image: {
-      type: String,
-      required: [true, 'Please provide an image URL'],
+    prizes:{
+      type: Array<IPrize>,
+      required: [true, 'Please provide at least one prize'],
     },
-    images: [{
-      type: String
-    }],
     totalNumbers: {
       type: Number,
       required: [true, 'Please provide the total number of tickets'],
@@ -68,9 +75,17 @@ const CampaignSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Please provide a draw date'],
     },
-    isActive: {
-      type: Boolean,
+    status: {
+      type: String,
       default: true,
+    },
+    canceled: {
+      type: Boolean,
+      default: false,
+    },
+    scheduledActivationDate: {
+      type: Date,
+      default: null,
     },
     winnerNumber: {
       type: Number,
@@ -87,9 +102,6 @@ const CampaignSchema = new mongoose.Schema(
       default: []
     },
     regulation: {
-      type: String,
-    },
-    campaignCode: {
       type: String,
     },
     mainPrize: {

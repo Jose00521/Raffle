@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export interface IPrize {
   _id?: string;
-  name?: string;
+  name: string;
   description?: string;
   category?: mongoose.Types.ObjectId;
   image: string;
@@ -17,6 +17,7 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
     name: {
       type: String,
       trim: true,
+      required: [true, 'Please provide a name for the prize'],
     },
     description: {
       type: String,
