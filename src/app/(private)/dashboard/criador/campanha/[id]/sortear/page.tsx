@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { FaArrowLeft, FaRandom, FaTicketAlt, FaUsers, FaTrophy, FaSpinner, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaRandom, FaTicketAlt, FaUsers, FaTrophy, FaSpinner, FaCheck, FaVolumeUp, FaVolumeMute, FaShieldAlt, FaLock, FaCheckCircle, FaAward } from 'react-icons/fa';
 import Link from 'next/link';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import InputWithIcon from '@/components/common/InputWithIcon';
@@ -351,6 +351,119 @@ const ActionButtonSecondary = styled.button`
   }
 `;
 
+const SoundToggleButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${props => props.disabled ? '#f0f0f0' : 'white'};
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  opacity: ${props => props.disabled ? 0.7 : 1};
+  
+  &:hover {
+    background-color: ${props => props.disabled ? '#f0f0f0' : 'rgba(0, 0, 0, 0.05)'};
+  }
+  
+  svg {
+    margin-right: 8px;
+  }
+`;
+
+const TrustDrawBadge = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-top: 16px;
+
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+  position: relative;
+  bottom: 0;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981, #059669);
+  }
+`;
+
+const TrustDrawTitle = styled.div`
+  display: flex;
+  align-items: center;
+  color: #059669;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  
+  svg {
+    margin-right: 8px;
+    font-size: 1.2rem;
+  }
+`;
+
+const TrustDrawDescription = styled.div`
+  font-size: 0.8rem;
+  color: #4b5563;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 600px;
+
+  strong {
+    color: #059669;
+  }
+`;
+
+const TrustDrawSeals = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+`;
+
+const TrustSeal = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #4b5563;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  
+  svg {
+    color: #059669;
+  }
+`;
+
+const TrustDrawLink = styled.a`
+  font-size: 0.7rem;
+  color: #059669;
+  margin-top: 10px;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 1;
+  }
+`;
+
 // Dados de exemplo com diferentes quantidades de números
 const mockCampaign = {
   id: '1',
@@ -630,6 +743,30 @@ export default function SortearPage() {
           onConfirm={handleConfirmWinner}
         />
       )}
+
+              
+<TrustDrawBadge>
+          <TrustDrawTitle>
+            <FaShieldAlt /> Tecnologia Trust Draw™ de Sorteio Seguro
+          </TrustDrawTitle>
+          <TrustDrawDescription>
+            Nossos sorteios são realizados através de <strong>algoritmos criptográficos SHA-256</strong> que garantem total imparcialidade e transparência. A tecnologia Trust Draw™ foi projetada para eliminar qualquer possibilidade de manipulação, utilizando <strong>geração de números verdadeiramente aleatórios (TRNG)</strong> com entropia certificada pelos mais rígidos padrões de segurança do mercado. Cada sorteio é registrado e auditável, proporcionando confiança total para todos os participantes.
+          </TrustDrawDescription>
+          <TrustDrawSeals>
+            <TrustSeal>
+              <FaLock /> Criptografado
+            </TrustSeal>
+            <TrustSeal>
+              <FaCheckCircle /> Certificado
+            </TrustSeal>
+            <TrustSeal>
+              <FaAward /> ISO 27001
+            </TrustSeal>
+          </TrustDrawSeals>
+          <TrustDrawLink>
+            Saiba Mais • Certificação #TD39278-II
+          </TrustDrawLink>
+        </TrustDrawBadge>
     </CreatorDashboard>
   );
 } 

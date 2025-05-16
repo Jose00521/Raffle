@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import { FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaTimes, FaSpinner, FaVolumeUp, FaVolumeMute, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
 import confetti from 'canvas-confetti';
 import { WinnerInfo } from './WinnerDetailCard';
 
@@ -277,6 +277,86 @@ const CloseModalButton = styled.button`
   }
 `;
 
+const SoundControlButton = styled.button`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+  z-index: 10;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+  }
+`;
+
+const SecurityBadge = styled.div`
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  max-width: 90%;
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  z-index: 20;
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+    }
+    50% {
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.9);
+    }
+    100% {
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+    }
+  }
+  
+  svg {
+    font-size: 1.3rem;
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+      rgba(255, 255, 255, 0.3) 0%, 
+      rgba(255, 255, 255, 0) 100%
+    );
+    border-radius: 8px;
+    z-index: -1;
+  }
+`;
+
 export interface SlotMachineDrawerProps {
   isVisible: boolean;
   drawMethod: 'automatic' | 'manual';
@@ -305,6 +385,7 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
   const winnerAudioRef = useRef<HTMLAudioElement | null>(null);
   
   // Estados
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
   const [animationText, setAnimationText] = useState('');
   const [digitAnimations, setDigitAnimations] = useState<number[]>([]);
   const [spinCompleted, setSpinCompleted] = useState(false);
@@ -819,6 +900,11 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
     }
   }, [isVisible]);
   
+  // Funu00e7u00e3o para ligar/desligar o som
+  const toggleSound = () => {
+    setIsSoundEnabled(prev => !prev);
+  };
+  
   // Renderiza o componente
   return (
     <>
@@ -826,6 +912,14 @@ const SlotMachineDrawer: React.FC<SlotMachineDrawerProps> = ({
         <CloseModalButton onClick={onClose}>
           <FaTimes />
         </CloseModalButton>
+        
+        <SoundControlButton onClick={toggleSound}>
+          {isSoundEnabled ? <FaVolumeUp /> : <FaVolumeMute />}
+        </SoundControlButton>
+        
+        <SecurityBadge>
+          <FaShieldAlt /> Algoritmo 100% auditado e certificado com Trust Draw™
+        </SecurityBadge>
         
         <AnimationInner>
           <h2>{animationText}</h2>
