@@ -1,13 +1,13 @@
-import { CampanhaRepository } from '@/server/repositories/CampanhaRepository';
+import { CampaignRepository } from '@/server/repositories/CampaignRepository';
 import { NumberStatusEnum } from '@/models/NumberStatus';
 
-export class CampanhaService {
+export class CampaignService {
   /**
    * Obtém todas as campanhas ativas com suas estatísticas
    */
   static async listarCampanhasAtivas() {
     try {
-      const campanhas = await CampanhaRepository.buscarCampanhasAtivas();
+      const campanhas = await CampaignRepository.buscarCampanhasAtivas();
       
       // Para cada campanha, processar estatísticas
       // const campanhasComStats = await Promise.all(
@@ -41,7 +41,7 @@ export class CampanhaService {
    */
   static async obterDetalhesCampanha(id: string) {
     try {
-      const campanha = await CampanhaRepository.buscarCampanhaPorId(id);
+      const campanha = await CampaignRepository.buscarCampanhaPorId(id);
       
       if (!campanha) {
         return {
@@ -55,7 +55,7 @@ export class CampanhaService {
       const stats = await this.obterEstatisticasCampanha(id);
       
       // Obter últimos números vendidos
-      const recentSales = await CampanhaRepository.buscarUltimosNumerosVendidos(id);
+      const recentSales = await CampaignRepository.buscarUltimosNumerosVendidos(id);
       
       // Construir resposta completa
       const campanhaCompleta = {
@@ -81,7 +81,7 @@ export class CampanhaService {
    * Método privado para calcular estatísticas de uma campanha
    */
   private static async obterEstatisticasCampanha(rifaId: string) {
-    const statusCountArray = await CampanhaRepository.contarNumeroPorStatus(rifaId);
+    const statusCountArray = await CampaignRepository.contarNumeroPorStatus(rifaId);
     
     // Inicializar estatísticas
     const stats = {

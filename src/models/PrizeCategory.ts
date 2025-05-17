@@ -7,7 +7,7 @@ export interface ICategory {
   updatedAt: Date;
 }
 
-const CategorySchema = new mongoose.Schema<ICategory>(
+const PrizeCategorySchema = new mongoose.Schema<ICategory>(
   {
     name: {
       type: String,
@@ -18,8 +18,8 @@ const CategorySchema = new mongoose.Schema<ICategory>(
   },
   {
     timestamps: true,
-    collection: 'categories'
+    collection: 'prize_categories'
   }
 );
 
-export default mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema); 
+export default mongoose.models.PrizeCategory || mongoose.model<ICategory>('PrizeCategory', PrizeCategorySchema); 

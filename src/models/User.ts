@@ -56,7 +56,7 @@ export interface IParticipant extends IBaseUser {
     dataSharing: boolean;
   };
 }
-
+  
 export interface ICreator extends IBaseUser {
   role: 'creator';
   personType: 'individual' | 'company';
@@ -65,12 +65,12 @@ export interface ICreator extends IBaseUser {
   companyName?: string;
   legalName?: string;
   legalRepresentative?: string;
-  bankAccount: IBankAccount;
+  bankAccount: Array<IBankAccount>;
   statistics: {
     rafflesCreated: number;
     activeRaffles: number;
     totalRevenue: number;
-    conversionRate: number;
+    conversionRate: number | null;
     lastRaffleCreated?: Date;
   };
   settings: {
@@ -210,7 +210,7 @@ const CreatorSchema = new Schema({
   companyName: String,
   legalName: String,
   legalRepresentative: String,
-  bankAccount: {
+  bankAccount: [{
     bank: { type: String, required: true },
     agency: { type: String, required: true },
     account: { type: String, required: true },
@@ -220,7 +220,7 @@ const CreatorSchema = new Schema({
       required: true
     },
     pixKey: String
-  },
+  }],
   statistics: {
     rafflesCreated: { type: Number, default: 0 },
     activeRaffles: { type: Number, default: 0 },

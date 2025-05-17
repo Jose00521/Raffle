@@ -2,6 +2,14 @@ import mongoose from 'mongoose';
 import NumberStatus from './NumberStatus';
 import { IUser } from './User';
 import { IPrize } from './Prize';
+import { IWinner } from './Winner';
+import { IInstantPrize } from './InstantPrize';
+
+export enum CampaignStatusEnum {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELED = 'CANCELED'
+}
 
 // Interface principal da Rifa
 export interface ICampaign {
@@ -12,30 +20,28 @@ export interface ICampaign {
   description: string;
   price: number;
   prizes: Array<IPrize>;
+  //affiliates: Array<IUser>;
   returnExpected?: string;
   totalNumbers: number;
   drawDate: Date;
-  canceled:Boolean;
-  status: string; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED", "CANCELED"
+  canceled: Boolean; 
+  status: CampaignStatusEnum; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED"
   scheduledActivationDate: Date | null;
   winnerNumber: number | null;
   winnerUser?: mongoose.Types.ObjectId | null;
+  winner: Array<IWinner>;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
   // Estatísticas calculadas
   stats?: {
     available: number;
-    reserved: number;
+    reserved: number | null;
     sold: number;
     percentComplete: number;
   };
   // Propriedades adicionais para a página de detalhes
-  instantPrizes?: Array<{ 
-    number: string;
-    value: number;
-    winner: string | null;
-  }>;
+  instantPrizes?: Array<IInstantPrize>;
   
   regulation?: string;
 }
@@ -45,15 +51,15 @@ const CampaignSchema = new mongoose.Schema(
     campaignCode: {
       type: String,
     },
-    title: {
-      type: String,
-      required: [true, 'Please provide a title for the raffle'],
-      trim: true,
-    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    title: {
+      type: String,
+      required: [true, 'Please provide a title for the raffle'],
+      trim: true,
     },
     description: {
       type: String,
@@ -63,10 +69,11 @@ const CampaignSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Please provide a price per number'],
     },
-    prizes:{
-      type: Array<IPrize>,
+    prizes:[{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Prize',
       required: [true, 'Please provide at least one prize'],
-    },
+    }],
     totalNumbers: {
       type: Number,
       required: [true, 'Please provide the total number of tickets'],
@@ -77,37 +84,48 @@ const CampaignSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: true,
+      enum: Object.values(CampaignStatusEnum),
+      default: CampaignStatusEnum.ACTIVE,
+      required: true,
+      index: true
     },
     canceled: {
       type: Boolean,
       default: false,
+      index: true
     },
     scheduledActivationDate: {
       type: Date,
       default: null,
     },
-    winnerNumber: {
+    winnerPositions: {
       type: Number,
-      default: null,
+      default: 1,
+      min: 1,
+      required: true
     },
-    winnerUser: {
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User',
+     // Define os prêmios para cada posição
+    prizeDistribution: [{
+      position: {
+        type: Number,
+        required: true,
+        min: 1
+      },
+      prizes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Prize',
+        required: true
+      }],
+      description: String // Descrição opcional para esta posição
+    }],
+    winners: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Winner',
       default: null
-    },
+    }],
+
     // Campos adicionais para detalhes da campanha
-    instantPrizes: {
-      type: Array,
-      default: []
-    },
     regulation: {
-      type: String,
-    },
-    mainPrize: {
-      type: String,
-    },
-    valuePrize: {
       type: String,
     },
     returnExpected: {
@@ -117,27 +135,25 @@ const CampaignSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'campaigns',
-    strict: false
   }
 );
-
-// Hook para inicializar todos os números na coleção NumberStatus após salvar uma nova rifa
-CampaignSchema.post('save', async function(doc) {
-  // Verificar se é um documento novo comparando timestamps
-  if (doc.createdAt && doc.updatedAt && doc.createdAt.getTime() === doc.updatedAt.getTime()) {
-    try {
-      await NumberStatus!.initializeForRifa(doc._id.toString(), doc.totalNumbers);
-      console.log(`Initialized ${doc.totalNumbers} numbers for Rifa ${doc._id}`);
-    } catch (error) {
-      console.error('Error initializing numbers for rifa:', error);
-    }
-  }
-});
 
 // Método adicional para obter estatísticas sobre números disponíveis/reservados/pagos
 CampaignSchema.methods.getNumbersStats = async function() {
   return await NumberStatus!.countByStatus(this._id);
 };
+
+// Adicione antes do export
+CampaignSchema.index({ createdBy: 1 }); // Busca por criador
+CampaignSchema.index({ status: 1 }); // Filtrar por status
+CampaignSchema.index({ drawDate: 1 }); // Ordenar por data de sorteio
+CampaignSchema.index({ createdAt: -1 }); // Listar por data de criação
+CampaignSchema.index({ campaignCode: 1 }, { sparse: true }); // Busca por código
+CampaignSchema.index({ canceled: 1, status: 1 }); // Consultas combinadas de status
+CampaignSchema.index({ 'prizeDistribution.position': 1 });
+CampaignSchema.index({ 'winners.position': 1 });
+CampaignSchema.index({ 'winners.user': 1 });
+CampaignSchema.index({ 'winners.prizesClaimed': 1 });
 
 // Criando ou obtendo o modelo já existente
 // @ts-ignore - Ignorando verificações de tipo para simplificar

@@ -8,6 +8,8 @@ import { IPrize } from '@/models/Prize';
 import { motion } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import InputWithIcon from '@/components/common/InputWithIcon';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 // Mock data for initial development
 export const MOCK_PRIZES: IPrize[] = [
@@ -340,21 +342,6 @@ export default function PrizesDashboard() {
     setSortDesc(!sortDesc);
   };
   
-  const handleAddPrize = () => {
-    // Navigate to add prize page
-    window.location.href = '/dashboard/criador/premios/adicionar';
-  };
-  
-  const handleEditPrize = (prizeId: string) => {
-    // Navigate to edit prize page
-    window.location.href = `/dashboard/criador/premios/${prizeId}`;
-  };
-  
-  const handleViewPrizeDetails = (prizeId: string) => {
-    // Navigate to prize detail page
-    window.location.href = `/dashboard/criador/premios/detalhes/${prizeId}`;
-  };
-  
   return (
     <CreatorDashboard>
       <PageHeader>
@@ -375,11 +362,12 @@ export default function PrizesDashboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </SearchContainer>
-          
-          <AddButton onClick={handleAddPrize}>
-            <FaPlus />
-            Adicionar
-          </AddButton>
+          <Link href="/dashboard/criador/premios/adicionar">
+            <AddButton>
+              <FaPlus />
+              Adicionar
+            </AddButton>
+          </Link>
         </HeaderActions>
       </PageHeader>
       
@@ -411,6 +399,7 @@ export default function PrizesDashboard() {
       ) : sortedPrizes.length > 0 ? (
         <PrizesGrid>
           {sortedPrizes.map((prize, index) => (
+            <Link href={`/dashboard/criador/premios/detalhes/${prize._id}`} key={prize._id}>
             <PrizeCard 
               key={prize._id}
               initial="hidden"
@@ -418,7 +407,6 @@ export default function PrizesDashboard() {
               custom={index}
               variants={cardVariants}
               whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.12)' }}
-              onClick={() => handleViewPrizeDetails(prize._id as string)}
             >
               <PrizeImageContainer>
                 <PrizeImage src={prize.image} alt={prize.name} />
@@ -433,6 +421,7 @@ export default function PrizesDashboard() {
                 <PrizeDescription>{prize.description}</PrizeDescription>
               </PrizeContent>
             </PrizeCard>
+            </Link>
           ))}
         </PrizesGrid>
       ) : (
@@ -444,10 +433,12 @@ export default function PrizesDashboard() {
           <EmptyStateText>
             Comece adicionando prêmios para suas rifas.
           </EmptyStateText>
-          <AddButton onClick={handleAddPrize}>
-            <FaPlus />
-            Adicionar Prêmio
-          </AddButton>
+          <Link href="/dashboard/criador/premios/adicionar">
+            <AddButton>
+              <FaPlus />
+              Adicionar Prêmio
+            </AddButton>
+          </Link>
         </EmptyState>
       )}
     </CreatorDashboard>

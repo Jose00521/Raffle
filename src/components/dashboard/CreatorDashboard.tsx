@@ -24,7 +24,13 @@ const creatorMenuItems = [
     path: '/dashboard/criador/vendas',
     icon: <FaChartLine />
   },
-    {
+  {
+    id: 'ganhadores',
+    label: 'Ganhadores',
+    path: '/dashboard/criador/ganhadores',
+    icon: <FaTrophy />
+  },
+  {
     id: 'premios',
     label: 'Prêmios',
     path: '/dashboard/criador/premios',

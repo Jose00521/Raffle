@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaTrophy } from 'react-icons/fa';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

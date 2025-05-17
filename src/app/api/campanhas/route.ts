@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { CampanhaController } from '@/server/controllers/CampanhaController';
+import { CampaignController } from '@/server/controllers/CampaignController';
 
 /**
  * Endpoint GET: Listar todas as campanhas ativas
  */
 export async function GET() {
-  const result = await CampanhaController.listarCampanhasAtivas();
+  const result = await CampaignController.listarCampanhasAtivas();
   
   if (!result.success) {
     return NextResponse.json(

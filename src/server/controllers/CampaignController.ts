@@ -1,17 +1,17 @@
-import { CampanhaService } from '@/server/services/CampanhaService';
+import { CampaignService } from '@/server/services/CampaignService';
 
-export class CampanhaController {
+export class CampaignController {
   /**
    * Controller para listar todas as campanhas ativas
    */
   static async listarCampanhasAtivas() {
-    return await CampanhaService.listarCampanhasAtivas();
+    return await CampaignService.listarCampanhasAtivas();
   }
 
   /**
    * Controller para obter detalhes de uma campanha por ID
    */
   static async obterDetalhesCampanha(id: string) {
-    return await CampanhaService.obterDetalhesCampanha(id);
+    return await CampaignService.obterDetalhesCampanha(id);
   }
 } 

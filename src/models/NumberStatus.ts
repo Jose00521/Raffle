@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ICampaign } from './Campaign';
 
 // Verificar se estamos no servidor
 const isServer = typeof window === 'undefined';
@@ -12,7 +13,7 @@ export enum NumberStatusEnum {
 
 export interface INumberStatus {
   _id?: string;
-  rifaId: mongoose.Types.ObjectId | string;
+  campaignId?: mongoose.Types.ObjectId | string;
   number: number;
   status: NumberStatusEnum;
   userId?: mongoose.Types.ObjectId | string;
@@ -25,9 +26,9 @@ export interface INumberStatus {
 // Só criar o schema se estiver no servidor
 const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
   {
-    rifaId: {
+    campaignId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Rifa',
+      ref: 'Campaign',
       required: true,
       index: true
     },
@@ -57,13 +58,14 @@ const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection:'numbers'
   }
 ) : null;
 
 // Interface para o modelo com métodos estáticos
 interface NumberStatusModel extends mongoose.Model<INumberStatus> {
-  initializeForRifa(rifaId: string, totalNumbers: number): Promise<INumberStatus[]>;
+  initializeForRifa(rifaId: string, totalNumbers: number, excludeNumbers: string[], session: mongoose.ClientSession | null): Promise<INumberStatus[]>;
   confirmPayment(rifaId: string, numbers: number[], userId: string): Promise<any>;
   countByStatus(rifaId: string): Promise<Array<{ status: string, count: number }>>;
 }
@@ -83,21 +85,37 @@ if (isServer && NumberStatusSchema) {
    * Método estático para inicializar todos os números para uma nova rifa
    */
   NumberStatusSchema.statics.initializeForRifa = async function(
-    rifaId: string,
-    totalNumbers: number
+    rifaId: string, 
+    totalNumbers: number, 
+    excludeNumbers: string[] = [], 
+    session: mongoose.ClientSession | null = null
   ) {
-    const batch = [];
+    const BATCH_SIZE = 10000;
+    const excludeSet = new Set(excludeNumbers);
+    const options = session ? { session, ordered: false } : { ordered: false };
     
-    for (let i = 1; i <= totalNumbers; i++) {
-      batch.push({
-        rifaId,
-        number: i,
-        status: NumberStatusEnum.AVAILABLE
-      });
+    for (let start = 0; start < totalNumbers; start += BATCH_SIZE) {
+      const end = Math.min(start + BATCH_SIZE, totalNumbers);
+      const numbersToInsert = [];
+      
+      for (let i = start; i < end; i++) {
+        const formattedNumber = i.toString().padStart(totalNumbers.toString().length, '0');
+        if (!excludeSet.has(formattedNumber)) {
+          numbersToInsert.push({
+            rifaId,
+            number: formattedNumber,
+            status: 'available',
+            reservedAt: null,
+            paidAt: null,
+            userId: null
+          });
+        }
+      }
+      
+      if (numbersToInsert.length > 0) {
+        await this.insertMany(numbersToInsert, options);
+      }
     }
-    
-    // Usar insertMany com ordered: false para maior performance
-    return this.insertMany(batch, { ordered: false });
   };
 
   /**

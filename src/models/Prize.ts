@@ -4,7 +4,7 @@ export interface IPrize {
   _id?: string;
   name: string;
   description?: string;
-  category?: mongoose.Types.ObjectId;
+  categoryId?: mongoose.Types.ObjectId;
   image: string;
   images: string[];
   value: string;
@@ -23,9 +23,9 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
       type: String,
       trim: true,
     },
-    category: {
+    categoryId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: 'PrizeCategory',
     },
     image: {
       type: String,
@@ -44,5 +44,11 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
     collection: 'prizes'
   }
 );
+
+
+PrizeSchema.index({ name: 'text', description: 'text' }); // Text search for name and description
+PrizeSchema.index({ category: 1 }); // For filtering prizes by category
+PrizeSchema.index({ value: 1 }); // For sorting/filtering by value
+PrizeSchema.index({ createdAt: -1 }); // For recent prizes queries
 
 export default mongoose.models.Prize || mongoose.model<IPrize>('Prize', PrizeSchema); 
