@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import StyledComponentsRegistry from '../lib/registry';
 import { Poppins } from 'next/font/google';
 import './globals.css';
+import AuthProvider from '@/lib/auth/sessionProvider';
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -29,7 +30,9 @@ export default function RootLayout({
       </head>
       <body className={poppins.className} suppressHydrationWarning>
         <StyledComponentsRegistry>
-        {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </StyledComponentsRegistry>
       </body>
     </html>

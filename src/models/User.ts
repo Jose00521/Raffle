@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
 
 /**
@@ -24,6 +25,7 @@ export interface IBankAccount {
 
 export interface IBaseUser {
   _id?: string;
+  userCode?: string; // Código único no formato Snowflake ID
   email: string;
   password: string;
   name: string;
@@ -56,6 +58,30 @@ export interface IParticipant extends IBaseUser {
     dataSharing: boolean;
   };
 }
+
+export interface IVerification {
+    // Campos para verificação documental
+    verification?: {
+      status: 'pending' | 'under_review' | 'approved' | 'rejected';
+      documents?: {
+        identityFront?: { path: string; uploadedAt: Date; verified: boolean };
+        identityBack?: { path: string; uploadedAt: Date; verified: boolean };
+        identitySelfie?: { path: string; uploadedAt: Date; verified: boolean };
+        companyDocuments?: Array<{
+          type: 'contract' | 'registration' | 'license' | 'other';
+          path: string;
+          description?: string;
+          uploadedAt: Date;
+          verified: boolean;
+        }>;
+      };
+      verificationNotes?: string;
+      rejectionReason?: string;
+      reviewedAt?: Date;
+      reviewedBy?: mongoose.Types.ObjectId | string;
+      expiresAt?: Date;
+    };
+}
   
 export interface ICreator extends IBaseUser {
   role: 'creator';
@@ -66,6 +92,7 @@ export interface ICreator extends IBaseUser {
   legalName?: string;
   legalRepresentative?: string;
   bankAccount: Array<IBankAccount>;
+  verification: IVerification;
   statistics: {
     rafflesCreated: number;
     activeRaffles: number;
@@ -86,13 +113,14 @@ export type IUser = IParticipant | ICreator;
  * Base User Schema - Shared fields 
  */
 const UserSchema = new Schema({
+  userCode: {
+    type: String,
+  },
   email: {
     type: String,
     required: [true, 'Email é obrigatório'],
-    unique: true,
     trim: true,
     lowercase: true,
-    index: true // Índice para autenticação rápida
   },
   password: {
     type: String,
@@ -122,6 +150,7 @@ const UserSchema = new Schema({
       required: [true, 'CEP é obrigatório']
     }
   },
+  
   isActive: {
     type: Boolean,
     default: true,
@@ -132,13 +161,39 @@ const UserSchema = new Schema({
   }
 }, {
   discriminatorKey: 'role', // Campo discriminador para o tipo de usuário
+  collection: 'users',
   timestamps: true, // Rastreia criação e atualizações automaticamente
   strict: true, // Não permite campos não definidos no schema
+});
+
+// Adiciona um hook pre-save para gerar automaticamente o código do usuário
+UserSchema.pre('save', function(this: any, next) {
+  // Só gera o código se ele ainda não existir e se estiver no servidor
+  if (!this.userCode && typeof window === 'undefined') {
+    this.userCode = generateEntityCode(this._id, 'US');
+  }
+  next();
 });
 
 // Índices compostos para consultas comuns
 UserSchema.index({ role: 1, createdAt: -1 }); // Facilita consultas por tipo e ordenadas por data
 UserSchema.index({ name: 1, role: 1 }); // Otimiza busca por nome dentro de cada tipo
+UserSchema.index({ email: 1 }, { unique: true }); // Índice para autenticação e unicidade
+UserSchema.index({ userCode: 1 }, { unique: true, sparse: true }); // Índice para busca por código
+UserSchema.index({ 'address.city': 1, 'address.state': 1 }); // Para filtrar por localização
+UserSchema.index({ isActive: 1, role: 1 }); // Para filtrar usuários ativos por tipo
+UserSchema.index({ name: 'text', email: 'text' }); // Para pesquisa por texto
+UserSchema.index({ createdAt: 1 }); // Para relatórios por período
+UserSchema.index({ lastLogin: 1 }); // Para identificar usuários inativos
+
+// Métodos estáticos para User
+UserSchema.statics.findByUserCode = function(userCode: string) {
+  return this.findOne({ userCode });
+};
+
+UserSchema.statics.findByEmail = function(email: string) {
+  return this.findOne({ email: email.toLowerCase() });
+};
 
 // Modelo base
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
@@ -221,6 +276,50 @@ const CreatorSchema = new Schema({
     },
     pixKey: String
   }],
+    // Adicionar estrutura para verificação documental
+    verification: {
+      status: {
+        type: String,
+        enum: ['pending', 'under_review', 'approved', 'rejected'],
+        default: 'pending',
+        index: true
+      },
+      documents: {
+        identityFront: { 
+          path: String,
+          uploadedAt: Date,
+          verified: Boolean
+        },
+        identityBack: { 
+          path: String,
+          uploadedAt: Date,
+          verified: Boolean
+        },
+        identitySelfie: { 
+          path: String,
+          uploadedAt: Date,
+          verified: Boolean
+        },
+        companyDocuments: [{
+          type: { 
+            type: String,
+            enum: ['contract', 'registration', 'license', 'other']
+          },
+          path: String,
+          description: String,
+          uploadedAt: Date,
+          verified: Boolean
+        }]
+      },
+      verificationNotes: String,
+      rejectionReason: String,
+      reviewedAt: Date,
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      expiresAt: Date
+    },
   statistics: {
     rafflesCreated: { type: Number, default: 0 },
     activeRaffles: { type: Number, default: 0 },
@@ -240,7 +339,6 @@ const Participant = User.discriminator('participant', ParticipantSchema);
 const Creator = User.discriminator('creator', CreatorSchema);
 
 // Configurar índices adicionais após a inicialização do mongoose
-// Esta função deve ser chamada após a conexão com o MongoDB
 export const setupUserIndexes = async () => {
   const db = mongoose.connection.db;
   
@@ -284,7 +382,38 @@ export const setupUserIndexes = async () => {
       background: true
     }
   );
-
+  
+  // Índices adicionais para otimização de consultas específicas
+  await db.collection('users').createIndex(
+    { 'statistics.participationCount': -1, role: 1 },
+    { background: true }
+  );
+  
+  await db.collection('users').createIndex(
+    { 'statistics.rafflesWon': -1, role: 1 },
+    { background: true }
+  );
+  
+  await db.collection('users').createIndex(
+    { 'statistics.totalSpent': -1, role: 1 },
+    { background: true }
+  );
+  
+  await db.collection('users').createIndex(
+    { 'statistics.rafflesCreated': -1, role: 1 },
+    { background: true }
+  );
+  
+  await db.collection('users').createIndex(
+    { 'statistics.activeRaffles': -1, role: 1 },
+    { background: true }
+  );
+  
+  // await db.collection('users').createIndex(
+  //   { 'consents.marketingEmails': 1, role: 1 },
+  //   { background: true }
+  // );
+  
   console.log('User indexes configured successfully');
 };
 

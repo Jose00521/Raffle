@@ -22,4 +22,9 @@ const PrizeCategorySchema = new mongoose.Schema<ICategory>(
   }
 );
 
+// Índices para otimização de consultas
+PrizeCategorySchema.index({ name: 1 }, { unique: true });
+PrizeCategorySchema.index({ createdAt: -1 });
+PrizeCategorySchema.index({ name: 'text' }); // Para busca textual de categorias
+
 export default mongoose.models.PrizeCategory || mongoose.model<ICategory>('PrizeCategory', PrizeCategorySchema); 

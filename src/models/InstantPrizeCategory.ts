@@ -22,4 +22,9 @@ const InstantPrizeCategorySchema = new mongoose.Schema<IInstantPrizeCategory>(
   }
 );
 
+// Índices para otimização de consultas
+InstantPrizeCategorySchema.index({ name: 1 }, { unique: true });
+InstantPrizeCategorySchema.index({ createdAt: -1 });
+InstantPrizeCategorySchema.index({ name: 'text' }); // Para busca textual de categorias
+
 export default mongoose.models.InstantPrizeCategory || mongoose.model<IInstantPrizeCategory>('InstantPrizeCategory', InstantPrizeCategorySchema); 

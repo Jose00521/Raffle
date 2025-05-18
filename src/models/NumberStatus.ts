@@ -73,13 +73,31 @@ interface NumberStatusModel extends mongoose.Model<INumberStatus> {
 // Adicionar os índices e métodos estáticos apenas se estiver no servidor
 if (isServer && NumberStatusSchema) {
   // Índice composto para consultas rápidas por rifa e status
-  NumberStatusSchema.index({ rifaId: 1, status: 1 });
+  NumberStatusSchema.index({ campaignId: 1, status: 1 });
 
   // Índice composto para consultas por número específico em uma rifa
-  NumberStatusSchema.index({ rifaId: 1, number: 1 }, { unique: true });
+  NumberStatusSchema.index({ campaignId: 1, number: 1 }, { unique: true });
 
   // TTL index para expirar reservas automaticamente
   NumberStatusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  
+  // Índices adicionais para otimização
+  
+  // Para busca rápida de números por usuário (histórico de compras)
+  NumberStatusSchema.index({ userId: 1, campaignId: 1 });
+  
+  // Para busca de números reservados que expirarão em breve (monitoramento)
+  NumberStatusSchema.index({ status: 1, expiresAt: 1 });
+  
+  // Para verificação rápida da disponibilidade de intervalos de números
+  NumberStatusSchema.index({ campaignId: 1, status: 1, number: 1 });
+  
+  // Para ordenar números por data de reserva/pagamento
+  NumberStatusSchema.index({ campaignId: 1, status: 1, reservedAt: -1 });
+  NumberStatusSchema.index({ campaignId: 1, status: 1, paidAt: -1 });
+  
+  // Para estatísticas de números por usuário
+  NumberStatusSchema.index({ userId: 1, status: 1 });
 
   /**
    * Método estático para inicializar todos os números para uma nova rifa

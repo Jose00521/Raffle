@@ -30,7 +30,7 @@ const creatorMenuItems = [
     path: '/dashboard/criador/ganhadores',
     icon: <FaTrophy />
   },
-  {
+    {
     id: 'premios',
     label: 'Prêmios',
     path: '/dashboard/criador/premios',
