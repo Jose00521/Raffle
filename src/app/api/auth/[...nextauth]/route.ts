@@ -23,44 +23,44 @@ interface UserDocument {
 // Configurar Next-Auth
 const handler = NextAuth({
   providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Senha', type: 'password' }
-      },
-      async authorize(credentials) {
-        // Verificar se as credenciais foram fornecidas
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email e senha são obrigatórios');
-        }
+    // CredentialsProvider({
+    //   name: 'Credentials',
+    //   credentials: {
+    //     email: { label: 'Email', type: 'email' },
+    //     password: { label: 'Senha', type: 'password' }
+    //   },
+    //   async authorize(credentials) {
+    //     // Verificar se as credenciais foram fornecidas
+    //     if (!credentials?.email || !credentials?.password) {
+    //       throw new Error('Email e senha são obrigatórios');
+    //     }
 
-        // Conectar ao banco de dados
-        await dbConnect();
+    //     // Conectar ao banco de dados
+    //     await dbConnect();
 
-        // Buscar usuário pelo email
-        const user = await User.findOne({ email: credentials.email }).select('+password').lean() as unknown as UserDocument;
+    //     // Buscar usuário pelo email
+    //     const user = await User.findOne({ email: credentials.email }).select('+password').lean() as unknown as UserDocument;
 
-        // Verificar se o usuário existe
-        if (!user) {
-          throw new Error('Email ou senha inválidos');
-        }
+    //     // Verificar se o usuário existe
+    //     if (!user) {
+    //       throw new Error('Email ou senha inválidos');
+    //     }
 
-        // Verificar se a senha está correta
-        const isPasswordCorrect = await compare(credentials.password, user.password);
-        if (!isPasswordCorrect) {
-          throw new Error('Email ou senha inválidos');
-        }
+    //     // Verificar se a senha está correta
+    //     const isPasswordCorrect = await compare(credentials.password, user.password);
+    //     if (!isPasswordCorrect) {
+    //       throw new Error('Email ou senha inválidos');
+    //     }
 
-        // Retornar objeto de usuário sem a senha
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role
-        };
-      }
-    })
+    //     // Retornar objeto de usuário sem a senha
+    //     return {
+    //       id: user._id.toString(),
+    //       name: user.name,
+    //       email: user.email,
+    //       role: user.role
+    //     };
+    //   }
+    // })
   ],
   session: {
     strategy: 'jwt',

@@ -220,7 +220,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
         <CreateAccountContainer>
           <CreateAccountText>Não tem uma conta?</CreateAccountText>
-          <CreateAccountLink href="/cadastro">
+          <CreateAccountLink href="/cadastro-tipo">
             <FaUserPlus /> Criar conta
           </CreateAccountLink>
         </CreateAccountContainer>

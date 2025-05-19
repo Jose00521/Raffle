@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, ReactNode } from 'react';
+import React, { useState, ReactNode, useEffect } from 'react';
 import styled from 'styled-components';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import { ptBR } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
-import { FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaExclamationCircle } from 'react-icons/fa';
+import { useFormContext } from 'react-hook-form';
 
 // Register Brazilian Portuguese locale
 registerLocale('pt-BR', ptBR);
 
 interface FormDatePickerProps {
   id: string;
+  name?: string;
   label: string;
   icon?: ReactNode;
   placeholder?: string;
@@ -30,6 +32,7 @@ interface FormDatePickerProps {
   className?: string;
   dateFormat?: string;
   isClearable?: boolean;
+  triggerValidation?: (value: string) => void;
 }
 
 const InputGroup = styled.div<{ $fullWidth?: boolean }>`
@@ -37,6 +40,8 @@ const InputGroup = styled.div<{ $fullWidth?: boolean }>`
   flex-direction: column;
   flex: ${props => props.$fullWidth ? '1 0 100%' : '1'};
   margin-bottom: 24px;
+  position: relative;
+  min-height: 82px; /* Altura do input (50px) + label (8px margin-bottom) + espaço para erro (24px) */
 `;
 
 const InputLabel = styled.label`
@@ -80,7 +85,7 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
     
     input {
       width: 100%;
-      height: 46px;
+      height: 50px !important	;
       padding: 0 15px 0 40px;
       border-radius: 8px;
       border: 2px solid ${props => props.$hasError ? '#ef4444' : props.$isFocused ? '#6a11cb' : 'rgba(0, 0, 0, 0.1)'};
@@ -396,6 +401,11 @@ const ErrorText = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  right: 0;
+  min-height: 16px;
 `;
 
 const TimeIcon = styled.span`
@@ -404,8 +414,14 @@ const TimeIcon = styled.span`
   align-items: center;
 `;
 
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
 const FormDatePicker: React.FC<FormDatePickerProps> = ({
   id,
+  name = id,
   label,
   icon = <FaCalendarAlt />,
   placeholder = 'Selecione a data',
@@ -424,13 +440,49 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
   className,
   dateFormat = 'dd/MM/yyyy',
   isClearable = false,
+  triggerValidation,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [valueChanged, setValueChanged] = useState(false);
 
   // Set the complete dateFormat if time selection is enabled
   const completeDateFormat = showTimeSelect 
     ? `${dateFormat} ${timeFormat}`
     : dateFormat;
+
+  // Trigger validation após mudanças
+  useEffect(() => {
+    if (touched && valueChanged && triggerValidation) {
+      const validationTimeout = setTimeout(() => {
+        triggerValidation('dataNascimento');
+      }, 300);
+      
+      return () => clearTimeout(validationTimeout);
+    }
+  }, [touched, valueChanged, triggerValidation, selected]);
+
+  const handleDateChange = (date: Date | null) => {
+    onChange(date);
+    setValueChanged(true);
+    
+    // Trigger validation com delay para melhor experiência
+    if (triggerValidation) {
+      setTimeout(() => {
+        triggerValidation('dataNascimento');
+      }, 300);
+    }
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    setTouched(true);
+    
+    // Trigger validação quando perder o foco
+    if (triggerValidation) {
+      triggerValidation('dataNascimento');
+    }
+  };
 
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
@@ -445,16 +497,12 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
         <DatePickerWrapper $hasError={!!error} $isFocused={isFocused}>
           <ReactDatePicker
             id={id}
+            name={name}
             selected={selected}
-            onChange={(date: Date | null) => {
-              onChange(date);
-              // Close automatically after selection if not selecting time
-              if (!showTimeSelect) {
-                (document.activeElement as HTMLElement)?.blur();
-              }
-            }}
+            onChange={handleDateChange}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={handleBlur}
+            onCalendarClose={handleBlur}
             disabled={disabled}
             placeholderText={placeholder}
             dateFormat={completeDateFormat}
@@ -481,7 +529,17 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
         </DatePickerWrapper>
       </InputWrapper>
       
-      {error && <ErrorText>{error}</ErrorText>}
+      {error ? (
+        <ErrorText>
+          <ErrorIcon />
+          {error}
+        </ErrorText>
+      ) : (
+        <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
+          <ErrorIcon />
+          &nbsp;
+        </ErrorText>
+      )}
     </InputGroup>
   );
 };

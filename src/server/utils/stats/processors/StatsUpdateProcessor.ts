@@ -41,10 +41,11 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
     // Extrair IDs únicos e mapear pagamentos por campanha
     for (const event of relevantEvents) {
       const campaignId = event.campaignId.toString();
+      const userId = event.userId.toString();
       
       // Adicionar aos conjuntos de IDs únicos
       campaignIds.add(campaignId);
-      participantIds.add(event.userId.toString());
+      participantIds.add(userId);
       
       // Mapear pagamentos por campanha
       if (!paymentsByCampaign[campaignId]) {
@@ -204,6 +205,7 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
         timestamp: new Date(),
         data: snapshot
       });
+      
     } catch (error) {
       console.error('Erro ao atualizar estatísticas da campanha em lote:', error);
       throw error;

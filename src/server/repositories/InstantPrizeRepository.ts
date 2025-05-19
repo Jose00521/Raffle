@@ -47,7 +47,7 @@ export class InstantPrizeRepository {
                 // 5. Busca os IDs dos prêmios pré-selecionados para obter dados completos
                 {
                     $lookup: {
-                        from: 'instantprizes',
+                        from: 'instant_prizes',
                         localField: 'limitedDocs._id',
                         foreignField: '_id', 
                         as: 'premioCompleto'

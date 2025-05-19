@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState, ReactNode } from 'react';
-import styled from 'styled-components';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import React, { useState, ReactNode, useEffect, useRef, useCallback } from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 
 interface FormInputProps {
   id: string;
+  name?: string;
   label: string;
   icon?: ReactNode;
   placeholder?: string;
   type?: string;
-  value?: string | number;
+  value?: string | number | Date;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   error?: string;
@@ -22,6 +23,7 @@ interface FormInputProps {
   isPassword?: boolean;
   fullWidth?: boolean;
   className?: string;
+  mask?: 'cpf' | 'phone' | 'cep' | 'uf' | string;
 }
 
 const InputGroup = styled.div<{ $fullWidth?: boolean }>`
@@ -29,6 +31,23 @@ const InputGroup = styled.div<{ $fullWidth?: boolean }>`
   flex-direction: column;
   flex: ${props => props.$fullWidth ? '1 0 100%' : '1'};
   margin-bottom: 24px;
+  position: relative;
+  min-height: 82px; /* Altura do input (50px) + label (8px margin-bottom) + espaço para erro (24px) */
+  
+  @media (max-height: 900px) {
+    margin-bottom: 20px;
+    min-height: 78px;
+  }
+  
+  @media (max-height: 800px) {
+    margin-bottom: 16px;
+    min-height: 74px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-bottom: 12px;
+    min-height: 70px;
+  }
 `;
 
 const InputLabel = styled.label`
@@ -37,6 +56,16 @@ const InputLabel = styled.label`
   font-size: 0.9rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  
+  @media (max-height: 800px) {
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+  
+  @media (max-height: 700px) {
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+  }
 `;
 
 const RequiredMark = styled.span`
@@ -47,6 +76,8 @@ const RequiredMark = styled.span`
 const InputWrapper = styled.div`
   position: relative;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 `;
 
 const InputIcon = styled.div`
@@ -60,12 +91,24 @@ const InputIcon = styled.div`
   justify-content: center;
   z-index: 2;
   pointer-events: none;
+  
+  @media (max-height: 800px) {
+    left: 10px;
+    font-size: 0.9em;
+  }
+  
+  @media (max-height: 700px) {
+    left: 8px;
+    font-size: 0.85em;
+  }
 `;
 
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
-  height: 46px;
+  max-width: 100%;
+  height: 50px !important;
   padding: ${props => props.$hasIcon ? '0 15px 0 40px' : '0 15px'};
+  padding-right: 40px; /* Ensure space for password toggle button */
   border-radius: 8px;
   border: 1px solid ${props => props.$hasError ? '#ef4444' : 'rgba(0, 0, 0, 0.1)'};
   background-color: white;
@@ -73,6 +116,7 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   color: #333;
+  box-sizing: border-box;
   
   &:focus {
     outline: none;
@@ -90,13 +134,31 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
     opacity: 0.8;
   }
   
+  @media (max-height: 900px) {
+    height: 45px !important;
+  }
+  
+  @media (max-height: 800px) {
+    height: 42px !important;
+    font-size: 0.85rem;
+    padding: ${props => props.$hasIcon ? '0 12px 0 36px' : '0 12px'};
+    padding-right: 36px;
+  }
+  
+  @media (max-height: 700px) {
+    height: 38px !important;
+    font-size: 0.8rem;
+    padding: ${props => props.$hasIcon ? '0 10px 0 32px' : '0 10px'};
+    padding-right: 32px;
+  }
+  
   @media (max-width: 768px) {
-    height: 44px;
+    height: 44px !important;
     font-size: 0.85rem;
   }
   
   @media (max-width: 480px) {
-    height: 42px;
+    height: 42px !important;
     font-size: 0.8rem;
   }
 `;
@@ -124,6 +186,11 @@ const TogglePasswordButton = styled.button`
   }
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
 const ErrorText = styled.div`
   color: #ef4444;
   font-size: 0.8rem;
@@ -132,10 +199,145 @@ const ErrorText = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  animation: ${fadeIn} 0.2s ease;
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  right: 0;
+  min-height: 16px;
+  
+  @media (max-height: 800px) {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    bottom: -20px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-top: 3px;
+    font-size: 0.7rem;
+    bottom: -18px;
+  }
 `;
 
-const FormInput: React.FC<FormInputProps> = ({
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
+// Funções utilitárias para aplicar máscaras
+const applyMaskValue = (value: string, maskType?: string): string => {
+  if (!value || !maskType) return value;
+  // Limpar valor para trabalhar apenas com os caracteres desejados
+  let rawValue = value.replace(/\D/g, '');
+  
+  // Aplicar a máscara apropriada
+  switch (maskType) {
+    case 'cpf':
+      // Limitar a 11 dígitos
+      if (rawValue.length > 11) {
+        rawValue = rawValue.slice(0, 11);
+      }
+      
+      // Formatar CPF: 000.000.000-00
+      if (rawValue.length > 0) {
+        // Limita a 11 dígitos
+        rawValue = rawValue.slice(0, 11);
+        
+        // Aplica máscara
+        if (rawValue.length <= 3) {
+          // Nada a fazer
+        } else if (rawValue.length <= 6) {
+          rawValue = rawValue.replace(/^(\d{3})(\d+)/, '$1.$2');
+        } else if (rawValue.length <= 9) {
+          rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3');
+        } else {
+          rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3-$4');
+        }
+      }
+      return rawValue;
+      
+    case 'phone':
+    case 'telefone':
+      // Limitar a 11 dígitos e remover não-dígitos
+      rawValue = rawValue.replace(/\D/g, '').slice(0, 11);
+      
+      // Formatar telefone: (00) 00000-0000 ou (00) 0000-0000
+      if (rawValue.length > 0) {
+        let formattedValue = '';
+        
+        // Adiciona DDD
+        if (rawValue.length >= 2) {
+          formattedValue = `(${rawValue.slice(0, 2)}) `;
+          
+          // Adiciona número
+          if (rawValue.length > 2) {
+            // Verifica se é celular (tem 11 dígitos)
+            const isCellphone = rawValue.length > 10;
+            
+            if (isCellphone) {
+              // Formato: (00) 90000-0000
+              const rest = rawValue.slice(2);
+              formattedValue += rest.slice(0, 5);
+              if (rest.length > 5) {
+                formattedValue += '-' + rest.slice(5);
+              }
+            } else {
+              // Formato: (00) 0000-0000
+              const rest = rawValue.slice(2);
+              formattedValue += rest.slice(0, 4);
+              if (rest.length > 4) {
+                formattedValue += '-' + rest.slice(4);
+              }
+            }
+          }
+        } else {
+          formattedValue = rawValue;
+        }
+        
+        return formattedValue;
+      }
+      return rawValue;
+      
+    case 'cep':
+      // Limitar a 8 dígitos
+      if (rawValue.length > 8) {
+        rawValue = rawValue.slice(0, 8);
+      }
+      
+      // Formatar CEP: 00000-000
+      if (rawValue.length > 5) {
+        rawValue = rawValue.replace(/^(\d{5})(\d)/, '$1-$2');
+      }
+      return rawValue;
+      
+    case 'uf':
+      // Limitar a 2 caracteres e converter para maiúsculo
+      return value.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
+      
+    default:
+      return value;
+  }
+};
+
+// Função para obter o valor sem máscara
+const getUnmaskedValue = (value: string, maskType?: string): string => {
+  if (!value || !maskType) return value;
+  
+  switch (maskType) {
+    case 'cpf':
+    case 'telefone':
+    case 'cep':
+      return value.replace(/\D/g, '');
+    case 'uf':
+      return value.toUpperCase();
+    default:
+      return value;
+  }
+};
+
+const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
   id,
+  name = id,
   label,
   icon,
   placeholder,
@@ -152,16 +354,148 @@ const FormInput: React.FC<FormInputProps> = ({
   isPassword = false,
   fullWidth = false,
   className,
-}) => {
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const togglePasswordVisibility = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setShowPassword(prev => !prev);
+  mask,
+}, ref) => {
+  // Função para converter qualquer tipo de valor para string
+  const convertValueToString = (val: string | number | Date | undefined): string => {
+    if (val === undefined || val === null) {
+      return '';
+    }
+    if (val instanceof Date) {
+      return val.toISOString().split('T')[0];
+    }
+    return String(val);
   };
   
+  const stringValue = convertValueToString(value);
+  const [displayValue, setDisplayValue] = useState(() => 
+    mask ? applyMaskValue(stringValue, mask) : stringValue
+  );
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [wasTouched, setWasTouched] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Estado local para controlar o erro
+  const [localError, setLocalError] = useState<string | undefined>(error);
+  
+  // Atualizar valor de exibição quando o valor de entrada muda
+  useEffect(() => {
+    const newStringValue = convertValueToString(value);
+    const newDisplayValue = mask ? applyMaskValue(newStringValue, mask) : newStringValue;
+    setDisplayValue(newDisplayValue);
+  }, [value, mask]);
+  
+  // Atualizar o erro local quando o erro da prop mudar
+  useEffect(() => {
+    // Sempre mostrar o erro atual da prop, independente se o campo foi tocado ou não
+    setLocalError(error);
+  }, [error]);
+  
+  const togglePasswordVisibility = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowPassword(prev => !prev);
+  }, []);
+  
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
-
+  
+  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    // Posicionar cursor no final do texto ao focar
+    const input = e.target;
+    if (input.value) {
+      setTimeout(() => {
+        input.selectionStart = input.selectionEnd = input.value.length;
+      }, 0);
+    }
+  }, []);
+  
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(false);
+    setWasTouched(true); // Marcar que o campo perdeu o foco pelo menos uma vez
+    
+    if (onBlur) {
+      // Caso tenha máscara, fornecer o valor sem máscara para o campo
+      if (mask) {
+        const rawValue = getUnmaskedValue(e.target.value, mask);
+        const syntheticEvent = {
+          ...e,
+          currentTarget: {
+            ...e.currentTarget,
+            rawValue
+          },
+          target: {
+            ...e.target,
+            rawValue
+          }
+        };
+        onBlur(syntheticEvent as any);
+      } else {
+        onBlur(e);
+      }
+    }
+  }, [onBlur, mask]);
+  
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    let maskedValue = inputValue;
+    
+    // Se tiver máscara, aplicá-la
+    if (mask) {
+      maskedValue = applyMaskValue(inputValue, mask);
+      // Atualizar o valor exibido
+      setDisplayValue(maskedValue);
+      
+      // Chamar o onChange do componente pai, se existir
+      if (onChange) {
+        const rawValue = getUnmaskedValue(maskedValue, mask);
+        
+        // Criar um evento sintético com os valores mascarado e não mascarado
+        const syntheticEvent = {
+          ...e,
+          target: {
+            ...e.target,
+            value: maskedValue,
+            rawValue
+          },
+          currentTarget: {
+            ...e.currentTarget,
+            value: maskedValue,
+            rawValue
+          }
+        };
+        
+        // Garantir que o evento tenha uma cópia real do valor original
+        Object.defineProperty(syntheticEvent.target, 'value', {
+          get() { return maskedValue; }
+        });
+        
+        // Para CPF e telefone, certifique-se de que o valor sem máscara 
+        // esteja disponível para validação
+        if (mask === 'cpf' || mask === 'phone' || mask === 'telefone') {
+          Object.defineProperty(syntheticEvent.target, 'rawValue', {
+            get() { return rawValue; }
+          });
+        }
+        
+        onChange(syntheticEvent as any);
+      }
+    } else {
+      setDisplayValue(maskedValue);
+      if (onChange) {
+        onChange(e);
+      }
+    }
+  }, [mask, onChange]);
+  
+  const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
+    if (mask) {
+      const input = e.currentTarget;
+      input.select();
+    }
+  }, [mask]);
+  
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
       <InputLabel htmlFor={id}>
@@ -174,19 +508,23 @@ const FormInput: React.FC<FormInputProps> = ({
         
         <StyledInput
           id={id}
-          name={id}
+          name={name}
           type={inputType}
           placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
+          value={displayValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
+          onClick={handleClick}
           disabled={disabled}
           required={required}
           min={min}
           max={max}
           step={step}
           $hasIcon={!!icon}
-          $hasError={!!error}
+          $hasError={!!localError}
+          ref={ref || inputRef}
+          autoComplete={isPassword ? 'new-password' : 'on'}
         />
         
         {isPassword && (
@@ -194,15 +532,28 @@ const FormInput: React.FC<FormInputProps> = ({
             type="button" 
             onClick={togglePasswordVisibility}
             tabIndex={-1}
+            aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
           >
             {showPassword ? <FaEyeSlash /> : <FaEye />}
           </TogglePasswordButton>
         )}
       </InputWrapper>
       
-      {error && <ErrorText>{error}</ErrorText>}
+      {localError ? (
+        <ErrorText>
+          <ErrorIcon />
+          {localError}
+        </ErrorText>
+      ) : (
+        <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
+          <ErrorIcon />
+          &nbsp;
+        </ErrorText>
+      )}
     </InputGroup>
   );
-};
+});
+
+FormInput.displayName = 'FormInput';
 
 export default FormInput; 
