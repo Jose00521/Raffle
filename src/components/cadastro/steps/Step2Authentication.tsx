@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaEnvelope, FaLock, FaLockOpen, FaPhone } from 'react-icons/fa';
-import { useFormContext, RegisterFormData } from '../../../context/FormContext';
+import { useFormContext, RegisterFormData } from '../../../context/UserFormContext';
 import { usePasswordField } from '../../../hooks/usePasswordField';
 import FormInput from '../../common/FormInput';
 import { 
@@ -18,14 +18,18 @@ import {
   PasswordStrengthText
 } from '../../../styles/registration.styles';
 
+import { useHookFormMask } from 'use-mask-input';
+
 const Step2Authentication: React.FC = () => {
   const { form } = useFormContext();
   const { 
     formState: { errors, touchedFields }, 
     trigger,
     watch,
-    getValues
+    register,
   } = form;
+
+  const registerWithMask = useHookFormMask(register);
   
   const password = watch('senha');
   const confirmPassword = watch('confirmarSenha');
@@ -36,85 +40,7 @@ const Step2Authentication: React.FC = () => {
     passwordsMatch
   } = usePasswordField(password, confirmPassword);
 
-  // Estado para armazenar o último campo alterado
-
-  // Helper function para registrar os inputs com validação otimizada
-  const registerInput = (name: keyof RegisterFormData) => {
-    const { ref, onChange, onBlur, name: fieldName } = form.register(name);
-    
-    return {
-      ref,
-      onChange(e: React.ChangeEvent<HTMLInputElement>) {
-        onChange(e);
-        
-        // Separate validation logic for different field types
-        const value = e.target.value;
-        
-        // For password fields, use longer delay and validate both fields
-        if (name === 'senha' || name === 'confirmarSenha') {
-          const timeoutId = setTimeout(() => {
-            if (value === e.target.value) { // Only validate if value hasn't changed
-              trigger('senha');
-              if (value.length >= 8) { // Only validate confirm if password meets min length
-                trigger('confirmarSenha');
-              }
-            }
-          }, 800); // Longer delay for password validation
-          
-          return () => clearTimeout(timeoutId);
-        }
-        
-        // For phone fields, validate with medium delay
-        if (name === 'telefone' || name === 'confirmarTelefone') {
-          const timeoutId = setTimeout(() => {
-            if (value === e.target.value) {
-              // Get clean value (without mask)
-              const phoneClean = value.replace(/\D/g, '');
-              
-              console.log(`${name} value onChange:`, phoneClean); // Debug log
-              
-              // Don't validate incomplete values (unless empty)
-              if (phoneClean === '' || phoneClean.length >= 10) {
-                // Make sure the form has the current value before validation
-                form.setValue(name, value);
-                
-                trigger(name).then(isValid => {
-                  // If primary phone is valid and confirm phone has content, validate confirm
-                  if (name === 'telefone' && isValid && form.getValues('confirmarTelefone')) {
-                    const confirmPhoneClean = form.getValues('confirmarTelefone').replace(/\D/g, '');
-                    if (confirmPhoneClean.length >= 10) {
-                      trigger('confirmarTelefone');
-                    }
-                  }
-                });
-              }
-            }
-          }, 800); // Longer delay for phone validation
-          
-          return () => clearTimeout(timeoutId);
-        }
-        
-        // For email, validate with shorter delay
-        if (name === 'email') {
-          const timeoutId = setTimeout(() => {
-            if (value === e.target.value && value.includes('@')) {
-              trigger(name);
-            }
-          }, 600);
-          
-          return () => clearTimeout(timeoutId);
-        }
-      },
-      onBlur(e: React.FocusEvent<HTMLInputElement>) {
-        onBlur(e);
-
-
-            trigger(name);
-      },
-      name: fieldName,
-      value: watch(name)
-    };
-  };
+  // Criar as funções de debounce uma vez
 
   return (
     <StepContent>
@@ -132,7 +58,7 @@ const Step2Authentication: React.FC = () => {
           placeholder="Digite seu e-mail"
           error={errors.email?.message as string}
           required
-          {...registerInput('email')}
+          {...register('email')}
           fullWidth
         />
       </FormRow>
@@ -149,7 +75,7 @@ const Step2Authentication: React.FC = () => {
               isPassword
               error={errors.senha?.message as string}
               required
-              {...registerInput('senha')}
+              {...register('senha')}
             />
             <PasswordStrengthMeter>
               <PasswordStrengthIndicator $strength={passwordStrength} />
@@ -173,7 +99,7 @@ const Step2Authentication: React.FC = () => {
               (passwordsMatch === false && confirmPassword ? "As senhas não conferem" : undefined)
             }
             required
-            {...registerInput('confirmarSenha')}
+            {...register('confirmarSenha')}
           />
         </FormGroup>
       </FormRow>
@@ -185,9 +111,7 @@ const Step2Authentication: React.FC = () => {
           icon={<FaPhone />}
           placeholder="(00) 00000-0000"
           error={errors.telefone?.message as string}
-          required
-          mask="phone"
-          {...registerInput('telefone')}
+          {...registerWithMask('telefone', '(99) 99999-9999')}
         />
         
         <FormInput
@@ -196,9 +120,7 @@ const Step2Authentication: React.FC = () => {
           icon={<FaPhone />}
           placeholder="(00) 00000-0000"
           error={errors.confirmarTelefone?.message as string}
-          required
-          mask="phone"
-          {...registerInput('confirmarTelefone')}
+          {...registerWithMask('confirmarTelefone', '(99) 99999-9999')}
         />
       </FormRow>
     </StepContent>

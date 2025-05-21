@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FaUser, FaShieldAlt, FaMapMarked, FaUserPlus } from 'react-icons/fa';
-import { useFormContext } from '../../../context/FormContext';
+import { useFormContext } from '../../../context/UserFormContext';
 import { 
   StepContent, 
   StepContentHeader, 

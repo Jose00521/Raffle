@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FaCheckCircle, FaUser, FaShieldAlt, FaMapMarked, FaUserPlus, FaArrowRight, FaArrowLeft, FaLock } from 'react-icons/fa';
-import { FormProvider, useFormContext } from '../../context/FormContext';
+import { FormProvider, useFormContext } from '../../context/UserFormContext';
 
 import Step1Personal from './steps/Step1Personal';
 import Step2Authentication from './steps/Step2Authentication';
@@ -28,6 +28,11 @@ import {
   SecurityText
 } from '../../styles/registration.styles';
 
+const MemoizedStep1Personal = React.memo(Step1Personal);
+const MemoizedStep2Authentication = React.memo(Step2Authentication);
+const MemoizedStep3Address = React.memo(Step3Address);
+const MemoizedStep4Confirmation = React.memo(Step4Confirmation);
+
 // Componente interno para o conteúdo do formulário
 const FormContent: React.FC = () => {
   const { 
@@ -44,61 +49,6 @@ const FormContent: React.FC = () => {
   const [isStepValid, setIsStepValid] = React.useState(false);
   
   //Verificar validade dos campos quando o step mudar
-  React.useEffect(() => {
-    const checkValidity = async () => {
-      if (step === 1) {
-        // Get errors directly from formState
-        const errors = form.formState.errors;
-        // Verify errors in step 1 fields
-        const hasErrors = !!(
-          errors.nomeCompleto || 
-          errors.cpf || 
-          errors.dataNascimento
-        );
-        
-        // Get current values
-        const values = form.getValues();
-        const isComplete = !!(
-          values.nomeCompleto?.length >= 3 && 
-          values.cpf?.length >= 11 && 
-          values.dataNascimento
-        );
-        
-        // Se já tem valores completos, validar. Se não, verificar apenas erros atuais
-        if (isComplete) {
-          const valid = await form.trigger(['nomeCompleto', 'cpf', 'dataNascimento'], { shouldFocus: false });
-          setIsStepValid(valid);
-        } else {
-          setIsStepValid(!hasErrors && isComplete);
-        }
-      } else if (step === 2) {
-        const valid = await form.trigger(['email', 'senha', 'confirmarSenha', 'telefone', 'confirmarTelefone'], { shouldFocus: false });
-        setIsStepValid(valid);
-      } else if (step === 3) {
-        const valid = await form.trigger(['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf'], { shouldFocus: false });
-        setIsStepValid(valid);
-      } else {
-        setIsStepValid(true);
-      }
-    };
-    
-    checkValidity();
-    
-    // Cache para evitar validações excessivas
-    let lastValidationTime = Date.now();
-    
-    // Monitorar mudanças nos campos do formulário
-    const subscription = form.watch(() => {
-      // Evitar validações excessivas durante digitação rápida
-      const now = Date.now();
-      if (now - lastValidationTime > 300) { // Só valida se passou pelo menos 300ms
-        lastValidationTime = now;
-        setTimeout(() => checkValidity(), 10);
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [step, form]);
 
   return (
     <FormContainer>
@@ -179,8 +129,6 @@ const FormContent: React.FC = () => {
               <NextButton 
                 type="button" 
                 onClick={handleNextStep}
-                $isValid={isStepValid}
-                disabled={!isStepValid}
               >
                 Continuar <FaArrowRight />
               </NextButton>
@@ -208,4 +156,4 @@ const SteppedRegistrationForm: React.FC = () => {
   );
 };
 
-export default SteppedRegistrationForm; 
+export default React.memo(SteppedRegistrationForm); 

@@ -1,36 +1,41 @@
-import { CampaignRepository } from '@/server/repositories/CampaignRepository';
 import { NumberStatusEnum } from '@/models/NumberStatus';
+import { ICampaign } from '@/models/Campaign';
+import { injectable, inject } from 'tsyringe';
+import * as CampaignRepository from '@/server/repositories/CampaignRepository';
+export interface ICampaignService {
+  listarCampanhasAtivas(): Promise<{statusCode: number, success: boolean, data: ICampaign[], error: string | null}>;
+  obterDetalhesCampanha(id: string): Promise<{statusCode: number, success: boolean, data: ICampaign | null, error: string | null}>;
+}
 
-export class CampaignService {
+@injectable()
+export class CampaignService implements ICampaignService {
+  private campaignRepository: CampaignRepository.ICampaignRepository;
+
+  constructor(
+    @inject('campaignRepository') campaignRepository: CampaignRepository.ICampaignRepository
+  ) {
+    this.campaignRepository = campaignRepository;
+  }
   /**
    * Obtém todas as campanhas ativas com suas estatísticas
    */
-  static async listarCampanhasAtivas() {
+  async listarCampanhasAtivas(): Promise<{statusCode: number, success: boolean, data: ICampaign[], error: string | null}> {
     try {
-      const campanhas = await CampaignRepository.buscarCampanhasAtivas();
-      
-      // Para cada campanha, processar estatísticas
-      // const campanhasComStats = await Promise.all(
-      //   campanhas.map(async (campanha) => {
-      //     const stats = await this.obterEstatisticasCampanha(campanha._id!.toString());
-
-         
-          
-      //     return {
-      //       ...campanha,
-      //       stats
-      //     };
-      //   })
-      // );
+      const campanhas: ICampaign[] = await this.campaignRepository.buscarCampanhasAtivas();
+    
       
       return {
+        statusCode: 200,
         success: true,
+        error: null,
         data: campanhas
       };
     } catch (error) {
       console.error('Erro ao listar campanhas ativas:', error);
       return {
+        statusCode: 500,
         success: false,
+        data: [],
         error: 'Falha ao carregar as campanhas ativas'
       };
     }
@@ -39,39 +44,44 @@ export class CampaignService {
   /**
    * Obtém detalhes completos de uma campanha por ID
    */
-  static async obterDetalhesCampanha(id: string) {
+  async obterDetalhesCampanha(campaignCode: string): Promise<{statusCode: number, success: boolean, data: ICampaign | null , error: string | null}> {
     try {
-      const campanha = await CampaignRepository.buscarCampanhaPorId(id);
+      const campanha: ICampaign | null = await this.campaignRepository.buscarCampanhaPorId(campaignCode);
       
       if (!campanha) {
         return {
+          statusCode: 404,
           success: false,
+          data: null,
           error: 'Campanha não encontrada',
-          statusCode: 404
         };
       }
       
       // Obter estatísticas
-      const stats = await this.obterEstatisticasCampanha(id);
+      // const stats = await this.obterEstatisticasCampanha(id);
       
-      // Obter últimos números vendidos
-      const recentSales = await CampaignRepository.buscarUltimosNumerosVendidos(id);
+      // // Obter últimos números vendidos
+      // const recentSales = await CampaignRepository.buscarUltimosNumerosVendidos(id);
       
-      // Construir resposta completa
-      const campanhaCompleta = {
-        ...campanha,
-        stats,
-        recentSales
-      };
+      // // Construir resposta completa
+      // const campanhaCompleta = {
+      //   ...campanha,
+      //   stats,
+      //   recentSales
+      // };
       
       return {
+        statusCode: 200,
         success: true,
-        data: campanhaCompleta
+        error: null,
+        data: campanha
       };
     } catch (error) {
       console.error('Erro ao obter detalhes da campanha:', error);
       return {
+        statusCode: 500,
         success: false,
+        data: null,
         error: 'Falha ao carregar os detalhes da campanha'
       };
     }
@@ -80,8 +90,8 @@ export class CampaignService {
   /**
    * Método privado para calcular estatísticas de uma campanha
    */
-  private static async obterEstatisticasCampanha(rifaId: string) {
-    const statusCountArray = await CampaignRepository.contarNumeroPorStatus(rifaId);
+  private async obterEstatisticasCampanha(rifaId: string) {
+    const statusCountArray = await this.campaignRepository.contarNumeroPorStatus(rifaId);
     
     // Inicializar estatísticas
     const stats = {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { UseFormSetValue, UseFormSetError, UseFormClearErrors } from 'react-hook-form';
-import { RegisterFormData } from '../context/FormContext';
+import { RegisterFormData } from '../context/UserFormContext';
 
 type SetValueFunction = UseFormSetValue<RegisterFormData>;
 type SetErrorFunction = UseFormSetError<RegisterFormData>;

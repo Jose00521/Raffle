@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ICampaign } from '../../models/Campaign';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
-import rifaAPI from '../../services/rifaAPI';
+import rifaAPI from '../../API/campaignAPI';
 import PremioCategory from './PremioCategory';
 
 // Atualizando a interface IRifa para incluir as propriedades extras

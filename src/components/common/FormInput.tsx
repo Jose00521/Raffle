@@ -17,8 +17,8 @@ interface FormInputProps {
   error?: string;
   disabled?: boolean;
   required?: boolean;
-  min?: number;
-  max?: number;
+  min?: number | string;
+  max?: number | string;
   step?: number | string;
   isPassword?: boolean;
   fullWidth?: boolean;
@@ -106,7 +106,7 @@ const InputIcon = styled.div`
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
   max-width: 100%;
-  height: 50px !important;
+  height: 60px !important;
   padding: ${props => props.$hasIcon ? '0 15px 0 40px' : '0 15px'};
   padding-right: 40px; /* Ensure space for password toggle button */
   border-radius: 8px;
@@ -224,118 +224,125 @@ const ErrorIcon = styled(FaExclamationCircle)`
   min-height: 14px;
 `;
 
-// Funções utilitárias para aplicar máscaras
-const applyMaskValue = (value: string, maskType?: string): string => {
-  if (!value || !maskType) return value;
-  // Limpar valor para trabalhar apenas com os caracteres desejados
-  let rawValue = value.replace(/\D/g, '');
+// const applyMaskValue = (value: string, maskType?: string): string => {
+//   if (!value || !maskType) return value;
+//   // Limpar valor para trabalhar apenas com os caracteres desejados
+//   let rawValue = value.replace(/\D/g, '');
   
-  // Aplicar a máscara apropriada
-  switch (maskType) {
-    case 'cpf':
-      // Limitar a 11 dígitos
-      if (rawValue.length > 11) {
-        rawValue = rawValue.slice(0, 11);
-      }
+//   // Aplicar a máscara apropriada
+//   switch (maskType) {
+//     case 'cpf':
+//       // Limitar a 11 dígitos
+//       if (rawValue.length > 11) {
+//         rawValue = rawValue.slice(0, 11);
+//       }
       
-      // Formatar CPF: 000.000.000-00
-      if (rawValue.length > 0) {
-        // Limita a 11 dígitos
-        rawValue = rawValue.slice(0, 11);
+//       // Formatar CPF: 000.000.000-00
+//       if (rawValue.length > 0) {
+//         // Limita a 11 dígitos
+//         rawValue = rawValue.slice(0, 11);
         
-        // Aplica máscara
-        if (rawValue.length <= 3) {
-          // Nada a fazer
-        } else if (rawValue.length <= 6) {
-          rawValue = rawValue.replace(/^(\d{3})(\d+)/, '$1.$2');
-        } else if (rawValue.length <= 9) {
-          rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3');
-        } else {
-          rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3-$4');
-        }
-      }
-      return rawValue;
+//         // Aplica máscara
+//         if (rawValue.length <= 3) {
+//           // Nada a fazer
+//         } else if (rawValue.length <= 6) {
+//           rawValue = rawValue.replace(/^(\d{3})(\d+)/, '$1.$2');
+//         } else if (rawValue.length <= 9) {
+//           rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3');
+//         } else {
+//           rawValue = rawValue.replace(/^(\d{3})\.?(\d{3})\.?(\d{3})(\d+)/, '$1.$2.$3-$4');
+//         }
+//       }
+//       return rawValue;
       
-    case 'phone':
-    case 'telefone':
-      // Limitar a 11 dígitos e remover não-dígitos
-      rawValue = rawValue.replace(/\D/g, '').slice(0, 11);
+//     case 'phone':
+//     case 'telefone':
+//       // Limitar a 11 dígitos e remover não-dígitos
+//       rawValue = rawValue.replace(/\D/g, '').slice(0, 11);
       
-      // Formatar telefone: (00) 00000-0000 ou (00) 0000-0000
-      if (rawValue.length > 0) {
-        let formattedValue = '';
+//       // Formatar telefone: (00) 00000-0000 ou (00) 0000-0000
+//       if (rawValue.length > 0) {
+//         let formattedValue = '';
         
-        // Adiciona DDD
-        if (rawValue.length >= 2) {
-          formattedValue = `(${rawValue.slice(0, 2)}) `;
+//         // Adiciona DDD
+//         if (rawValue.length >= 2) {
+//           formattedValue = `(${rawValue.slice(0, 2)}) `;
           
-          // Adiciona número
-          if (rawValue.length > 2) {
-            // Verifica se é celular (tem 11 dígitos)
-            const isCellphone = rawValue.length > 10;
+//           // Adiciona número
+//           if (rawValue.length > 2) {
+//             // Verifica se é celular (tem 11 dígitos)
+//             const isCellphone = rawValue.length > 10;
             
-            if (isCellphone) {
-              // Formato: (00) 90000-0000
-              const rest = rawValue.slice(2);
-              formattedValue += rest.slice(0, 5);
-              if (rest.length > 5) {
-                formattedValue += '-' + rest.slice(5);
-              }
-            } else {
-              // Formato: (00) 0000-0000
-              const rest = rawValue.slice(2);
-              formattedValue += rest.slice(0, 4);
-              if (rest.length > 4) {
-                formattedValue += '-' + rest.slice(4);
-              }
-            }
-          }
-        } else {
-          formattedValue = rawValue;
-        }
+//             if (isCellphone) {
+//               // Garante que celular (11 dígitos) comece com 9
+//               let rest = rawValue.slice(2);
+              
+//               // Se o primeiro dígito após o DDD não for 9, insere 9
+//               if (rest.length > 0 && rest[0] !== '9') {
+//                 rest = '9' + rest.slice(0, -1); // Remove o último dígito para manter 11 dígitos total
+//               }
+              
+//               // Formato: (00) 90000-0000
+//               formattedValue += rest.slice(0, 5);
+//               if (rest.length > 5) {
+//                 formattedValue += '-' + rest.slice(5);
+//               }
+//             } else {
+//               // Formato: (00) 0000-0000
+//               const rest = rawValue.slice(2);
+//               formattedValue += rest.slice(0, 4);
+//               if (rest.length > 4) {
+//                 formattedValue += '-' + rest.slice(4);
+//               }
+//             }
+//           }
+//         } else {
+//           formattedValue = rawValue;
+//         }
         
-        return formattedValue;
-      }
-      return rawValue;
+//         return formattedValue;
+//       }
+//       return rawValue;
       
-    case 'cep':
-      // Limitar a 8 dígitos
-      if (rawValue.length > 8) {
-        rawValue = rawValue.slice(0, 8);
-      }
+//     case 'cep':
+//       // Limitar a 8 dígitos
+//       if (rawValue.length > 8) {
+//         rawValue = rawValue.slice(0, 8);
+//       }
       
-      // Formatar CEP: 00000-000
-      if (rawValue.length > 5) {
-        rawValue = rawValue.replace(/^(\d{5})(\d)/, '$1-$2');
-      }
-      return rawValue;
+//       // Formatar CEP: 00000-000
+//       if (rawValue.length > 5) {
+//         rawValue = rawValue.replace(/^(\d{5})(\d)/, '$1-$2');
+//       }
+//       return rawValue;
       
-    case 'uf':
-      // Limitar a 2 caracteres e converter para maiúsculo
-      return value.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
+//     case 'uf':
+//       // Limitar a 2 caracteres e converter para maiúsculo
+//       return value.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
       
-    default:
-      return value;
-  }
-};
+//     default:
+//       return value;
+//   }
+// };
 
-// Função para obter o valor sem máscara
-const getUnmaskedValue = (value: string, maskType?: string): string => {
-  if (!value || !maskType) return value;
+// // Função para obter o valor sem máscara
+// const getUnmaskedValue = (value: string, maskType?: string): string => {
+//   if (!value || !maskType) return value;
   
-  switch (maskType) {
-    case 'cpf':
-    case 'telefone':
-    case 'cep':
-      return value.replace(/\D/g, '');
-    case 'uf':
-      return value.toUpperCase();
-    default:
-      return value;
-  }
-};
+//   switch (maskType) {
+//     case 'cpf':
+//     case 'telefone':
+//     case 'cep':
+//       return value.replace(/\D/g, '');
+//     case 'uf':
+//       return value.toUpperCase();
+//     default:
+//       return value;
+//   }
+// };
 
-const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
+
+const FormInput:React.FC<FormInputProps> = ({
   id,
   name = id,
   label,
@@ -343,8 +350,6 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
   placeholder,
   type = 'text',
   value,
-  onChange,
-  onBlur,
   error,
   disabled = false,
   required = false,
@@ -354,147 +359,28 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
   isPassword = false,
   fullWidth = false,
   className,
-  mask,
-}, ref) => {
-  // Função para converter qualquer tipo de valor para string
-  const convertValueToString = (val: string | number | Date | undefined): string => {
-    if (val === undefined || val === null) {
-      return '';
-    }
-    if (val instanceof Date) {
-      return val.toISOString().split('T')[0];
-    }
-    return String(val);
-  };
-  
-  const stringValue = convertValueToString(value);
-  const [displayValue, setDisplayValue] = useState(() => 
-    mask ? applyMaskValue(stringValue, mask) : stringValue
-  );
+  ...props
+}) => {
   
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const [wasTouched, setWasTouched] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Estado local para controlar o erro
   const [localError, setLocalError] = useState<string | undefined>(error);
   
-  // Atualizar valor de exibição quando o valor de entrada muda
-  useEffect(() => {
-    const newStringValue = convertValueToString(value);
-    const newDisplayValue = mask ? applyMaskValue(newStringValue, mask) : newStringValue;
-    setDisplayValue(newDisplayValue);
-  }, [value, mask]);
+  // Estado local para controlar o erro
   
-  // Atualizar o erro local quando o erro da prop mudar
-  useEffect(() => {
-    // Sempre mostrar o erro atual da prop, independente se o campo foi tocado ou não
-    setLocalError(error);
-  }, [error]);
+  // Atualizar valor de exibição quando o valor de entrada muda
   
   const togglePasswordVisibility = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setShowPassword(prev => !prev);
   }, []);
+
+  useEffect(() => {
+    setLocalError(error);
+  }, [error]);
   
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
   
-  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    setIsFocused(true);
-    // Posicionar cursor no final do texto ao focar
-    const input = e.target;
-    if (input.value) {
-      setTimeout(() => {
-        input.selectionStart = input.selectionEnd = input.value.length;
-      }, 0);
-    }
-  }, []);
   
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    setIsFocused(false);
-    setWasTouched(true); // Marcar que o campo perdeu o foco pelo menos uma vez
-    
-    if (onBlur) {
-      // Caso tenha máscara, fornecer o valor sem máscara para o campo
-      if (mask) {
-        const rawValue = getUnmaskedValue(e.target.value, mask);
-        const syntheticEvent = {
-          ...e,
-          currentTarget: {
-            ...e.currentTarget,
-            rawValue
-          },
-          target: {
-            ...e.target,
-            rawValue
-          }
-        };
-        onBlur(syntheticEvent as any);
-      } else {
-        onBlur(e);
-      }
-    }
-  }, [onBlur, mask]);
-  
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    let maskedValue = inputValue;
-    
-    // Se tiver máscara, aplicá-la
-    if (mask) {
-      maskedValue = applyMaskValue(inputValue, mask);
-      // Atualizar o valor exibido
-      setDisplayValue(maskedValue);
-      
-      // Chamar o onChange do componente pai, se existir
-      if (onChange) {
-        const rawValue = getUnmaskedValue(maskedValue, mask);
-        
-        // Criar um evento sintético com os valores mascarado e não mascarado
-        const syntheticEvent = {
-          ...e,
-          target: {
-            ...e.target,
-            value: maskedValue,
-            rawValue
-          },
-          currentTarget: {
-            ...e.currentTarget,
-            value: maskedValue,
-            rawValue
-          }
-        };
-        
-        // Garantir que o evento tenha uma cópia real do valor original
-        Object.defineProperty(syntheticEvent.target, 'value', {
-          get() { return maskedValue; }
-        });
-        
-        // Para CPF e telefone, certifique-se de que o valor sem máscara 
-        // esteja disponível para validação
-        if (mask === 'cpf' || mask === 'phone' || mask === 'telefone') {
-          Object.defineProperty(syntheticEvent.target, 'rawValue', {
-            get() { return rawValue; }
-          });
-        }
-        
-        onChange(syntheticEvent as any);
-      }
-    } else {
-      setDisplayValue(maskedValue);
-      if (onChange) {
-        onChange(e);
-      }
-    }
-  }, [mask, onChange]);
-  
-  const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
-    if (mask) {
-      const input = e.currentTarget;
-      input.select();
-    }
-  }, [mask]);
   
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
@@ -511,11 +397,6 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
           name={name}
           type={inputType}
           placeholder={placeholder}
-          value={displayValue}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onFocus={handleFocus}
-          onClick={handleClick}
           disabled={disabled}
           required={required}
           min={min}
@@ -523,8 +404,8 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
           step={step}
           $hasIcon={!!icon}
           $hasError={!!localError}
-          ref={ref || inputRef}
           autoComplete={isPassword ? 'new-password' : 'on'}
+          {...props}
         />
         
         {isPassword && (
@@ -552,7 +433,7 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(({
       )}
     </InputGroup>
   );
-});
+};
 
 FormInput.displayName = 'FormInput';
 

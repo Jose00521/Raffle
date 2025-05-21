@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { Socket } from "socket.io";
 
 import express, { Request, Response } from 'express';
@@ -5,8 +6,9 @@ import next from "next";
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dbConnect from './src/server/lib/dbConnect.js';
+import { DBConnection } from './src/server/lib/dbConnect.js';
 import { initializeServices } from './src/server/init.js';
+import { container } from 'tsyringe';
 
 // Para executar migrations automaticamente no arranque, descomente estas linhas:
 // const path = require('path');
@@ -17,6 +19,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const PORT = process.env.PORT || 3000;
+const db = container.resolve(DBConnection);
 
 app.prepare().then(async () => {
   const server = express();
@@ -45,7 +48,7 @@ app.prepare().then(async () => {
   try {
     // Conectar ao MongoDB
     console.log('Conectando ao MongoDB...');
-    await dbConnect();
+    await db.connect();
     console.log('✅ Conectado ao MongoDB com sucesso!');
     
     // Inicializar serviços passando a instância do Socket.io

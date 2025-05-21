@@ -19,6 +19,7 @@
     "@draft-js-plugins/editor": "^4.1.4",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-tabs": "^1.1.11",
+    "@tanstack/form-core": "^1.11.2",
     "@tanstack/react-form": "^1.11.2",
     "@tanstack/zod-form-adapter": "^0.42.1",
     "@types/canvas-confetti": "^1.9.0",
@@ -50,13 +51,16 @@
     "react-input-mask-next": "^3.0.0-alpha.12",
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.3",
+    "reflect-metadata": "^0.2.2",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.18",
     "tailwind-merge": "^3.3.0",
     "ts-migrate-mongoose": "^4.0.8",
+    "tsyringe": "^4.10.0",
+    "use-mask-input": "^3.4.2",
     "yup": "^1.6.1",
-    "zod": "^3.24.4"
+    "zod": "^3.25.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

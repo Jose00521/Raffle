@@ -33,12 +33,12 @@ export interface IBaseUser {
   address: IAddress;
   isActive: boolean;
   lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedA?: Date;
 }
 
-export interface IParticipant extends IBaseUser {
-  role: 'participant';
+export interface IRegularUser extends IBaseUser {
+  role: 'user' | 'participant'; 
   cpf: string;
   birthDate: Date;
   socialName?: string;
@@ -107,7 +107,7 @@ export interface ICreator extends IBaseUser {
   };
 }
 
-export type IUser = IParticipant | ICreator;
+export type IUser = IRegularUser | ICreator;
 
 /**
  * Base User Schema - Shared fields 
@@ -165,12 +165,24 @@ const UserSchema = new Schema({
   timestamps: true, // Rastreia criação e atualizações automaticamente
   strict: true, // Não permite campos não definidos no schema
 });
-
-// Adiciona um hook pre-save para gerar automaticamente o código do usuário
+// Modifique o hook pre-save em src/models/User.ts
 UserSchema.pre('save', function(this: any, next) {
-  // Só gera o código se ele ainda não existir e se estiver no servidor
   if (!this.userCode && typeof window === 'undefined') {
-    this.userCode = generateEntityCode(this._id, 'US');
+    // Só tente gerar o código se o _id já estiver definido
+    if (this._id) {
+      this.userCode = generateEntityCode(this._id, 'US');
+    } else {
+      // Se o _id ainda não estiver disponível, adie a geração para o próximo save
+      console.warn('_id não está disponível para gerar userCode. Será gerado no próximo save.');
+    }
+  }
+  next();
+});
+// Adicione um hook post-save para garantir que o código seja gerado se não foi feito no pre-save
+UserSchema.post('save', async function(this: any, doc, next) {
+  if (!doc.userCode && doc._id && typeof window === 'undefined') {
+    doc.userCode = generateEntityCode(doc._id, 'US');
+    await doc.save(); // Salva novamente para persistir o código
   }
   next();
 });
@@ -201,7 +213,7 @@ const User = mongoose.models.User || mongoose.model('User', UserSchema);
 /**
  * Schema de Participante
  */
-const ParticipantSchema = new Schema({
+const RegularUserSchema = new Schema({
   cpf: {
     type: String,
     required: [true, 'CPF é obrigatório'],
@@ -335,8 +347,18 @@ const CreatorSchema = new Schema({
 });
 
 // Criar modelos utilizando discriminators
-const Participant = User.discriminator('participant', ParticipantSchema);
-const Creator = User.discriminator('creator', CreatorSchema);
+
+let RegularUser,Participant,Creator;
+
+if (!mongoose.models.user) {
+  RegularUser = User.discriminator('user', RegularUserSchema);
+  Participant = User.discriminator('participant', RegularUserSchema);
+  Creator = User.discriminator('creator', CreatorSchema);
+} else {
+  RegularUser = mongoose.models.user;
+  Participant = mongoose.models.participant;
+  Creator = mongoose.models.creator;
+}
 
 // Configurar índices adicionais após a inicialização do mongoose
 export const setupUserIndexes = async () => {
@@ -417,4 +439,4 @@ export const setupUserIndexes = async () => {
   console.log('User indexes configured successfully');
 };
 
-export { User, Participant, Creator }; 
+export { User, RegularUser, Participant, Creator }; 

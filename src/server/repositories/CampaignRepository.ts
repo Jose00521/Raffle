@@ -1,34 +1,40 @@
-import dbConnect from '@/server/lib/dbConnect';
+import * as dbConnect from '@/server/lib/dbConnect';
 import Campaign, { ICampaign } from '@/models/Campaign';
 import InstantPrize, { IInstantPrize } from '@/models/InstantPrize';
 import NumberStatus, { NumberStatusEnum } from '@/models/NumberStatus';
 import mongoose from 'mongoose';
+import { injectable, inject } from 'tsyringe';
 
-export class CampaignRepository {
+export interface ICampaignRepository {
+  buscarCampanhasAtivas(): Promise<ICampaign[]>;
+  buscarCampanhaPorId(id: string): Promise<ICampaign | null>;
+  createCampaignWithInstantPrizes(campaignData: ICampaign, instantPrizesData: IInstantPrize[]): Promise<ICampaign | Error>;
+  contarNumeroPorStatus(rifaId: string): Promise<any[]>;
+  buscarUltimosNumerosVendidos(rifaId: string, limite: number): Promise<any[]>;
+}
+
+@injectable()
+export class CampaignRepository	implements ICampaignRepository  {
+  private db: dbConnect.IDBConnection;
+
+  constructor(@inject('db') db: dbConnect.IDBConnection) {
+    this.db = db;
+  }
   /**
    * Busca todas as campanhas ativas
    */
-  static async buscarCampanhasAtivas() {
+   async buscarCampanhasAtivas(): Promise<ICampaign[]> {
     try {
-      await dbConnect();
+      await this.db.connect();
       const campaigns = await Campaign.find({ status: 'ACTIVE' }).exec();
 
       const campaingStats = campaigns.map(campaign=>{
         return {
           ...campaign.toObject(),
-          stats: {
-            available: 1000,
-            reserved: 10,
-            sold: 200,
-            percentComplete: ((campaign.stats?.sold || 0) / campaign.totalNumbers) * 100  
-          }
         }
       })
 
-      return {
-        success: true,
-        data: campaingStats
-      };
+      return campaigns;
     } catch (error) {
       console.error('Erro ao buscar campanhas ativas:', error);
       throw error;
@@ -39,16 +45,17 @@ export class CampaignRepository {
     /**
    * Busca uma campanha específica por ID
    */
-    static async buscarCampanhaPorId(id: string) {
+   async buscarCampanhaPorId(id: string): Promise<ICampaign | null> {
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return null;
       }
       
-      await dbConnect();
-      return Campaign.findById(id).lean();
+      await this.db.connect();
+      const campaign: ICampaign | null = await Campaign.findById(id).lean() as ICampaign | null;
+      return campaign;
     }
 
-  static async createCampaignWithInstantPrizes(campaignData:ICampaign, instantPrizesData:IInstantPrize[]) {
+   async createCampaignWithInstantPrizes(campaignData:ICampaign, instantPrizesData:IInstantPrize[]): Promise<ICampaign | Error> {
     const session = await mongoose.startSession();
     
     try {
@@ -86,7 +93,8 @@ export class CampaignRepository {
       );
       
       await session.commitTransaction();
-      return await Campaign.findById(campaignId).populate('instantPrizes');
+      const campaignFind = await Campaign.findById(campaignId).populate('instantPrizes'); 
+      return campaignFind;
       
     } catch (error) {
       await session.abortTransaction();
@@ -99,8 +107,8 @@ export class CampaignRepository {
   /**
    * Conta o número de números por status para uma campanha
    */
-  static async contarNumeroPorStatus(rifaId: string) {
-    await dbConnect();
+   async contarNumeroPorStatus(rifaId: string) {
+    await this.db.connect();
     
     return NumberStatus!.aggregate([
       { $match: { rifaId: new mongoose.Types.ObjectId(rifaId) } },
@@ -112,8 +120,8 @@ export class CampaignRepository {
   /**
    * Busca os últimos números vendidos de uma campanha
    */
-  static async buscarUltimosNumerosVendidos(rifaId: string, limite: number = 10) {
-    await dbConnect();
+   async buscarUltimosNumerosVendidos(rifaId: string, limite: number = 10) {
+    this.db.connect();
     
     return NumberStatus!.find(
       { rifaId, status: NumberStatusEnum.PAID },

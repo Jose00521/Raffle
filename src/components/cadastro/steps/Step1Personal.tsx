@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, UseFormRegister } from 'react-hook-form';
 import { FaUser, FaIdCard, FaCalendarAlt } from 'react-icons/fa';
-import { useFormContext, RegisterFormData } from '../../../context/FormContext';
+import { useFormContext, RegisterFormData } from '../../../context/UserFormContext';
 import FormInput from '../../common/FormInput';
 import FormDatePicker from '../../common/FormDatePicker';
 import { 
@@ -16,72 +16,25 @@ import {
   StyledFormDatePickerWrapper
 } from '../../../styles/registration.styles';
 
+import { useHookFormMask } from 'use-mask-input';
+
+
 const Step1Personal: React.FC = () => {
   const { form } = useFormContext();
   const { 
     control, 
     formState: { errors, touchedFields, dirtyFields },
-    trigger, 
-    watch, 
-    getValues
+    trigger,
+    register,
+
   } = form;
+
+  const registerWithMask = useHookFormMask(register);
 
   // Estado para armazenar o último campo alterado
    
   
   // Função helper para registrar inputs
-  const registerInput = (name: keyof RegisterFormData) => {
-    const { ref, onChange, onBlur, name: fieldName } = form.register(name);
-    
-    return {
-      ref,
-      onChange(e: React.ChangeEvent<HTMLInputElement>) {
-        onChange(e);
-        
-        // Para CPF, validamos apenas quando estiver completo
-        if (name == 'cpf') {
-          // Pegamos o valor limpo (sem máscara)
-          const cpfValue = e.target.value ? e.target.value.replace(/\D/g, '') : '';
-          
-          console.log('CPF value onChange:', cpfValue); // Debug log
-          
-          // Apenas validamos quando vazio (para mostrar obrigatório) ou quando completo
-          if (cpfValue === '' || cpfValue.length === 11) {
-            // Atualizamos o valor no formulário antes de validar
-            form.setValue('cpf', e.target.value);
-            
-            setTimeout(() => {
-              trigger(name);
-            }, 600);
-          }
-        } else {
-            form.setValue(name, e.target.value);
-          // Para outros campos, validamos normalmente
-          setTimeout(() => {
-            trigger(name);
-          }, 600);
-        }
-      },
-      onBlur(e: React.FocusEvent<HTMLInputElement>) {
-        onBlur(e);
-        
-        // Para CPF, só valida no blur se estiver completo
-        if (name === 'cpf') {
-          const cpfValue = e.target.value ? e.target.value.replace(/\D/g, '') : '';
-          
-          // Validamos quando vazio ou completo
-          if (cpfValue === '' || cpfValue.length === 11) {
-            trigger(name);
-          }
-        } else {
-          // Outros campos validam normalmente no blur
-          trigger(name);
-        }
-      },
-      name: fieldName,
-      value: watch(name)
-    };
-  };
 
   return (
     <StepContent>
@@ -96,9 +49,8 @@ const Step1Personal: React.FC = () => {
           label="Nome Completo"
           icon={<FaUser />}
           placeholder="Digite seu nome completo"
-          required
+          {...register('nomeCompleto')}
           error={errors.nomeCompleto?.message as string}
-          {...registerInput('nomeCompleto')}
           fullWidth
         />
       </FormRow>
@@ -109,7 +61,7 @@ const Step1Personal: React.FC = () => {
           label="Nome Social"
           icon={<FaUser />}
           placeholder="Digite seu nome social (opcional)"
-          {...registerInput('nomeSocial')}
+          {...register('nomeSocial')}
           fullWidth
         />
       </FormRow>
@@ -120,10 +72,8 @@ const Step1Personal: React.FC = () => {
           label="CPF"
           icon={<FaIdCard />}
           placeholder="000.000.000-00"
+          {...registerWithMask('cpf', 'cpf')}
           error={errors.cpf?.message as string}
-          required
-          mask="cpf"
-          {...registerInput('cpf')}
         />
       </FormRow>
       
@@ -158,3 +108,4 @@ const Step1Personal: React.FC = () => {
 };
 
 export default Step1Personal; 
+
