@@ -4,7 +4,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import CampaignGrid from '../campaign/CampaignGrid';
-import { IRifa } from '../../models/Campaign';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 const SectionContainer = styled.section`
   padding: 5rem 2rem;
@@ -60,13 +60,13 @@ const ViewAllButton = styled.a`
 `;
 
 interface FeaturedCampaignsProps {
-  campaigns: IRifa[];
+  campaigns: ICampaign[];
 }
 
 const FeaturedCampaigns: React.FC<FeaturedCampaignsProps> = ({ campaigns }) => {
   // Only show up to 3 active campaigns in the featured section
   const activeCampaigns = campaigns
-    .filter(campaign => campaign.isActive)
+    .filter(campaign => campaign.status === CampaignStatusEnum.ACTIVE)
     .slice(0, 3);
   
   return (

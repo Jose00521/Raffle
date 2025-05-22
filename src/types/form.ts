@@ -49,9 +49,10 @@ export const registerUserSchema = z.object({
       message: 'CPF inválido'
     }),
   dataNascimento: z.date({
-    required_error: "Data de nascimento é obrigatória",
     invalid_type_error: "Data de nascimento inválida",
-  }).refine(
+    required_error: "Data de nascimento é obrigatória",
+  })
+  .refine(
     (date) => {
       // Verificar se a pessoa tem pelo menos 18 anos
       const today = new Date();

@@ -1,5 +1,5 @@
 // API client para operações com rifas e números
-import { ICampaign } from '@/models/Campaign';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 /**
  * Interface para estatísticas de números

@@ -1,59 +1,11 @@
 import mongoose from 'mongoose';
 import NumberStatus from './NumberStatus';
-import { IUser } from './User';
-import { IPrize } from './Prize';
-import { IWinner } from './Winner';
-import { IInstantPrize } from './InstantPrize';
 import { generateEntityCode } from './utils/idGenerator';
-
+import { CampaignStatusEnum, ICampaign } from './interfaces/ICampaignInterfaces';
 // Constantes para a geração de IDs estilo Snowflake
 // Removidos e movidos para utils/idGenerator.ts
 
-export enum CampaignStatusEnum {
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  PENDING = 'PENDING'
-}
-
-// Interface principal da Rifa
-export interface ICampaign {
-  _id?: string;
-  campaignCode?: string;
-  createdBy: mongoose.Types.ObjectId | null;
-  title: string;
-  description: string;
-  price: number;
-  prizes: Array<IPrize>;
-  //affiliates: Array<IUser>;
-  returnExpected?: string;
-  totalNumbers: number;
-  drawDate: Date;
-  canceled: Boolean; 
-  status: CampaignStatusEnum; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED"
-  scheduledActivationDate: Date | null;
-  winnerNumber: number | null;
-  winnerUser?: mongoose.Types.ObjectId | null;
-  winner: Array<IWinner>;
-  createdAt: Date;
-  updatedAt: Date;
-  activatedAt: Date | null;
-  // Estatísticas calculadas
-  stats?: {
-    available: number;
-    reserved: number | null;
-    sold: number;
-    percentComplete: number;
-  };
-  // Propriedades adicionais para a página de detalhes
-  
-  regulation?: string;
-}
-
 // Interface para o modelo com métodos estáticos
-interface CampaignModel extends mongoose.Model<ICampaign> {
-  findByCampaignCode(campaignCode: string): Promise<ICampaign | null>;
-  findActiveByCreator(creatorId: mongoose.Types.ObjectId | string): Promise<ICampaign[]>;
-}
 
 const CampaignSchema = new mongoose.Schema(
   {
@@ -74,9 +26,10 @@ const CampaignSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide a description'],
     },
-    price: {
+    individualNumberPrice: {
       type: Number,
-      required: [true, 'Please provide a price per number'],
+      required: [true, 'Preço do número individual é obrigatório'],
+      min: [0, 'Preço não pode ser negativo']
     },
     prizes:[{
       type: mongoose.Schema.Types.ObjectId,
@@ -131,6 +84,45 @@ const CampaignSchema = new mongoose.Schema(
       ref: 'Winner',
       default: null
     }],
+    numberPackages: {
+      type: [{
+        name: {
+          type: String,
+          required: [true, 'Nome do pacote é obrigatório']
+        },
+        description: String,
+        quantity: {
+          type: Number,
+          required: [true, 'Quantidade de números é obrigatória'],
+          min: [1, 'Pacote deve ter pelo menos 1 número']
+        },
+        price: {
+          type: Number,
+          required: [true, 'Preço do pacote é obrigatório'],
+          min: [0, 'Preço não pode ser negativo']
+        },
+        discount: {
+          type: Number,
+          min: [0, 'Desconto não pode ser negativo'],
+          max: [100, 'Desconto não pode exceder 100%'],
+          default: 0
+        },
+        isActive: {
+          type: Boolean,
+          default: true
+        },
+        highlight: {
+          type: Boolean,
+          default: false
+        },
+        order: {
+          type: Number,
+          default: 0
+        },
+        maxPerUser: Number
+      }],
+      default: [],
+    },
 
     // Campos adicionais para detalhes da campanha
     regulation: {
@@ -209,4 +201,4 @@ CampaignSchema.index({ 'verification.expiresAt': 1 }); // Para alertas de verifi
 CampaignSchema.index({ 'verification.reviewedAt': 1 }); // Para auditorias de verificação
 
 // Criando ou obtendo o modelo já existente
-export default mongoose.models.Campaign || mongoose.model('Campaign', CampaignSchema);
+export default mongoose.models.Campaign || mongoose.model<ICampaign>('Campaign', CampaignSchema);

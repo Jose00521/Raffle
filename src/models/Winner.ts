@@ -1,21 +1,8 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
+import { IWinner } from './interfaces/IWinnerInterfaces';
 
-
-export interface IWinner {
-    _id?: mongoose.Types.ObjectId;
-    winnerCode?: string; // Snowflake ID único
-    campaignId: mongoose.Types.ObjectId;
-    position: number;
-    number: string;
-    prizes: mongoose.Types.ObjectId[];
-    userId: mongoose.Types.ObjectId;
-    prizesClaimed: boolean;
-    awardedAt: Date;
-    createdAt: Date;
-    updatedAt: Date;
-}
 
 const WinnerSchema = new Schema<IWinner>({
     winnerCode: {

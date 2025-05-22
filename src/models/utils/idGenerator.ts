@@ -41,12 +41,15 @@ function getUniqueWorkerId(): number {
 const WORKER_ID = getUniqueWorkerId();
 console.log(`[Snowflake] Worker ID initialized: ${WORKER_ID}`);
 
+
+
 // Último timestamp usado
 let lastTimestamp = -1;
 // Contador de sequência por milissegundo
 let sequence = 0;
 
-// Cache para fragments
+// Cache para fragments com limite de tamanho
+const MAX_CACHE_SIZE = 10000;
 const fragmentCache = new Map<string, string>();
 
 /**

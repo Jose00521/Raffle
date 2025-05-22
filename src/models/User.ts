@@ -1,113 +1,7 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
-
-/**
- * Interfaces
- */
-export interface IAddress {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
-export interface IBankAccount {
-  bank: string;
-  agency: string;
-  account: string;
-  accountType: 'checking' | 'savings';
-  pixKey?: string;
-}
-
-export interface IBaseUser {
-  _id?: string;
-  userCode?: string; // Código único no formato Snowflake ID
-  email: string;
-  password: string;
-  name: string;
-  phone: string;
-  address: IAddress;
-  isActive: boolean;
-  lastLogin?: Date;
-  createdAt?: Date;
-  updatedA?: Date;
-}
-
-export interface IRegularUser extends IBaseUser {
-  role: 'user' | 'participant'; 
-  cpf: string;
-  birthDate: Date;
-  socialName?: string;
-  purchasedNumbers: {
-    rifaId: string;
-    numbers: number[];
-  }[];
-  statistics: {
-    participationCount: number;
-    totalSpent: number;
-    rafflesWon: number;
-    lastParticipation?: Date;
-  };
-  consents: {
-    marketingEmails: boolean;
-    termsAndConditions: boolean;
-    dataSharing: boolean;
-  };
-}
-
-export interface IVerification {
-    // Campos para verificação documental
-    verification?: {
-      status: 'pending' | 'under_review' | 'approved' | 'rejected';
-      documents?: {
-        identityFront?: { path: string; uploadedAt: Date; verified: boolean };
-        identityBack?: { path: string; uploadedAt: Date; verified: boolean };
-        identitySelfie?: { path: string; uploadedAt: Date; verified: boolean };
-        companyDocuments?: Array<{
-          type: 'contract' | 'registration' | 'license' | 'other';
-          path: string;
-          description?: string;
-          uploadedAt: Date;
-          verified: boolean;
-        }>;
-      };
-      verificationNotes?: string;
-      rejectionReason?: string;
-      reviewedAt?: Date;
-      reviewedBy?: mongoose.Types.ObjectId | string;
-      expiresAt?: Date;
-    };
-}
-  
-export interface ICreator extends IBaseUser {
-  role: 'creator';
-  personType: 'individual' | 'company';
-  cpf?: string;
-  cnpj?: string;
-  companyName?: string;
-  legalName?: string;
-  legalRepresentative?: string;
-  bankAccount: Array<IBankAccount>;
-  verification: IVerification;
-  statistics: {
-    rafflesCreated: number;
-    activeRaffles: number;
-    totalRevenue: number;
-    conversionRate: number | null;
-    lastRaffleCreated?: Date;
-  };
-  settings: {
-    allowCommissions: boolean;
-    commissionPercentage: number;
-    receiveReports: boolean;
-  };
-}
-
-export type IUser = IRegularUser | ICreator;
+import { IRegularUser } from './interfaces/IUserInterfaces';
 
 /**
  * Base User Schema - Shared fields 
@@ -166,26 +60,26 @@ const UserSchema = new Schema({
   strict: true, // Não permite campos não definidos no schema
 });
 // Modifique o hook pre-save em src/models/User.ts
-UserSchema.pre('save', function(this: any, next) {
-  if (!this.userCode && typeof window === 'undefined') {
-    // Só tente gerar o código se o _id já estiver definido
-    if (this._id) {
-      this.userCode = generateEntityCode(this._id, 'US');
-    } else {
-      // Se o _id ainda não estiver disponível, adie a geração para o próximo save
-      console.warn('_id não está disponível para gerar userCode. Será gerado no próximo save.');
-    }
-  }
-  next();
-});
-// Adicione um hook post-save para garantir que o código seja gerado se não foi feito no pre-save
-UserSchema.post('save', async function(this: any, doc, next) {
-  if (!doc.userCode && doc._id && typeof window === 'undefined') {
-    doc.userCode = generateEntityCode(doc._id, 'US');
-    await doc.save(); // Salva novamente para persistir o código
-  }
-  next();
-});
+// UserSchema.pre('save', function(this: any, next) {
+//   if (!this.userCode && typeof window === 'undefined') {
+//     // Só tente gerar o código se o _id já estiver definido
+//     if (this._id) {
+//       this.userCode = generateEntityCode(this._id, 'US');
+//     } else {
+//       // Se o _id ainda não estiver disponível, adie a geração para o próximo save
+//       console.warn('_id não está disponível para gerar userCode. Será gerado no próximo save.');
+//     }
+//   }
+//   next();
+// });
+// // Adicione um hook post-save para garantir que o código seja gerado se não foi feito no pre-save
+// UserSchema.post('save', async function(this: any, doc, next) {
+//   if (!doc.userCode && doc._id && typeof window === 'undefined') {
+//     doc.userCode = generateEntityCode(doc._id, 'US');
+//     await doc.save(); // Salva novamente para persistir o código
+//   }
+//   next();
+// });
 
 // Índices compostos para consultas comuns
 UserSchema.index({ role: 1, createdAt: -1 }); // Facilita consultas por tipo e ordenadas por data

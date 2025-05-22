@@ -5,8 +5,9 @@ import { z } from 'zod';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUserSchema } from '../types/form';
-import { IRegularUser, IUser } from '@/models/User';
+import { IRegularUser, IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPI from '@/API/userAPI';
+import { toast, ToastContainer } from 'react-toastify';
 // Função auxiliar para validar CPF
 
 // Schema de validação do formulário
@@ -38,6 +39,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const form = useForm<RegisterFormData>({resolver: zodResolver(registerUserSchema), 
     mode: 'all',
     delayError: 200,
+    criteriaMode: 'firstError',
+    
   });
 
   const { trigger } = form;
@@ -133,12 +136,12 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Função para enviar o formulário
   const onSubmit = async (data: RegisterFormData) => {
     setIsSubmitting(true);
-    console.log(JSON.stringify(data, null, 2));    
     
     try {
       // Remover máscaras antes de enviar
       const dataToSubmit: IUser = {
         role: 'user',
+        userCode: 'sda',
         name: data.nomeCompleto,
         email: data.email,
         password: data.senha,
@@ -155,6 +158,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         birthDate: new Date(data.dataNascimento),
         isActive: true,
+        lastLogin: new Date(),
         consents: {
           marketingEmails: true,
           termsAndConditions: true,
@@ -167,14 +171,19 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rafflesWon: 0
         }
       };
+
+      console.log(JSON.stringify(dataToSubmit, null, 2));
+      
       
       // Simulação de envio para API
-      const response = await userAPI.createUser(dataToSubmit);
-      console.log(response);
+      const safeData = JSON.parse(JSON.stringify(dataToSubmit));
+      const response = await userAPI.createUser(safeData);
+      console.log("Resposta:", response);
+      toast.success('Cadastro realizado com sucesso!');
       
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
-      alert('Erro ao realizar cadastro. Tente novamente.');
+      toast.error('Erro ao realizar cadastro. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +202,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSubmitting,
         onSubmit
       }}
-    >
+      >
+      <ToastContainer />
       {children}
     </FormContext.Provider>
   );

@@ -1,27 +1,9 @@
 import mongoose from 'mongoose';
-import { ICampaign } from './Campaign';
+import { INumberStatus, NumberStatusEnum } from './interfaces/INumberStatusInterfaces';
 
 // Verificar se estamos no servidor
 const isServer = typeof window === 'undefined';
 
-export enum NumberStatusEnum {
-  AVAILABLE = 'available',
-  RESERVED = 'reserved',
-  PAID = 'paid',
-  EXPIRED = 'expired'
-}
-
-export interface INumberStatus {
-  _id?: string;
-  campaignId?: mongoose.Types.ObjectId | string;
-  number: number;
-  status: NumberStatusEnum;
-  userId?: mongoose.Types.ObjectId | string;
-  reservedAt?: Date;
-  paidAt?: Date;
-  expiresAt?: Date;
-  metadata?: Record<string, any>; // Para informações adicionais flexíveis
-}
 
 // Só criar o schema se estiver no servidor
 const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(

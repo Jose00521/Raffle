@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { ICampaign } from '../../models/Campaign';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
-import rifaAPI from '../../API/campaignAPI';
+import rifaAPI from '@/API/campaignAPI';
 import PremioCategory from './PremioCategory';
 
 // Atualizando a interface IRifa para incluir as propriedades extras

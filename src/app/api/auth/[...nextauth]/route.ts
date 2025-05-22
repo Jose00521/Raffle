@@ -1,28 +1,28 @@
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcrypt';
-import dbConnect from '@/server/lib/dbConnect'
-import { User } from '@/models/User';
-import { JWT } from 'next-auth/jwt';
+// import NextAuth from 'next-auth';
+// import CredentialsProvider from 'next-auth/providers/credentials';
+// import { compare } from 'bcrypt';
+// import * as dbConnect from '@/server/lib/dbConnect'
+// import { User } from '@/models/User';
+// import { JWT } from 'next-auth/jwt';
 
-// Tipo para representar o usuário
-interface UserDocument {
-    _id: string;
-    userCode?: string; // Código único no formato Snowflake ID
-    email: string;
-    password: string;
-    name: string;
-    role: string;
-    phone: string;
-    isActive: boolean;
-    lastLogin?: Date;
-    createdAt: Date;
-    updatedAt: Date;
-}
+// // Tipo para representar o usuário
+// interface UserDocument {
+//     _id: string;
+//     userCode?: string; // Código único no formato Snowflake ID
+//     email: string;
+//     password: string;
+//     name: string;
+//     role: string;
+//     phone: string;
+//     isActive: boolean;
+//     lastLogin?: Date;
+//     createdAt: Date;
+//     updatedAt: Date;
+// }
 
-// Configurar Next-Auth
-const handler = NextAuth({
-  providers: [
+// // Configurar Next-Auth
+// const handler = NextAuth({
+//   providers: [
     // CredentialsProvider({
     //   name: 'Credentials',
     //   credentials: {
@@ -61,34 +61,34 @@ const handler = NextAuth({
     //     };
     //   }
     // })
-  ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 dias
-  },
-  callbacks: {
-    // Personalizar o token JWT
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-      }
-      return token;
-    },
-    // Personalizar o objeto de sessão
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub as string;
-        session.user.role = token.role as string;
-      }
-      return session;
-    }
-  },
-  pages: {
-    signIn: '/login',
-    signOut: '/logout',
-    error: '/login',
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-});
+//   ],
+//   session: {
+//     strategy: 'jwt',
+//     maxAge: 30 * 24 * 60 * 60, // 30 dias
+//   },
+//   callbacks: {
+//     // Personalizar o token JWT
+//     async jwt({ token, user }) {
+//       if (user) {
+//         token.role = user.role;
+//       }
+//       return token;
+//     },
+//     // Personalizar o objeto de sessão
+//     async session({ session, token }) {
+//       if (session.user) {
+//         session.user.id = token.sub as string;
+//         session.user.role = token.role as string;
+//       }
+//       return session;
+//     }
+//   },
+//   pages: {
+//     signIn: '/login',
+//     signOut: '/logout',
+//     error: '/login',
+//   },
+//   secret: process.env.NEXTAUTH_SECRET,
+// });
 
-export { handler as GET, handler as POST }; 
+// export { handler as GET, handler as POST }; 

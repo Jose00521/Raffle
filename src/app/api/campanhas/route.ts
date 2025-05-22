@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CampaignController } from '@/server/controllers/CampaignController';
-import { container } from 'tsyringe';
+import { container } from '@/server/container/container';
 
 /**
  * Endpoint GET: Listar todas as campanhas ativas

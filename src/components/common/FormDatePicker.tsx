@@ -19,6 +19,7 @@ interface FormDatePickerProps {
   placeholder?: string;
   selected?: Date | null;
   onChange: (date: Date | null) => void;
+  onBlur: (date: Date | null) => void;
   error?: string;
   disabled?: boolean;
   required?: boolean;
@@ -425,12 +426,13 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
   label,
   icon = <FaCalendarAlt />,
   placeholder = 'Selecione a data',
-  selected,
-  onChange,
   error,
+  selected,
   disabled = false,
   required = false,
   minDate,
+  onChange,
+  onBlur,
   maxDate,
   showYearDropdown = true,
   showMonthDropdown = true,
@@ -441,6 +443,7 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
   dateFormat = 'dd/MM/yyyy',
   isClearable = false,
   triggerValidation,
+  ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -452,19 +455,20 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
     : dateFormat;
 
   // Trigger validation após mudanças
-  useEffect(() => {
-    if (touched && valueChanged && triggerValidation) {
-      const validationTimeout = setTimeout(() => {
-        triggerValidation('dataNascimento');
-      }, 300);
+  // useEffect(() => {
+  //   if (touched && valueChanged && triggerValidation) {
+  //     const validationTimeout = setTimeout(() => {
+  //       triggerValidation('dataNascimento');
+  //     }, 300);
       
-      return () => clearTimeout(validationTimeout);
-    }
-  }, [touched, valueChanged, triggerValidation, selected]);
+  //     return () => clearTimeout(validationTimeout);
+  //   }
+  // }, [touched, valueChanged, triggerValidation, selected]);
 
   const handleDateChange = (date: Date | null) => {
     onChange(date);
     setValueChanged(true);
+    console.log('handleDateChange', date);
     
     // Trigger validation com delay para melhor experiência
     if (triggerValidation) {
@@ -498,19 +502,20 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
           <ReactDatePicker
             id={id}
             name={name}
-            selected={selected}
-            onChange={handleDateChange}
             onFocus={() => setIsFocused(true)}
-            onBlur={handleBlur}
             onCalendarClose={handleBlur}
+            onBlur={handleBlur}
+            selected={selected}
             disabled={disabled}
+            required={required}
             placeholderText={placeholder}
+            onChange={handleDateChange}
             dateFormat={completeDateFormat}
             minDate={minDate}
             maxDate={maxDate}
             showYearDropdown={showYearDropdown}
             showMonthDropdown={showMonthDropdown}
-            dropdownMode="select"
+            dropdownMode="scroll"
             yearDropdownItemNumber={100}
             scrollableYearDropdown
             shouldCloseOnSelect={!showTimeSelect}
@@ -525,6 +530,7 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
             calendarClassName="custom-datepicker-calendar"
             popperClassName="datepicker-popper"
             timeInputLabel="Hora:"
+            {...props}
           />
         </DatePickerWrapper>
       </InputWrapper>
@@ -544,4 +550,4 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
   );
 };
 
-export default FormDatePicker;
+export default React.memo(FormDatePicker);

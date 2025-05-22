@@ -1,11 +1,6 @@
 import mongoose from 'mongoose';
+import { IInstantPrizeCategory } from './interfaces/IInstantPrizeInterfaces';
 
-export interface IInstantPrizeCategory {
-  _id?: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 const InstantPrizeCategorySchema = new mongoose.Schema<IInstantPrizeCategory>(
   {

@@ -1,18 +1,7 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
+import { IPrize } from './interfaces/IPrizeInterfces';
 
-export interface IPrize {
-  _id?: string;
-  prizeCode?: string; // Código único no formato Snowflake ID
-  name: string;
-  description?: string;
-  categoryId?: mongoose.Types.ObjectId;
-  image: string;
-  images: string[];
-  value: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 const PrizeSchema = new mongoose.Schema<IPrize>(
   {

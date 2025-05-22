@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import CampaignCard from './CampaignCard';
-import { ICampaign } from '../../models/Campaign';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 const Grid = styled.div`
   display: grid;

@@ -1,11 +1,6 @@
 import mongoose from 'mongoose';
+import { ICategory } from './interfaces/IPrizeInterfces';
 
-export interface ICategory {
-  _id?: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 const PrizeCategorySchema = new mongoose.Schema<ICategory>(
   {

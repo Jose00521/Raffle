@@ -1,5 +1,5 @@
-import { NumberStatusEnum } from '@/models/NumberStatus';
-import { ICampaign } from '@/models/Campaign';
+import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { injectable, inject } from 'tsyringe';
 import * as CampaignRepository from '@/server/repositories/CampaignRepository';
 export interface ICampaignService {

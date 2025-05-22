@@ -106,7 +106,7 @@ const InputIcon = styled.div`
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
   max-width: 100%;
-  height: 60px !important;
+  height: 50px !important;
   padding: ${props => props.$hasIcon ? '0 15px 0 40px' : '0 15px'};
   padding-right: 40px; /* Ensure space for password toggle button */
   border-radius: 8px;
@@ -415,7 +415,7 @@ const FormInput:React.FC<FormInputProps> = ({
             tabIndex={-1}
             aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
           >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
+            {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
           </TogglePasswordButton>
         )}
       </InputWrapper>
@@ -437,4 +437,4 @@ const FormInput:React.FC<FormInputProps> = ({
 
 FormInput.displayName = 'FormInput';
 
-export default FormInput; 
+export default React.memo(FormInput); 

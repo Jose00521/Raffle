@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags } from 'react-icons/fa';
-import { IPrize } from '@/models/Prize';
+import { IPrize } from '@/models/interfaces/IPrizeInterfces';
 import InputWithIcon from '@/components/common/InputWithIcon';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
@@ -270,7 +270,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   // Keep track of the selected category as a string for the dropdown
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    getCategoryIdAsString(initialData?.category)
+    getCategoryIdAsString(initialData?.categoryId)
   );
   
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
@@ -412,7 +412,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       // submissionData.category = new mongoose.Types.ObjectId(selectedCategory);
       
       // For mock version (type casting for TypeScript):
-      submissionData.category = selectedCategory as unknown as mongoose.Types.ObjectId;
+      submissionData.categoryId = selectedCategory as unknown as mongoose.Types.ObjectId;
     }
     
     onSubmit(submissionData);

@@ -77,7 +77,7 @@ export const usePasswordField = (password: string, confirmPassword?: string): Pa
 
   const toggleConfirmPasswordVisibility = useCallback(() => {
     setShowConfirmPassword(prev => !prev);
-  }, []);
+  }, [confirmPassword,password]);
 
   return {
     passwordStrength,

@@ -1,8 +1,12 @@
 import * as dbConnect from '@/server/lib/dbConnect';
-import Campaign, { ICampaign } from '@/models/Campaign';
-import InstantPrize, { IInstantPrize } from '@/models/InstantPrize';
-import NumberStatus, { NumberStatusEnum } from '@/models/NumberStatus';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { IInstantPrize } from '@/models/interfaces/IInstantPrizeInterfaces';
+import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
 import mongoose from 'mongoose';
+import Campaign from '@/models/Campaign';
+import NumberStatus from '@/models/NumberStatus';
+import InstantPrize from '@/models/InstantPrize';
+
 import { injectable, inject } from 'tsyringe';
 
 export interface ICampaignRepository {

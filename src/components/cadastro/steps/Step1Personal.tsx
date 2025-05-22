@@ -26,13 +26,10 @@ const Step1Personal: React.FC = () => {
     formState: { errors, touchedFields, dirtyFields },
     trigger,
     register,
-
   } = form;
 
   const registerWithMask = useHookFormMask(register);
 
-  // Estado para armazenar o último campo alterado
-   
   
   // Função helper para registrar inputs
 
@@ -47,6 +44,7 @@ const Step1Personal: React.FC = () => {
         <FormInput
           id="nomeCompleto"
           label="Nome Completo"
+          required
           icon={<FaUser />}
           placeholder="Digite seu nome completo"
           {...register('nomeCompleto')}
@@ -59,6 +57,7 @@ const Step1Personal: React.FC = () => {
         <FormInput
           id="nomeSocial"
           label="Nome Social"
+          required
           icon={<FaUser />}
           placeholder="Digite seu nome social (opcional)"
           {...register('nomeSocial')}
@@ -70,6 +69,7 @@ const Step1Personal: React.FC = () => {
         <FormInput
           id="cpf"
           label="CPF"
+          required
           icon={<FaIdCard />}
           placeholder="000.000.000-00"
           {...registerWithMask('cpf', 'cpf')}
@@ -87,16 +87,18 @@ const Step1Personal: React.FC = () => {
                 <FormDatePicker
                   id="dataNascimento"
                   label="Data de Nascimento"
-                  icon={<FaCalendarAlt />}
                   selected={field.value}
-                  onChange={field.onChange}
-                  error={errors.dataNascimento?.message as string}
+                  icon={<FaCalendarAlt />}
                   placeholder="DD/MM/AAAA"
-                  triggerValidation={() => trigger('dataNascimento')}
                   required
                   showYearDropdown
                   showMonthDropdown
                   maxDate={new Date()}
+                  {...register('dataNascimento')}
+                  error={errors.dataNascimento?.message as string}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  triggerValidation={() => trigger('dataNascimento')}
                 />
               </StyledFormDatePickerWrapper>
             )}

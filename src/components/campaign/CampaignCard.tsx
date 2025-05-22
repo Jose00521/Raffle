@@ -3,7 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { ICampaign } from '../../models/Campaign';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 const Card = styled.div`
   display: flex;
@@ -194,7 +194,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const daysUntilDraw = Math.ceil((drawDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   
   let status: 'active' | 'completed' | 'ending' = 'active';
-  if (!campaign.isActive || campaign.winnerNumber !== null) {
+  if (!campaign.status || campaign.winnerNumber !== null) {
     status = 'completed';
   } else if (daysUntilDraw <= 3 || progressPercentage >= 90) {
     status = 'ending';
@@ -222,7 +222,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
         </CardBadge>
         <CardCode>{campaignCode}</CardCode>
         <img
-          src={campaign.image}
+          src={campaign.prizes[0].image}
           alt={campaign.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />

@@ -1,4 +1,4 @@
-import { IUser } from "@/models/User";
+import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { inject, injectable } from "tsyringe";
 import * as UserRepository from "../repositories/UserRepository";
 

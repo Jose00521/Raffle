@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { IRifa } from '../models/Campaign';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 const StyledCard = styled.div`
   display: flex;
@@ -92,19 +92,19 @@ const Price = styled.span`
 `;
 
 interface RifaCardProps {
-  rifa: IRifa;
+  rifa: ICampaign;
 }
 
 const RifaCard: React.FC<RifaCardProps> = ({ rifa }) => {
   // Calculate progress
-  const soldCount = rifa.totalNumbers - rifa.availableNumbers.length;
+  const soldCount = rifa.totalNumbers - (rifa.stats?.available || 0);
   const progressPercentage = (soldCount / rifa.totalNumbers) * 100;
   
   return (
     <StyledCard>
       <ImageContainer>
         <img
-          src={rifa.image}
+          src={rifa.prizes[0].image}
           alt={rifa.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />

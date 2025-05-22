@@ -1,4 +1,5 @@
-import { ICampaign } from '@/models/Campaign';
+import 'reflect-metadata';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import * as CampaignService from '@/server/services/CampaignService';
 import { injectable, inject } from 'tsyringe';
 

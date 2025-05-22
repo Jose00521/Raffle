@@ -1,7 +1,8 @@
-import dbConnect from '@/server/lib/dbConnect';
-import Campaign, { ICampaign } from '@/models/Campaign';
-import InstantPrize, { IInstantPrize } from '@/models/InstantPrize';
-import NumberStatus, { NumberStatusEnum } from '@/models/NumberStatus';
+import * as dbConnect from '@/server/lib/dbConnect';
+import Campaign from '@/models/Campaign';
+import InstantPrize from '@/models/InstantPrize';
+import NumberStatus from '@/models/NumberStatus';
+import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
 import mongoose from 'mongoose';
 
 

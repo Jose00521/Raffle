@@ -6,15 +6,18 @@ import next from "next";
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { DBConnection } from './src/server/lib/dbConnect.js';
-import { initializeServices } from './src/server/init.js';
-import { container } from 'tsyringe';
+import { DBConnection, IDBConnection } from './src/server/lib/dbConnect.ts';
+import { initializeServices } from './src/server/init.ts';
+
+import './src/server/container/container';
+import { container } from './src/server/container/container.ts';
+
 
 // Para executar migrations automaticamente no arranque, descomente estas linhas:
 // const path = require('path');
 // const { exec } = require('child_process');
 
-const dev = process.env.NODE_ENV !== 'production';
+const dev = process.env.NODE_ENV !== 'development';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -22,11 +25,9 @@ const PORT = process.env.PORT || 3000;
 const db = container.resolve(DBConnection);
 
 app.prepare().then(async () => {
-  const server = express();
-  const httpServer = createServer(server);
-  
-  server.use(cors());
-  server.use(express.json());
+  const httpServer = createServer((req, res) => {
+    return handle(req, res);
+  });
   
   // Socket.io setup
   const io = new Server(httpServer, {
@@ -58,10 +59,6 @@ app.prepare().then(async () => {
     console.error('❌ Erro ao conectar ao MongoDB:', error);
   }
   
-  // Next.js request handler
-  server.all(/.*/, (req: Request, res: Response) => {
-    return handle(req, res);
-  });
   
   httpServer.listen(PORT, () => {
     console.log(`> Server running on http://localhost:${PORT}`);

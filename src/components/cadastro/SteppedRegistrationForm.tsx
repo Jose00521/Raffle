@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaCheckCircle, FaUser, FaShieldAlt, FaMapMarked, FaUserPlus, FaArrowRight, FaArrowLeft, FaLock } from 'react-icons/fa';
 import { FormProvider, useFormContext } from '../../context/UserFormContext';
 
@@ -45,8 +45,8 @@ const FormContent: React.FC = () => {
     isSubmitting,
     onSubmit
   } = useFormContext();
-  
-  const [isStepValid, setIsStepValid] = React.useState(false);
+
+
   
   //Verificar validade dos campos quando o step mudar
 
@@ -101,16 +101,16 @@ const FormContent: React.FC = () => {
       <Form onSubmit={form.handleSubmit(onSubmit)}>
         <StepsContainer $step={step} $isSliding={isSliding}>
           {/* Etapa 1: Informações Pessoais */}
-          <Step1Personal />
+          <MemoizedStep1Personal />
 
           {/* Etapa 2: Autenticação */}
-          <Step2Authentication />
+          <MemoizedStep2Authentication />
 
           {/* Etapa 3: Endereço */}
-          <Step3Address />
+          <MemoizedStep3Address />
 
           {/* Etapa 4: Revisão e Confirmação */}
-          <Step4Confirmation />
+          <MemoizedStep4Confirmation />
         </StepsContainer>
         
         <ButtonContainer>
