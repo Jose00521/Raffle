@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { PaymentEvent, PaymentStatusEnum } from './interfaces/PaymentEvent';
 import { BatchProcessor } from './BatchProcessor';
-
+import { IDBConnection } from '@/server/lib/dbConnect';
+import Payment from '@/models/Payment';
 /**
  * Monitora eventos de pagamento usando MongoDB ChangeStream
  * Segue o princípio de Responsabilidade Única (S do SOLID)
@@ -10,9 +11,11 @@ export class PaymentEventMonitor {
   private changeStream: any = null;
   private isRunning = false;
   private readonly batchProcessor: BatchProcessor;
-  
-  constructor(batchProcessor: BatchProcessor) {
+  private readonly dbConnect: IDBConnection;
+
+  constructor(batchProcessor: BatchProcessor, dbConnect: IDBConnection) {
     this.batchProcessor = batchProcessor;
+    this.dbConnect = dbConnect;
   }
 
   /**
@@ -29,10 +32,9 @@ export class PaymentEventMonitor {
       // Pipeline de filtro para operações relevantes
       const pipeline = this.createMonitoringPipeline();
       
+      await this.dbConnect.connect();
       // Iniciar ChangeStream
-      this.changeStream = mongoose.connection
-        .collection('payments')
-        .watch(pipeline, { 
+      this.changeStream = Payment?.watch(pipeline, { 
           fullDocument: 'updateLookup',
           maxAwaitTimeMS: 1000 
         });
@@ -113,6 +115,8 @@ export class PaymentEventMonitor {
    */
   private handleChangeEvent(change: any): void {
     try {
+      console.log('EVENTO DE MUDANÇA NA TABELA PAYMENT:', change);
+      
       const { operationType, fullDocument } = change;
       
       // Ignorar se não há documento completo

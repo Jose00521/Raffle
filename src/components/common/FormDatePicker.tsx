@@ -76,30 +76,25 @@ const InputIcon = styled.div`
   pointer-events: none;
 `;
 
-const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean }>`
+const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean; $hasIcon?: boolean }>`
   .react-datepicker-wrapper {
     width: 100%;
   }
+
+
   
   .react-datepicker__input-container {
     width: 100%;
     
     input {
       width: 100%;
-      height: 50px !important	;
-      padding: 0 15px 0 40px;
+      padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'} !important;
       border-radius: 8px;
       border: 2px solid ${props => props.$hasError ? '#ef4444' : props.$isFocused ? '#6a11cb' : 'rgba(0, 0, 0, 0.1)'};
-      background-color: ${props => props.$isFocused ? 'white' : '#f5f5f5'};
-      font-size: 0.9rem;
+      background-color: ${props => props.$isFocused ? 'white' : '#f8f9fa'};
+      font-size: 1.0rem;
       transition: all 0.2s ease;
-      box-shadow: ${({ $hasError, $isFocused }) => 
-        $hasError 
-          ? `0 0 0 1px #ef4444` 
-          : $isFocused 
-            ? `0 0 0 2px #6a11cb` 
-            : 'none'};
-      cursor: pointer;
+
       
       &:focus {
         outline: none;
@@ -113,8 +108,8 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
       }
       
       &::placeholder {
-        color: #a0aec0;
-        opacity: 0.7;
+        color: #6d7280;
+        opacity: 0.8;
       }
       
       &:hover:not(:focus) {
@@ -498,7 +493,7 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
       <InputWrapper>
         <InputIcon>{icon}</InputIcon>
         
-        <DatePickerWrapper $hasError={!!error} $isFocused={isFocused}>
+        <DatePickerWrapper $hasError={!!error} $isFocused={isFocused} $hasIcon={!!icon}>
           <ReactDatePicker
             id={id}
             name={name}

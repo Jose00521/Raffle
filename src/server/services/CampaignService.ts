@@ -1,43 +1,41 @@
 import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { injectable, inject } from 'tsyringe';
-import * as CampaignRepository from '@/server/repositories/CampaignRepository';
+import type { ICampaignRepository } from '@/server/repositories/CampaignRepository';
+import { ApiResponse, createSuccessResponse, createErrorResponse } from '../utils/errorHandler/api';
+import { ApiError } from '../utils/errorHandler/ApiError';
+
 export interface ICampaignService {
-  listarCampanhasAtivas(): Promise<{statusCode: number, success: boolean, data: ICampaign[], error: string | null}>;
-  obterDetalhesCampanha(id: string): Promise<{statusCode: number, success: boolean, data: ICampaign | null, error: string | null}>;
+  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>>;
+  obterDetalhesCampanha(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
 @injectable()
 export class CampaignService implements ICampaignService {
-  private campaignRepository: CampaignRepository.ICampaignRepository;
+  private campaignRepository: ICampaignRepository;
 
   constructor(
-    @inject('campaignRepository') campaignRepository: CampaignRepository.ICampaignRepository
+    @inject('campaignRepository') campaignRepository: ICampaignRepository
   ) {
     this.campaignRepository = campaignRepository;
   }
   /**
    * Obtém todas as campanhas ativas com suas estatísticas
    */
-  async listarCampanhasAtivas(): Promise<{statusCode: number, success: boolean, data: ICampaign[], error: string | null}> {
+  async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>> {
     try {
       const campanhas: ICampaign[] = await this.campaignRepository.buscarCampanhasAtivas();
     
       
-      return {
-        statusCode: 200,
-        success: true,
-        error: null,
-        data: campanhas
-      };
+      return createSuccessResponse(campanhas, 'Campanhas ativas carregadas com sucesso', 200);
     } catch (error) {
       console.error('Erro ao listar campanhas ativas:', error);
-      return {
-        statusCode: 500,
+      throw new ApiError({
         success: false,
-        data: [],
-        error: 'Falha ao carregar as campanhas ativas'
-      };
+        message: 'Erro ao listar campanhas ativas',
+        statusCode: 500,
+        cause: error as Error
+      });
     }
   }
 

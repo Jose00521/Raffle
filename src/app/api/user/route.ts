@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { CampaignController } from '@/server/controllers/CampaignController';
 import { container } from '../../../server/container/container';
 import { UserController } from '@/server/controllers/UserController';
+import { createErrorResponse } from '@/server/utils/errorHandler/api';
 /**
  * Endpoint GET: Obter detalhes de uma campanha específica por ID
  */
@@ -12,11 +13,12 @@ export async function POST( request: Request,response: Response) {
     try {
         // Envolva todo o código em try/catch
         const body = await request.json();
-        console.log("Chegou no try", body);
         
         // Seu código existente...
         const userController = container.resolve(UserController);
         const result = await userController.createUser(body);
+
+        console.log('result',result);
         
         // Garantir resposta válida
         return new Response(
@@ -37,12 +39,7 @@ export async function POST( request: Request,response: Response) {
         
         // Garantir que SEMPRE retorne um JSON válido, mesmo em erro
         return new Response(
-          JSON.stringify({
-            success: false,
-            statusCode: 500,
-            message: "Erro interno do servidor",
-            error: error instanceof Error ? error.message : "Erro desconhecido"
-          }),
+          JSON.stringify(createErrorResponse('Erro interno do servidor', 500)),
           { 
             status: 500, 
             headers: { 'Content-Type': 'application/json' } 

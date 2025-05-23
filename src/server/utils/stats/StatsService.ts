@@ -6,7 +6,8 @@ import { StatsUpdateProcessor } from './processors/StatsUpdateProcessor';
 import { SocketIONotifier } from './notifiers/SocketIONotifier';
 import SessionManager from './SessionManager';
 import { IEventNotifier } from './interfaces/IEventNotifier';
-
+import { IDBConnection } from '../../lib/dbConnect';
+import { container } from '../../container/container';
 /**
  * Serviço principal para gerenciamento de estatísticas
  * Segue o princípio de Inversão de Dependência (D do SOLID)
@@ -18,7 +19,8 @@ export class StatsService {
   private readonly updateProcessor: StatsUpdateProcessor;
   private readonly batchProcessor: BatchProcessor;
   private readonly eventMonitor: PaymentEventMonitor;
-  
+  private readonly dbConnect: IDBConnection;
+
   constructor(io: SocketServer) {
     // Configurações padrão
     this.config = {
@@ -28,13 +30,14 @@ export class StatsService {
     
     // Inicializar componentes seguindo SOLID
     // Injeção de dependências (D do SOLID)
+    this.dbConnect = container.resolve('db');
     this.notifier = new SocketIONotifier(io);
     
     // Criamos um processador para atualizar as estatísticas e enviar notificações
     this.updateProcessor = new StatsUpdateProcessor(this.notifier);
     
     this.batchProcessor = new BatchProcessor(this.config, this.updateProcessor);
-    this.eventMonitor = new PaymentEventMonitor(this.batchProcessor);
+    this.eventMonitor = new PaymentEventMonitor(this.batchProcessor, this.dbConnect);
   }
 
   /**

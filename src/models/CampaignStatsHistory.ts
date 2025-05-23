@@ -58,7 +58,8 @@ const CampaignStatsHistorySchema = new Schema({
   daysRemaining: { type: Number }, // Dias até o sorteio
   isExpired: { type: Boolean, default: false }
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'campaign_stats_history'
 });
 
 // Índices para consultas frequentes

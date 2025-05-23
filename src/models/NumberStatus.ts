@@ -41,7 +41,7 @@ const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
   },
   {
     timestamps: true,
-    collection:'numbers'
+    collection:'numbers_status'
   }
 ) : null;
 

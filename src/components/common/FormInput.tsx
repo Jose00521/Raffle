@@ -7,7 +7,7 @@ import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 interface FormInputProps {
   id: string;
   name?: string;
-  label: string;
+  label?: string;
   icon?: ReactNode;
   placeholder?: string;
   type?: string;
@@ -105,14 +105,13 @@ const InputIcon = styled.div`
 
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
-  max-width: 100%;
-  height: 50px !important;
-  padding: ${props => props.$hasIcon ? '0 15px 0 40px' : '0 15px'};
+  border: ${props => props.$hasError ? '2px solid #ef4444' : '2px solid rgba(0, 0, 0, 0)'};
+  padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
   padding-right: 40px; /* Ensure space for password toggle button */
   border-radius: 8px;
-  border: 1px solid ${props => props.$hasError ? '#ef4444' : 'rgba(0, 0, 0, 0.1)'};
-  background-color: white;
-  font-size: 0.9rem;
+  background-color: #f8f9fa;
+  font-size: 1.0rem;
+  transition: all 0.2s;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   color: #333;
@@ -120,8 +119,10 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   
   &:focus {
     outline: none;
+    border: 2px solid ${props => props.$hasError ? '#ef4444' : '#6a11cb'};
     border-color: ${props => props.$hasError ? '#ef4444' : '#6a11cb'};
-    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(106, 17, 203, 0.1)'};
+    background-color: white;
+    
   }
   
   &:disabled {

@@ -64,7 +64,8 @@ const CreatorStatsHistorySchema = new Schema({
     sunday: { type: Number, default: 0 }
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'creator_stats_history'
 });
 
 // Índices para consultas frequentes

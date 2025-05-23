@@ -1,94 +1,58 @@
-// import NextAuth from 'next-auth';
-// import CredentialsProvider from 'next-auth/providers/credentials';
-// import { compare } from 'bcrypt';
-// import * as dbConnect from '@/server/lib/dbConnect'
-// import { User } from '@/models/User';
-// import { JWT } from 'next-auth/jwt';
+import 'reflect-metadata';
+import NextAuth, { Awaitable } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcrypt';
+import { User } from '@/models/User';
+import { JWT } from 'next-auth/jwt';
+import Credentials from 'next-auth/providers/credentials';
+import { container } from '@/server/container/container';
+import { IUserAuthRepository } from '@/server/repositories/auth/userAuth';
+import type { IUser } from '@/models/interfaces/IUserInterfaces';
 
-// // Tipo para representar o usuário
-// interface UserDocument {
-//     _id: string;
-//     userCode?: string; // Código único no formato Snowflake ID
-//     email: string;
-//     password: string;
-//     name: string;
-//     role: string;
-//     phone: string;
-//     isActive: boolean;
-//     lastLogin?: Date;
-//     createdAt: Date;
-//     updatedAt: Date;
-// }
 
-// // Configurar Next-Auth
-// const handler = NextAuth({
-//   providers: [
-    // CredentialsProvider({
-    //   name: 'Credentials',
-    //   credentials: {
-    //     email: { label: 'Email', type: 'email' },
-    //     password: { label: 'Senha', type: 'password' }
-    //   },
-    //   async authorize(credentials) {
-    //     // Verificar se as credenciais foram fornecidas
-    //     if (!credentials?.email || !credentials?.password) {
-    //       throw new Error('Email e senha são obrigatórios');
-    //     }
+// Configurar Next-Auth
+const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+   Credentials({
+    credentials: {
+      phone: { },
+      password: {  }
+    },
+    authorize: async (credentials) => {
 
-    //     // Conectar ao banco de dados
-    //     await dbConnect();
+        const userAuthRepository = container.resolve<IUserAuthRepository>('userAuthRepository');
 
-    //     // Buscar usuário pelo email
-    //     const user = await User.findOne({ email: credentials.email }).select('+password').lean() as unknown as UserDocument;
+        const user = await userAuthRepository.findByCredentials(
+            credentials!.phone as string, 
+            credentials!.password as string
+        );
+        //TODO: Implementar a lógica de autenticação
 
-    //     // Verificar se o usuário existe
-    //     if (!user) {
-    //       throw new Error('Email ou senha inválidos');
-    //     }
+        //Retornar null se a autenticação falhar
+        if (!user) {
+            return null;
+        }
+        
 
-    //     // Verificar se a senha está correta
-    //     const isPasswordCorrect = await compare(credentials.password, user.password);
-    //     if (!isPasswordCorrect) {
-    //       throw new Error('Email ou senha inválidos');
-    //     }
+        //Retornar o usuário se a autenticação for bem sucedida
+        return {
+            id: user.userCode as string,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+        };
 
-    //     // Retornar objeto de usuário sem a senha
-    //     return {
-    //       id: user._id.toString(),
-    //       name: user.name,
-    //       email: user.email,
-    //       role: user.role
-    //     };
-    //   }
-    // })
-//   ],
-//   session: {
-//     strategy: 'jwt',
-//     maxAge: 30 * 24 * 60 * 60, // 30 dias
-//   },
-//   callbacks: {
-//     // Personalizar o token JWT
-//     async jwt({ token, user }) {
-//       if (user) {
-//         token.role = user.role;
-//       }
-//       return token;
-//     },
-//     // Personalizar o objeto de sessão
-//     async session({ session, token }) {
-//       if (session.user) {
-//         session.user.id = token.sub as string;
-//         session.user.role = token.role as string;
-//       }
-//       return session;
-//     }
-//   },
-//   pages: {
-//     signIn: '/login',
-//     signOut: '/logout',
-//     error: '/login',
-//   },
-//   secret: process.env.NEXTAUTH_SECRET,
-// });
+   }
+})
+  ],
+  session: {
+    strategy: 'jwt',
+  },
+  pages:{
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
+  },
+  secret: process.env.NEXTAUTH_SECRET || 'secret',
+});
 
-// export { handler as GET, handler as POST }; 
+export { handlers as GET, handlers as POST }; 

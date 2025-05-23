@@ -123,8 +123,8 @@ const RegularUserSchema = new Schema({
   purchasedNumbers: [
     {
       rifaId: {
-        type: String,
-        required: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rifa',
       },
       numbers: [
         {

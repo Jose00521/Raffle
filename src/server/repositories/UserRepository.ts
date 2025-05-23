@@ -1,39 +1,55 @@
 import { User } from "@/models/User";
 import { inject, injectable } from "tsyringe";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
-import * as dbConnect from '@/server/lib/dbConnect';
+import type { IDBConnection } from "@/server/lib/dbConnect";
 import { generateEntityCode } from "@/models/utils/idGenerator";
+import { ApiError } from "@/server/utils/errorHandler/ApiError";
+import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
 export interface IUserRepository {
-    createUser(user: IUser): Promise<IUser>;
+    createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
 export class UserRepository implements IUserRepository {
-    private db: dbConnect.IDBConnection;
+    private db: IDBConnection;
 
     constructor(
-        @inject('db') db: dbConnect.IDBConnection
+        @inject('db') db: IDBConnection
     ) {
         this.db = db;
     }
 
-     async createUser(user: IUser) {
+     async createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>> {
         try {
+            //inicia conexão com o banco de dados
             await this.db.connect();
 
+            //verifica se o usuário já existe
             const userExists = await this.checkIfUserExists(user);
+
             if(userExists){
-                throw new Error('Usuário já existe');
+                return createErrorResponse('Usuário já cadastrado', 400);
             }
 
+            //cria o usuário
             const userData = await User.create(user);
+
+            //gera o código do usuário(userCode)
             userData.userCode = generateEntityCode(userData._id, 'US');
+
+            //salva o usuário
             await userData.save();
 
             
-            return userData;
+            return createSuccessResponse(userData, 'Usuário criado com sucesso', 200);
+
         } catch (error) {
-            throw new Error(error as string);
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao criar usuário',
+                statusCode: 500,
+                cause: error as Error
+            });
         }
     }
 
@@ -56,7 +72,12 @@ export class UserRepository implements IUserRepository {
             }
             return false;
         } catch (error) {
-            throw new Error(error as string);
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao checar se o usuário já existe',
+                statusCode: 500,
+                cause: error as Error
+            });
         }
     }
 }

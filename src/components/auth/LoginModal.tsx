@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import Link from 'next/link';
 import { FaPhone, FaLock, FaArrowLeft, FaEye, FaEyeSlash, FaMobileAlt, FaUserPlus, FaShieldAlt } from 'react-icons/fa';
+import { set, useForm } from 'react-hook-form';
+import { LoginFormData, loginUserSchema } from '@/types/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+import FormInput from '../common/FormInput';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,49 +17,75 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1); // 1: telefone, 2: senha
-  const [telefone, setTelefone] = useState('');
-  const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const { register, setValue , getValues, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginUserSchema),
+    mode: 'all',
+    delayError: 200,
+    criteriaMode: 'firstError',
+    defaultValues: {
+      telefone: '',
+      password: '',
+    },
+  });
+
+  const registerInput = (name: keyof LoginFormData) => {
+    const {  onChange, onBlur , ...rest} = register(name);
+
+    return {
+      onChange(e: React.ChangeEvent<HTMLInputElement>) {
+        onChange(e);
+        handleInputChange(e);
+      },
+      onBlur(e: React.FocusEvent<HTMLInputElement>) {
+        onBlur(e);
+        handleInputChange(e);
+      },
+      ...rest,
+    };
+    
+  }
+
   // Efeito para lidar com clique fora do modal para fechar
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+  //       onClose();
+  //     }
+  //   };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+  //   if (isOpen) {
+  //     document.addEventListener('mousedown', handleClickOutside);
+  //   }
     
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   };
+  // }, [isOpen, onClose]);
 
-  // Efeito para prevenir scroll do body quando modal estiver aberto
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+  // // Efeito para prevenir scroll do body quando modal estiver aberto
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     document.body.style.overflow = 'hidden';
+  //   } else {
+  //     document.body.style.overflow = '';
+  //   }
     
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  //   return () => {
+  //     document.body.style.overflow = '';
+  //   };
+  // }, [isOpen]);
 
   // Reset do step quando o modal é fechado
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
         setStep(1);
-        setTelefone('');
-        setSenha('');
+        setValue('telefone', '');
+        setValue('password', '');
       }, 300);
     }
   }, [isOpen]);
@@ -64,10 +95,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     
     if (name === 'telefone') {
       const formattedValue = formatPhoneNumber(value);
-      setTelefone(formattedValue);
-    } else if (name === 'senha') {
-      setSenha(value);
+      setValue(name, formattedValue);
+    } else if (name === 'password') {
+      setValue(name, value);
     }
+
   };
 
   const formatPhoneNumber = (value: string) => {
@@ -85,7 +117,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleNextStep = () => {
-    if (telefone.length >= 14) { // Garantir que o telefone está completo
+    if (getValues('telefone').length >= 14) { // Garantir que o telefone está completo
       setIsSliding(true);
       setTimeout(() => {
         setStep(2);
@@ -102,17 +134,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     }, 300);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
+    console.log(data);
     // Aqui você implementaria a lógica de autenticação
-    console.log('Login com', { telefone, senha });
+    
     // Após login bem-sucedido:
     // onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      if (step === 1 && telefone.length >= 14) {
+      if (step === 1 && getValues('telefone').length >= 14) {
         handleNextStep();
       }
     }
@@ -137,7 +169,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </ModalSubtitle>
         </ModalHeader>
 
-        <FormContainer onSubmit={handleSubmit}>
+        <FormContainer onSubmit={handleSubmit(onSubmit)}>
           <StepIndicator>
             <StepDot $active={step === 1} $completed={step > 1} />
             <StepLine $completed={step > 1} />
@@ -153,25 +185,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               </StepLabel>
               
               <InputGroup>
-                <InputIcon>
-                  <FaPhone />
-                </InputIcon>
-                <Input
-                  type="text"
-                  name="telefone"
+                <FormInput
+                  id="telefone"
+                  icon={<FaPhone />}
                   placeholder="(00) 00000-0000"
-                  value={telefone}
-                  onChange={handleInputChange}
-                  maxLength={15}
-                  autoFocus
-                  onKeyDown={handleKeyDown}
+                  error={errors.telefone?.message as string}
+                  {...registerInput('telefone')}
+                  // onKeyDown={handleKeyDown}
                 />
               </InputGroup>
               
               <Button 
                 type="button" 
                 onClick={handleNextStep}
-                disabled={telefone.length < 14}
+                disabled={getValues('telefone').length < 14}
               >
                 Continuar
               </Button>
@@ -188,16 +215,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               </StepLabel>
               
               <InputGroup>
-                <InputIcon>
-                  <FaLock />
-                </InputIcon>
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  name="senha"
+                <FormInput
+                  id="password"
+                  icon={<FaLock />}
+                  isPassword
+                  error={errors.password?.message as string}
                   placeholder="Digite sua senha"
-                  value={senha}
-                  onChange={handleInputChange}
-                  style={{ color: '#333' }}
+                  {...registerInput('password')}
                 />
                 <TogglePasswordButton
                   type="button"
@@ -207,7 +231,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 </TogglePasswordButton>
               </InputGroup>
 
-              <Button type="submit" disabled={senha.length < 8}>
+              <Button type="submit" disabled={getValues('password').length < 8}>
                 Entrar
               </Button>
             </StepContent>
@@ -554,10 +578,10 @@ const StepText = styled.div`
 
 const InputGroup = styled.div`
   position: relative;
-  margin-bottom: 25px;
+  margin-bottom: 2px;
   
   @media (max-width: 375px) {
-    margin-bottom: 20px;
+    margin-bottom: 2px;
   }
 `;
 

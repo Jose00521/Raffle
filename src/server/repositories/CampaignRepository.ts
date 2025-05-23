@@ -1,4 +1,4 @@
-import * as dbConnect from '@/server/lib/dbConnect';
+import type { IDBConnection } from '@/server/lib/dbConnect';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { IInstantPrize } from '@/models/interfaces/IInstantPrizeInterfaces';
 import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
@@ -19,9 +19,9 @@ export interface ICampaignRepository {
 
 @injectable()
 export class CampaignRepository	implements ICampaignRepository  {
-  private db: dbConnect.IDBConnection;
+  private db: IDBConnection;
 
-  constructor(@inject('db') db: dbConnect.IDBConnection) {
+  constructor(@inject('db') db: IDBConnection) {
     this.db = db;
   }
   /**

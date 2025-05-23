@@ -11,23 +11,27 @@ import { initializeServices } from './src/server/init.ts';
 
 import './src/server/container/container';
 import { container } from './src/server/container/container.ts';
-
+import { validateEntityCode } from './src/models/utils/idGenerator';
 
 // Para executar migrations automaticamente no arranque, descomente estas linhas:
 // const path = require('path');
 // const { exec } = require('child_process');
 
-const dev = process.env.NODE_ENV !== 'development';
+const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const PORT = process.env.PORT || 3000;
 const db = container.resolve(DBConnection);
 
+
+
+
 app.prepare().then(async () => {
   const httpServer = createServer((req, res) => {
     return handle(req, res);
   });
+
   
   // Socket.io setup
   const io = new Server(httpServer, {
@@ -62,5 +66,7 @@ app.prepare().then(async () => {
   
   httpServer.listen(PORT, () => {
     console.log(`> Server running on http://localhost:${PORT}`);
+    console.log('process.env.AUTH_SECRET',process.env.AUTH_SECRET);
+
   });
 }); 

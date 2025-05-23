@@ -2,16 +2,23 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 import * as os from 'os';
 
+// Configurações de bits/tamanho para componentes do ID
+const TIME_CHAR_LENGTH = 5;        // 5 chars = ~25 bits (32^5 combinações)
+const SEQ_WORKER_CHAR_LENGTH = 4;  // 4 chars = ~16 bits (32^4 combinações)
+const ENTITY_CHAR_LENGTH = 4;      // 4 chars = ~16 bits (32^4 combinações)
+
 // Constantes para Snowflake ID
 const EPOCH_START = 1672531200000; // 01 Jan 2023 como referência
-const MAX_SEQUENCE = 4095; // 12 bits (0-4095)
+const WORKER_ID_BITS = 12;         // 12 bits para worker ID (0-4095)
+const SEQUENCE_BITS = 12;          // 12 bits para sequence (0-4095)
+const MAX_SEQUENCE = (1 << SEQUENCE_BITS) - 1; // 4095
 
 // Alfabeto seguro
 const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const BASE = ALPHABET.length; // 32
 
 // Chave secreta
-const SECRET_KEY = process.env.ID_SECRET_KEY || crypto.randomBytes(32).toString('hex');
+const SECRET_KEY = process.env.ID_SECRET_KEY || 'e6a44fdf130584409973b20ea04d982928e513ab3356a0bf3eb3e80718ee1728';
 
 // Gera worker ID estável baseado em MAC address + hostname
 function getUniqueWorkerId(): number {
@@ -28,12 +35,14 @@ function getUniqueWorkerId(): number {
     const input = `${macAddresses}-${os.hostname()}-${process.pid}`;
     const hash = crypto.createHash('sha256').update(input).digest('hex');
     
-    // Extrair 10 bits (0-1023) para worker ID
-    return parseInt(hash.substring(0, 3), 16) % 1024;
+    // Extrair bits para worker ID usando a constante configurável
+    const maxWorkerId = (1 << WORKER_ID_BITS) - 1;
+    return parseInt(hash.substring(0, 3), 16) % (maxWorkerId + 1);
   } catch (e) {
     // Fallback com hash de hostname
     const hash = crypto.createHash('sha256').update(os.hostname()).digest('hex');
-    return parseInt(hash.substring(0, 3), 16) % 1024;
+    const maxWorkerId = (1 << WORKER_ID_BITS) - 1;
+    return parseInt(hash.substring(0, 3), 16) % (maxWorkerId + 1);
   }
 }
 
@@ -65,7 +74,7 @@ function generateEntityFragment(entityId: string): string {
   const hash = hmac.digest('hex');
   
   let fragment = '';
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < ENTITY_CHAR_LENGTH; i++) {
     const value = parseInt(hash.substring(i * 2, i * 2 + 2), 16);
     fragment += ALPHABET[value % BASE];
   }
@@ -148,14 +157,14 @@ export function generateEntityCode(
   
   // Componente de tempo: 41 bits no total
   const timeSeconds = Math.floor((timestamp - EPOCH_START) / 1000);
-  const timeComponent = toAlphabetString(timeSeconds, 5);
+  const timeComponent = toAlphabetString(timeSeconds, TIME_CHAR_LENGTH);
   
   // Componente de sequência: 22 bits (10 worker + 12 sequence)
-  const uniquenessValue = (WORKER_ID << 12) | sequence;
-  const sequenceComponent = toAlphabetString(uniquenessValue, 3);
+  const uniquenessValue = (WORKER_ID << SEQUENCE_BITS) | sequence;
+  const sequenceComponent = toAlphabetString(uniquenessValue, SEQ_WORKER_CHAR_LENGTH);
   
   // Fragmento da entidade
-  let entityFragment = '0000';
+  let entityFragment = ALPHABET[0].repeat(ENTITY_CHAR_LENGTH);
   if (entityId) {
     entityFragment = generateEntityFragment(entityId.toString());
   }
@@ -169,6 +178,47 @@ export function generateEntityCode(
   
   // ID final: PREFIX-TIME-SEQUENCECHECKSUM-ENTITY-YEAR
   return `${normalizedPrefix}-${timeComponent}-${sequenceComponent}${checksumChar}-${entityFragment}-${year}`;
+}
+
+/**
+ * Verifica se um código de entidade é válido e foi gerado por este sistema
+ * @param code O código a ser verificado
+ * @returns true se o código é válido, false caso contrário
+ */
+export function validateEntityCode(code: string): boolean {
+  try {
+    // Cria o padrão regex baseado nas constantes de tamanho
+    const alphabetPattern = `[${ALPHABET}]`;
+    const regex = new RegExp(
+      `^([A-Z]{1,4})-` +                                  // PREFIX
+      `(${alphabetPattern}{${TIME_CHAR_LENGTH}})-` +      // TIME
+      `(${alphabetPattern}{${SEQ_WORKER_CHAR_LENGTH + 1}})-` +  // SEQUENCE+CHECKSUM
+      `(${alphabetPattern}{${ENTITY_CHAR_LENGTH}})-` +    // ENTITY
+      `(\\d{2})$`                                         // YEAR
+    );
+    
+    const match = code.match(regex);
+    
+    if (!match) {
+      return false;
+    }
+    
+    // Extrai componentes
+    const [_, prefix, timeComponent, sequenceWithChecksum, entityFragment, year] = match;
+    
+    // Separa sequência e checksum
+    const sequenceComponent = sequenceWithChecksum.substring(0, SEQ_WORKER_CHAR_LENGTH);
+    const providedChecksum = sequenceWithChecksum.charAt(SEQ_WORKER_CHAR_LENGTH);
+    
+    // Verifica o checksum
+    const baseCode = timeComponent + sequenceComponent + entityFragment;
+    const expectedChecksum = generateChecksum(baseCode);
+    
+    // Verifica se o checksum corresponde
+    return providedChecksum === expectedChecksum;
+  } catch (error) {
+    return false;
+  }
 }
 
 // Limpeza de cache a cada 12 horas

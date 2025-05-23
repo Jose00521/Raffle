@@ -67,7 +67,8 @@ const ParticipantStatsHistorySchema = new Schema({
     numbersCount: Number
   }]
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'participant_stats_history'
 });
 
 // Índices para consultas frequentes

@@ -57,7 +57,6 @@ const Step1Personal: React.FC = () => {
         <FormInput
           id="nomeSocial"
           label="Nome Social"
-          required
           icon={<FaUser />}
           placeholder="Digite seu nome social (opcional)"
           {...register('nomeSocial')}

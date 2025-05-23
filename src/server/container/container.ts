@@ -11,6 +11,7 @@ import { CampaignRepository } from '../repositories/CampaignRepository';
 import { CampaignService } from '../services/CampaignService';
 import { CampaignController } from '../controllers/CampaignController';
 import { ICampaignController } from '../controllers/CampaignController';
+import { IUserAuthRepository, UserAuthRepository } from '../repositories/auth/userAuth';
 // Register dependencies
 container.register<IDBConnection>('db', { useClass: DBConnection })
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
@@ -19,6 +20,7 @@ container.register<IUserController>('userController', { useClass: UserController
 container.register<ICampaignService>('campaignService', { useClass: CampaignService });
 container.register<ICampaignRepository>('campaignRepository', { useClass: CampaignRepository });
 container.register<ICampaignController>('campaignController', { useClass: CampaignController });
+container.register<IUserAuthRepository>('userAuthRepository', { useClass: UserAuthRepository });
 
 
 // Export configured container

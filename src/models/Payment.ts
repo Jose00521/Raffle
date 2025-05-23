@@ -57,7 +57,6 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       type: Date,
       default: Date.now,
       required: true,
-      index: true
     },
     approvedDate: Date,
     refundedDate: Date,

@@ -1,16 +1,16 @@
-import mongoose from 'mongoose';
+import mongoose, { Mongoose, Connection } from 'mongoose';
 import { injectable, inject	 } from 'tsyringe';
 
 
 export interface IDBConnection {
-  connect(): Promise<any>;
+  connect(): Promise<Mongoose | Connection>;
 }
 
 export class DBConnection implements IDBConnection {
 
 
 
-  async connect() {
+  async connect(): Promise<Mongoose | Connection> {
     const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://strongunderfed490:HYV8Gsu3MyxcLQYJ@cluster0.72eltg2.mongodb.net/projeto?retryWrites=true&w=majority&appName=Cluster0';
   
     // Se já estamos conectados, retorne a conexão existente
@@ -26,6 +26,7 @@ export class DBConnection implements IDBConnection {
       socketTimeoutMS: 45000,   // Timeout de socket em ms
       connectTimeoutMS: 10000,  // Timeout de conexão em ms
       serverSelectionTimeoutMS: 10000, // Timeout de seleção de servidor
+
     };
   
     return mongoose.connect(MONGODB_URI, opts);

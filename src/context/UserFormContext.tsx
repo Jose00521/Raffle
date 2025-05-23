@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUserSchema } from '../types/form';
 import { IRegularUser, IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPI from '@/API/userAPI';
-import { toast, ToastContainer } from 'react-toastify';
+import { Bounce, toast, ToastContainer } from 'react-toastify';
 // Função auxiliar para validar CPF
 
 // Schema de validação do formulário
@@ -178,8 +178,24 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Simulação de envio para API
       const safeData = JSON.parse(JSON.stringify(dataToSubmit));
       const response = await userAPI.createUser(safeData);
-      console.log("Resposta:", response);
-      toast.success('Cadastro realizado com sucesso!');
+
+      console.log('response',response);
+      
+      if(response.success){
+        toast.success(response.message);
+      }else{
+        toast.error(response.message, {
+          position: "bottom-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          transition: Bounce,
+          });
+      }
       
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
@@ -203,7 +219,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         onSubmit
       }}
       >
-      <ToastContainer />
+      <ToastContainer limit={1} />
       {children}
     </FormContext.Provider>
   );

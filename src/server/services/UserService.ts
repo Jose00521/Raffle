@@ -1,22 +1,23 @@
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { inject, injectable } from "tsyringe";
-import * as UserRepository from "../repositories/UserRepository";
+import type {IUserRepository} from "../repositories/UserRepository";
+import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface IUserService {
-    createUser(user: IUser): Promise<IUser>;
+    createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
 export class UserService implements IUserService {
-    private userRepository: UserRepository.IUserRepository;
+    private userRepository: IUserRepository;
 
     constructor(
-        @inject('userRepository') userRepository: UserRepository.IUserRepository
+        @inject('userRepository') userRepository: IUserRepository
     ) {
         this.userRepository = userRepository;
     }
 
-    async createUser(user: IUser): Promise<IUser> {
+    async createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>> {
         return await this.userRepository.createUser(user);
     }
-}
+}   
