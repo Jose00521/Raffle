@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import SteppedRegistrationForm from '../../../components/cadastro/SteppedRegistrationForm';
+import SteppedRegistrationForm from '../../../../components/cadastro/SteppedRegistrationForm';
 import styled from 'styled-components';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
+import Layout from '@/components/layout/Layout';
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -163,6 +164,7 @@ export default function CadastroParticipante() {
   // }, []);
   
   return (
+    <Layout hideFooter={true} hideHeader={true}>
     <PageContainer>
       <ContentWrapper>
         <BackLinkContainer>
@@ -176,5 +178,6 @@ export default function CadastroParticipante() {
         </FormWrapper>
       </ContentWrapper>
     </PageContainer>
+    </Layout>
   );
 } 

@@ -6,7 +6,7 @@ import { ThemeProvider } from 'styled-components';
 import StyledComponentsRegistry from '../../lib/registry';
 import { theme } from '../../styles/theme';
 
-export default function PrivateLayout({
+export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -15,9 +15,6 @@ export default function PrivateLayout({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-
-
-  // Show loading while checking authentication
 
   // Show authenticated content
 
@@ -29,7 +26,4 @@ export default function PrivateLayout({
       </StyledComponentsRegistry>
     );
   
-
-  // This should not render if redirect works correctly
-  return null;
 } 

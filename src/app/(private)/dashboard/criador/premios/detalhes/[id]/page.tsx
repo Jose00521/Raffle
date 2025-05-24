@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
-import { IPrize } from '@/models/Prize';
+import { IPrize } from '@/models/interfaces/IPrizeInterfces';
 
 // Mock data for demonstration purposes
 import { MOCK_PRIZES } from '../../page';
@@ -376,22 +376,22 @@ export default function PrizeDetailPage({ params }: DetailPageProps) {
             <InfoItem>
               <InfoLabel>Data de Cadastro</InfoLabel>
               <InfoValue>
-                {new Date(prize.createdAt).toLocaleDateString('pt-BR', {
+                {prize.createdAt ? new Date(prize.createdAt).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric'
-                })}
+                }) : ''}
               </InfoValue>
             </InfoItem>
             
             <InfoItem>
               <InfoLabel>Última Atualização</InfoLabel>
               <InfoValue>
-                {new Date(prize.updatedAt).toLocaleDateString('pt-BR', {
+                {prize.updatedAt ? new Date(prize.updatedAt).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric'
-                })}
+                }) : ''}
               </InfoValue>
             </InfoItem>
           </InfoSection>

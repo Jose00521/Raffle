@@ -6,6 +6,9 @@ import Link from 'next/link';
 import CampaignGrid from '../campaign/CampaignGrid';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
+import { useSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
+
 const SectionContainer = styled.section`
   padding: 5rem 2rem;
   background-color: ${({ theme }) => theme.colors.background};

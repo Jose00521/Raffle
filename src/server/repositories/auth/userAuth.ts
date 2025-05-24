@@ -21,10 +21,14 @@ export class UserAuthRepository implements IUserAuthRepository {
 
     async findByCredentials(phone: string, password: string): Promise<IUser | null> {
         try {
+            console.log('phone', phone);
+            console.log('password', password);
+
 
             await this.db.connect();
             
-            const user: IUser | null = await User.findOne({ phone });
+            const user: IUser | null = await User.findOne({ phone }, '+password').lean() as IUser | null;
+
         
             if (!user) {
                 return null;
@@ -32,6 +36,7 @@ export class UserAuthRepository implements IUserAuthRepository {
 
             //Verifica se a senha é válida, comparando a senha fornecida com a senha armazenada via bcrypt
             const isPasswordValid = await compare(password, user.password);
+
             return isPasswordValid ? user : null;
 
         } catch (error) {

@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaIdCard, FaMapMarkerAlt, FaCity, FaGlobe, FaLock } from 'react-icons/fa';
+import Layout from '@/components/layout/Layout';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -289,6 +290,7 @@ export default function CadastroCriador() {
   };
   
   return (
+    <Layout hideFooter={true} hideHeader={true}>
     <PageContainer>
       <ContentWrapper>
         <Header>
@@ -513,5 +515,6 @@ export default function CadastroCriador() {
         </ContentContainer>
       </ContentWrapper>
     </PageContainer>
+    </Layout>
   );
 } 

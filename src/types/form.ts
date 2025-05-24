@@ -289,9 +289,9 @@ export const loginUserSchema = z.object({
   })
   .refine(val => {
     console.log('Verificando comprimento telefone:', val);
-    return val.length === 0 || val.length === 10 || val.length === 11;
+    return val.length === 0 || val.length === 11;
   }, {
-    message: 'Telefone deve ter 10 ou 11 dígitos'
+    message: 'Telefone deve ter 11 dígitos'
   })
   .refine(val => {
     console.log('Verificando DDD telefone:', val);
@@ -311,7 +311,13 @@ export const loginUserSchema = z.object({
   }, {
     message: 'Celular deve começar com 9'
   }),
-  password: z.string().min(1, 'Senha é obrigatória'),
+  password: z.string()
+  .min(1, 'Senha é obrigatória')
+  .refine(val => {
+    return val.length >= 8;
+  }, {
+    message: 'Senha deve ter pelo menos 8 caracteres'
+  }),
 });
   
 

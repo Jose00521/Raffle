@@ -9,6 +9,11 @@ import { LoginFormData, loginUserSchema } from '@/types/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import FormInput from '../common/FormInput';
+import { useHookFormMask } from 'use-mask-input';
+import userAPI from '@/API/userAPI';
+import { getSession, signIn, useSession } from 'next-auth/react';
+import { toast, ToastContainer } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -16,10 +21,14 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+  const router = useRouter();
   const [step, setStep] = useState(1); // 1: telefone, 2: senha
   const [showPassword, setShowPassword] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [credentialsError, setCredentialsError] = useState(false);
+  const { data: session, status } = useSession();
 
   const { register, setValue , getValues, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginUserSchema),
@@ -31,23 +40,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       password: '',
     },
   });
-
-  const registerInput = (name: keyof LoginFormData) => {
-    const {  onChange, onBlur , ...rest} = register(name);
-
-    return {
-      onChange(e: React.ChangeEvent<HTMLInputElement>) {
-        onChange(e);
-        handleInputChange(e);
-      },
-      onBlur(e: React.FocusEvent<HTMLInputElement>) {
-        onBlur(e);
-        handleInputChange(e);
-      },
-      ...rest,
-    };
-    
-  }
+  const registerWithMask = useHookFormMask(register);
 
   // Efeito para lidar com clique fora do modal para fechar
   // useEffect(() => {
@@ -90,34 +83,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'telefone') {
-      const formattedValue = formatPhoneNumber(value);
-      setValue(name, formattedValue);
-    } else if (name === 'password') {
-      setValue(name, value);
-    }
-
-  };
-
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    
-    if (numbers.length <= 2) {
-      return numbers;
-    } else if (numbers.length <= 7) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    } else if (numbers.length <= 11) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
-    } else {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-    }
-  };
+  // Reset do erro de credenciais
+  useEffect(() => {
+    setCredentialsError(false);
+  }, [getValues('telefone'), getValues('password')]);
 
   const handleNextStep = () => {
-    if (getValues('telefone').length >= 14) { // Garantir que o telefone está completo
+    if (getValues('telefone').replace(/\D/g, '').length >= 11) { // Garantir que o telefone está completo
       setIsSliding(true);
       setTimeout(() => {
         setStep(2);
@@ -135,9 +107,38 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log(data);
+    setIsSubmitting(true);
+    console.log('data',data);
+    console.log('isSubmitting',isSubmitting);
     // Aqui você implementaria a lógica de autenticação
+
+    const result = await signIn('credentials', {
+      phone: data.telefone,
+      password: data.password,
+      redirect: false
+    });
+
+    console.log('result', result);
+
+    if(result?.ok){
+      console.log('session', session);
+      if(session?.user?.role === 'creator'){
+        router.push('/dashboard/criador');
+      }
+      if(session?.user?.role === 'participant' || session?.user?.role === 'user'){
+        router.push('/dashboard/participante');
+      }
+    }
     
+
+    if(result?.error === 'CredentialsSignin'){
+      setCredentialsError(true);
+    } else {
+      setCredentialsError(false);
+    }
+
+    
+    setIsSubmitting(false);
     // Após login bem-sucedido:
     // onClose();
   };
@@ -184,23 +185,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 <StepText>Telefone</StepText>
               </StepLabel>
               
-              <InputGroup>
+
                 <FormInput
                   id="telefone"
                   icon={<FaPhone />}
                   placeholder="(00) 00000-0000"
                   error={errors.telefone?.message as string}
-                  {...registerInput('telefone')}
+                  {...registerWithMask('telefone','(99) 99999-9999')}
                   // onKeyDown={handleKeyDown}
                 />
-              </InputGroup>
+          
               
               <Button 
                 type="button" 
                 onClick={handleNextStep}
-                disabled={getValues('telefone').length < 14}
+                disabled={
+                  getValues('telefone').replace(/\D/g, '').length < 11 || !!errors.telefone?.message 
+                  || isSubmitting
+                }
               >
-                Continuar
+                {isSubmitting ? 'Processando...' : 'Continuar'}
               </Button>
             </StepContent>
 
@@ -214,25 +218,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 <StepText>Senha</StepText>
               </StepLabel>
               
-              <InputGroup>
+           
                 <FormInput
                   id="password"
                   icon={<FaLock />}
                   isPassword
                   error={errors.password?.message as string}
                   placeholder="Digite sua senha"
-                  {...registerInput('password')}
+                  {...register('password')}
                 />
-                <TogglePasswordButton
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </TogglePasswordButton>
-              </InputGroup>
 
-              <Button type="submit" disabled={getValues('password').length < 8}>
-                Entrar
+                {credentialsError && (
+                  <ErrorBox>
+                    <FaShieldAlt style={{ marginRight: 8 }} />
+                    Telefone ou senha incorretos. Tente novamente.
+                  </ErrorBox>
+                )}
+         
+ 
+              <Button type="submit" disabled={getValues('password').length < 8 || !!errors.password?.message || isSubmitting}>
+                {isSubmitting ? 'Processando...' : 'Entrar'}
               </Button>
             </StepContent>
           </StepsContainer>
@@ -578,7 +583,6 @@ const StepText = styled.div`
 
 const InputGroup = styled.div`
   position: relative;
-  margin-bottom: 2px;
   
   @media (max-width: 375px) {
     margin-bottom: 2px;
@@ -927,6 +931,22 @@ const DemoButton = styled.button`
     padding: 12px 8px;
     font-size: 0.9rem;
   }
+`;
+
+const ErrorBox = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.error};
+  color: ${({ theme }) => theme.colors.white};
+  border: 1.5px solid ${({ theme }) => theme.colors.error};
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(255,0,0,0.07);
+  animation: ${fadeIn} 0.3s;
 `;
 
 export default LoginModal; 

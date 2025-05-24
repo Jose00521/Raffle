@@ -11,16 +11,21 @@ import type { IUser } from '@/models/interfaces/IUserInterfaces';
 
 
 // Configurar Next-Auth
-const { handlers, signIn, signOut, auth } = NextAuth({
+const handler = NextAuth({
   providers: [
-   Credentials({
+   CredentialsProvider({
+    name: 'credentials',
     credentials: {
-      phone: { },
-      password: {  }
+      phone: { label: 'Telefone', type: 'text' },
+      password: { label: 'Senha', type: 'password' }
     },
     authorize: async (credentials) => {
+      console.log('credentials', credentials);
+      if (!credentials) {
+        return null;
+      }
 
-        const userAuthRepository = container.resolve<IUserAuthRepository>('userAuthRepository');
+      const userAuthRepository = container.resolve<IUserAuthRepository>('userAuthRepository');
 
         const user = await userAuthRepository.findByCredentials(
             credentials!.phone as string, 
@@ -38,6 +43,7 @@ const { handlers, signIn, signOut, auth } = NextAuth({
         return {
             id: user.userCode as string,
             name: user.name,
+            role: user.role,
             email: user.email,
             phone: user.phone,
         };
@@ -47,12 +53,34 @@ const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 30*60, // 30 minutos
   },
-  pages:{
-    signIn: '/auth/signin',
-    signOut: '/auth/signout',
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET || 'secret',
+    maxAge: 30*60, // 30 minutos
+  },
+  callbacks: {
+    async jwt({token, user}){
+      return {...token, ...user}
+    },
+    async session ({ session, token, user }) {
+      session.user = token as any ;
+      return session;
+    },
+    async signIn({ user }) {
+      if(user.role === 'creator'  ){
+        return '/dashboard/criador';
+      }
+      if(user.role === 'participant'){
+        return '/dashboard/participante';
+      }
+      return true;
+    }
+  },
+  pages: {
+    signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET || 'secret',
 });
 
-export { handlers as GET, handlers as POST }; 
+export { handler as GET, handler as POST}; 

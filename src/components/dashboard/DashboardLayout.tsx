@@ -6,6 +6,7 @@ import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown
 import { FaTrophy } from 'react-icons/fa';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 
 // Types
 interface MenuItem {
@@ -662,7 +663,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [openSubmenuIds, setOpenSubmenuIds] = useState<string[]>([]);
   const pathname = usePathname();
-
+  const { data: session } = useSession();
   // Check if it's mobile view
   useEffect(() => {
     const checkIfMobile = () => {
@@ -811,7 +812,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <FaBars />
               </MobileMenuToggle>
             )}
-            <PageTitle>{getPageTitleFromPath(pathname)}</PageTitle>
+            <PageTitle>{getPageTitleFromPath(pathname)} {session?.user?.name}</PageTitle>
           </div>
           
           <UserSection>
@@ -840,6 +841,7 @@ interface UserDropdownProps {
 
 const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -878,8 +880,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
       <UserInfo>
         <UserAvatar>JD</UserAvatar>
         <UserDetails>
-          <UserName>John Doe</UserName>
-          <UserEmail>john.doe@example.com</UserEmail>
+          <UserName>{session?.user?.name}</UserName>
+          <UserEmail>{session?.user?.email}</UserEmail>
         </UserDetails>
       </UserInfo>
       <UserMenuItems>
@@ -892,7 +894,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
           Configurações
         </UserMenuItem>
         <UserMenuDivider />
-        <UserMenuItem href="/logout">
+        <UserMenuItem onClick={() => signOut()}>
           <UserMenuIcon><FaSignOutAlt /></UserMenuIcon>
           Sair
         </UserMenuItem>

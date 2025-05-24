@@ -290,8 +290,12 @@ export default function MinhasRifasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   
   useEffect(() => {
+    // Mark component as mounted on client
+    setIsMounted(true);
+    
     // Simulate data loading
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -315,7 +319,7 @@ export default function MinhasRifasPage() {
     
   return (
     <ParticipantDashboard>
-      <PageHeader>
+      <PageHeader>  
         <PageTitle>Meus Bilhetes</PageTitle>
       </PageHeader>
       
@@ -325,8 +329,10 @@ export default function MinhasRifasPage() {
             <FaSearch size={14} />
           </SearchIcon>
           <SearchInput 
+            suppressHydrationWarning
+            key="search-input"
             placeholder="Buscar por nome da rifa..." 
-            value={searchTerm}
+            value={isMounted ? searchTerm : ''}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </SearchContainer>

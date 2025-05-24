@@ -9,25 +9,25 @@ const participantMenuItems = [
   {
     id: 'home',
     label: 'Início',
-    path: '/dashboard',
+    path: '/dashboard/participante',
     icon: <FaHome />
   },
   {
     id: 'rifas',
     label: 'Rifas Disponíveis',
-    path: '/dashboard/rifas',
+    path: '/dashboard/participante/rifas',
     icon: <FaTicketAlt />
   },
   {
     id: 'minhas-rifas',
     label: 'Minhas Rifas',
-    path: '/dashboard/minhas-rifas',
+    path:'',
     icon: <FaClipboardList />,
     subMenuItems: [
       {
         id: 'minhas-rifas-compradas',
         label: 'Compradas',
-        path: '/dashboard/minhas-rifas/compradas',
+        path: '/dashboard/participante/minhas-rifas/compradas',
         icon: <FaTicketAlt /> 
       }
     ]
@@ -35,7 +35,7 @@ const participantMenuItems = [
   {
     id: 'premios',
     label: 'Prêmios',
-    path: '/dashboard/premios',
+    path: '/dashboard/participante/premios',
     icon: <FaTrophy />
   }
 ];

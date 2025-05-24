@@ -14,17 +14,19 @@ const Main = styled.main`
 interface LayoutProps {
   children: React.ReactNode;
   hideHeader?: boolean;
+  hideFooter?: boolean;
 }
 
 const Layout: React.FC<LayoutProps> = ({ 
   children,
-  hideHeader = false
+  hideHeader = false,
+  hideFooter = false
 }) => {
   return (
     <ThemeProvider theme={theme}>
       {!hideHeader && <Header />}
       <Main>{children}</Main>
-      <Footer />
+      {!hideFooter && <Footer />}
     </ThemeProvider>
   );
 };

@@ -28,15 +28,19 @@ const userAPI = {
     },
 
 
-    requestLogin: async (phone: string, password: string) => {
+    requestLogin: async (credentials: {phone: string, password: string}) => {
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/callback/credentials', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'  
                 },
-                body: JSON.stringify({ phone, password })
+                body: JSON.stringify(credentials)
             });
+            // Verificar primeiro o status
+            if (!response.ok) {
+              console.error(`Erro do servidor: ${response.status} ${response.statusText}`);
+            }
             return response.json();
         } catch (error) {
             return {
