@@ -164,7 +164,7 @@ export default function CadastroParticipante() {
   // }, []);
   
   return (
-    <Layout hideFooter={true} hideHeader={true}>
+
     <PageContainer>
       <ContentWrapper>
         <BackLinkContainer>
@@ -178,6 +178,6 @@ export default function CadastroParticipante() {
         </FormWrapper>
       </ContentWrapper>
     </PageContainer>
-    </Layout>
+
   );
 } 

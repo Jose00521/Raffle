@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FaUser, FaShieldAlt, FaMapMarked, FaUserPlus } from 'react-icons/fa';
-import { useFormContext } from '../../../context/UserFormContext';
+import { RegisterFormData, useFormContext } from '../../../context/UserFormContext';
 import { 
   StepContent, 
   StepContentHeader, 
@@ -13,15 +13,24 @@ import {
   ConfirmationRow,
   ConfirmationLabel,
   ConfirmationValue,
-  TermsCheckboxContainer,
-  TermsCheckbox,
-  TermsLabel,
-  TermsLink
+  TermsCheckboxContainer
 } from '../../../styles/registration.styles';
+
+import InputCheckbox from '@/components/common/InputCheckbox';
 
 const Step4Confirmation: React.FC = () => {
   const { form } = useFormContext();
-  const watch = form.watch;
+  const { register, formState: { errors }, setValue, getValues, watch } = form;
+  
+  const termsAgreement = watch('termsAgreement'); 
+
+  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('termsAgreement', e.target.checked, { 
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+  };
 
   return (
     <StepContent>
@@ -116,14 +125,15 @@ const Step4Confirmation: React.FC = () => {
       </ConfirmationSection>
       
       <TermsCheckboxContainer>
-        <TermsCheckbox 
-          type="checkbox" 
-          id="termsAgreement" 
+        <InputCheckbox
+          id="termsAgreement"
+          label={<>Li e concordo com os <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer">Termos de Uso</a> e <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a></>}
+          checked={!!termsAgreement}
+          {...register('termsAgreement')}
+          onChange={handleTermsChange}
           required
+          error={errors.termsAgreement?.message as string}
         />
-        <TermsLabel htmlFor="termsAgreement">
-          Li e concordo com os <TermsLink href="/termos-de-uso" target="_blank">Termos de Uso</TermsLink> e <TermsLink href="/politica-de-privacidade" target="_blank">Política de Privacidade</TermsLink>
-        </TermsLabel>
       </TermsCheckboxContainer>
     </StepContent>
   );

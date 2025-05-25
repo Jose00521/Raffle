@@ -228,6 +228,11 @@ export const registerUserSchema = z.object({
   numero: z.string().min(1, 'Número é obrigatório'),
   bairro: z.string().min(2, 'Bairro é obrigatório'),
   complemento: z.string().optional(),
+  termsAgreement: z.boolean()
+  .refine((value) => value === true, {
+    message: "Você deve concordar com os termos de uso e política de privacidade",
+    path: ["termsAgreement"],
+  }),
   uf: z
     .string()
     .min(2, 'UF é obrigatória')
@@ -272,7 +277,6 @@ export const registerUserSchema = z.object({
   message: "Os telefones não conferem",
   path: ["confirmarTelefone"],
 });
-
 
 export const loginUserSchema = z.object({
   telefone: z.string()

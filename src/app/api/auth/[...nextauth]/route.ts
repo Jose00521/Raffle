@@ -67,15 +67,7 @@ const handler = NextAuth({
       session.user = token as any ;
       return session;
     },
-    async signIn({ user }) {
-      if(user.role === 'creator'  ){
-        return '/dashboard/criador';
-      }
-      if(user.role === 'participant'){
-        return '/dashboard/participante';
-      }
-      return true;
-    }
+    
   },
   pages: {
     signIn: '/login',

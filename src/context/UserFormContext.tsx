@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState } from 'react';
 import { z } from 'zod';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerUserSchema } from '../types/form';
+import { registerUserSchema } from '@/zod/user.schema';
 import { IRegularUser, IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPI from '@/API/userAPI';
 import { Bounce, toast, ToastContainer } from 'react-toastify';
@@ -40,7 +40,9 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
     mode: 'all',
     delayError: 200,
     criteriaMode: 'firstError',
-    
+    defaultValues: {
+      termsAgreement: false
+    }
   });
 
   const { trigger } = form;
@@ -93,6 +95,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isValid = await trigger(['logradouro', 'numero', 'bairro', 'cidade', 'uf'], { 
           shouldFocus: true 
         });
+      } else if (currentStep === 4) {
+        isValid = await trigger('termsAgreement', { shouldFocus: true });
       }
     } catch (error) {
       console.error('Validation error:', error);
@@ -161,7 +165,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastLogin: new Date(),
         consents: {
           marketingEmails: true,
-          termsAndConditions: true,
+          termsAndConditions: data.termsAgreement,
           dataSharing: true
         },
         purchasedNumbers: [],
@@ -175,7 +179,6 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log(JSON.stringify(dataToSubmit, null, 2));
       
       
-      // Simulação de envio para API
       const safeData = JSON.parse(JSON.stringify(dataToSubmit));
       const response = await userAPI.createUser(safeData);
 

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
 import { IRegularUser } from './interfaces/IUserInterfaces';
+import { IParticipant, IIndividualCreator, ICompanyCreator } from './interfaces/UserModels';
 
 /**
  * Base User Schema - Shared fields 
@@ -105,7 +106,7 @@ UserSchema.statics.findByEmail = function(email: string) {
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
 /**
- * Schema de Participante
+ * Schema para Usuário Regular/Participante
  */
 const RegularUserSchema = new Schema({
   cpf: {
@@ -147,30 +148,29 @@ const RegularUserSchema = new Schema({
 });
 
 /**
- * Schema de Criador
+ * Schema Base de Criador (campos comuns)
  */
-const CreatorSchema = new Schema({
+const BaseCreatorSchema = new Schema({
+  // Campo discriminador para o tipo de pessoa (física ou jurídica)
   personType: {
     type: String,
     enum: ['individual', 'company'],
     required: true,
-    index: true // Índice para filtrar por tipo de pessoa
+    index: true
   },
+  // Campos comuns para todos os tipos de criador
   cpf: {
     type: String,
-    required: function(this: any): boolean { return this.personType === 'individual'; },
+    required: true, // Obrigatório tanto para PF quanto para representante de PJ
     unique: true,
-    sparse: true // Índice esparso
+    sparse: true
   },
-  cnpj: {
-    type: String,
-    required: function(this: any): boolean { return this.personType === 'company'; },
-    unique: true,
-    sparse: true // Índice esparso
+  birthDate: {
+    type: Date,
+    required: true, // Obrigatório tanto para PF quanto para representante de PJ
+    index: true
   },
-  companyName: String,
-  legalName: String,
-  legalRepresentative: String,
+  // Conta bancária
   bankAccount: [{
     bank: { type: String, required: true },
     agency: { type: String, required: true },
@@ -182,50 +182,51 @@ const CreatorSchema = new Schema({
     },
     pixKey: String
   }],
-    // Adicionar estrutura para verificação documental
-    verification: {
-      status: {
-        type: String,
-        enum: ['pending', 'under_review', 'approved', 'rejected'],
-        default: 'pending',
-        index: true
-      },
-      documents: {
-        identityFront: { 
-          path: String,
-          uploadedAt: Date,
-          verified: Boolean
-        },
-        identityBack: { 
-          path: String,
-          uploadedAt: Date,
-          verified: Boolean
-        },
-        identitySelfie: { 
-          path: String,
-          uploadedAt: Date,
-          verified: Boolean
-        },
-        companyDocuments: [{
-          type: { 
-            type: String,
-            enum: ['contract', 'registration', 'license', 'other']
-          },
-          path: String,
-          description: String,
-          uploadedAt: Date,
-          verified: Boolean
-        }]
-      },
-      verificationNotes: String,
-      rejectionReason: String,
-      reviewedAt: Date,
-      reviewedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
-      expiresAt: Date
+  // Verificação documental
+  verification: {
+    status: {
+      type: String,
+      enum: ['pending', 'under_review', 'approved', 'rejected'],
+      default: 'pending',
+      index: true
     },
+    documents: {
+      identityFront: { 
+        path: String,
+        uploadedAt: Date,
+        verified: Boolean
+      },
+      identityBack: { 
+        path: String,
+        uploadedAt: Date,
+        verified: Boolean
+      },
+      identitySelfie: { 
+        path: String,
+        uploadedAt: Date,
+        verified: Boolean
+      },
+      companyDocuments: [{
+        type: { 
+          type: String,
+          enum: ['contract', 'registration', 'license', 'other']
+        },
+        path: String,
+        description: String,
+        uploadedAt: Date,
+        verified: Boolean
+      }]
+    },
+    verificationNotes: String,
+    rejectionReason: String,
+    reviewedAt: Date,
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    expiresAt: Date
+  },
+  // Estatísticas
   statistics: {
     rafflesCreated: { type: Number, default: 0 },
     activeRaffles: { type: Number, default: 0 },
@@ -233,25 +234,88 @@ const CreatorSchema = new Schema({
     conversionRate: { type: Number, default: 0 },
     lastRaffleCreated: Date
   },
-  settings: {
-    allowCommissions: { type: Boolean, default: false },
-    commissionPercentage: { type: Number, default: 0 },
-    receiveReports: { type: Boolean, default: true }
+  consents: {
+    marketingEmails: { type: Boolean, default: false },
+    termsAndConditions: { type: Boolean, default: true },
+    dataSharing: { type: Boolean, default: false }
   }
+}, { discriminatorKey: 'personType' });
+
+/**
+ * Schema específico para Criador Pessoa Física
+ * Não precisa de campos adicionais, pois os campos necessários (cpf, birthDate)
+ * já estão no schema base.
+ */
+const IndividualCreatorSchema = new Schema({
+  // Sem campos adicionais, pois cpf e birthDate já estão no schema base
+});
+
+/**
+ * Schema específico para Criador Pessoa Jurídica
+ */
+const CompanyCreatorSchema = new Schema({
+  // Campos específicos para pessoa jurídica
+  cnpj: {
+    type: String,
+    required: true,
+    unique: true,
+    sparse: true
+  },
+    // Representante legal (usado apenas para PJ)
+    representanteLegal: {
+      type: String,
+      required: function(this: any): boolean { return this.personType === 'company'; }
+    },
+  companyName: {
+    type: String,
+    required: true
+  },
+  legalName: {
+    type: String,
+    required: true
+  },
+  companyCategory: {
+    type: String,
+    required: true
+  }
+  // Nota: cpf, birthDate e representanteLegal estão no schema base
 });
 
 // Criar modelos utilizando discriminators
+let RegularUser, Participant, Creator, IndividualCreator, CompanyCreator;
 
-let RegularUser,Participant,Creator;
-
+// Cria o modelo de usuário regular
 if (!mongoose.models.user) {
   RegularUser = User.discriminator('user', RegularUserSchema);
-  Participant = User.discriminator('participant', RegularUserSchema);
-  Creator = User.discriminator('creator', CreatorSchema);
 } else {
   RegularUser = mongoose.models.user;
+}
+
+// Cria o modelo de participante (usando o mesmo schema do usuário regular)
+if (!mongoose.models.participant) {
+  Participant = User.discriminator('participant', RegularUserSchema);
+} else {
   Participant = mongoose.models.participant;
+}
+
+// Cria o modelo base de Creator
+if (!mongoose.models.creator) {
+  Creator = User.discriminator('creator', BaseCreatorSchema);
+} else {
   Creator = mongoose.models.creator;
+}
+
+// Cria os discriminators para tipos de Creator
+if (Creator && !mongoose.models.individual) {
+  IndividualCreator = Creator.discriminator('individual', IndividualCreatorSchema);
+} else if (mongoose.models.individual) {
+  IndividualCreator = mongoose.models.individual;
+}
+
+if (Creator && !mongoose.models.company) {
+  CompanyCreator = Creator.discriminator('company', CompanyCreatorSchema);
+} else if (mongoose.models.company) {
+  CompanyCreator = mongoose.models.company;
 }
 
 // Configurar índices adicionais após a inicialização do mongoose
@@ -263,7 +327,7 @@ export const setupUserIndexes = async () => {
     return;
   }
   
-  // Índice único parcial para CPFs apenas em participantes
+  // Índice único parcial para CPFs de participantes
   await db.collection('users').createIndex(
     { cpf: 1 },
     { 
@@ -273,15 +337,22 @@ export const setupUserIndexes = async () => {
     }
   );
 
-  // Índice único parcial para CPFs de criadores pessoa física
+  // Índice único parcial para CPFs de usuários regulares
   await db.collection('users').createIndex(
     { cpf: 1 },
     { 
       unique: true,
-      partialFilterExpression: { 
-        role: "creator",
-        personType: "individual"
-      },
+      partialFilterExpression: { role: "user" },
+      background: true
+    }
+  );
+
+  // Índice único parcial para CPFs de criadores (independente do tipo)
+  await db.collection('users').createIndex(
+    { cpf: 1 },
+    { 
+      unique: true,
+      partialFilterExpression: { role: "creator" },
       background: true
     }
   );
@@ -291,6 +362,18 @@ export const setupUserIndexes = async () => {
     { cnpj: 1 },
     { 
       unique: true,
+      partialFilterExpression: { 
+        role: "creator",
+        personType: "company" 
+      },
+      background: true
+    }
+  );
+  
+  // Índices para categorias de empresa
+  await db.collection('users').createIndex(
+    { categoriaEmpresa: 1 },
+    { 
       partialFilterExpression: { 
         role: "creator",
         personType: "company" 
@@ -325,12 +408,7 @@ export const setupUserIndexes = async () => {
     { background: true }
   );
   
-  // await db.collection('users').createIndex(
-  //   { 'consents.marketingEmails': 1, role: 1 },
-  //   { background: true }
-  // );
-  
   console.log('User indexes configured successfully');
 };
 
-export { User, RegularUser, Participant, Creator }; 
+export { User, RegularUser, Participant, Creator, IndividualCreator, CompanyCreator }; 

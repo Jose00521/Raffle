@@ -5,7 +5,7 @@ import styled, { keyframes, css } from 'styled-components';
 import Link from 'next/link';
 import { FaPhone, FaLock, FaArrowLeft, FaEye, FaEyeSlash, FaMobileAlt, FaUserPlus, FaShieldAlt } from 'react-icons/fa';
 import { set, useForm } from 'react-hook-form';
-import { LoginFormData, loginUserSchema } from '@/types/form';
+import { LoginFormData, loginUserSchema } from '@/zod/user.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import FormInput from '../common/FormInput';
@@ -14,6 +14,7 @@ import userAPI from '@/API/userAPI';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import LoadingDots from '../common/LoadingDots';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [credentialsError, setCredentialsError] = useState(false);
   const { data: session, status } = useSession();
 
-  const { register, setValue , getValues, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const { register, setValue , getValues, handleSubmit, formState: { errors }, watch } = useForm<LoginFormData>({
     resolver: zodResolver(loginUserSchema),
     mode: 'all',
     delayError: 200,
@@ -41,6 +42,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     },
   });
   const registerWithMask = useHookFormMask(register);
+  const password = watch('password');
 
   // Efeito para lidar com clique fora do modal para fechar
   // useEffect(() => {
@@ -118,27 +120,25 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       redirect: false
     });
 
-    console.log('result', result);
-
     if(result?.ok){
-      console.log('session', session);
-      if(session?.user?.role === 'creator'){
+
+      const session = await getSession();
+
+      if(session?.user?.role == 'creator'){
         router.push('/dashboard/criador');
       }
-      if(session?.user?.role === 'participant' || session?.user?.role === 'user'){
+      if(session?.user?.role == 'participant' || session?.user?.role == 'user'){
         router.push('/dashboard/participante');
       }
-    }
-    
+      
 
+      }
+    
     if(result?.error === 'CredentialsSignin'){
       setCredentialsError(true);
-    } else {
-      setCredentialsError(false);
+      toast.error('Credenciais inválidas');
+      setIsSubmitting(false);
     }
-
-    
-    setIsSubmitting(false);
     // Após login bem-sucedido:
     // onClose();
   };
@@ -204,7 +204,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   || isSubmitting
                 }
               >
-                {isSubmitting ? 'Processando...' : 'Continuar'}
+                {isSubmitting ? <LoadingDots size="small" color="white" /> : 'Continuar'}
               </Button>
             </StepContent>
 
@@ -236,8 +236,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 )}
          
  
-              <Button type="submit" disabled={getValues('password').length < 8 || !!errors.password?.message || isSubmitting}>
-                {isSubmitting ? 'Processando...' : 'Entrar'}
+              <Button 
+                type="submit" 
+                disabled={getValues('password').length < 8 || !!errors.password?.message || isSubmitting}
+              >
+                {isSubmitting ? <LoadingDots size="small" color="white" /> : 'Entrar'}
               </Button>
             </StepContent>
           </StepsContainer>
@@ -713,12 +716,17 @@ const Button = styled.button`
   transition: all 0.3s;
   margin-bottom: 20px;
   box-shadow: 0 4px 10px rgba(106, 17, 203, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 55px;
   
   @media (max-width: 480px) {
     padding: 14px;
     font-size: 1rem;
     margin-bottom: 15px;
     border-radius: 10px;
+    min-height: 50px;
   }
   
   @media (max-width: 375px) {
@@ -726,6 +734,7 @@ const Button = styled.button`
     font-size: 0.9rem;
     margin-bottom: 12px;
     border-radius: 8px;
+    min-height: 45px;
   }
   
   &:hover:not(:disabled) {

@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt, FaPowerOff } from 'react-icons/fa';
 import Link from 'next/link';
+import ToggleSwitch from '@/components/common/ToggleSwitch';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -139,6 +140,7 @@ const SearchInput = styled.input`
 const TabsContainer = styled.div`
   display: flex;
   gap: 10px;
+     transition: all 0.3s;
   margin-bottom: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   overflow-x: auto;
@@ -183,6 +185,7 @@ const RifaCardsGrid = styled.div`
 const RifaCard = styled.div`
   background: white;
   border-radius: 12px;
+  
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -241,6 +244,13 @@ const RifaBadge = styled.div<{ $status: string }>`
       return `
         background-color: rgba(16, 185, 129, 0.9);
         color: white;
+        animation: pulse 3s infinite ease-in-out;
+        
+        @keyframes pulse {
+          0% { opacity: 0.4; }
+          50% { opacity: 1; }
+          100% { opacity: 0.4; }
+        }
       `;
     } else if ($status === 'finalizada') {
       return `
@@ -283,7 +293,7 @@ const RifaUpperContent = styled.div`
 const RifaTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 10px;
 `;
 
@@ -293,9 +303,40 @@ const RifaTitle = styled.h3`
   font-weight: 600;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   
   @media (max-width: 768px) {
     font-size: 1rem;
+  }
+`;
+
+const StatusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+  flex-shrink: 0;
+
+  padding: 4px 8px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  
+
+  
+  @media (max-width: 768px) {
+    padding: 3px 6px;
+  }
+`;
+
+const StatusLabel = styled.span`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-right: 8px;
+  
+  @media (max-width: 480px) {
+    display: none;
   }
 `;
 
@@ -361,6 +402,7 @@ const ProgressText = styled.div`
 
 const RifaActions = styled.div`
   display: flex;
+  
   gap: 10px;
   min-height: 38px;
   margin-top: auto;
@@ -377,6 +419,7 @@ const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' 
   border: ${props => props.$variant === 'outline' ? '1px solid #6a11cb' : 'none'};
   border-radius: 6px;
   font-size: 0.9rem;
+  min-height: 38px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -487,32 +530,8 @@ const EmptyStateText = styled.p`
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
 `;
 
-const StatusToggle = styled.button<{ $active: boolean, $canceled: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background-color: ${props => 
-    props.$canceled 
-      ? '#ef4444' 
-      : (props.$active ? '#10b981' : '#9ca3af')};
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: 8px;
-  flex-shrink: 0;
-  
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
+const StyledToggleSwitch = styled(ToggleSwitch)`
+  transform: scale(0.85);
 `;
 
 // Mock data for demonstration
@@ -720,16 +739,22 @@ export default function MinhasRifasPage() {
                 <RifaContent>
                   <RifaUpperContent>
                     <RifaTitleRow>
-                      <RifaTitle>{campaign.title}</RifaTitle>
+                      <RifaTitle title={campaign.title}>
+                        {campaign.title.length > 24 
+                          ? `${campaign.title.substring(0, 24)}...` 
+                          : campaign.title}
+                      </RifaTitle>
                       {campaign.status !== 'finalizada' && (
-                        <StatusToggle 
-                          $active={!campaign.canceled}
-                          $canceled={campaign.canceled}
-                          onClick={() => toggleCampaignStatus(campaign.id)}
-                          title={campaign.canceled ? 'Ativar campanha' : 'Cancelar campanha'}
-                        >
-                          <FaPowerOff size={14} />
-                        </StatusToggle>
+                        <StatusContainer>
+                          {/* <StatusLabel>Ativa</StatusLabel> */}
+                          <StyledToggleSwitch 
+                            checked={!campaign.canceled}
+                            onChange={() => toggleCampaignStatus(campaign.id)}
+                            size="medium"
+                            colorOn={campaign.status === 'futura' ? '#3b82f6' : '#10b981'}
+                            colorOff="#ef4444"
+                          />
+                        </StatusContainer>
                       )}
                     </RifaTitleRow>
                     

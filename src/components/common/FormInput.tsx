@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, ReactNode, useEffect, useRef, useCallback } from 'react';
+import React, { useState, ReactNode, useEffect, useRef, useCallback, forwardRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 
@@ -24,6 +24,7 @@ interface FormInputProps {
   fullWidth?: boolean;
   className?: string;
   mask?: 'cpf' | 'phone' | 'cep' | 'uf' | string;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 const InputGroup = styled.div<{ $fullWidth?: boolean }>`
@@ -343,7 +344,7 @@ const ErrorIcon = styled(FaExclamationCircle)`
 // };
 
 
-const FormInput:React.FC<FormInputProps> = ({
+const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   id,
   name = id,
   label,
@@ -361,7 +362,7 @@ const FormInput:React.FC<FormInputProps> = ({
   fullWidth = false,
   className,
   ...props
-}) => {
+}, ref) => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | undefined>(error);
@@ -406,6 +407,7 @@ const FormInput:React.FC<FormInputProps> = ({
           $hasIcon={!!icon}
           $hasError={!!localError}
           autoComplete={isPassword ? 'new-password' : 'on'}
+          ref={ref}
           {...props}
         />
         
@@ -434,7 +436,7 @@ const FormInput:React.FC<FormInputProps> = ({
       )}
     </InputGroup>
   );
-};
+});
 
 FormInput.displayName = 'FormInput';
 

@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { UseFormSetValue, UseFormSetError, UseFormClearErrors } from 'react-hook-form';
-import { RegisterFormData } from '../context/UserFormContext';
+import { UseFormSetValue, UseFormTrigger } from 'react-hook-form';
 
-type SetValueFunction = UseFormSetValue<RegisterFormData>;
-type SetErrorFunction = UseFormSetError<RegisterFormData>;
-type ClearErrorsFunction = UseFormClearErrors<RegisterFormData>;
+interface UseAddressFieldProps {
+  setValue: UseFormSetValue<any>;
+  trigger: UseFormTrigger<any>;
+}
 
-interface AddressFieldResult {
-  isLoadingCep: boolean;
-  handleCepChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+interface AddressFromCep {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
 }
 
 /**
@@ -18,127 +21,48 @@ interface AddressFieldResult {
  * - Busca de endereço por CEP
  * - Preenchimento automático dos campos de endereço
  */
-export const useAddressField = (
-  setValue: SetValueFunction, 
-  setError?: SetErrorFunction,
-  clearErrors?: ClearErrorsFunction
-): AddressFieldResult => {
+export const useAddressField = ({ setValue, trigger }: UseAddressFieldProps) => {
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
 
-  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Se temos a função para limpar erros, vamos usá-la
-    // if (clearErrors) {
-    //   clearErrors('cep');
-    // }
-    
-    const cep = e.target.value.replace(/\D/g, '').toString();
-    console.log('handleCepChange:', cep);
+  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '');
     
     if (cep.length !== 8) {
-      // CEP incompleto
-      if (setError) {
-        setError('cep', {
-          type: 'manual',
-          message: 'CEP incompleto'
-        });
-      }
-      return; // Não continue com a busca
+      setCepError('CEP deve conter 8 dígitos');
+      return;
     }
     
-    setIsLoadingCep(true);
-    
     try {
-      console.log(`Buscando CEP: ${cep}`);
+      setIsLoadingCep(true);
+      setCepError(null);
+      
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
-      console.log('data:', data);
+      const data: AddressFromCep = await response.json();
       
-      if (!response.ok) {
-
-            console.log('Definindo erro no campo CEP');
-            setError?.('cep', {
-              type: 'manual',
-              message: 'CEP não encontrado'
-            });
-          
-        throw new Error(`Erro na resposta: ${response.status}`);
-      }
-      
-      console.log('CEP search result:', data);
-      
-      if (Boolean(data.erro)) {
-        console.log('CEP não encontrado na API');
-        setError?.('cep', {
-            type: 'manual',
-            message: 'CEP não encontrado'
-          });
-        
-        // Limpar campos de endereço
-        ['logradouro', 'bairro', 'cidade', 'uf'].forEach(field => {
-          setValue(field as keyof RegisterFormData, '', { shouldValidate: false });
-        });
-        
-        
-        setValue('cep', e.target.value, { shouldValidate: true });
+      if (data.erro) {
+        setCepError('CEP não encontrado');
         return;
       }
       
-      // CEP válido, preencher campos
-      console.log('CEP válido, preenchendo campos');
-      setValue('logradouro', data.logradouro || '');
-      setValue('bairro', data.bairro || '');
-      setValue('cidade', data.localidade || '');
-      setValue('uf', data.uf || '');
+      setValue('endereco', data.logradouro, { shouldValidate: true });
+      setValue('bairro', data.bairro, { shouldValidate: true });
+      setValue('cidade', data.localidade, { shouldValidate: true });
+      setValue('estado', data.uf, { shouldValidate: true });
       
-      // Limpar qualquer erro anterior
-      if (clearErrors) {
-        clearErrors('cep');
-      }
-      
-      // Re-validate the fields after setting values
-      setTimeout(() => {
-        ['logradouro', 'bairro', 'cidade', 'uf'].forEach(field => {
-          setValue(field as keyof RegisterFormData, 
-                 getValue(data, field), 
-                 { shouldValidate: true, shouldDirty: true });
-        });
-      }, 100);
-      
+      // Trigger validation for address fields
+      trigger(['endereco', 'bairro', 'cidade', 'estado']);
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
-      
-      // Limpar campos de endereço
-      ['logradouro', 'bairro', 'cidade', 'uf'].forEach(field => {
-        setValue(field as keyof RegisterFormData, '', { shouldValidate: false });
-      });
-      
-      if (setError) {
-        console.log('Definindo erro de API no campo CEP');
-        setError('cep', {
-          type: 'manual',
-          message: 'Erro ao buscar CEP'
-        });
-      }
+      setCepError('Erro ao buscar o CEP. Tente novamente.');
     } finally {
       setIsLoadingCep(false);
     }
   };
 
-  // Helper function to safely get values from the API response
-  const getValue = (data: any, field: string): string => {
-    if (!data) return '';
-    
-    // Map fields to viacep API response fields
-    const fieldMapping: Record<string, string> = {
-      'logradouro': 'logradouro',
-      'bairro': 'bairro',
-      'cidade': 'localidade',
-      'uf': 'uf'
-    };
-    
-    const apiField = fieldMapping[field] || field;
-    return data[apiField] || '';
+  return {
+    isLoadingCep,
+    cepError,
+    handleCepBlur
   };
-
-  return { isLoadingCep, handleCepChange };
 }; 

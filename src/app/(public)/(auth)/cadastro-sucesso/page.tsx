@@ -110,8 +110,8 @@ const RegistrationSuccess = () => {
   // Redirecionar para a página inicial após 5 segundos
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/');
-    }, 5000);
+      router.push('/login');
+    }, 30000);
     
     return () => clearTimeout(timer);
   }, [router]);

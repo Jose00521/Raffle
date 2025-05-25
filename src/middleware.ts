@@ -48,9 +48,6 @@ export async function middleware(request: NextRequest) {
   const participantRoute = participantRoutes.find(route => route === path);
   const adminRoute = adminRoutes.find(route => route === path);
 
-  console.log('path', path);
-  console.log('publicRoute', publicRoute);
-
   const token = await getToken({ 
     req: request, 
     secret: process.env.NEXTAUTH_SECRET || 'secret'
@@ -61,48 +58,51 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if(!token && !publicRoute){
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = REDIRECT_WHEN_NOT_AUTHENTICATED;
-    return NextResponse.redirect(redirectUrl);
-  }
+  // if(!token && !publicRoute){
+  //   const redirectUrl = request.nextUrl.clone();
+  //   redirectUrl.pathname = REDIRECT_WHEN_NOT_AUTHENTICATED;
+  //   return NextResponse.redirect(redirectUrl);
+  // }
 
-  if(token && publicRoute && publicRoute.whenAuthenticated === 'redirect'){
-    const redirectUrl = request.nextUrl.clone();
-    if(token.role === 'participant' || token.role === 'user'){
-      redirectUrl.pathname = '/dashboard/participante';
-    }
-    if(token.role === 'creator'){
-      redirectUrl.pathname = '/dashboard/criador';
-    }
-    return NextResponse.redirect(redirectUrl);
-  }
+  // if(token && publicRoute && publicRoute.whenAuthenticated === 'redirect'){
+  //   const redirectUrl = request.nextUrl.clone();
+  //   if(token.role === 'participant' || token.role === 'user'){
+  //     redirectUrl.pathname = '/dashboard/participante';
+  //   }
+  //   if(token.role === 'creator'){
+  //     redirectUrl.pathname = '/dashboard/criador';
+  //   }
+  //   if(token.role === 'admin'){
+  //     redirectUrl.pathname = '/dashboard/admin';
+  //   }
+  //   return NextResponse.redirect(redirectUrl);
+  // }
 
-  if(token && !publicRoute){
-    if(token.role === 'creator' && (participantRoute || adminRoute)){
+  // if(token && !publicRoute){
+  //   if(token.role === 'creator' && (participantRoute || adminRoute)){
 
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/dashboard/criador';
-      return NextResponse.redirect(redirectUrl);
+  //     const redirectUrl = request.nextUrl.clone();
+  //     redirectUrl.pathname = '/dashboard/criador';
+  //     return NextResponse.redirect(redirectUrl);
 
-    }else if ((token.role === 'participant' || token.role === 'user') && (creatorRoute || adminRoute)){
+  //   }else if ((token.role === 'participant' || token.role === 'user') && (creatorRoute || adminRoute)){
 
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/dashboard/participante';
-      return NextResponse.redirect(redirectUrl);
+  //     const redirectUrl = request.nextUrl.clone();
+  //     redirectUrl.pathname = '/dashboard/participante';
+  //     return NextResponse.redirect(redirectUrl);
 
-    }else if (token.role === 'admin' && (creatorRoute || participantRoute)){
+  //   }else if (token.role === 'admin' && (creatorRoute || participantRoute)){
 
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/dashboard/admin';
-      return NextResponse.redirect(redirectUrl);
+  //     const redirectUrl = request.nextUrl.clone();
+  //     redirectUrl.pathname = '/dashboard/admin';
+  //     return NextResponse.redirect(redirectUrl);
 
-    }else{
-      return NextResponse.next();
-    }
+  //   }else{
+  //     return NextResponse.next();
+  //   }
     
 
-  }
+  // }
 
 
 }

@@ -5,15 +5,16 @@ import styled, { keyframes, css } from 'styled-components';
 import Link from 'next/link';
 import { FaPhone, FaLock, FaArrowLeft, FaEye, FaEyeSlash, FaMobileAlt, FaUserPlus, FaShieldAlt } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
-import { LoginFormData, loginUserSchema } from '@/types/form';
+import { LoginFormData, loginUserSchema } from '@/zod/user.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import FormInput from '@/components/common/FormInput';
 import { useHookFormMask } from 'use-mask-input';
-import { signIn, useSession } from 'next-auth/react';
+import { getSession, signIn, useSession } from 'next-auth/react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Layout from '@/components/layout/Layout';
+import LoadingDots from '@/components/common/LoadingDots';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function LoginPage() {
   const [credentialsError, setCredentialsError] = useState(false);
   const { data: session, status } = useSession();
 
-  const { register, setValue, getValues, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const { register, setValue, getValues, handleSubmit, formState: { errors }, watch } = useForm<LoginFormData>({
     resolver: zodResolver(loginUserSchema),
     mode: 'all',
     delayError: 200,
@@ -34,6 +35,7 @@ export default function LoginPage() {
     },
   });
   const registerWithMask = useHookFormMask(register);
+  const password = watch('password');
 
   useEffect(() => {
     setCredentialsError(false);
@@ -63,30 +65,31 @@ export default function LoginPage() {
     const result = await signIn('credentials', {
       phone: data.telefone,
       password: data.password,
-      redirect: false
+      redirect: false,
+      
     });
 
-    console.log('result', result);
 
     if(result?.ok){
-        console.log('session', session?.user?.role);
-        if(session?.user?.role == 'creator'){
-          router.push('/dashboard/criador');
-        }
-        if(session?.user?.role == 'participant' || session?.user?.role == 'user'){
-          router.push('/dashboard/participante');
-        }
+
+      const session = await getSession();
+
+      if(session?.user?.role == 'creator'){
+        router.push('/dashboard/criador');
+      }
+      if(session?.user?.role == 'participant' || session?.user?.role == 'user'){
+        router.push('/dashboard/participante');
+      }
+      
+
       }
     
     if(result?.error === 'CredentialsSignin'){
       setCredentialsError(true);
       toast.error('Credenciais inválidas');
-    } else if(result?.ok) {
-      setCredentialsError(false);
-    //   router.push('/dashboard');
+      setIsSubmitting(false);
     }
     
-    setIsSubmitting(false);
   };
 
   return (
@@ -138,7 +141,7 @@ export default function LoginPage() {
                   || isSubmitting
                 }
               >
-                {isSubmitting ? 'Processando...' : 'Continuar'}
+                {isSubmitting ? <LoadingDots size="small" color="white" /> : 'Continuar'}
               </Button>
             </StepContent>
 
@@ -172,7 +175,7 @@ export default function LoginPage() {
                 type="submit" 
                 disabled={getValues('password').length < 8 || !!errors.password?.message || isSubmitting}
               >
-                {isSubmitting ? 'Processando...' : 'Entrar'}
+                {isSubmitting ? <LoadingDots size="small" color="white" /> : 'Entrar'}
               </Button>
             </StepContent>
           </StepsContainer>
@@ -450,10 +453,15 @@ const Button = styled.button`
   margin-top: 20px;
   margin-bottom: 20px;
   box-shadow: 0 4px 15px rgba(106, 17, 203, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
   
   @media (max-width: 480px) {
     padding: 16px;
     font-size: 1.1rem;
+    min-height: 55px;
   }
   
   &:hover:not(:disabled) {

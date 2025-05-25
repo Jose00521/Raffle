@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { FaCheckCircle, FaUser, FaShieldAlt, FaMapMarked, FaUserPlus, FaArrowRight, FaArrowLeft, FaLock } from 'react-icons/fa';
-import { FormProvider, useFormContext } from '../../context/UserFormContext';
+import React from 'react';
+import { FaCheckCircle, FaUser, FaBuilding, FaMapMarked, FaShieldAlt, FaArrowRight, FaArrowLeft, FaLock } from 'react-icons/fa';
+import { CreatorFormProvider, useCreatorFormContext } from '@/context/CreatorFormContext';
 import LoadingDots from '../common/LoadingDots';
 
-import Step1Personal from './steps/Step1Personal';
-import Step2Authentication from './steps/Step2Authentication';
+import Step1AccountType from './steps/Step1AccountType';
+import Step2PersonalInfo from './steps/Step2PersonalInfo';
 import Step3Address from './steps/Step3Address';
-import Step4Confirmation from './steps/Step4Confirmation';
+import Step4Access from './steps/Step4Access';
 
 import { 
   FormContainer,
@@ -28,11 +28,12 @@ import {
   SubmitButton,
   SecurityText
 } from '../../styles/registration.styles';
+import Image from 'next/image';
 
-const MemoizedStep1Personal = React.memo(Step1Personal);
-const MemoizedStep2Authentication = React.memo(Step2Authentication);
+const MemoizedStep1AccountType = React.memo(Step1AccountType);
+const MemoizedStep2PersonalInfo = React.memo(Step2PersonalInfo);
 const MemoizedStep3Address = React.memo(Step3Address);
-const MemoizedStep4Confirmation = React.memo(Step4Confirmation);
+const MemoizedStep4Access = React.memo(Step4Access);
 
 // Componente interno para o conteúdo do formulário
 const FormContent: React.FC = () => {
@@ -45,21 +46,20 @@ const FormContent: React.FC = () => {
     setStep, 
     isSubmitting,
     onSubmit
-  } = useFormContext();
-
-
-  
-  //Verificar validade dos campos quando o step mudar
+  } = useCreatorFormContext();
 
   return (
     <FormContainer>
       <FormHeader>
-        <FormTitle>Crie sua conta</FormTitle>
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          
+        </div>
+        <FormTitle>Cadastro de Criador</FormTitle>
         <FormSubtitle>
-          {step === 1 && 'Preencha suas informações pessoais'}
-          {step === 2 && 'Configure sua conta e acesso'}
-          {step === 3 && 'Informe seu endereço'}
-          {step === 4 && 'Confirme seus dados'}
+          {step === 1 && 'Escolha o tipo de conta que melhor se adapta ao seu perfil'}
+          {step === 2 && 'Preencha seus dados pessoais'}
+          {step === 3 && 'Informe seu endereço para contato'}
+          {step === 4 && 'Configure seu acesso à plataforma'}
         </FormSubtitle>
       </FormHeader>
       
@@ -68,7 +68,7 @@ const FormContent: React.FC = () => {
           <StepNumber $active={step === 1} $completed={step > 1}>
             {step > 1 ? <FaCheckCircle /> : 1}
           </StepNumber>
-          <StepIcon $active={step === 1}><FaUser /></StepIcon>
+          <StepIcon $active={step === 1}><FaBuilding /></StepIcon>
         </StepItem>
         
         <StepConnector $completed={step > 1} />
@@ -77,7 +77,7 @@ const FormContent: React.FC = () => {
           <StepNumber $active={step === 2} $completed={step > 2}>
             {step > 2 ? <FaCheckCircle /> : 2}
           </StepNumber>
-          <StepIcon $active={step === 2}><FaShieldAlt /></StepIcon>
+          <StepIcon $active={step === 2}><FaUser /></StepIcon>
         </StepItem>
         
         <StepConnector $completed={step > 2} />
@@ -95,23 +95,23 @@ const FormContent: React.FC = () => {
           <StepNumber $active={step === 4} $completed={step > 4}>
             {step > 4 ? <FaCheckCircle /> : 4}
           </StepNumber>
-          <StepIcon $active={step === 4}><FaUserPlus /></StepIcon>
+          <StepIcon $active={step === 4}><FaShieldAlt /></StepIcon>
         </StepItem>
       </StepIndicator>
       
       <Form onSubmit={form.handleSubmit(onSubmit)}>
         <StepsContainer $step={step} $isSliding={isSliding}>
-          {/* Etapa 1: Informações Pessoais */}
-          <MemoizedStep1Personal />
+          {/* Etapa 1: Tipo de Conta */}
+          <MemoizedStep1AccountType />
 
-          {/* Etapa 2: Autenticação */}
-          <MemoizedStep2Authentication />
+          {/* Etapa 2: Informações Pessoais */}
+          <MemoizedStep2PersonalInfo />
 
           {/* Etapa 3: Endereço */}
           <MemoizedStep3Address />
 
-          {/* Etapa 4: Revisão e Confirmação */}
-          <MemoizedStep4Confirmation />
+          {/* Etapa 4: Acesso */}
+          <MemoizedStep4Access />
         </StepsContainer>
         
         <ButtonContainer>
@@ -152,12 +152,12 @@ const FormContent: React.FC = () => {
 };
 
 // Componente principal que envolve o conteúdo com o Provider do contexto
-const SteppedRegistrationForm: React.FC = () => {
+const SteppedCreatorForm: React.FC = () => {
   return (
-    <FormProvider>
+    <CreatorFormProvider>
       <FormContent />
-    </FormProvider>
+    </CreatorFormProvider>
   );
 };
 
-export default React.memo(SteppedRegistrationForm); 
+export default React.memo(SteppedCreatorForm); 

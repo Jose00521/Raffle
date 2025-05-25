@@ -44,6 +44,59 @@ export const validateCPF = (cpf: string) => {
   return true;
 };
 
+// Validação de CNPJ
+export const validateCNPJ = (cnpj: string) => {
+  // Remove caracteres não numéricos
+  console.log('Validando CNPJ:', cnpj);
+  
+  // Garantir que temos uma string para trabalhar
+  if (typeof cnpj !== 'string') {
+    console.error('CNPJ não é uma string:', cnpj);
+    return false;
+  }
+  
+  const cleanCNPJ = cnpj.replace(/\D/g, '');
+  console.log('CNPJ limpo:', cleanCNPJ);
+  
+  // Verifica se tem 14 dígitos
+  if (cleanCNPJ.length !== 14) return false;
+  
+  // Verifica se todos os dígitos são iguais
+  if (/^(\d)\1+$/.test(cleanCNPJ)) return false;
+  
+  // Algoritmo de validação do CNPJ
+  let size = cleanCNPJ.length - 2;
+  let numbers = cleanCNPJ.substring(0, size);
+  const digits = cleanCNPJ.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+  
+  // Primeiro dígito verificador
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0))) return false;
+  
+  // Segundo dígito verificador
+  size += 1;
+  numbers = cleanCNPJ.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+  
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(1))) return false;
+  
+  return true;
+};
+
 // Validate if user is 18 years old or older
 export const validateAdult = (date: Date): boolean => {
   const today = new Date();

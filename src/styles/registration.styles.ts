@@ -1,4 +1,5 @@
 import styled, { keyframes, css } from 'styled-components';
+import Link from 'next/link';
 
 // Animações
 export const fadeIn = keyframes`
@@ -30,8 +31,7 @@ export const FormContainer = styled.div`
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
   overflow: hidden !important;
   max-width: 100% !important;
-  
-  margin: 0 auto;
+  height: 100%;
   display: flex;
   flex-direction: column;
   animation: ${css`${fadeIn} 0.5s ease`};
@@ -112,9 +112,8 @@ export const FormSubtitle = styled.p`
 export const StepIndicator = styled.div`
   display: flex;
   align-items: center;
-  
   max-width: 100vw !important;
-  padding: 0.7rem 1.5rem;
+  padding: 0.5rem 1rem;
   background-color: #f8fafc;
   border-bottom: 1px solid #e9ecef;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -122,7 +121,7 @@ export const StepIndicator = styled.div`
   flex-shrink: 0;
   
   @media (max-width: 768px) {
-    padding: 0.7rem 1.5rem;
+    padding: 0.5rem 1rem;
     overflow-x: auto;
     justify-content: flex-start;
     gap: 0.5rem;
@@ -130,8 +129,8 @@ export const StepIndicator = styled.div`
   
   @media (max-width: 480px) {
     display:flex;
-    padding: 0em 1rem;
-    height: 80px !important;
+    padding: 0.5rem 1rem;
+    height: 60px !important;
     align-items: center !important;
   }
 `;
@@ -144,7 +143,7 @@ export const StepItem = styled.div<{ $active: boolean; $completed: boolean }>`
   z-index: 1;
   cursor: ${props => props.$completed ? 'pointer' : 'default'};
   transition: all 0.3s ease;
-  min-width: 120px;
+  min-width: 100px;
   
   ${props => props.$active && css`
     transform: scale(1.05);
@@ -157,8 +156,8 @@ export const StepItem = styled.div<{ $active: boolean; $completed: boolean }>`
 `;
 
 export const StepNumber = styled.div<{ $active: boolean; $completed: boolean }>`
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: ${props => 
     props.$completed 
@@ -170,7 +169,7 @@ export const StepNumber = styled.div<{ $active: boolean; $completed: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   font-weight: 600;
   transition: all 0.3s ease;
   
@@ -180,14 +179,14 @@ export const StepNumber = styled.div<{ $active: boolean; $completed: boolean }>`
   `}
   
   @media (max-width: 768px) {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     font-size: 0.9rem;
   }
   
   @media (max-width: 480px) {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     font-size: 0.8rem;
   }
 `;
@@ -249,7 +248,7 @@ export const StepsContainer = styled.div<{ $step: number; $isSliding: boolean }>
 export const FormRow = styled.div`
   display: flex;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   width: 100%;
   
   & > div {
@@ -259,12 +258,12 @@ export const FormRow = styled.div`
   
   @media (max-width: 768px) {
     gap: 0.6rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
   }
   
   @media (max-width: 480px) {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 `;
 
@@ -272,13 +271,13 @@ export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
   flex: ${props => props.$fullWidth ? 1 : 'auto'};
   max-width: 100%;
   position: relative;
-  min-height: 85px; /* Garante que haja espaço suficiente para o campo + mensagem de erro */
-  margin-bottom: 5px;
+  min-height: 75px; /* Reduce space for field + error message */
+  margin-bottom: 0;
 `;
 
 // Step Content
 export const StepContent = styled.div`
-  padding: 1.5rem !important;
+  padding: 1rem !important;
   flex: 1;
   width: 25%;
   overflow-y: auto;
@@ -324,60 +323,60 @@ export const StepContent = styled.div`
 export const StepContentHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
   border-bottom: 1px dashed #e2e8f0;
   
   @media (max-width: 768px) {
-    margin-bottom: 0.6rem;
-    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
   }
   
   @media (max-width: 480px) {
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.3rem;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.2rem;
   }
 `;
 
 export const StepContentIcon = styled.div`
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   color: #6a11cb;
   background: rgba(106, 17, 203, 0.1);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   
   @media (max-width: 768px) {
-    font-size: 1.1rem;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
   }
   
   @media (max-width: 480px) {
     font-size: 0.9rem;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 6px;
   }
 `;
 
 export const StepContentTitle = styled.h3`
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
   
   @media (max-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -417,7 +416,7 @@ export const BackButton = styled.button`
 export const NextButton = styled.button<{ $isValid?: boolean }>`
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.5rem;
   background: ${props => props.$isValid === false ? '#a0aec0' : 'linear-gradient(135deg, #6a11cb 0%, #8e44ad 100%)'};
   color: white;
@@ -432,6 +431,8 @@ export const NextButton = styled.button<{ $isValid?: boolean }>`
   position: relative;
   overflow: hidden;
   opacity: ${props => props.$isValid === false ? '0.7' : '1'};
+  min-width: 140px;
+  min-height: 45px;
   
   &::after {
     content: '';
@@ -480,6 +481,8 @@ export const NextButton = styled.button<{ $isValid?: boolean }>`
 export const SubmitButton = styled(NextButton)`
   background-size: 200% 200%;
   animation: ${props => props.$isValid === false ? 'none' : css`${gradientMove} 3s ease infinite`};
+  min-width: 140px;
+  min-height: 45px;
   
   &:disabled {
     background: #94a3b8;
@@ -615,34 +618,44 @@ export const ConfirmationValue = styled.span`
 // Terms Section
 export const TermsCheckboxContainer = styled.div`
   display: flex;
-  align-items: flex-start;
   margin-top: 1.5rem;
-  padding: 1rem;
+  padding: 1.5rem;
+  align-items: center !important;
   background: #f8fafc;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
+  
+  a {
+    color: #6a11cb;
+    text-decoration: none;
+    font-weight: 500;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
-export const TermsCheckbox = styled.input`
-  margin-right: 0.75rem;
-  margin-top: 0.25rem;
-  width: 16px;
-  height: 16px;
-  accent-color: #6a11cb;
+export const TermsContainer = styled.div`
+  margin-top: 1.5rem;
+  padding: 0.5rem 0;
 `;
 
-export const TermsLabel = styled.label`
+export const TermsText = styled.span`
   font-size: 0.9rem;
-  line-height: 1.5;
   color: #4b5563;
+  line-height: 1.5;
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
 `;
 
-export const TermsLink = styled.a`
+export const TermsLink = styled(Link)`
   color: #6a11cb;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
-  margin-left: 0.25rem;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
   
   &:hover {
     color: #8e44ad;
@@ -732,7 +745,7 @@ export const SecurityText = styled.div`
 export const ButtonContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem;
   border-top: 1px solid #e9ecef;
   background-color: #f8fafc;
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
