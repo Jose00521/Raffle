@@ -4,6 +4,31 @@ import { validateCPF, validateCNPJ } from '../utils/validators';
 // Schema base com campos comuns para pessoa física e jurídica
 const baseCreatorSchema = z.object({
   // Informações básicas
+  nomeCompleto: z.string()
+  .nonempty('Nome completo é obrigatório')
+  .min(3, 'Nome completo deve ter pelo menos 3 caracteres')
+  .max(50, 'Nome muito longo')
+  .transform(value => value.trim())
+  .superRefine((value, ctx) => {
+    if (value.length < 3) return true;
+    
+    for (let i = 0; i < value.length; i++) {
+      const char = value[i];
+      if (!(
+        (char >= 'a' && char <= 'z') || 
+        (char >= 'A' && char <= 'Z') || 
+        char === ' ' ||
+        /[À-ÿ]/.test(char)
+      )) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nome completo deve conter apenas letras e espaços',
+        });
+        return false;
+      }
+    }
+    return true;
+  }),
   email: z
     .string()
     .min(1, 'E-mail é obrigatório')
@@ -111,7 +136,7 @@ const baseCreatorSchema = z.object({
       { message: 'UF inválida' }
     ),
   // Campo discriminador
-  tipoPessoa: z.enum(['fisica', 'juridica'], {
+  tipoPessoa: z.enum(['individual', 'company'], {
     errorMap: () => ({ message: 'Selecione o tipo de pessoa' })
   }),
   termsAgreement: z.boolean().refine(val => val === true, {
@@ -122,31 +147,7 @@ const baseCreatorSchema = z.object({
 // Schema específico para pessoa física (CPF)
 const pessoaFisicaSchema = baseCreatorSchema.extend({
   tipoPessoa: z.literal('individual'),
-  nomeCompleto: z.string()
-  .nonempty('Nome completo é obrigatório')
-  .min(3, 'Nome completo deve ter pelo menos 3 caracteres')
-  .max(50, 'Nome muito longo')
-  .transform(value => value.trim())
-  .superRefine((value, ctx) => {
-    if (value.length < 3) return true;
-    
-    for (let i = 0; i < value.length; i++) {
-      const char = value[i];
-      if (!(
-        (char >= 'a' && char <= 'z') || 
-        (char >= 'A' && char <= 'Z') || 
-        char === ' ' ||
-        /[À-ÿ]/.test(char)
-      )) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Nome completo deve conter apenas letras e espaços',
-        });
-        return false;
-      }
-    }
-    return true;
-  }),
+  
   cpf: z.string()
     .nonempty('CPF é obrigatório')
     .transform(val => val.replace(/\D/g, ''))
@@ -199,7 +200,7 @@ const pessoaJuridicaSchema = baseCreatorSchema.extend({
     .refine(val => validateCNPJ(val), {
       message: 'CNPJ inválido'
     }),
-    cpf: z.string()
+  cpf: z.string()
     .nonempty('CPF do representante legal é obrigatório')
     .transform(val => val.replace(/\D/g, ''))
     .refine(val => val.length === 11, {
@@ -208,13 +209,13 @@ const pessoaJuridicaSchema = baseCreatorSchema.extend({
     .refine(val => validateCPF(val), {
       message: 'CPF inválido'
     }),
+  categoriaEmpresa: z.string(),
   razaoSocial: z.string()
     .nonempty('Razão social é obrigatória')
     .min(3, 'Razão social deve ter pelo menos 3 caracteres'),
   nomeFantasia: z.string()
     .nonempty('Nome fantasia é obrigatório')
     .min(2, 'Nome fantasia deve ter pelo menos 2 caracteres'),
-  dataNascimento: z.date().optional(),
 });
 
 // Schema combinado usando discriminated union

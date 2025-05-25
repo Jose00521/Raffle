@@ -5,67 +5,8 @@ import { z } from 'zod';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast, ToastContainer, Bounce } from 'react-toastify';
+import { creatorFormSchema , CreatorFormData} from '@/zod/creator.schema';
 
-// Schema de validação do formulário para criadores
-const creatorFormSchema = z.object({
-  accountType: z.enum(['pf', 'pj']),
-  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
-  telefone: z.string().min(14, "Telefone inválido").max(15, "Telefone inválido"),
-  dataNascimento: z.date({
-    required_error: "Data de nascimento é obrigatória",
-    invalid_type_error: "Data inválida",
-  }).refine(date => {
-    const today = new Date();
-    const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-    return date <= eighteenYearsAgo;
-  }, "Você deve ter pelo menos 18 anos"),
-  // Pessoa Física
-  cpf: z.string().optional(),
-  // Pessoa Jurídica
-  nomeEmpresa: z.string().optional(),
-  cnpj: z.string().optional(),
-  // Endereço
-  endereco: z.string().min(5, "Endereço inválido"),
-  numero: z.string().min(1, "Número é obrigatório"),
-  complemento: z.string().optional(),
-  bairro: z.string().min(2, "Bairro inválido"),
-  cidade: z.string().min(2, "Cidade inválida"),
-  estado: z.string().min(2, "Estado inválido"),
-  cep: z.string().min(9, "CEP inválido"),
-  // Acesso
-  senha: z.string()
-    .min(8, "Senha deve ter pelo menos 8 caracteres")
-    .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
-    .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
-  confirmarSenha: z.string().min(1, "Confirme sua senha"),
-  termsAgreement: z.boolean().refine(val => val === true, {
-    message: "Você precisa aceitar os termos de uso",
-  }),
-}).refine(
-  data => data.senha === data.confirmarSenha, {
-    message: "As senhas não conferem",
-    path: ["confirmarSenha"],
-  }
-).refine(
-  data => data.accountType !== 'pf' || (data.cpf && data.cpf.length >= 14), {
-    message: "CPF inválido",
-    path: ["cpf"],
-  }
-).refine(
-  data => data.accountType !== 'pj' || (data.nomeEmpresa && data.nomeEmpresa.length >= 3), {
-    message: "Nome da empresa inválido",
-    path: ["nomeEmpresa"],
-  }
-).refine(
-  data => data.accountType !== 'pj' || (data.cnpj && data.cnpj.length >= 18), {
-    message: "CNPJ inválido",
-    path: ["cnpj"],
-  }
-);
-
-export type CreatorFormData = z.infer<typeof creatorFormSchema>;
 
 // Interface do contexto do formulário de criador
 interface CreatorFormContextType {
@@ -89,37 +30,19 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [step, setStep] = useState(1);
   const [isSliding, setIsSliding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accountType, setAccountType] = useState<'pf' | 'pj'>('pf');
+  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual');
 
   const form = useForm<CreatorFormData>({
     resolver: zodResolver(creatorFormSchema),
     mode: 'onChange',
-    defaultValues: {
-      accountType: 'pf',
-      nome: '',
-      email: '',
-      telefone: '',
-      cpf: '',
-      nomeEmpresa: '',
-      cnpj: '',
-      endereco: '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      cidade: '',
-      estado: '',
-      cep: '',
-      senha: '',
-      confirmarSenha: '',
-      termsAgreement: false,
-    }
+ 
   });
 
   const { trigger, setValue, getValues } = form;
 
   // Atualizar o tipo de conta quando mudar
   useEffect(() => {
-    setValue('accountType', accountType);
+    setValue('tipoPessoa', accountType);
   }, [accountType, setValue]);
 
   // Validar etapa atual
@@ -130,11 +53,11 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       case 1:
         return true; // Account type selection always valid
       case 2:
-        fieldsToValidate = ['nome', 'email', 'telefone', 'dataNascimento'];
-        if (accountType === 'pf') {
+        fieldsToValidate = ['nomeCompleto', 'email', 'telefone'];
+        if (accountType === 'individual') {
           fieldsToValidate.push('cpf');
         } else {
-          fieldsToValidate.push('nomeEmpresa', 'cnpj');
+          fieldsToValidate.push('nomeFantasia', 'cnpj');
         }
         break;
       case 3:
