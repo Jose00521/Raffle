@@ -4,13 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPasswordStrength, getPasswordStrengthText } from '../utils/validators';
 
 interface PasswordFieldResult {
-  passwordStrength: number;
-  strengthText: string;
-  showPassword: boolean;
-  showConfirmPassword: boolean;
-  passwordsMatch: boolean | null;
-  togglePasswordVisibility: () => void;
-  toggleConfirmPasswordVisibility: () => void;
+  passwordStrength: { strength: number; text: string; color: string };
 }
 
 /**
@@ -27,65 +21,54 @@ export const usePasswordField = (password: string, confirmPassword?: string): Pa
 
   // Memoize password strength calculation with early returns
   const passwordStrength = useMemo(() => {
-    if (!password) return 0;
-    if (password.length < 8) return 0;
+    if (!password) return { strength: 0, text: '', color: '#94a3b8' };
     
-    let strength = 1; // Start with 1 for minimum length
+    let strength = 0;
     
-    // Use single regex test for better performance
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    // Adiciona pontuação com base em critérios
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
     
-    if (hasUpperCase) strength += 1;
-    if (hasNumber) strength += 1;
-    if (hasSpecial) strength += 1;
+    // Define o texto e cor com base na pontuação
+    let text = '';
+    let color = '';
     
-    return strength;
+    switch (strength) {
+      case 0:
+      case 1:
+        text = 'Muito fraca';
+        color = '#ef4444';
+        break;
+      case 2:
+        text = 'Fraca';
+        color = '#f97316';
+        break;
+      case 3:
+        text = 'Média';
+        color = '#eab308';
+        break;
+      case 4:
+        text = 'Boa';
+        color = '#22c55e';
+        break;
+      case 5:
+        text = 'Excelente';
+        color = '#10b981';
+        break;
+      default:
+        text = '';
+        color = '#94a3b8';
+    }
+    
+    return { strength, text, color };
   }, [password]);
-  
-  // Memoize strength text with dependency only on strength
-  const strengthText = useMemo(() => {
-    switch (passwordStrength) {
-      case 0: return 'Muito fraca';
-      case 1: return 'Fraca';
-      case 2: return 'Média';
-      case 3: return 'Forte';
-      case 4: return 'Muito forte';
-      default: return '';
-    }
-  }, [passwordStrength]);
-  
-  // Optimize password match check
-  useEffect(() => {
-    if (!confirmPassword || !password || password.length < 8) {
-      setPasswordsMatch(null);
-      return;
-    }
-    
-    const timeoutId = setTimeout(() => {
-      setPasswordsMatch(password === confirmPassword);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [password, confirmPassword]);
 
-  // Memoize toggle functions
-  const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
-  }, []);
-
-  const toggleConfirmPasswordVisibility = useCallback(() => {
-    setShowConfirmPassword(prev => !prev);
-  }, [confirmPassword,password]);
+  
 
   return {
     passwordStrength,
-    strengthText,
-    showPassword,
-    showConfirmPassword,
-    passwordsMatch,
-    togglePasswordVisibility,
-    toggleConfirmPasswordVisibility
   };
 }; 

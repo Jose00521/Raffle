@@ -109,15 +109,15 @@ const Step1AccountType: React.FC = () => {
       
       <AccountTypeContainer>
         <AccountTypeCard 
-          $selected={accountType === 'pf'} 
-          onClick={() => setAccountType('pf')}
+          $selected={accountType === 'individual'} 
+          onClick={() => setAccountType('individual')}
         >
           <AccountTypeHeader>
-            <AccountTypeIcon $selected={accountType === 'pf'}>
+            <AccountTypeIcon $selected={accountType === 'individual'}>
               <FaUser />
             </AccountTypeIcon>
             <AccountTypeInfo>
-              <AccountTypeTitle $selected={accountType === 'pf'}>
+              <AccountTypeTitle $selected={accountType === 'individual'}>
                 Pessoa Física
               </AccountTypeTitle>
               <AccountTypeDescription>
@@ -128,15 +128,15 @@ const Step1AccountType: React.FC = () => {
         </AccountTypeCard>
         
         <AccountTypeCard 
-          $selected={accountType === 'pj'} 
-          onClick={() => setAccountType('pj')}
+          $selected={accountType === 'company'} 
+          onClick={() => setAccountType('company')}
         >
           <AccountTypeHeader>
-            <AccountTypeIcon $selected={accountType === 'pj'}>
+            <AccountTypeIcon $selected={accountType === 'company'}>
               <FaBuilding />
             </AccountTypeIcon>
             <AccountTypeInfo>
-              <AccountTypeTitle $selected={accountType === 'pj'}>
+              <AccountTypeTitle $selected={accountType === 'company'}>
                 Pessoa Jurídica
               </AccountTypeTitle>
               <AccountTypeDescription>

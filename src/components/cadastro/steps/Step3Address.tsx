@@ -39,7 +39,7 @@ const Step3Address: React.FC = () => {
   
   // Para depuração - mostrar erros ao montar ou atualizar
   
-  const { isLoadingCep, handleCepChange } = useAddressField(setValue, setError, clearErrors);
+  const { isLoadingCep, handleCepChange } = useAddressField(setValue, setError, clearErrors,trigger);
 
   // Helper function para registrar os inputs com tipagem correta e debounce
   
@@ -52,9 +52,8 @@ const Step3Address: React.FC = () => {
 
     const cepValue = e.target.value.replace(/\D/g, '');
     
-    if (cepValue.length == 8) {
-      handleCepChange(e);
-    }
+    handleCepChange(e);
+  
   };
 
   return (
@@ -72,7 +71,6 @@ const Step3Address: React.FC = () => {
             icon={isLoadingCep ? <LoadingSpinner /> : <FaMapPin />}
             placeholder="00000-000"
             error={errors.cep?.message as string}
-            mask="cep"
             disabled={isLoadingCep}
             {...registerWithMask('cep', '99999-999')}
             onChange={handleCepOnChange}

@@ -137,31 +137,29 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   }
   
   @media (max-height: 900px) {
-    height: 45px !important;
+    height: 55px !important;
   }
   
   @media (max-height: 800px) {
-    height: 42px !important;
-    font-size: 0.85rem;
-    padding: ${props => props.$hasIcon ? '0 12px 0 36px' : '0 12px'};
-    padding-right: 36px;
+
+    font-size: 1rem;
+      padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
   }
   
   @media (max-height: 700px) {
-    height: 38px !important;
-    font-size: 0.8rem;
-    padding: ${props => props.$hasIcon ? '0 10px 0 32px' : '0 10px'};
-    padding-right: 32px;
+    height: 55px !important;
+    font-size:1rem;
+  padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
   }
   
   @media (max-width: 768px) {
-    height: 44px !important;
-    font-size: 0.85rem;
+    height: 55px !important;
+    font-size: 1rem;
   }
   
   @media (max-width: 480px) {
-    height: 42px !important;
-    font-size: 0.8rem;
+    height: 55px !important;
+    font-size:1rem;
   }
 `;
 

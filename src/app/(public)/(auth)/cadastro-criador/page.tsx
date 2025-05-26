@@ -204,7 +204,7 @@ export default function CadastroCriador() {
           </FormWrapper>
         </ContentWrapper>
         <BrandOverlay>
-          RifaApp © {new Date().getFullYear()}
+          Rifa.com © {new Date().getFullYear()}
         </BrandOverlay>
       </PageContainer>
 

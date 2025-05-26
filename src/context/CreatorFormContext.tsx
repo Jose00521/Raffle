@@ -1,11 +1,11 @@
- 'use client';
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast, ToastContainer, Bounce } from 'react-toastify';
-import { creatorFormSchema , CreatorFormData} from '@/zod/creator.schema';
+import { creatorFormSchema, CreatorFormData } from '@/zod/creator.schema';
 
 
 // Interface do contexto do formulário de criador
@@ -14,8 +14,8 @@ interface CreatorFormContextType {
   step: number;
   isSliding: boolean;
   isSubmitting: boolean;
-  accountType: 'pf' | 'pj';
-  setAccountType: (type: 'pf' | 'pj') => void;
+  accountType: 'individual' | 'company';
+  setAccountType: (type: 'individual' | 'company') => void;
   handleNextStep: () => Promise<void>;
   handlePrevStep: () => void;
   setStep: (step: number) => void;
@@ -35,7 +35,10 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const form = useForm<CreatorFormData>({
     resolver: zodResolver(creatorFormSchema),
     mode: 'onChange',
- 
+    defaultValues: {
+      tipoPessoa: 'individual',
+      termsAgreement: false
+    }
   });
 
   const { trigger, setValue, getValues } = form;
@@ -44,6 +47,26 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     setValue('tipoPessoa', accountType);
   }, [accountType, setValue]);
+  
+  // Ajustar os passos quando o tipo de conta mudar
+  useEffect(() => {
+    // Se mudar de company para individual
+    if (accountType === 'individual') {
+      // Quando é pessoa física, temos apenas 4 passos
+      // Se estiver em um passo específico de empresa (passo 3 - dados da empresa),
+      // ajustar para o passo correspondente para pessoa física
+      if (step > 4) {
+        // Não pode ter passo maior que 4 para pessoa física
+        setIsSliding(true);
+        setTimeout(() => {
+          setStep(4); // Último passo para pessoa física
+          setTimeout(() => {
+            setIsSliding(false);
+          }, 50);
+        }, 300);
+      }
+    }
+  }, [accountType, step, setStep, setIsSliding]);
 
   // Validar etapa atual
   const validateStep = async (currentStep: number) => {
@@ -53,18 +76,32 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       case 1:
         return true; // Account type selection always valid
       case 2:
-        fieldsToValidate = ['nomeCompleto', 'email', 'telefone'];
-        if (accountType === 'individual') {
-          fieldsToValidate.push('cpf');
-        } else {
-          fieldsToValidate.push('nomeFantasia', 'cnpj');
-        }
+        // Dados pessoais/do representante
+        fieldsToValidate = ['nomeCompleto', 'email', 'telefone', 'cpf', 'dataNascimento'];
         break;
       case 3:
-        fieldsToValidate = ['endereco', 'numero', 'bairro', 'cidade', 'estado', 'cep'];
+        // Se for empresa, valida os campos da empresa, senão valida endereço
+        if (accountType === 'company') {
+          fieldsToValidate = ['cnpj', 'razaoSocial', 'nomeFantasia'];
+        } else {
+          // Para pessoa física, o passo 3 já é o endereço
+          fieldsToValidate = ['logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep'];
+        }
         break;
       case 4:
-        fieldsToValidate = ['senha', 'confirmarSenha', 'termsAgreement'];
+        // Endereço (para pessoa jurídica) ou acesso/dados bancários (para pessoa física)
+        if (accountType === 'company') {
+          fieldsToValidate = ['logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep'];
+        } else {
+          // Para pessoa física, o passo 4 é acesso e dados bancários
+          fieldsToValidate = ['senha', 'confirmarSenha', 'termsAgreement'];
+        }
+        break;
+      case 5:
+        // Acesso e dados bancários (apenas para pessoa jurídica)
+        if (accountType === 'company') {
+          fieldsToValidate = ['senha', 'confirmarSenha', 'termsAgreement'];
+        }
         break;
       default:
         return false;
@@ -118,16 +155,53 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // Remover máscaras antes de enviar
       const cleanData = {
         ...data,
+        role: 'creator',
+        personType: data.tipoPessoa,
+        name: data.tipoPessoa === 'individual' ? data.nomeCompleto : data.nomeFantasia,
+        phone: data.telefone.replace(/\D/g, ''),
+        password: data.senha,
         cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
         cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : undefined,
-        telefone: data.telefone.replace(/\D/g, ''),
-        cep: data.cep.replace(/\D/g, ''),
+        address: {
+          street: data.logradouro,
+          number: data.numero,
+          complement: data.complemento || '',
+          neighborhood: data.bairro,
+          city: data.cidade,
+          state: data.uf,
+          zipCode: data.cep.replace(/\D/g, '')
+        },
+        bankAccount: [],
+        consents: {
+          termsAndConditions: data.termsAgreement,
+          marketingEmails: false,
+          dataSharing: false
+        }
       };
+      
+      // Adicionar campos específicos por tipo de conta
+      if (data.tipoPessoa === 'company') {
+        Object.assign(cleanData, {
+          representanteLegal: data.nomeCompleto,
+          companyName: data.nomeFantasia,
+          legalName: data.razaoSocial
+        });
+      }
       
       console.log('Form data:', cleanData);
       
-      // Simulação de envio
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Envio para a API
+      const response = await fetch('/api/creators', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cleanData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao cadastrar usuário');
+      }
       
       toast.success('Cadastro realizado com sucesso!');
       // Redirecionar após o cadastro

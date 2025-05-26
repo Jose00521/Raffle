@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Controller } from 'react-hook-form';
-import { FaUser, FaIdCard, FaCalendarAlt, FaEnvelope, FaPhone, FaBuilding } from 'react-icons/fa';
+import { FaUser, FaIdCard, FaCalendarAlt, FaEnvelope, FaPhone } from 'react-icons/fa';
 import { useCreatorFormContext } from '../../../context/CreatorFormContext';
 import FormInput from '../../common/FormInput';
 import FormDatePicker from '../../common/FormDatePicker';
@@ -32,34 +32,23 @@ const Step2PersonalInfo: React.FC = () => {
     <StepContent>
       <StepContentHeader>
         <StepContentIcon><FaUser /></StepContentIcon>
-        <StepContentTitle>Dados Pessoais</StepContentTitle>
+        <StepContentTitle>
+          {accountType === 'individual' ? 'Dados Pessoais' : 'Dados do Representante Legal'}
+        </StepContentTitle>
       </StepContentHeader>
       
-      {accountType === 'pf' ?
-        (<FormRow>
-          <FormInput
-            id="nome"
-            label="Nome Completo"
-            required
-            icon={<FaUser />}
-            placeholder="Digite seu nome completo"
-          {...register('nome')}
-          error={errors.nome?.message as string}
-          fullWidth
-        />
-      </FormRow>) :
-      (         
-         <FormInput
-          id="representanteLegal"
-          label="Representante Legal"
+      <FormRow>
+        <FormInput
+          id="nomeCompleto"
+          label="Nome Completo"
           required
           icon={<FaUser />}
           placeholder="Digite seu nome completo"
-          {...register('representanteLegal')}
-          error={errors.representanteLegal?.message as string}
+          {...register('nomeCompleto')}
+          error={errors.nomeCompleto?.message as string}
           fullWidth
- />)
-      }
+        />
+      </FormRow>
       
       <FormRow>
         <FormGroup>
@@ -115,50 +104,18 @@ const Step2PersonalInfo: React.FC = () => {
           />
         </FormGroup>
         
-        {accountType === 'pf' ? (
-          <FormGroup>
-            <FormInput
-              id="cpf"
-              label="CPF"
-              required
-              icon={<FaIdCard />}
-              placeholder="000.000.000-00"
-              {...registerWithMask('cpf', 'cpf')}
-              error={errors.cpf?.message as string}
-            />
-          </FormGroup>
-        ) : null}
+        <FormGroup>
+          <FormInput
+            id="cpf"
+            label="CPF"
+            required
+            icon={<FaIdCard />}
+            placeholder="000.000.000-00"
+            {...registerWithMask('cpf', 'cpf')}
+            error={errors.cpf?.message as string}
+          />
+        </FormGroup>
       </FormRow>
-      
-      {accountType === 'pj' && (
-        <>
-          <FormRow>
-            <FormInput
-              id="nomeEmpresa"
-              label="Nome da Empresa"
-              required
-              icon={<FaBuilding />}
-              placeholder="Digite o nome da sua empresa"
-              {...register('nomeEmpresa')}
-              error={errors.nomeEmpresa?.message as string}
-              fullWidth
-            />
-          </FormRow>
-          
-          <FormRow>
-            <FormInput
-              id="cnpj"
-              label="CNPJ"
-              required
-              icon={<FaIdCard />}
-              placeholder="00.000.000/0000-00"
-              {...registerWithMask('cnpj', 'cnpj')}
-              error={errors.cnpj?.message as string}
-              fullWidth
-            />
-          </FormRow>
-        </>
-      )}
     </StepContent>
   );
 };

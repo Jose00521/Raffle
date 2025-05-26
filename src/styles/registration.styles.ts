@@ -49,7 +49,7 @@ export const FormHeader = styled.div`
   background-size: 200% 200%;
   max-width: 100% !important;
   animation: ${css`${gradientMove} 10s ease infinite`};
-  padding: 1rem;
+  padding: 1.5rem;
   color: white;
   text-align: center;
   position: relative;
@@ -68,11 +68,11 @@ export const FormHeader = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 0.8rem;
+    padding: 1.2rem 0.8rem;
   }
   
   @media (max-width: 480px) {
-    padding: 0.7rem;
+    padding: 1rem 0.7rem;
   }
 `;
 
@@ -82,29 +82,32 @@ export const FormTitle = styled.h2`
   font-weight: 700;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   letter-spacing: -0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   
   @media (max-width: 768px) {
     font-size: 1.3rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
   }
 `;
 
 export const FormSubtitle = styled.p`
-  margin: 0.3rem 0 0;
+  margin: 0.5rem 0 0;
   opacity: 0.9;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 300;
   
   @media (max-width: 768px) {
-    font-size: 0.8rem;
-    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
 `;
 
@@ -113,25 +116,30 @@ export const StepIndicator = styled.div`
   display: flex;
   align-items: center;
   max-width: 100vw !important;
-  padding: 0.5rem 1rem;
+  padding: 1rem 1.5rem;
   background-color: #f8fafc;
   border-bottom: 1px solid #e9ecef;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
   flex-shrink: 0;
+  overflow-x: auto;
+  justify-content: space-between;
+  
+  &::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+    background: transparent;
+  }
   
   @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    overflow-x: auto;
-    justify-content: flex-start;
-    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    justify-content: space-between;
   }
   
   @media (max-width: 480px) {
-    display:flex;
-    padding: 0.5rem 1rem;
-    height: 60px !important;
-    align-items: center !important;
+    padding: 0.75rem 0.5rem;
+    height: auto !important;
+    justify-content: space-between;
   }
 `;
 
@@ -143,15 +151,19 @@ export const StepItem = styled.div<{ $active: boolean; $completed: boolean }>`
   z-index: 1;
   cursor: ${props => props.$completed ? 'pointer' : 'default'};
   transition: all 0.3s ease;
-  min-width: 100px;
+  width: auto;
+  padding: 0 0.25rem;
   
   ${props => props.$active && css`
     transform: scale(1.05);
   `}
   
   @media (max-width: 768px) {
-    min-width: 10px;
-    max-width: 20px;
+    padding: 0 0.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0;
   }
 `;
 
@@ -193,15 +205,21 @@ export const StepNumber = styled.div<{ $active: boolean; $completed: boolean }>`
 
 export const StepIcon = styled.div<{ $active: boolean }>`
   color: ${props => props.$active ? '#6a11cb' : '#94a3b8'};
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.3rem;
   
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.1rem;
+    margin-top: 0.2rem;
   }
-
+  
   @media (max-width: 480px) {
-    display: none;
+    font-size: 1rem;
+    margin-top: 0.1rem;
   }
 `;
 
@@ -209,19 +227,15 @@ export const StepConnector = styled.div<{ $completed: boolean }>`
   flex: 1;
   height: 2px;
   background-color: ${props => props.$completed ? '#10b981' : '#e2e8f0'};
-  margin: 0 0.5rem;
-  position: relative;
-  top: -15px;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
+  min-width: 40px;
   
   @media (max-width: 768px) {
-    min-width: 10px;
-    margin: 0 0.25rem;
+    min-width: 20px;
   }
-
+  
   @media (max-width: 480px) {
-    align-self: center;
-    justify-self: center;
+    min-width: 10px;
   }
 `;
 
@@ -237,11 +251,18 @@ export const Form = styled.form`
 export const StepsContainer = styled.div<{ $step: number; $isSliding: boolean }>`
   display: flex;
   transition: transform 0.3s ease, opacity 0.2s ease;
-  width: 400%;
-  transform: translateX(${props => (props.$step - 1) * -25}%);
+  width: 500%; /* Increased to accommodate 5 steps for PJ */
+  transform: translateX(${props => (props.$step - 1) * -20}%); /* Adjusted to 20% per step */
   opacity: ${props => (props.$isSliding ? '0.8' : '1')};
   flex: 1;
   overflow: hidden !important;
+  
+  & > * {
+    width: 20%; /* Each step takes 20% of the container width */
+    min-width: 20%;
+    max-width: 20%;
+    flex-shrink: 0;
+  }
 `;
 
 // Form Components
@@ -275,11 +296,18 @@ export const FormGroup = styled.div<{ $fullWidth?: boolean }>`
   margin-bottom: 0;
 `;
 
+export const FormGroup2 = styled.div<{ $fullWidth?: boolean }>`
+  max-width: 100%;
+  position: relative;
+  min-height: 75px; /* Reduce space for field + error message */
+  margin-bottom: 0 !important;
+`;
+
 // Step Content
 export const StepContent = styled.div`
   padding: 1rem !important;
   flex: 1;
-  width: 25%;
+  width: 100%; /* Take full width of its parent (which is 20% of StepsContainer) */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -323,19 +351,21 @@ export const StepContent = styled.div`
 export const StepContentHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px dashed #e2e8f0;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+  flex-wrap: wrap;
   
   @media (max-width: 768px) {
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.3rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem;
   }
   
   @media (max-width: 480px) {
-    margin-bottom: 0.4rem;
-    padding-bottom: 0.2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
   }
 `;
 
@@ -367,16 +397,18 @@ export const StepContentIcon = styled.div`
 
 export const StepContentTitle = styled.h3`
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
+  overflow: visible;
+  white-space: normal;
   
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 `;
 

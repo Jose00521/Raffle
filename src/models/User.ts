@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
 import { IRegularUser } from './interfaces/IUserInterfaces';
-import { IParticipant, IIndividualCreator, ICompanyCreator } from './interfaces/UserModels';
 
 /**
  * Base User Schema - Shared fields 
@@ -150,7 +149,7 @@ const RegularUserSchema = new Schema({
 /**
  * Schema Base de Criador (campos comuns)
  */
-const BaseCreatorSchema = new Schema({
+const CreatorSchema = new Schema({
   // Campo discriminador para o tipo de pessoa (física ou jurídica)
   personType: {
     type: String,
@@ -169,6 +168,30 @@ const BaseCreatorSchema = new Schema({
     type: Date,
     required: true, // Obrigatório tanto para PF quanto para representante de PJ
     index: true
+  },
+  // Campos específicos para pessoa jurídica
+  cnpj: {
+    type: String,
+    required: function(this: any) { return this.personType === 'company'; },
+    unique: true,
+    sparse: true
+  },
+  // Representante legal (usado apenas para PJ)
+  representanteLegal: {
+    type: String,
+    required: function(this: any) { return this.personType === 'company'; }
+  },
+  companyName: {
+    type: String,
+    required: function(this: any) { return this.personType === 'company'; }
+  },
+  legalName: {
+    type: String,
+    required: function(this: any) { return this.personType === 'company'; }
+  },
+  companyCategory: {
+    type: String,
+    required: function(this: any) { return this.personType === 'company'; }
   },
   // Conta bancária
   bankAccount: [{
@@ -238,51 +261,40 @@ const BaseCreatorSchema = new Schema({
     marketingEmails: { type: Boolean, default: false },
     termsAndConditions: { type: Boolean, default: true },
     dataSharing: { type: Boolean, default: false }
-  }
-}, { discriminatorKey: 'personType' });
-
-/**
- * Schema específico para Criador Pessoa Física
- * Não precisa de campos adicionais, pois os campos necessários (cpf, birthDate)
- * já estão no schema base.
- */
-const IndividualCreatorSchema = new Schema({
-  // Sem campos adicionais, pois cpf e birthDate já estão no schema base
+  },
 });
 
-/**
- * Schema específico para Criador Pessoa Jurídica
- */
-const CompanyCreatorSchema = new Schema({
-  // Campos específicos para pessoa jurídica
-  cnpj: {
-    type: String,
-    required: true,
-    unique: true,
-    sparse: true
+// Adiciona métodos estáticos ao schema de Creator (antes de criar o modelo)
+CreatorSchema.statics = {
+  // Método auxiliar para criar criador pessoa física
+  createIndividual: function(data: any) {
+    return this.create({
+      ...data,
+      personType: 'individual'
+    });
   },
-    // Representante legal (usado apenas para PJ)
-    representanteLegal: {
-      type: String,
-      required: function(this: any): boolean { return this.personType === 'company'; }
-    },
-  companyName: {
-    type: String,
-    required: true
+
+  // Método auxiliar para criar criador pessoa jurídica
+  createCompany: function(data: any) {
+    return this.create({
+      ...data,
+      personType: 'company'
+    });
   },
-  legalName: {
-    type: String,
-    required: true
+
+  // Método para buscar criadores pessoa física
+  findIndividuals: function() {
+    return this.find({ role: 'creator', personType: 'individual' });
   },
-  companyCategory: {
-    type: String,
-    required: true
+
+  // Método para buscar criadores pessoa jurídica
+  findCompanies: function() {
+    return this.find({ role: 'creator', personType: 'company' });
   }
-  // Nota: cpf, birthDate e representanteLegal estão no schema base
-});
+};
 
 // Criar modelos utilizando discriminators
-let RegularUser, Participant, Creator, IndividualCreator, CompanyCreator;
+let RegularUser, Participant, Creator;
 
 // Cria o modelo de usuário regular
 if (!mongoose.models.user) {
@@ -300,22 +312,9 @@ if (!mongoose.models.participant) {
 
 // Cria o modelo base de Creator
 if (!mongoose.models.creator) {
-  Creator = User.discriminator('creator', BaseCreatorSchema);
+  Creator = User.discriminator('creator', CreatorSchema);
 } else {
   Creator = mongoose.models.creator;
-}
-
-// Cria os discriminators para tipos de Creator
-if (Creator && !mongoose.models.individual) {
-  IndividualCreator = Creator.discriminator('individual', IndividualCreatorSchema);
-} else if (mongoose.models.individual) {
-  IndividualCreator = mongoose.models.individual;
-}
-
-if (Creator && !mongoose.models.company) {
-  CompanyCreator = Creator.discriminator('company', CompanyCreatorSchema);
-} else if (mongoose.models.company) {
-  CompanyCreator = mongoose.models.company;
 }
 
 // Configurar índices adicionais após a inicialização do mongoose
@@ -411,4 +410,4 @@ export const setupUserIndexes = async () => {
   console.log('User indexes configured successfully');
 };
 
-export { User, RegularUser, Participant, Creator, IndividualCreator, CompanyCreator }; 
+export { User, RegularUser, Participant, Creator }; 

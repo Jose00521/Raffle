@@ -123,7 +123,7 @@ const baseCreatorSchema = z.object({
   cidade: z.string().min(2, 'Cidade é obrigatória'),
   uf: z
     .string()
-    .length(2, 'UF deve ter 2 caracteres')
+    .nonempty('UF é obrigatória')
     .refine(
       (uf) => {
         const estados = [
@@ -135,7 +135,7 @@ const baseCreatorSchema = z.object({
       },
       { message: 'UF inválida' }
     ),
-  // Campo discriminador
+
   tipoPessoa: z.enum(['individual', 'company'], {
     errorMap: () => ({ message: 'Selecione o tipo de pessoa' })
   }),
@@ -166,31 +166,7 @@ const pessoaFisicaSchema = baseCreatorSchema.extend({
 // Schema específico para pessoa jurídica (CNPJ)
 const pessoaJuridicaSchema = baseCreatorSchema.extend({
     tipoPessoa: z.literal('company'),
-    representanteLegal: z.string()
-    .nonempty('Representante legal é obrigatório')
-    .min(3, 'Representante legal deve ter pelo menos 3 caracteres')
-    .max(50, 'Representante legal muito longo')
-    .transform(value => value.trim())
-    .superRefine((value, ctx) => {
-      if (value.length < 3) return true;
-      
-      for (let i = 0; i < value.length; i++) {
-        const char = value[i];
-        if (!(
-          (char >= 'a' && char <= 'z') || 
-          (char >= 'A' && char <= 'Z') || 
-          char === ' ' ||
-          /[À-ÿ]/.test(char)
-        )) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Nome completo deve conter apenas letras e espaços',
-          });
-          return false;
-        }
-      }
-      return true;
-    }),
+
   cnpj: z.string()
     .nonempty('CNPJ é obrigatório')
     .transform(val => val.replace(/\D/g, ''))
@@ -209,7 +185,9 @@ const pessoaJuridicaSchema = baseCreatorSchema.extend({
     .refine(val => validateCPF(val), {
       message: 'CPF inválido'
     }),
-  categoriaEmpresa: z.string(),
+  categoriaEmpresa: z.string()
+    .nonempty('Categoria da empresa é obrigatória')
+    .min(2, 'Categoria deve ter pelo menos 2 caracteres'),
   razaoSocial: z.string()
     .nonempty('Razão social é obrigatória')
     .min(3, 'Razão social deve ter pelo menos 3 caracteres'),
@@ -228,3 +206,4 @@ export const creatorFormSchema = z.discriminatedUnion('tipoPessoa', [
 });
 
 export type CreatorFormData = z.infer<typeof creatorFormSchema>;
+export type CreatorInput = z.infer<typeof creatorFormSchema>;

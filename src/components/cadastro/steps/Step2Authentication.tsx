@@ -19,6 +19,7 @@ import {
 } from '../../../styles/registration.styles';
 
 import { useHookFormMask } from 'use-mask-input';
+import { usePasswordConfirmation } from '@/hooks/usePasswordConfirmation';
 
 const Step2Authentication: React.FC = () => {
   const { form } = useFormContext();
@@ -27,6 +28,9 @@ const Step2Authentication: React.FC = () => {
     trigger,
     watch,
     register,
+    setError,
+    clearErrors,
+    formState
   } = form;
 
   const registerWithMask = useHookFormMask(register);
@@ -35,10 +39,16 @@ const Step2Authentication: React.FC = () => {
   const confirmPassword = watch('confirmarSenha');
   
   const { 
-    passwordStrength, 
-    strengthText, 
-    passwordsMatch
-  } = usePasswordField(password, confirmPassword);
+    passwordStrength
+  } = usePasswordField(password);
+
+  const { passwordsMatch } = usePasswordConfirmation({
+    password,
+    confirmPassword,
+    setError,
+    clearErrors,
+    debounceTime: 300
+  });
 
   // Criar as funções de debounce uma vez
 
@@ -78,10 +88,10 @@ const Step2Authentication: React.FC = () => {
               {...register('senha')}
             />
             <PasswordStrengthMeter>
-              <PasswordStrengthIndicator $strength={passwordStrength} />
+              <PasswordStrengthIndicator $strength={passwordStrength.strength} />
             </PasswordStrengthMeter>
-            <PasswordStrengthText $strength={passwordStrength}>
-              {strengthText}
+            <PasswordStrengthText $strength={passwordStrength.strength}>
+              {passwordStrength.text}
             </PasswordStrengthText>
           </PasswordContainer>
         </FormGroup>
