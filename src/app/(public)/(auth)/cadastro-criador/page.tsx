@@ -30,7 +30,7 @@ const PageContainer = styled.div`
 
 const ContentWrapper = styled.div`
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
   height: 100%;
   max-height: 90vh;
   max-height: calc(var(--vh, 1vh) * 90);

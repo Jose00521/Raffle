@@ -58,7 +58,7 @@ const Step5Access: React.FC = () => {
     <StepContent>
       <StepContentHeader>
         <StepContentIcon><FaShieldAlt /></StepContentIcon>
-        <StepContentTitle>Acesso e Conta Bancária</StepContentTitle>
+        <StepContentTitle>Acesso</StepContentTitle>
       </StepContentHeader>
       
       <div>
@@ -140,7 +140,13 @@ const Step5Access: React.FC = () => {
             </TermsText>
           }
           checked={termsAccepted}
-          {...register('termsAgreement')}
+          onChange={(e) => {
+            form.setValue('termsAgreement', e.target.checked, { 
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true
+            });
+          }}
           error={errors.termsAgreement?.message as string}
         />
       </TermsContainer>

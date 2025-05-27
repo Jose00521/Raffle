@@ -40,10 +40,6 @@ export interface IAddress {
     cpf: string;
     birthDate: Date;
     socialName?: string;
-    purchasedNumbers: {
-      rifaId: string;
-      numbers: number[];
-    }[];
     statistics: {
       participationCount: number;
       totalSpent: number;
@@ -59,7 +55,7 @@ export interface IAddress {
   
   export interface IVerification {
       // Campos para verificação documental
-      verification?: {
+
         status: 'pending' | 'under_review' | 'approved' | 'rejected';
         documents?: {
           identityFront?: { path: string; uploadedAt: Date; verified: boolean };
@@ -78,7 +74,6 @@ export interface IAddress {
         reviewedAt?: Date;
         reviewedBy?: mongoose.Types.ObjectId | string;
         expiresAt?: Date;
-      };
   }
     
   export interface ICreator extends IBaseUser {
@@ -87,8 +82,10 @@ export interface IAddress {
     cpf?: string;
     cnpj?: string;
     companyName?: string;
+    birthDate?: Date;
     legalName?: string;
     legalRepresentative?: string;
+    companyCategory?: string;
     bankAccount: Array<IBankAccount>;
     verification: IVerification;
     statistics: {
@@ -102,6 +99,11 @@ export interface IAddress {
       allowCommissions: boolean;
       commissionPercentage: number;
       receiveReports: boolean;
+    };
+    consents: {
+      marketingEmails: boolean;
+      termsAndConditions: boolean;
+      dataSharing: boolean;
     };
   }
   

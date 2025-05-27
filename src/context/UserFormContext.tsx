@@ -6,7 +6,7 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUserSchema } from '@/zod/user.schema';
 import { IRegularUser, IUser } from '@/models/interfaces/IUserInterfaces';
-import userAPI from '@/API/userAPI';
+import userAPIClient from '@/API/userAPIClient';
 import { Bounce, toast, ToastContainer } from 'react-toastify';
 // Função auxiliar para validar CPF
 
@@ -168,7 +168,6 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
           termsAndConditions: data.termsAgreement,
           dataSharing: true
         },
-        purchasedNumbers: [],
         statistics: {
           participationCount: 0,
           totalSpent: 0,
@@ -180,7 +179,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       
       const safeData = JSON.parse(JSON.stringify(dataToSubmit));
-      const response = await userAPI.createUser(safeData);
+      const response = await userAPIClient.createUser(safeData);
 
       console.log('response',response);
       

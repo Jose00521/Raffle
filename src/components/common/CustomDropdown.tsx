@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaChevronDown, FaCheck } from 'react-icons/fa';
-import { Portal } from './Portal';
 
 interface DropdownOption {
   value: string;
@@ -19,6 +18,7 @@ interface CustomDropdownProps {
   width?: string;
   disabled?: boolean;
   className?: string;
+  direction?: 'up' | 'down';
 }
 
 const DropdownContainer = styled.div<{ $width?: string }>`
@@ -82,7 +82,15 @@ const DropdownButton = styled.button<{ $isOpen: boolean, $hasValue: boolean }>`
   }
 `;
 
-const DropdownContent = styled.div<{ $maxHeight?: number }>`
+const DropdownContent = styled.div<{ 
+  $maxHeight?: number,
+  $direction?: 'up' | 'down'
+}>`
+  position: absolute;
+  ${props => props.$direction === 'up' ? 'bottom: 100%;' : 'top: 100%;'}
+  left: 0;
+  margin-top: ${props => props.$direction === 'down' ? '5px' : '0'};
+  margin-bottom: ${props => props.$direction === 'up' ? '5px' : '0'};
   max-height: ${props => props.$maxHeight ? `${props.$maxHeight}px` : '240px'};
   overflow-y: auto;
   background-color: white;
@@ -90,6 +98,18 @@ const DropdownContent = styled.div<{ $maxHeight?: number }>`
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   width: 100%;
+  animation: fadeIn 0.2s ease;
+  
+  @keyframes fadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(${props => props.$direction === 'down' ? '-10px' : '10px'}); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -108,26 +128,6 @@ const DropdownContent = styled.div<{ $maxHeight?: number }>`
   
   @media (max-width: 768px) {
     max-height: ${props => props.$maxHeight ? `${props.$maxHeight}px` : '280px'};
-  }
-`;
-
-const PortalContainer = styled.div<{ 
-  $top: number; 
-  $left: number; 
-  $width: number;
-  $direction: 'down' | 'up';
-}>`
-  position: absolute;
-  top: ${props => props.$direction === 'down' ? `${props.$top}px` : 'auto'};
-  bottom: ${props => props.$direction === 'up' ? `calc(100vh - ${props.$top}px + 10px)` : 'auto'};
-  left: ${props => `${props.$left}px`};
-  width: ${props => `${props.$width}px`};
-  z-index: 9999;
-  animation: fadeIn 0.2s ease;
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(${props => props.$direction === 'down' ? '-10px' : '10px'}); }
-    to { opacity: 1; transform: translateY(0); }
   }
 `;
 
@@ -196,6 +196,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   width,
   disabled = false,
   className,
+  direction,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -216,7 +217,6 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     
     const buttonRect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const scrollY = window.scrollY;
     
     // Espaço disponível abaixo do botão
     const spaceBelow = viewportHeight - buttonRect.bottom;
@@ -227,20 +227,30 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     const estimatedDropdownHeight = Math.min(240, options.length * 45);
     
     // Determinar se o dropdown deve aparecer abaixo ou acima do botão
-    const direction = spaceBelow >= estimatedDropdownHeight || spaceBelow >= spaceAbove
-      ? 'down'
-      : 'up';
+    let finalDirection: 'up' | 'down';
     
-    // Calcular a altura máxima disponível
-    const maxHeight = direction === 'down'
+    if (direction) {
+      // Se a direção foi explicitamente definida via prop, use-a
+      finalDirection = direction;
+      console.log(`Usando direção definida por prop: ${direction}`);
+    } else {
+      // Caso contrário, calcule a direção com base no espaço disponível
+      finalDirection = spaceBelow >= estimatedDropdownHeight || spaceBelow >= spaceAbove
+        ? 'down'
+        : 'up';
+      console.log(`Direção calculada automaticamente: ${finalDirection}`);
+    }
+    
+    // Calcular a altura máxima disponível com base na direção escolhida
+    const maxHeight = finalDirection === 'down'
       ? Math.min(240, spaceBelow - 10) // -10 para margem
       : Math.min(240, spaceAbove - 10);
     
     setDropdownPosition({
-      top: direction === 'down' ? buttonRect.bottom + scrollY : buttonRect.top + scrollY,
-      left: buttonRect.left + window.scrollX,
+      top: 0,
+      left: 0,
       width: buttonRect.width,
-      direction,
+      direction: finalDirection,
       maxHeight
     });
   };
@@ -283,8 +293,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   };
   
   const handleSelect = (optionValue: string) => {
-    onChange(optionValue);
-    setIsOpen(false);
+    console.log('Option selected:', optionValue);
+    setTimeout(() => {
+      onChange(optionValue);
+      setIsOpen(false);
+    }, 0);
   };
   
   return (
@@ -307,33 +320,28 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </DropdownButton>
       
       {isOpen && (
-        <Portal>
-          <PortalContainer
-            $top={dropdownPosition.top}
-            $left={dropdownPosition.left}
-            $width={dropdownPosition.width}
-            $direction={dropdownPosition.direction}
-          >
-            <DropdownContent $maxHeight={dropdownPosition.maxHeight}>
-              <OptionsList>
-                {options.map((option) => (
-                  <OptionItem
-                    key={option.value}
-                    $isSelected={option.value === value}
-                    onClick={() => handleSelect(option.value)}
-                  >
-                    {option.label}
-                    {option.value === value && (
-                      <CheckIcon>
-                        <FaCheck size={12} />
-                      </CheckIcon>
-                    )}
-                  </OptionItem>
-                ))}
-              </OptionsList>
-            </DropdownContent>
-          </PortalContainer>
-        </Portal>
+        <DropdownContent $maxHeight={dropdownPosition.maxHeight} $direction={dropdownPosition.direction}>
+          <OptionsList>
+            {options.map((option) => (
+              <OptionItem
+                key={option.value}
+                $isSelected={option.value === value}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation(); // Impede propagação
+                  handleSelect(option.value);
+                }}
+              >
+                {option.label}
+                {option.value === value && (
+                  <CheckIcon>
+                    <FaCheck size={12} />
+                  </CheckIcon>
+                )}
+              </OptionItem>
+            ))}
+          </OptionsList>
+        </DropdownContent>
       )}
     </DropdownContainer>
   );

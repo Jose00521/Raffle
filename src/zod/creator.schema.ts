@@ -92,6 +92,43 @@ const baseCreatorSchema = z.object({
     .refine(val => val.length === 0 || val.length === 10 || val.length === 11, {
       message: 'Telefone deve ter 10 ou 11 dígitos'
     }),
+    confirmarTelefone: z
+    .string()
+    .min(1, 'Confirme seu telefone')
+    .transform(val => {
+      console.log('Transformando confirmarTelefone:', val);
+      return val ? val.replace(/\D/g, '') : '';
+    })
+    .refine(val => {
+      console.log('Verificando confirmarTelefone preenchido:', val);
+      return val.length > 0;
+    }, {
+      message: 'Confirmação de telefone é obrigatória'
+    })
+    .refine(val => {
+      console.log('Verificando comprimento confirmarTelefone:', val);
+      return val.length === 0 || val.length === 10 || val.length === 11;
+    }, {
+      message: 'Telefone deve ter 10 ou 11 dígitos'
+    })
+    .refine(val => {
+      console.log('Verificando DDD confirmarTelefone:', val);
+      // Se não tem pelo menos 2 dígitos, não valida DDD
+      if (val.length < 2) return true;
+      const ddd = parseInt(val.substring(0, 2));
+      return ddd >= 11;
+    }, {
+      message: 'DDD inválido'
+    })
+    .refine(val => {
+      console.log('Verificando formato celular confirmarTelefone:', val);
+      // Se não for celular (11 dígitos), não valida primeiro dígito
+      if (val.length !== 11) return true;
+      // O primeiro dígito após o DDD para celular deve ser 9
+      return val[2] === '9';
+    }, {
+      message: 'Celular deve começar com 9'
+    }),
   // Endereço
   cep: z
     .string()
@@ -142,7 +179,8 @@ const baseCreatorSchema = z.object({
   termsAgreement: z.boolean().refine(val => val === true, {
     message: 'Você precisa aceitar os termos de uso'
   }),
-});
+})
+;
 
 // Schema específico para pessoa física (CPF)
 const pessoaFisicaSchema = baseCreatorSchema.extend({
@@ -187,7 +225,15 @@ const pessoaJuridicaSchema = baseCreatorSchema.extend({
     }),
   categoriaEmpresa: z.string()
     .nonempty('Categoria da empresa é obrigatória')
-    .min(2, 'Categoria deve ter pelo menos 2 caracteres'),
+    .refine(
+      (uf) => {
+        const categories = [
+          'ASF', 'MEI', 'ME', 'EPP'
+        ];
+        return categories.includes(uf.toUpperCase());
+      },
+      { message: 'Categoria inválida' }
+    ),
   razaoSocial: z.string()
     .nonempty('Razão social é obrigatória')
     .min(3, 'Razão social deve ter pelo menos 3 caracteres'),
@@ -203,7 +249,31 @@ export const creatorFormSchema = z.discriminatedUnion('tipoPessoa', [
 ]).refine(data => data.senha === data.confirmarSenha, {
   message: "As senhas não conferem",
   path: ["confirmarSenha"],
-});
+})
+.refine((data) => {
+  // Remove caracteres especiais antes de comparar
+  console.log('Comparing phone numbers:', data.telefone, data.confirmarTelefone);
+  
+  // Se um dos telefones não estiver preenchido, não comparar
+  if (!data.telefone || !data.confirmarTelefone) {
+    return true;
+  }
+  
+  const phone1 = data.telefone.replace(/\D/g, '');
+  const phone2 = data.confirmarTelefone.replace(/\D/g, '');
+  
+  console.log('Cleaned phone numbers:', phone1, phone2);
+  
+  // Só compara se ambos tiverem pelo menos 10 dígitos (completos)
+  if (phone1.length < 10 || phone2.length < 10) {
+    return true;
+  }
+  
+  return phone1 === phone2;
+}, {
+  message: "Os telefones não conferem",
+  path: ["confirmarTelefone"],
+});;
 
 export type CreatorFormData = z.infer<typeof creatorFormSchema>;
 export type CreatorInput = z.infer<typeof creatorFormSchema>;

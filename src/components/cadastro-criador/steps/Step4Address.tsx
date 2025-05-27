@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaMapMarkerAlt, FaCity, FaGlobe, FaHome, FaMapMarked, FaMapPin } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCity, FaGlobe, FaHome, FaMapMarked, FaMapPin, FaRoad, FaBuilding } from 'react-icons/fa';
 import { useCreatorFormContext } from '../../../context/CreatorFormContext';
 import FormInput from '../../common/FormInput';
 import CustomDropdown from '../../common/CustomDropdown';
@@ -54,7 +54,8 @@ const Step4Address: React.FC = () => {
     trigger,
     watch,
     setError,
-    clearErrors
+    clearErrors,
+    getValues
   } = form;
 
   const registerWithMask = useHookFormMask(register);
@@ -132,7 +133,7 @@ const Step4Address: React.FC = () => {
             id="logradouro"
             label="Endereço"
             required
-            icon={<FaHome />}
+            icon={<FaRoad />}
             placeholder="Rua, Avenida, etc."
             {...register('logradouro')}
             error={errors.logradouro?.message as string}
@@ -154,29 +155,34 @@ const Step4Address: React.FC = () => {
       </FormRow>
       
       <FormRow>
-        <FormInput
-          id="complemento"
-          label="Complemento"
-          icon={<FaHome />}
-          placeholder="Apartamento, bloco, etc. (opcional)"
-          {...register('complemento')}
-          error={errors.complemento?.message as string}
-          fullWidth
-        />
-      </FormRow>
-      
-      <FormRow>
-        <FormInput
-          id="bairro"
-          label="Bairro"
-          required
-          icon={<FaMapMarkerAlt />}
-          placeholder="Seu bairro"
-          {...register('bairro')}
+        <FormGroup>
+          <FormInput
+            id="bairro"
+            label="Bairro"
+            required
+            icon={<FaMapMarkerAlt />}
+            placeholder="Seu bairro"
+            {...register('bairro')}
           error={errors.bairro?.message as string}
           disabled={isLoadingCep}
           fullWidth
         />
+        </FormGroup>
+        <FormGroup>
+        <FormInput
+          id="complemento"
+          label="Complemento"
+          icon={<FaBuilding />}
+          placeholder="Apartamento, bloco, etc. (opcional)"
+            {...register('complemento')}
+            error={errors.complemento?.message as string}
+            fullWidth
+          />
+        </FormGroup>
+      </FormRow>
+      
+      <FormRow>
+
       </FormRow>
       
       <FormRow>
@@ -204,6 +210,7 @@ const Step4Address: React.FC = () => {
               placeholder="Selecione o estado"
               icon={<FaGlobe />}
               disabled={isLoadingCep}
+              direction="up"
             />
             {errors.uf && (
               <div className="error-message">

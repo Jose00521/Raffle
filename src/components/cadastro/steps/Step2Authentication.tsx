@@ -35,8 +35,8 @@ const Step2Authentication: React.FC = () => {
 
   const registerWithMask = useHookFormMask(register);
   
-  const password = watch('senha');
-  const confirmPassword = watch('confirmarSenha');
+  const password = watch('senha', '');
+  const confirmPassword = watch('confirmarSenha', '');
   
   const { 
     passwordStrength
@@ -87,12 +87,33 @@ const Step2Authentication: React.FC = () => {
               required
               {...register('senha')}
             />
-            <PasswordStrengthMeter>
-              <PasswordStrengthIndicator $strength={passwordStrength.strength} />
-            </PasswordStrengthMeter>
-            <PasswordStrengthText $strength={passwordStrength.strength}>
-              {passwordStrength.text}
-            </PasswordStrengthText>
+            {password && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px', 
+                marginTop: '5px',
+                fontSize: '0.85rem',
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flex: 1, 
+                  height: '4px', 
+                  background: '#e2e8f0',
+                  borderRadius: '2px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ 
+                    width: `${(passwordStrength.strength / 5) * 100}%`, 
+                    background: passwordStrength.color,
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+                <span style={{ color: passwordStrength.color, fontWeight: 500 }}>
+                  {passwordStrength.text}
+                </span>
+              </div>
+            )}
           </PasswordContainer>
         </FormGroup>
         
@@ -105,9 +126,7 @@ const Step2Authentication: React.FC = () => {
             placeholder="Confirme sua senha"
             isPassword
             error={
-              errors.confirmarSenha?.message as string || 
-              (passwordsMatch === false && confirmPassword ? "As senhas não conferem" : undefined)
-            }
+              errors.confirmarSenha?.message as string }
             required
             {...register('confirmarSenha')}
           />

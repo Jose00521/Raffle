@@ -450,7 +450,7 @@ const Button = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 20px;
+  margin-top: 50px !important;
   margin-bottom: 20px;
   box-shadow: 0 4px 15px rgba(106, 17, 203, 0.2);
   display: flex;

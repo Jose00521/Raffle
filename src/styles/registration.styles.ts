@@ -114,7 +114,6 @@ export const FormSubtitle = styled.p`
 // Step Indicator
 export const StepIndicator = styled.div`
   display: flex;
-  align-items: center;
   max-width: 100vw !important;
   padding: 1rem 1.5rem;
   background-color: #f8fafc;
@@ -226,9 +225,12 @@ export const StepIcon = styled.div<{ $active: boolean }>`
 export const StepConnector = styled.div<{ $completed: boolean }>`
   flex: 1;
   height: 2px;
+  margin-right: 0.5rem;
+  margin-left: 0.5rem;
+  margin-top: 1rem;
   background-color: ${props => props.$completed ? '#10b981' : '#e2e8f0'};
   transition: background-color 0.3s ease;
-  min-width: 40px;
+  min-width: 20px;
   
   @media (max-width: 768px) {
     min-width: 20px;
@@ -281,8 +283,8 @@ export const FormRow = styled.div`
     gap: 0.6rem;
     margin-bottom: 0.5rem;
   }
-  
-  @media (max-width: 480px) {
+
+  @media (max-width: 680px) {
     flex-direction: column;
     gap: 0.4rem;
   }
@@ -561,8 +563,7 @@ export const PasswordStrengthIndicator = styled.div<{ $strength: number }>`
   transition: width 0.3s ease, background-color 0.3s ease;
 `;
 
-export const PasswordStrengthText = styled.div<{ $strength: number }>`
-  font-size: 0.8rem;
+export const PasswordStrengthText = styled.div<{ $strength: number }>`  font-size: 0.8rem;
   margin-top: 0.25rem;
   text-align: right;
   color: ${props => {

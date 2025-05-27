@@ -17,8 +17,6 @@ export async function POST( request: Request,response: Response) {
         // Seu código existente...
         const userController = container.resolve(UserController);
         const result = await userController.createUser(body);
-
-        console.log('result',result);
         
         // Garantir resposta válida
         return new Response(

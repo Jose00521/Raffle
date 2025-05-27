@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import FormInput from '../common/FormInput';
 import { useHookFormMask } from 'use-mask-input';
-import userAPI from '@/API/userAPI';
+import userAPI from '@/API/userAPIClient';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useRouter } from 'next/navigation';
@@ -720,6 +720,7 @@ const Button = styled.button`
   align-items: center;
   justify-content: center;
   min-height: 55px;
+  margin-top: 50px;
   
   @media (max-width: 480px) {
     padding: 14px;

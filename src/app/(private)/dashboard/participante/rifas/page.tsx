@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { ICampaign } from '@/models/Campaign';
-import rifaAPI from '@/API/campaignAPI';
+import rifaAPI from '@/API/campaignAPIClient';
 import { FaSearch } from 'react-icons/fa';
 
 const PageHeader = styled.div`

@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
-import { IRegularUser } from './interfaces/IUserInterfaces';
+import { ICreator, IRegularUser, IUser } from './interfaces/IUserInterfaces';
 
 /**
  * Base User Schema - Shared fields 
  */
-const UserSchema = new Schema({
+const UserSchema = new Schema<IUser>({
   userCode: {
     type: String,
   },
@@ -107,7 +107,7 @@ const User = mongoose.models.User || mongoose.model('User', UserSchema);
 /**
  * Schema para Usuário Regular/Participante
  */
-const RegularUserSchema = new Schema({
+const RegularUserSchema = new Schema<IRegularUser>({
   cpf: {
     type: String,
     required: [true, 'CPF é obrigatório'],
@@ -120,19 +120,7 @@ const RegularUserSchema = new Schema({
     index: true // Permite consultas por faixa etária
   },
   socialName: String,
-  purchasedNumbers: [
-    {
-      rifaId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Rifa',
-      },
-      numbers: [
-        {
-          type: Number,
-        },
-      ],
-    },
-  ],
+
   statistics: {
     participationCount: { type: Number, default: 0 },
     totalSpent: { type: Number, default: 0 },
@@ -149,7 +137,7 @@ const RegularUserSchema = new Schema({
 /**
  * Schema Base de Criador (campos comuns)
  */
-const CreatorSchema = new Schema({
+const CreatorSchema = new Schema<ICreator>({
   // Campo discriminador para o tipo de pessoa (física ou jurídica)
   personType: {
     type: String,
@@ -177,7 +165,7 @@ const CreatorSchema = new Schema({
     sparse: true
   },
   // Representante legal (usado apenas para PJ)
-  representanteLegal: {
+  legalRepresentative: {
     type: String,
     required: function(this: any) { return this.personType === 'company'; }
   },
@@ -294,27 +282,29 @@ CreatorSchema.statics = {
 };
 
 // Criar modelos utilizando discriminators
-let RegularUser, Participant, Creator;
+let RegularUser: mongoose.Model<IUser>, 
+Participant:mongoose.Model<IUser>, 
+Creator:mongoose.Model<ICreator>;
 
 // Cria o modelo de usuário regular
 if (!mongoose.models.user) {
-  RegularUser = User.discriminator('user', RegularUserSchema);
+  RegularUser = User.discriminator('user', RegularUserSchema) as mongoose.Model<IUser>;
 } else {
-  RegularUser = mongoose.models.user;
+  RegularUser = mongoose.models.user as mongoose.Model<IUser>;
 }
 
 // Cria o modelo de participante (usando o mesmo schema do usuário regular)
 if (!mongoose.models.participant) {
-  Participant = User.discriminator('participant', RegularUserSchema);
+  Participant = User.discriminator('participant', RegularUserSchema) as mongoose.Model<IUser>;
 } else {
-  Participant = mongoose.models.participant;
+  Participant = mongoose.models.participant as mongoose.Model<IUser>;
 }
 
 // Cria o modelo base de Creator
 if (!mongoose.models.creator) {
-  Creator = User.discriminator('creator', CreatorSchema);
+  Creator = User.discriminator('creator', CreatorSchema) as mongoose.Model<ICreator>;
 } else {
-  Creator = mongoose.models.creator;
+  Creator = mongoose.models.creator as mongoose.Model<ICreator>;
 }
 
 // Configurar índices adicionais após a inicialização do mongoose

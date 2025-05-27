@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaUser, FaBuilding } from 'react-icons/fa';
 import { useCreatorFormContext } from '../../../context/CreatorFormContext';
 import { 
@@ -30,7 +30,7 @@ const AccountTypeCard = styled.div<{ $selected: boolean }>`
   background: white;
   border: 2px solid ${props => props.$selected ? '#6a11cb' : '#e2e8f0'};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: ${props => props.$selected ? '0 4px 15px rgba(106, 17, 203, 0.1)' : 'none'};
   
   &:hover {
@@ -98,7 +98,12 @@ const AccountTypeDescription = styled.p`
 `;
 
 const Step1AccountType: React.FC = () => {
-  const { accountType, setAccountType } = useCreatorFormContext();
+  const { accountType, setAccountType, form } = useCreatorFormContext();
+
+
+  useEffect(() => {
+    form.reset()
+  }, [accountType]);
 
   return (
     <StepContent>
@@ -108,24 +113,6 @@ const Step1AccountType: React.FC = () => {
       </StepContentHeader>
       
       <AccountTypeContainer>
-        <AccountTypeCard 
-          $selected={accountType === 'individual'} 
-          onClick={() => setAccountType('individual')}
-        >
-          <AccountTypeHeader>
-            <AccountTypeIcon $selected={accountType === 'individual'}>
-              <FaUser />
-            </AccountTypeIcon>
-            <AccountTypeInfo>
-              <AccountTypeTitle $selected={accountType === 'individual'}>
-                Pessoa Física
-              </AccountTypeTitle>
-              <AccountTypeDescription>
-                Para pessoas que desejam criar rifas individualmente
-              </AccountTypeDescription>
-            </AccountTypeInfo>
-          </AccountTypeHeader>
-        </AccountTypeCard>
         
         <AccountTypeCard 
           $selected={accountType === 'company'} 
@@ -141,6 +128,25 @@ const Step1AccountType: React.FC = () => {
               </AccountTypeTitle>
               <AccountTypeDescription>
                 Para empresas e organizações que desejam criar rifas
+              </AccountTypeDescription>
+            </AccountTypeInfo>
+          </AccountTypeHeader>
+        </AccountTypeCard>
+
+        <AccountTypeCard 
+          $selected={accountType === 'individual'} 
+          onClick={() => setAccountType('individual')}
+        >
+          <AccountTypeHeader>
+            <AccountTypeIcon $selected={accountType === 'individual'}>
+              <FaUser />
+            </AccountTypeIcon>
+            <AccountTypeInfo>
+              <AccountTypeTitle $selected={accountType === 'individual'}>
+                Pessoa Física
+              </AccountTypeTitle>
+              <AccountTypeDescription>
+                Para pessoas que desejam criar rifas individualmente
               </AccountTypeDescription>
             </AccountTypeInfo>
           </AccountTypeHeader>

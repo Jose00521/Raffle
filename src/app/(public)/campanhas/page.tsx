@@ -5,7 +5,7 @@ import Layout from '../../../components/layout/Layout';
 import styled from 'styled-components';
 import CampaignGrid from '../../../components/campaign/CampaignGrid';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
-import rifaAPI from '../../../API/campaignAPI';
+import rifaAPI from '../../../API/campaignAPIClient';
 
 // Dados de exemplo para as campanhas
 

@@ -6,7 +6,36 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast, ToastContainer, Bounce } from 'react-toastify';
 import { creatorFormSchema, CreatorFormData } from '@/zod/creator.schema';
-
+import { useRouter } from 'next/navigation';
+import creatorAPIClient from '@/API/creatorAPIClient';
+import { ICreator } from '@/models/interfaces/IUserInterfaces';
+import mongoose from 'mongoose';
+// Helper function to create default values with correct type
+const createDefaultValues = () => {
+  return {
+    tipoPessoa: 'individual' as const,
+    termsAgreement: false,
+    nomeCompleto: '',
+    email: '',
+    senha: '',
+    confirmarSenha: '',
+    telefone: '',
+    confirmarTelefone: '',
+    cpf: '',
+    cep: '',
+    logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    uf: '',
+    complemento: '',
+    // Fields for company that will be used only when tipoPessoa is 'company'
+    categoriaEmpresa: '',
+    razaoSocial: '',
+    nomeFantasia: '',
+    cnpj: '',
+  } as Partial<CreatorFormData>;
+};
 
 // Interface do contexto do formulário de criador
 interface CreatorFormContextType {
@@ -30,18 +59,16 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [step, setStep] = useState(1);
   const [isSliding, setIsSliding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual');
-
+  const [accountType, setAccountType] = useState<'individual' | 'company'>('company');
+  const router = useRouter();
+  
   const form = useForm<CreatorFormData>({
     resolver: zodResolver(creatorFormSchema),
-    mode: 'onChange',
-    defaultValues: {
-      tipoPessoa: 'individual',
-      termsAgreement: false
-    }
+    mode: 'all',
+    defaultValues: createDefaultValues()
   });
 
-  const { trigger, setValue, getValues } = form;
+  const { trigger, setValue, getValues, setError, clearErrors } = form;
 
   // Atualizar o tipo de conta quando mudar
   useEffect(() => {
@@ -77,12 +104,12 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return true; // Account type selection always valid
       case 2:
         // Dados pessoais/do representante
-        fieldsToValidate = ['nomeCompleto', 'email', 'telefone', 'cpf', 'dataNascimento'];
+        fieldsToValidate = ['nomeCompleto', 'email', 'telefone', 'confirmarTelefone', 'cpf', 'dataNascimento'];
         break;
       case 3:
         // Se for empresa, valida os campos da empresa, senão valida endereço
         if (accountType === 'company') {
-          fieldsToValidate = ['cnpj', 'razaoSocial', 'nomeFantasia'];
+          fieldsToValidate = ['cnpj', 'razaoSocial', 'nomeFantasia', 'categoriaEmpresa' as keyof CreatorFormData];
         } else {
           // Para pessoa física, o passo 3 já é o endereço
           fieldsToValidate = ['logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep'];
@@ -95,12 +122,14 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
         } else {
           // Para pessoa física, o passo 4 é acesso e dados bancários
           fieldsToValidate = ['senha', 'confirmarSenha', 'termsAgreement'];
+        
         }
         break;
       case 5:
         // Acesso e dados bancários (apenas para pessoa jurídica)
         if (accountType === 'company') {
           fieldsToValidate = ['senha', 'confirmarSenha', 'termsAgreement'];
+          
         }
         break;
       default:
@@ -153,7 +182,7 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
     
     try {
       // Remover máscaras antes de enviar
-      const cleanData = {
+      const cleanData: ICreator = {
         ...data,
         role: 'creator',
         personType: data.tipoPessoa,
@@ -161,6 +190,10 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
         phone: data.telefone.replace(/\D/g, ''),
         password: data.senha,
         cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
+        birthDate: new Date(data.dataNascimento),
+        legalName: data.razaoSocial,
+        legalRepresentative: data.nomeCompleto,
+        companyCategory: data.tipoPessoa === 'company' ? data.categoriaEmpresa : undefined,
         cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : undefined,
         address: {
           street: data.logradouro,
@@ -172,10 +205,38 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
           zipCode: data.cep.replace(/\D/g, '')
         },
         bankAccount: [],
+        statistics: {
+          rafflesCreated: 0,
+          activeRaffles: 0,
+          totalRevenue: 0,
+          conversionRate: 0,
+          lastRaffleCreated: new Date()
+        },
+        settings: {
+          allowCommissions: true,
+          commissionPercentage: 0,
+          receiveReports: true
+        },
+        isActive: true,
+        verification: {
+          status: 'pending',
+          documents: {
+            identityFront: {
+              path: '',
+              uploadedAt: new Date(),
+              verified: false
+            }
+          },
+          verificationNotes: '',
+          rejectionReason: '',
+          reviewedAt: new Date(),
+          reviewedBy: mongoose.Types.ObjectId.createFromHexString('665266526652665266526652'),
+          expiresAt: new Date()
+        },
         consents: {
           termsAndConditions: data.termsAgreement,
-          marketingEmails: false,
-          dataSharing: false
+          marketingEmails: data.termsAgreement,
+          dataSharing: data.termsAgreement
         }
       };
       
@@ -191,23 +252,18 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.log('Form data:', cleanData);
       
       // Envio para a API
-      const response = await fetch('/api/creators', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Erro ao cadastrar usuário');
+
+      const response = await creatorAPIClient.createCreator(cleanData);
+
+      console.log('response',response);
+      if(response.success){
+        toast.success('Cadastro realizado com sucesso!');
+        // Redirecionar após o cadastro
+        setTimeout(() => {
+          router.push('/cadastro-sucesso');
+        }, 1000);
       }
-      
-      toast.success('Cadastro realizado com sucesso!');
-      // Redirecionar após o cadastro
-      setTimeout(() => {
-        window.location.href = '/cadastro-sucesso';
-      }, 1000);
+    
       
     } catch (error) {
       console.error('Erro ao cadastrar:', error);

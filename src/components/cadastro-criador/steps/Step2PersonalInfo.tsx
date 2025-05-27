@@ -63,6 +63,10 @@ const Step2PersonalInfo: React.FC = () => {
             error={errors.email?.message as string}
           />
         </FormGroup>
+      </FormRow>
+
+
+        <FormRow>
         <FormGroup>
           <FormInput
             id="telefone"
@@ -74,9 +78,30 @@ const Step2PersonalInfo: React.FC = () => {
             error={errors.telefone?.message as string}
           />
         </FormGroup>
+
+        <FormGroup>
+          <FormInput
+            id="confirmarTelefone"
+            label="Confirmar Telefone"
+            required
+            icon={<FaPhone />}
+            placeholder="(00) 00000-0000"
+            {...registerWithMask('confirmarTelefone', '(99) 99999-9999')}
+            error={errors.confirmarTelefone?.message as string}
+          />
+        </FormGroup>
       </FormRow>
       
       <FormRow>
+      <FormInput
+            id="cpf"
+            label="CPF"
+            required
+            icon={<FaIdCard />}
+            placeholder="000.000.000-00"
+            {...registerWithMask('cpf', 'cpf')}
+            error={errors.cpf?.message as string}
+          />
         <FormGroup>
           <Controller
             name="dataNascimento"
@@ -104,17 +129,7 @@ const Step2PersonalInfo: React.FC = () => {
           />
         </FormGroup>
         
-        <FormGroup>
-          <FormInput
-            id="cpf"
-            label="CPF"
-            required
-            icon={<FaIdCard />}
-            placeholder="000.000.000-00"
-            {...registerWithMask('cpf', 'cpf')}
-            error={errors.cpf?.message as string}
-          />
-        </FormGroup>
+  
       </FormRow>
     </StepContent>
   );

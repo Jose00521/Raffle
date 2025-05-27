@@ -33,7 +33,7 @@ const InputGroup = styled.div<{ $fullWidth?: boolean }>`
   flex: ${props => props.$fullWidth ? '1 0 100%' : '1'};
   margin-bottom: 24px;
   position: relative;
-  min-height: 82px; /* Altura do input (50px) + label (8px margin-bottom) + espaço para erro (24px) */
+
   
   @media (max-height: 900px) {
     margin-bottom: 20px;

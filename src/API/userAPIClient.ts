@@ -1,7 +1,7 @@
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { ApiResponse } from "@/server/utils/errorHandler/api";
 
-const userAPI = {
+const userAPIClient = {
     createUser: async (user: any) => {
         try {
             const response = await fetch('/api/user', {
@@ -54,4 +54,4 @@ const userAPI = {
     
 
 }
-export default userAPI;
+export default userAPIClient;
