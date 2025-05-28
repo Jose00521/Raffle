@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
-import { IPrize } from '@/models/interfaces/IPrizeInterfces';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { motion } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import InputWithIcon from '@/components/common/InputWithIcon';

@@ -9,6 +9,7 @@ const publicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] =
   { path: '/login', whenAuthenticated: 'redirect' },
   { path: '/cadastro-participante', whenAuthenticated: 'redirect' },
   { path: '/cadastro-criador', whenAuthenticated: 'redirect' },
+  { path: '/cadastro-sucesso', whenAuthenticated: 'redirect' },
   { path: '/cadastro-tipo', whenAuthenticated: 'redirect' },
   { path: '/campanhas', whenAuthenticated: 'next' },
   { path: '/campanha', whenAuthenticated: 'next' },
@@ -54,10 +55,7 @@ export async function middleware(request: NextRequest) {
 
   if(tokenResquest){
     token = jwt.decode(tokenResquest.value);
-    console.log('decodedToken',token);
   }
-
-  console.log('token middleware',token);
   
 
   if(!token && publicRoute){

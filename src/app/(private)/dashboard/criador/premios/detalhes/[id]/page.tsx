@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
-import { IPrize } from '@/models/interfaces/IPrizeInterfces';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 
 // Mock data for demonstration purposes
 import { MOCK_PRIZES } from '../../page';

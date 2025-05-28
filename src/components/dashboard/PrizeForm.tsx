@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags } from 'react-icons/fa';
-import { IPrize } from '@/models/interfaces/IPrizeInterfces';
-import InputWithIcon from '@/components/common/InputWithIcon';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import mongoose from 'mongoose';
 import FormInput from '../common/FormInput';
 import FormTextArea from '../common/FormTextArea';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { prizeSchema } from '@/zod/prize.schema';
+import { useForm } from 'react-hook-form';
+import type { PrizeForm } from '@/zod/prize.schema';
 
 interface PrizeFormProps {
   initialData?: Partial<IPrize>;
-  onSubmit: (data: Partial<IPrize>) => void;
+  onSubmit: (data: Partial<{
+    name: string;
+    description: string;
+    value: string;
+    image: File;
+    images: File[];
+    categoryId: mongoose.Types.ObjectId;
+  }>) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -260,12 +270,23 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   };
   
   const [formData, setFormData] = useState<Partial<IPrize>>({
-    name: '',
-    description: '',
-    value: '',
     image: '',
     images: [],
     ...initialData
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<PrizeForm>({
+    resolver: zodResolver(prizeSchema),
+    mode: 'all',
+    defaultValues: {
+      name: '',
+      description: '',
+      value: '',
+    }
   });
   
   // Keep track of the selected category as a string for the dropdown
@@ -276,7 +297,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [bannerImageFiles, setBannerImageFiles] = useState<File[]>([]);
   const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errorsImage, setErrorsImage] = useState<Record<string, string>>({});
   
   // Preview URLs for uploaded images
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(
@@ -288,6 +309,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   // Update preview when main image file changes
   useEffect(() => {
+    console.log("mainImageFile",mainImageFile);
     if (!mainImageFile) return;
     
     const objectUrl = URL.createObjectURL(mainImageFile);
@@ -311,20 +333,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       objectUrls.forEach(url => URL.revokeObjectURL(url));
     };
   }, [additionalImageFiles]);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
+
   
   const handleBannerImageChange = (files: File[]) => {
     // If files array is not empty, use the first file as main image
@@ -332,8 +341,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       setMainImageFile(files[0]);
       
       // Clear error for image if it exists
-      if (errors.image) {
-        setErrors(prev => {
+      if (errorsImage.image) {
+        setErrorsImage(prev => {
           const newErrors = { ...prev };
           delete newErrors.image;
           return newErrors;
@@ -361,49 +370,25 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     setFormData(prev => ({ ...prev, images: newImages }));
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.name) {
-      newErrors.name = 'O nome do prêmio é obrigatório';
-    }
-    
-    if (!formData.value) {
-      newErrors.value = 'O valor do prêmio é obrigatório';
-    }
-    
-    if (!mainImageFile && !mainImagePreview) {
-      newErrors.image = 'Uma imagem principal é obrigatória';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+  
+  const onSubmitForm = async (data: Partial<IPrize>) => {
     
     // In a real application, you would upload the images to your server/cloud storage
     // and get back URLs to store in the database
     // For this demonstration, we'll just pass the current state
 
     // Create temporary URLs for the banner image (if new)
-    let bannerImageUrl = mainImagePreview;
-    if (mainImageFile) {
-      bannerImageUrl = URL.createObjectURL(mainImageFile);
-    }
 
     // Create temporary URLs for the new additional images
-    const newImageUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
+    // const newImageUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
     
     // Create submission data
-    const submissionData: Partial<IPrize> = {
-      ...formData,
+    const submissionData = {
+      ...data,
       // In a real app, you would replace these with actual uploaded URLs
-      image: bannerImageUrl || '',
+      image: mainImageFile as unknown as File,
       // Combine existing images with new ones
-      images: [...(formData.images || []), ...newImageUrls],
+      images: [ ...additionalImageFiles],
     };
     
     // Add category if selected
@@ -414,6 +399,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       // For mock version (type casting for TypeScript):
       submissionData.categoryId = selectedCategory as unknown as mongoose.Types.ObjectId;
     }
+
     
     onSubmit(submissionData);
   };
@@ -424,10 +410,11 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
         {initialData?._id ? 'Editar Prêmio' : 'Adicionar Novo Prêmio'}
       </FormTitle>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmitForm)}>
         <ImageUploadContainer>
           
           <BannerImageUploader
+            id="image"
             maxImages={1}
             onChange={handleBannerImageChange}
             value={mainImageFile ? [mainImageFile] : []}
@@ -436,14 +423,15 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
             allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
           />
           
-          {errors.image && (
-            <ErrorMessage>{errors.image}</ErrorMessage>
+          {errorsImage.image && (
+            <ErrorMessage>{errorsImage.image}</ErrorMessage>
           )}
         </ImageUploadContainer>
         
         
         <FormGroup>
-          <ProductImagesUploader 
+          <ProductImagesUploader
+            id="images"
             maxImages={8}
             onChange={handleAdditionalImagesChange}
             value={additionalImageFiles}
@@ -479,12 +467,11 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <FormInput
             id="name"
             label="Nome do Prêmio"
+            {...register('name')}
             icon={<FaGift />}
-            value={formData.name || ''}
-            onChange={handleChange}
             placeholder="Ex: iPhone 14 Pro Max"
             disabled={isLoading}
-            error={errors.name}
+            error={errors.name?.message}
             required
             fullWidth
           />
@@ -507,26 +494,25 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
             id="description"
             label="Descrição"
             icon={<FaFileAlt />}
-            value={formData.description || ''}
-            onChange={handleChange}
+            {...register('description')}
             placeholder="Descreva o prêmio em detalhes..."
             disabled={isLoading}
-            error={errors.description}
+            error={errors.description?.message}
             fullWidth
+            required
             rows={5}
           />
         </FormGroup>
         
         <FormGroup>
           <FormInput
-            id="value"
+            id="value"  
             label="Valor"
             icon={<FaMoneyBillWave />}
-            value={formData.value || ''}
-            onChange={handleChange}
+            {...register('value')}
             placeholder="Ex: R$ 5.000,00"
             disabled={isLoading}
-            error={errors.value}
+            error={errors.value?.message}
             required
             fullWidth
           />
@@ -545,7 +531,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <Button 
             type="submit" 
             $variant="primary"
-            disabled={isLoading}
+           
           >
             <FaSave />
             {isLoading ? 'Salvando...' : 'Salvar Prêmio'}

@@ -6,8 +6,11 @@ const { parsed: myEnv } = require('dotenv').config({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack(config) {
+  webpack(config,{ isServer }) {
     config.plugins.push(new webpack.EnvironmentPlugin(myEnv))
+      // Lidar melhor com módulos nativos
+    config.externals.push({ 'thread-stream': 'commonjs thread-stream', pino: 'commonjs pino' });
+
     return config
 },
   compiler: {

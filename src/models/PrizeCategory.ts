@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ICategory } from './interfaces/IPrizeInterfces';
+import { ICategory } from './interfaces/IPrizeInterfaces';
 
 
 const PrizeCategorySchema = new mongoose.Schema<ICategory>(

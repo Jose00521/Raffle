@@ -17,6 +17,12 @@ import { ICreatorController } from '../controllers/CreatorController';
 import { CreatorController } from '../controllers/CreatorController';
 import { ICreatorRepository } from '../repositories/CreatorRepository';
 import { CreatorRepository } from '../repositories/CreatorRepository';
+import { IPrizeRepository } from '../repositories/PrizeRepository';
+import { PrizeRepository } from '../repositories/PrizeRepository';
+import { IPrizeService } from '../services/PrizeService';
+import { PrizeService } from '../services/PrizeService';
+import { IPrizeController } from '../controllers/PrizeController';
+import { PrizeController } from '../controllers/PrizeController';
 // Register dependencies
 container.register<IDBConnection>('db', { useClass: DBConnection })
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
@@ -29,6 +35,9 @@ container.register<IUserAuthRepository>('userAuthRepository', { useClass: UserAu
 container.register<ICreatorRepository>('creatorRepository', { useClass: CreatorRepository });
 container.register<ICreatorService>('creatorService', { useClass: CreatorService });
 container.register<ICreatorController>('creatorController', { useClass: CreatorController });
+container.register<IPrizeRepository>('prizeRepository', { useClass: PrizeRepository });
+container.register<IPrizeService>('prizeService', { useClass: PrizeService });
+container.register<IPrizeController>('prizeController', { useClass: PrizeController });
 
 
 // Export configured container

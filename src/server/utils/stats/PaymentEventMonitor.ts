@@ -3,6 +3,7 @@ import { PaymentEvent, PaymentStatusEnum } from './interfaces/PaymentEvent';
 import { BatchProcessor } from './BatchProcessor';
 import { IDBConnection } from '@/server/lib/dbConnect';
 import Payment from '@/models/Payment';
+import logger from '../../../lib/logger/logger';
 /**
  * Monitora eventos de pagamento usando MongoDB ChangeStream
  * Segue o princípio de Responsabilidade Única (S do SOLID)
@@ -27,7 +28,7 @@ export class PaymentEventMonitor {
     }
     
     try {
-      console.log('Iniciando monitoramento de eventos de pagamento');
+      logger.info('Iniciando monitoramento de eventos de pagamento');
       
       // Pipeline de filtro para operações relevantes
       const pipeline = this.createMonitoringPipeline();
@@ -43,9 +44,9 @@ export class PaymentEventMonitor {
       this.setupEventHandlers();
       
       this.isRunning = true;
-      console.log('Monitoramento de eventos iniciado com sucesso');
+      logger.info('Monitoramento de eventos iniciado com sucesso');
     } catch (error) {
-      console.error('Erro ao iniciar monitoramento de eventos:', error);
+      logger.error('Erro ao iniciar monitoramento de eventos:', error);
       this.isRunning = false;
       
       // Tentar reiniciar após falha
@@ -65,9 +66,9 @@ export class PaymentEventMonitor {
       await this.changeStream.close();
       this.changeStream = null;
       this.isRunning = false;
-      console.log('Monitoramento de eventos parado');
+      logger.info('Monitoramento de eventos parado');
     } catch (error) {
-      console.error('Erro ao parar monitoramento:', error);
+      logger.error('Erro ao parar monitoramento:', error);
       this.isRunning = false;
     }
   }
@@ -102,7 +103,7 @@ export class PaymentEventMonitor {
     
     // Handler para erros
     this.changeStream.on('error', (error: any) => {
-      console.error('Erro no ChangeStream:', error);
+      logger.error('Erro no ChangeStream:', error);
       this.isRunning = false;
       
       // Tentar reiniciar após erro
@@ -115,7 +116,7 @@ export class PaymentEventMonitor {
    */
   private handleChangeEvent(change: any): void {
     try {
-      console.log('EVENTO DE MUDANÇA NA TABELA PAYMENT:', change);
+      logger.info('EVENTO DE MUDANÇA NA TABELA PAYMENT:', change);
       
       const { operationType, fullDocument } = change;
       
@@ -145,7 +146,7 @@ export class PaymentEventMonitor {
       this.batchProcessor.addEvent(paymentEvent);
       
     } catch (error) {
-      console.error('Erro ao processar evento de mudança:', error);
+      logger.error('Erro ao processar evento de mudança:', error);
     }
   }
 } 

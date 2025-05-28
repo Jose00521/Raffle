@@ -141,7 +141,8 @@ const FormTextArea: React.FC<FormTextAreaProps> = ({
   required = false,
   fullWidth = false,
   className,
-  rows = 4
+  rows = 4,
+  ...props
 }) => {
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
@@ -165,6 +166,7 @@ const FormTextArea: React.FC<FormTextAreaProps> = ({
           $hasIcon={!!icon}
           $hasError={!!error}
           rows={rows}
+          {...props}
         />
       </InputWrapper>
       

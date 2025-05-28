@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Socket } from "socket.io";
-
+import logger from './src/lib/logger/logger.ts';
 import express, { Request, Response } from 'express';
 import next from "next";
 import cors from 'cors';
@@ -43,30 +43,29 @@ app.prepare().then(async () => {
   
   // Socket.io events
   io.on('connection', (socket: Socket) => {
-    console.log('Novo cliente conectado:', socket.id);
+    logger.info(`Novo cliente conectado: ${socket.id}`);
     
     socket.on('disconnect', () => {
-      console.log('Cliente desconectado:', socket.id);
+      logger.info(`Cliente desconectado: ${socket.id}`);
     });
   });
   
   try {
     // Conectar ao MongoDB
-    console.log('Conectando ao MongoDB...');
+    logger.info('Conectando ao MongoDB...');
     await db.connect();
-    console.log('✅ Conectado ao MongoDB com sucesso!');
+    logger.info('✅ Conectado ao MongoDB com sucesso!');
     
     // Inicializar serviços passando a instância do Socket.io
     await initializeServices(io);
-    console.log('✅ Serviços do backend inicializados com sucesso!');
+    logger.info('✅ Serviços do backend inicializados com sucesso!');
   } catch (error) {
-    console.error('❌ Erro ao conectar ao MongoDB:', error);
+    logger.error('❌ Erro ao conectar ao MongoDB:', error);
   }
   
   
   httpServer.listen(PORT, () => {
-    console.log(`> Server running on http://localhost:${PORT}`);
-    console.log('process.env.AUTH_SECRET',process.env.AUTH_SECRET);
+    logger.info(`> Servidor rodando em http://localhost:${PORT}`);
 
   });
 }); 

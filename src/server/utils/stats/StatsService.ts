@@ -8,6 +8,7 @@ import SessionManager from './SessionManager';
 import { IEventNotifier } from './interfaces/IEventNotifier';
 import { IDBConnection } from '../../lib/dbConnect';
 import { container } from '../../container/container';
+import logger from '../../../lib/logger/logger';
 /**
  * Serviço principal para gerenciamento de estatísticas
  * Segue o princípio de Inversão de Dependência (D do SOLID)
@@ -45,7 +46,7 @@ export class StatsService {
    */
   public async start(): Promise<void> {
     try {
-      console.log('Iniciando serviço de estatísticas em tempo real...');
+      logger.info('Iniciando serviço de estatísticas em tempo real...');
       
       // Inicializar gerenciador de sessões
       await SessionManager.initialize();
@@ -53,9 +54,9 @@ export class StatsService {
       // Iniciar monitoramento de eventos
       await this.eventMonitor.start();
       
-      console.log('Serviço de estatísticas em tempo real iniciado com sucesso');
+      logger.info('Serviço de estatísticas em tempo real iniciado com sucesso');
     } catch (error) {
-      console.error('Erro ao iniciar serviço de estatísticas:', error);
+      logger.error('Erro ao iniciar serviço de estatísticas:', error);
       throw error;
     }
   }
@@ -65,7 +66,7 @@ export class StatsService {
    */
   public async stop(): Promise<void> {
     try {
-      console.log('Parando serviço de estatísticas...');
+      logger.info('Parando serviço de estatísticas...');
       
       // Parar monitoramento de eventos
       await this.eventMonitor.stop();
@@ -73,9 +74,9 @@ export class StatsService {
       // Fechar sessões
       await SessionManager.close();
       
-      console.log('Serviço de estatísticas parado');
+      logger.info('Serviço de estatísticas parado');
     } catch (error) {
-      console.error('Erro ao parar serviço de estatísticas:', error);
+      logger.error('Erro ao parar serviço de estatísticas:', error);
       throw error;
     }
   }

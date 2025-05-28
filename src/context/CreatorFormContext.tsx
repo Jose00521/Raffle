@@ -192,7 +192,7 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
         cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
         birthDate: new Date(data.dataNascimento),
         legalName: data.razaoSocial,
-        legalRepresentative: data.nomeCompleto,
+        legalRepresentative: data.tipoPessoa === 'company' ? data.nomeCompleto : undefined,
         companyCategory: data.tipoPessoa === 'company' ? data.categoriaEmpresa : undefined,
         cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : undefined,
         address: {
@@ -243,9 +243,9 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // Adicionar campos específicos por tipo de conta
       if (data.tipoPessoa === 'company') {
         Object.assign(cleanData, {
-          representanteLegal: data.nomeCompleto,
-          companyName: data.nomeFantasia,
-          legalName: data.razaoSocial
+          representanteLegal: data.nomeCompleto || "",
+          companyName: data.nomeFantasia || "",
+          legalName: data.razaoSocial || ""
         });
       }
       

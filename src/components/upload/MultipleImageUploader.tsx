@@ -22,6 +22,7 @@ interface MultipleImageUploaderProps {
   className?: string;
   maxSizeInMB?: number;
   allowedTypes?: string[];
+  id?: string;
 }
 
 const UploaderContainer = styled.div`
@@ -270,13 +271,15 @@ const AddMoreButton = styled.div`
 `;
 
 const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
+  id,
   maxImages = 10,
   onChange,
   label = 'Imagens da Rifa',
   value = [],
   className,
   maxSizeInMB = 5,
-  allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
+  allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
+  ...props
 }) => {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -406,6 +409,9 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
               JPG, PNG, WebP • Máximo de {maxSizeInMB}MB por arquivo
             </HelpText>
             <FileInput
+              {...props}
+              id={id}
+
               ref={fileInputRef}
               type="file"
               accept={allowedTypes.join(',')}

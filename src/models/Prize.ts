@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
-import { IPrize } from './interfaces/IPrizeInterfces';
+import { IPrize } from './interfaces/IPrizeInterfaces';
 
 
 const PrizeSchema = new mongoose.Schema<IPrize>(
@@ -9,7 +9,6 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
       type: String,
       unique: true,
       sparse: true,
-      index: true
     },
     name: {
       type: String,

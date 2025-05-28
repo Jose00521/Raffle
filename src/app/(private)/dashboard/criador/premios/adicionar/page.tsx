@@ -6,8 +6,10 @@ import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import PrizeForm from '@/components/dashboard/PrizeForm';
-import { IPrize } from '@/models/Prize';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import prizeAPIClient from '@/API/prizeAPIClient';
+import mongoose from 'mongoose';
 
 const PageHeader = styled.div`
   display: flex;
@@ -53,19 +55,37 @@ export default function AddPrizePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = async (data: Partial<IPrize>) => {
+  const handleSubmit = async (data: Partial<{
+    name: string;
+    description: string;
+    value: string;
+    image: File;
+    images: File[];
+    categoryId: mongoose.Types.ObjectId;
+  }>) => {
     setIsSubmitting(true);
     
     try {
       // In a real application, you would make an API call here
       // to create a new prize in your database
-      console.log('Submitting prize data:', data);
+      const formData = new FormData();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      formData.append('data', JSON.stringify({
+        name: data.name,
+        description: data.description,
+        value: data.value,
+        categoryId: data.categoryId,
+      }));
+
+      formData.append('image', data.image as File);
+      data.images?.forEach(image => {
+        formData.append('images', image as File);
+      }); 
+
+      const result = await prizeAPIClient.createPrize(formData);
+
+      console.log('result', result);
       
-      // Redirect back to prizes page on success
-      router.push('/dashboard/criador/premios');
       
     } catch (error) {
       console.error('Error adding prize:', error);

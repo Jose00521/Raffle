@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { IPrize } from './IPrizeInterfces';
+import { IPrize } from './IPrizeInterfaces';
 import { IWinner } from './IWinnerInterfaces';
 
 export enum CampaignStatusEnum {

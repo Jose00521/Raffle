@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import * as os from 'os';
-
+import logger from '@/lib/logger/logger';
 // Configurações de bits/tamanho para componentes do ID
 const TIME_CHAR_LENGTH = 5;        // 5 chars = ~25 bits (32^5 combinações)
 const SEQ_WORKER_CHAR_LENGTH = 4;  // 4 chars = ~16 bits (32^4 combinações)
@@ -48,7 +48,7 @@ function getUniqueWorkerId(): number {
 
 // Worker ID estável e único
 const WORKER_ID = getUniqueWorkerId();
-console.log(`[Snowflake] Worker ID initialized: ${WORKER_ID}`);
+logger.info(`[Snowflake] Worker ID initialized: ${WORKER_ID}`);
 
 
 
@@ -136,7 +136,7 @@ export function generateEntityCode(
   
   // Garante timestamp crescente estritamente monotônico
   if (timestamp < lastTimestamp) {
-    console.warn(`[Snowflake] Clock moved backwards. Waiting until ${lastTimestamp}`);
+    logger.warn(`[Snowflake] Clock moved backwards. Waiting until ${lastTimestamp}`);
     timestamp = waitNextMillis(lastTimestamp);
   }
   

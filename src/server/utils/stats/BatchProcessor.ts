@@ -2,6 +2,7 @@ import { ClientSession } from 'mongoose';
 import { PaymentEvent, BatchProcessingResult } from './interfaces/PaymentEvent';
 import { StatsProcessorConfig, StatsProcessor } from './interfaces/StatsProcessors';
 import SessionManager from './SessionManager';
+import logger from '@/lib/logger/logger';
 
 /**
  * Gerencia o processamento em lote de eventos de pagamento
@@ -69,7 +70,7 @@ export class BatchProcessor {
       const batchSize = Math.min(this.config.batchSize, this.eventQueue.length);
       const batch = this.eventQueue.splice(0, batchSize);
       
-      console.log(`Processando lote de ${batch.length} eventos`);
+      logger.info(`Processando lote de ${batch.length} eventos`);
       
       // Agrupar por campanha
       const eventsByCampaign = this.groupEventsByCampaign(batch);
@@ -79,12 +80,12 @@ export class BatchProcessor {
         await this.processCampaignEvents(campaignId, events);
       }
       
-      console.log(`Lote de ${batch.length} eventos processado com sucesso`);
+      logger.info(`Lote de ${batch.length} eventos processado com sucesso`);
     } catch (error) {
-      console.error('Erro ao processar lote de eventos:', error);
+      logger.error('Erro ao processar lote de eventos:', error);
       
       if (this.eventQueue.length > 100) {
-        console.error(`Fila acumulando (${this.eventQueue.length} eventos). Possível gargalo.`);
+        logger.error(`Fila acumulando (${this.eventQueue.length} eventos). Possível gargalo.`);
       }
     } finally {
       this.isProcessing = false;

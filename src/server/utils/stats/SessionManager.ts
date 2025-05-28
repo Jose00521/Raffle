@@ -1,4 +1,5 @@
 import mongoose, { ClientSession } from 'mongoose';
+import logger from '../../../lib/logger/logger';
 
 /**
  * Gerencia pool de sessões MongoDB para otimizar performance
@@ -20,14 +21,14 @@ export class SessionManager {
       return; // Já inicializado
     }
     
-    console.log(`Inicializando pool com ${this.poolSize} sessões MongoDB`);
+    logger.info(`Inicializando pool com ${this.poolSize} sessões MongoDB`);
     
     for (let i = 0; i < this.poolSize; i++) {
       const session = await mongoose.startSession();
       this.sessionPool.push(session);
     }
     
-    console.log('Pool de sessões inicializado com sucesso');
+    logger.info('Pool de sessões inicializado com sucesso');
   }
 
   /**
@@ -35,7 +36,7 @@ export class SessionManager {
    */
   public async getSession(): Promise<ClientSession> {
     if (this.sessionPool.length === 0) {
-      console.warn('Pool de sessões vazio, criando nova sessão');
+      logger.warn('Pool de sessões vazio, criando nova sessão');
       return mongoose.startSession();
     }
     
@@ -64,7 +65,7 @@ export class SessionManager {
     }
     
     this.sessionPool = [];
-    console.log('Pool de sessões encerrado');
+    logger.info('Pool de sessões encerrado');
   }
 }
 
