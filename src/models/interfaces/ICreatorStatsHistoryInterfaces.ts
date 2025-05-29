@@ -1,4 +1,4 @@
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Document } from 'mongoose';
 
 
 // Interface for the top campaigns
@@ -44,6 +44,7 @@ export interface ITopCampaign {
     conversionRate: number;
     topCampaigns: ITopCampaign[];
     revenueByDayOfWeek: IRevenueByDayOfWeek;
+    save(options?: any): Promise<this>;
   }
   
   // Interface for the model with static methods

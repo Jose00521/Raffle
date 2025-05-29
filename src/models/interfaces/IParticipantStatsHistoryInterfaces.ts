@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
 
 
@@ -39,4 +39,5 @@ export interface ILastParticipation {
     loyaltyScore: number;
     lastParticipation: ILastParticipation | null;
     topCampaigns: ITopCampaign[];
+    save(options?: any): Promise<this>;
   }

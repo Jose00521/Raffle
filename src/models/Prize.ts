@@ -7,8 +7,6 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
   {
     prizeCode: {
       type: String,
-      unique: true,
-      sparse: true,
     },
     name: {
       type: String,
@@ -42,13 +40,13 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
 );
 
 // Adiciona um hook pre-save para gerar automaticamente o código do prêmio
-PrizeSchema.pre('save', function(this: any, next) {
-  // Só gera o código se ele ainda não existir e se estiver no servidor
-  if (!this.prizeCode && typeof window === 'undefined') {
-    this.prizeCode = generateEntityCode(this._id, 'PR');
-  }
-  next();
-});
+// PrizeSchema.pre('save', function(this: any, next) {
+//   // Só gera o código se ele ainda não existir e se estiver no servidor
+//   if (!this.prizeCode && typeof window === 'undefined') {
+//     this.prizeCode = generateEntityCode(this._id, 'PR');
+//   }
+//   next();
+// });
 
 PrizeSchema.index({ name: 'text', description: 'text' }); // Text search for name and description
 PrizeSchema.index({ categoryId: 1 }); // For filtering prizes by category

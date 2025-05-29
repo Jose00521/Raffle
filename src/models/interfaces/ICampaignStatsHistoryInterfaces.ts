@@ -1,4 +1,4 @@
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Document } from 'mongoose';
 
 
 // Interface for the document
@@ -23,6 +23,7 @@ export interface ICampaignStatsHistory extends Document {
     status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
     daysRemaining?: number;
     isExpired: boolean;
+    save(options?: any): Promise<this>;
   }
   
   // Interface for the model with static methods

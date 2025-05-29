@@ -1,3 +1,7 @@
+// Increase EventEmitter max listeners to prevent warnings
+import { EventEmitter } from 'events';
+EventEmitter.defaultMaxListeners = 20;
+
 import 'reflect-metadata';
 import { Socket } from "socket.io";
 import logger from './src/lib/logger/logger.ts';

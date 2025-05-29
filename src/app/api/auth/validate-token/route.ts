@@ -10,7 +10,7 @@ import logger from '@/lib/logger/logger';
 const limiter = rateLimit({
   interval: 60 * 1000, // 1 minuto
   uniqueTokenPerInterval: 500,
-  tokensPerInterval: 20 // 10 requisições por minuto
+  tokensPerInterval: 20 // 20 requisições por minuto
 });
 
 /**
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     // Aplicar rate limiting
     try {
       logger.info('Aplicando rate limiting...');
-      await limiter.check(10, `${ip}:token-validation`);
+      await limiter.check(1, `${ip}:token-validation`);
     } catch {
       logger.warn(`Rate limit excedido para IP: ${ip}`);
       return NextResponse.json(

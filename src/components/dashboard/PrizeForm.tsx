@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { prizeSchema } from '@/zod/prize.schema';
 import { useForm } from 'react-hook-form';
 import type { PrizeForm } from '@/zod/prize.schema';
+import { useHookFormMask } from 'use-mask-input';
 
 interface PrizeFormProps {
   initialData?: Partial<IPrize>;
@@ -288,6 +289,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       value: '',
     }
   });
+
+  const registerWithMask = useHookFormMask(register);
   
   // Keep track of the selected category as a string for the dropdown
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -509,8 +512,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
             id="value"  
             label="Valor"
             icon={<FaMoneyBillWave />}
-            {...register('value')}
-            placeholder="Ex: R$ 5.000,00"
+            {...registerWithMask('value', '0.000.000.000,00')}
+            placeholder="Ex: R$ 5.000,00" 
             disabled={isLoading}
             error={errors.value?.message}
             required

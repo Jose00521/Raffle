@@ -31,11 +31,6 @@ const CampaignSchema = new mongoose.Schema(
       required: [true, 'Preço do número individual é obrigatório'],
       min: [0, 'Preço não pode ser negativo']
     },
-    prizes:[{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Prize',
-      required: [true, 'Please provide at least one prize'],
-    }],
     totalNumbers: {
       type: Number,
       required: [true, 'Please provide the total number of tickets'],

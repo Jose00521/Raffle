@@ -72,8 +72,7 @@ const TopTipsContainer = styled.div`
   padding: 32px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
   position: relative;
-  z-index: 2;
-  
+
   @media (max-width: 768px) {
     padding: 24px;
     margin-bottom: 16px;

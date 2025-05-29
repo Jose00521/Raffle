@@ -18,8 +18,16 @@ import {
   FaPercentage,
   FaRegCalendarAlt,
   FaSearch,
-  FaPlusCircle
+  FaPlusCircle,
+  FaPlus,
+  FaTimes,
+  FaSave,
+  FaUpload,
+  FaInfoCircle
 } from 'react-icons/fa';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import MultipleImageUploader from '../upload/MultipleImageUploader';
 import FormInput from '../common/FormInput';
 import FormTextArea from '../common/FormTextArea';
@@ -28,7 +36,12 @@ import AdvancedDateTimePicker from '../common/AdvancedDateTimePicker';
 import WysiwygEditor from '../common/WysiwygEditor';
 import PrizeConfigForm from '../raffle/PrizeConfigForm';
 import { MOCK_PRIZES } from '@/app/(private)/dashboard/criador/premios/page';
-import { IPrize } from '@/models/Prize';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+// Importar os novos componentes modulares
+import PrizeSelectorModal from '../prize/PrizeSelectorModal';
+import PrizeCreatorModal from '../prize/PrizeCreatorModal';
+import CustomDropdown from '../common/CustomDropdown';
+import ComboDiscountSectionComponent from './ComboDiscountSection';
 
 // Prize category interface
 interface PrizeCategory {
@@ -44,8 +57,8 @@ interface PrizeCategoriesConfig {
   premiado: PrizeCategory;
 }
 
-// Interface for form data
-export interface RaffleFormData {
+// Define a simple type for the form data
+export type RaffleFormData = {
   title: string;
   description: string;
   price: number;
@@ -60,7 +73,46 @@ export interface RaffleFormData {
   scheduledDate?: string;
   prizeCategories?: PrizeCategoriesConfig;
   instantPrizes: Array<{id: string, number: string, value: number}>;
-}
+  winnerCount: number;
+  prizes: Array<{position: number, prizeId?: string, name: string, value: string, image?: string}>;
+  enableCombos: boolean;
+  combos: Array<{ quantity: number, discountPercentage: number }>;
+};
+
+// Simplified schema that matches the type
+const raffleFormSchema = z.object({
+  title: z.string().min(1, 'O título é obrigatório'),
+  description: z.string().min(1, 'A descrição é obrigatória'),
+  price: z.number().min(0.01, 'O preço deve ser maior que zero'),
+  totalNumbers: z.number().min(1, 'O número de bilhetes deve ser maior que zero'),
+  drawDate: z.string().min(1, 'A data do sorteio é obrigatória'),
+  images: z.array(z.any()).min(1, 'Pelo menos uma imagem é obrigatória'),
+  regulation: z.string().optional(),
+  mainPrize: z.string().optional(),
+  valuePrize: z.string().optional(),
+  returnExpected: z.string().optional(),
+  isScheduled: z.boolean(),
+  scheduledDate: z.string().optional(),
+  prizeCategories: z.any().optional(),
+  instantPrizes: z.array(z.any()),
+  winnerCount: z.number().min(1, 'Pelo menos um vencedor é necessário').max(5, 'Máximo de 5 vencedores permitidos'),
+  prizes: z.array(
+    z.object({
+      position: z.number(),
+      prizeId: z.string().optional(),
+      name: z.string(),
+      value: z.string(),
+      image: z.string().optional()
+    })
+  ).min(1, 'Pelo menos um prêmio é necessário'),
+  enableCombos: z.boolean().optional().default(false),
+  combos: z.array(
+    z.object({
+      quantity: z.number().min(2, 'Quantidade mínima de 2 números'),
+      discountPercentage: z.number().min(1, 'Desconto mínimo de 1%').max(50, 'Desconto máximo de 50%')
+    })
+  ).optional().default([])
+}) as z.ZodType<RaffleFormData>;
 
 interface RaffleFormFieldsProps {
   onSubmit: (data: RaffleFormData) => void;
@@ -486,6 +538,17 @@ const PrizeSelectorButton = styled.button`
   }
 `;
 
+const PrizeButtonsContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -753,13 +816,1158 @@ const RemoveSelectedPrize = styled.button`
   }
 `;
 
+// Componentes para o Modal de Criar Prêmio
+const PrizeFormContainer = styled.div`
+  margin-top: 20px;
+`;
+
+const PrizeFormRow = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+  }
+`;
+
+const PrizeFormGroup = styled.div`
+  flex: 1;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+`;
+
+const PrizeFormInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+  }
+`;
+
+const PrizeFormTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+  min-height: 120px;
+  resize: vertical;
+  
+  &:focus {
+    outline: none;
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+  }
+`;
+
+const ImagePreview = styled.div<{ $imageUrl: string }>`
+  width: 100%;
+  height: 200px;
+  background-image: ${props => props.$imageUrl ? `url(${props.$imageUrl})` : 'none'};
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  border: ${props => props.$imageUrl ? 'none' : '2px dashed rgba(0, 0, 0, 0.1)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+`;
+
+const ImageUploadLabel = styled.label`
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  width: 100%;
+  height: 100%;
+  
+  svg {
+    font-size: 2rem;
+    color: #6a11cb;
+  }
+`;
+
+const ImageInput = styled.input`
+  display: none;
+`;
+
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: white;
+    transform: scale(1.1);
+  }
+  
+  svg {
+    color: #ef4444;
+    font-size: 1rem;
+  }
+`;
+
+const SaveButton = styled.button`
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  svg {
+    font-size: 1.1rem;
+  }
+`;
+
+// Add these styled components after the existing styled components
+const WinnersSection = styled.div`
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const WinnersHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const WinnersTitle = styled.h4`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const WinnerDropdownContainer = styled.div`
+  width: 180px;
+`;
+
+const PrizePositionCard = styled.div`
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.05) 0%, rgba(37, 117, 252, 0.05) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.1);
+    transform: translateY(-2px);
+  }
+`;
+
+const PositionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+const PositionBadge = styled.div<{ $position: number }>`
+  background: ${props => {
+    switch (props.$position) {
+      case 1: return 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+      case 2: return 'linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%)';
+      case 3: return 'linear-gradient(135deg, #CD7F32 0%, #8B4513 100%)';
+      default: return 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+    }
+  }};
+  color: white;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+`;
+
+const PositionTrophy = styled.span`
+  font-size: 1.2rem;
+`;
+
+const EmptyPrizeCard = styled.div`
+  border: 2px dashed rgba(106, 17, 203, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: rgba(106, 17, 203, 0.02);
+  height: 120px;
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.05);
+    border-color: rgba(106, 17, 203, 0.4);
+  }
+`;
+
+const EmptyPrizeIcon = styled.div`
+  font-size: 2rem;
+  color: rgba(106, 17, 203, 0.4);
+`;
+
+const EmptyPrizeText = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-weight: 500;
+  text-align: center;
+`;
+
+const PrizeSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.08) 0%, rgba(37, 117, 252, 0.08) 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+`;
+
+const PrizeSectionTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  svg {
+    color: ${props => props.theme.colors?.primary || '#6a11cb'};
+    font-size: 1.4rem;
+  }
+`;
+
+const WinnerInfoText = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    color: #6a11cb;
+    font-size: 1rem;
+  }
+`;
+
+const PrizeListContainer = styled.div`
+  margin: 24px 0;
+`;
+
+const NewPositionBadge = styled.div<{ $position: number }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: white;
+  border-radius: 8px 0 8px 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  background: ${props => {
+    switch (props.$position) {
+      case 1: return 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+      case 2: return 'linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%)';
+      case 3: return 'linear-gradient(135deg, #CD7F32 0%, #8B4513 100%)';
+      default: return 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+    }
+  }};
+`;
+
+const NewPrizeCard = styled.div<{ $position: number }>`
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.1);
+    border-color: rgba(106, 17, 203, 0.15);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: ${props => {
+      switch (props.$position) {
+        case 1: return 'linear-gradient(90deg, #FFD700 0%, #FFA500 100%)';
+        case 2: return 'linear-gradient(90deg, #C0C0C0 0%, #A9A9A9 100%)';
+        case 3: return 'linear-gradient(90deg, #CD7F32 0%, #8B4513 100%)';
+        default: return 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)';
+      }
+    }};
+  }
+`;
+
+// Card para o primeiro prêmio quando vazio
+const EmptyFirstPrize = styled.div`
+  border: 2px dashed rgba(106, 17, 203, 0.15);
+  border-radius: 12px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background-color: rgba(106, 17, 203, 0.02);
+  margin-bottom: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.04);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.08);
+    border-color: rgba(106, 17, 203, 0.3);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+  }
+`;
+
+// Adicionar os componentes estilizados que estão faltando após os existentes
+const NewPrizeContent = styled.div`
+  display: flex;
+  padding: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const NewPrizeImageContainer = styled.div`
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 15px;
+  }
+`;
+
+const NewPrizeImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const NewPrizeInfo = styled.div`
+  flex: 1;
+`;
+
+const NewPrizeName = styled.h4`
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+`;
+
+const NewPrizeValue = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #6a11cb;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const NewPrizeActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+`;
+
+const PrizeActionButton = styled.button<{ $variant?: 'danger' | 'default' }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: ${props => props.$variant === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'};
+  color: ${props => props.$variant === 'danger' ? '#ef4444' : '#6b7280'};
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.$variant === 'danger' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.05)'};
+    color: ${props => props.$variant === 'danger' ? '#ef4444' : '#111827'};
+  }
+  
+  svg {
+    font-size: 0.95rem;
+  }
+`;
+
+const EmptyFirstPrizeIcon = styled.div`
+  font-size: 3.5rem;
+  color: rgba(106, 17, 203, 0.3);
+  margin-bottom: 10px;
+`;
+
+const EmptyFirstPrizeTitle = styled.h4`
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0 0 5px;
+`;
+
+const EmptyFirstPrizeText = styled.p`
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin: 0;
+  max-width: 500px;
+`;
+
+// Remover as declarações duplicadas dos novos componentes
+// Card vazio para os prêmios secundários
+const ModernEmptyPrizeCard = styled.div`
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.1);
+    border-color: rgba(106, 17, 203, 0.15);
+  }
+`;
+
+const ModernEmptyPrizeContainer = styled.div`
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+`;
+
+const ModernEmptyPrizeIcon = styled.div`
+  font-size: 2.5rem;
+  color: rgba(106, 17, 203, 0.2);
+  margin-bottom: 16px;
+`;
+
+const ModernEmptyPrizeText = styled.div`
+  font-size: 1rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-weight: 500;
+  margin-bottom: 20px;
+`;
+
+const PrizeSelectButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.1) 0%, rgba(37, 117, 252, 0.1) 100%);
+  color: #6a11cb;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.15) 0%, rgba(37, 117, 252, 0.15) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(106, 17, 203, 0.15);
+  }
+`;
+
+const PrizeCreationButton = styled(PrizeSelectButton)`
+  background: linear-gradient(135deg, rgba(41, 142, 16, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+  color: #22c55e;
+  
+  &:hover {
+    background: linear-gradient(135deg, rgba(41, 142, 16, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%);
+  }
+`;
+
+const PrizeButtonGroup = styled.div`
+  display: flex;
+  gap: 12px;
+  
+  @media (max-width: 580px) {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+  }
+`;
+
+// Adicionar os componentes estilizados para o TotalPrizeDisplay após o componente ModernEmptyPrizeCard
+const TotalPrizeDisplay = styled.div`
+  margin: 0 0 20px 0;
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.05) 0%, rgba(37, 117, 252, 0.05) 100%);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  box-shadow: 0 6px 20px rgba(106, 17, 203, 0.08);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(106, 17, 203, 0.15);
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+`;
+
+const PrizeAmountValue = styled.div`
+  font-size: 1rem;
+  font-weight: 800;
+  color: #6a11cb;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #666;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.6rem;
+  }
+`;
+
+const PrizeCountBadge = styled.div`
+  background: rgba(106, 17, 203, 0.1);
+  color: #6a11cb;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    font-size: 1.1rem;
+  }
+`;
+
+// This styled component was renamed to avoid conflict with the imported component
+const ComboSectionWrapper = styled.div`
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const ComboTitle = styled.h4`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ComboDescription = styled.p`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin: 0;
+  max-width: 500px;
+`;
+
+const ToggleComboContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  padding: 16px 20px;
+  border-radius: 10px;
+  background-color: rgba(106, 17, 203, 0.02);
+  
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+    padding: 14px 16px;
+  }
+`;
+
+const CombosBuilderContainer = styled.div`
+  margin-top: 24px;
+`;
+
+const ComboVisualizer = styled.div`
+  background-color: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: ${({ theme }) => theme.colors?.gradients?.purple || 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)'};
+    opacity: 0.8;
+  }
+  
+  &:hover {
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 18px;
+    border-radius: 12px;
+  }
+`;
+
+const ComboVisualizerHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const ComboPriceInfo = styled.div`
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  span {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #666;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.4rem;
+  }
+`;
+
+const ComboInfoText = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    color: #6a11cb;
+    font-size: 1rem;
+  }
+`;
+
+const ComboCardsContainer = styled.div`
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const ComboCard = styled.div`
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(106, 17, 203, 0.15);
+    border-color: rgba(106, 17, 203, 0.3);
+  }
+`;
+
+const ComboQuantity = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+`;
+
+const ComboDiscount = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+const DiscountSlider = styled.input`
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  border-radius: 5px;
+  outline: none;
+  transition: all 0.3s ease;
+  
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    border-radius: 5px;
+  }
+  
+  &::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    background: #6a11cb;
+    border-radius: 50%;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -5px;
+  }
+  
+  &::-moz-range-track {
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    border-radius: 5px;
+  }
+  
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #6a11cb;
+    border-radius: 50%;
+    cursor: pointer;
+    -moz-appearance: none;
+    margin-top: -5px;
+  }
+  
+  &::-ms-track {
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    border-radius: 5px;
+  }
+  
+  &::-ms-thumb {
+    width: 20px;
+    height: 20px;
+    background: #6a11cb;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -5px;
+  }
+`;
+
+const DiscountBadge = styled.div<{ $percentage: number }>`
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 20px;
+  margin-left: 10px;
+`;
+
+const ComboPriceCalculation = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+const ComboFinalPrice = styled.div`
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6a11cb;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const ComboSavingBadge = styled.div`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6a11cb;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const ComboActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+`;
+
+const ComboActionButton = styled.button<{ $variant?: 'danger' | 'default' }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: ${props => props.$variant === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'};
+  color: ${props => props.$variant === 'danger' ? '#ef4444' : '#6b7280'};
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.$variant === 'danger' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.05)'};
+    color: ${props => props.$variant === 'danger' ? '#ef4444' : '#111827'};
+  }
+  
+  svg {
+    font-size: 0.95rem;
+  }
+`;
+
+const QuantityPicker = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100px;
+`;
+
+const QuantityButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #6a11cb;
+  }
+`;
+
+const ComboPreview = styled.div`
+  background-color: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: ${({ theme }) => theme.colors?.gradients?.purple || 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)'};
+    opacity: 0.8;
+  }
+  
+  &:hover {
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 18px;
+    border-radius: 12px;
+  }
+`;
+
+const ComboPreviewTitle = styled.h4`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ComboPreviewContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const ComboPreviewItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const ComboPreviewBadge = styled.div<{ $percentage: number }>`
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 20px;
+  margin-left: 10px;
+`;
+
+const ComboPreviewQuantity = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+`;
+
+const ComboPreviewLabel = styled.div`
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666;
+`;
+
+const ComboPreviewPrice = styled.div`
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6a11cb;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const ComboPreviewOriginalPrice = styled.div`
+  text-decoration: line-through;
+`;
+
+const ComboPreviewDiscountedPrice = styled.div`
+  font-weight: 700;
+`;
+
+
+const AddComboButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(106, 17, 203, 0.1);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6a11cb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(106, 17, 203, 0.1);
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(106, 17, 203, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(106, 17, 203, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 8px 14px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const ComboSection = styled.div`
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const ComboSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const ComboSectionTitle = styled.h4`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ComboSectionDescription = styled.p`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin: 0;
+  max-width: 500px;
+`;
+
 const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   onSubmit,
   initialData = {},
   isSubmitting = false
 }) => {
-  // Form state with default values from initialData
-  const [formData, setFormData] = useState<RaffleFormData>({
+  // Configurar React Hook Form
+  const defaultValues = {
     title: initialData.title || '',
     description: initialData.description || '',
     price: initialData.price || 0,
@@ -777,58 +1985,105 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       master: { active: false, quantity: 20, value: 1000 },
       premiado: { active: false, quantity: 50, value: 500 }
     },
-    instantPrizes: initialData.instantPrizes || []
+    instantPrizes: initialData.instantPrizes || [],
+    winnerCount: initialData.winnerCount || 1,
+    prizes: initialData.prizes || [{
+      position: 1,
+      name: initialData.mainPrize || '',
+      value: initialData.valuePrize || '',
+      image: ''
+    }],
+    enableCombos: initialData.enableCombos || false,
+    combos: initialData.combos || [
+      { quantity: 5, discountPercentage: 5 },
+      { quantity: 10, discountPercentage: 10 },
+      { quantity: 20, discountPercentage: 15 }
+    ]
+  } as RaffleFormData;
+  
+  const { 
+    control, 
+    handleSubmit, 
+    watch, 
+    setValue, 
+    formState: { errors }, 
+    trigger,
+    getValues
+  } = useForm<RaffleFormData>({
+    defaultValues,
+    mode: 'all',
+    resolver: zodResolver(raffleFormSchema)
   });
   
   // Prize selector state
   const [showPrizeSelector, setShowPrizeSelector] = useState(false);
+  const [showNewPrizeModal, setShowNewPrizeModal] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<IPrize | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [availablePrizes, setAvailablePrizes] = useState<IPrize[]>([]);
   
-  // Load available prizes
+  // Adicionar estado para rastrear o valor total dos prêmios
+  const [totalPrizeValue, setTotalPrizeValue] = useState<number>(0);
+  
+  // Observar campos do formulário para lógica dependente
+  const totalNumbers = watch('totalNumbers');
+  const isScheduled = watch('isScheduled');
+  const prizeCategories = watch('prizeCategories');
+  const price = watch('price');
+  
+  // Observar número de vencedores
+  const winnerCount = watch('winnerCount');
+  const prizes = watch('prizes');
+  
+  // Carregar prêmios mock quando o componente montar
   useEffect(() => {
-    // In a real app, this would fetch from an API
+    console.log('Loading MOCK_PRIZES:', MOCK_PRIZES);
     setAvailablePrizes(MOCK_PRIZES);
   }, []);
   
-  // Effect to update form fields when a prize is selected
+  // Adicionar o efeito para calcular o valor total dos prêmios
+  useEffect(() => {
+    if (prizes && prizes.length > 0) {
+      const total = prizes.reduce((sum: number, prize) => {
+        if (!prize.name || !prize.value) return sum;
+        
+        console.log('prize.value', prize.value);
+        // Verificar se o valor é uma string numérica e convertê-la
+        const prizeValue = typeof prize.value === 'string' 
+          ? parseFloat(prize.value.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.')) || 0 
+          : 0;
+        console.log('parsed prizeValue:', prizeValue);
+        return sum + prizeValue;
+      }, 0);
+      setTotalPrizeValue(total);
+    } else {
+      setTotalPrizeValue(0);
+    }
+  }, [prizes]);
+  
+  // Efeito para atualizar campos quando um prêmio é selecionado
   useEffect(() => {
     if (selectedPrize) {
-      setFormData(prev => ({
-        ...prev,
-        mainPrize: selectedPrize.name,
-        valuePrize: selectedPrize.value,
-        description: selectedPrize.description || prev.description
-      }));
+      setValue('mainPrize', selectedPrize.name);
+      setValue('valuePrize', selectedPrize.value);
+      if (selectedPrize.description) {
+        setValue('description', selectedPrize.description);
+      }
     }
-  }, [selectedPrize]);
+  }, [selectedPrize, setValue]);
   
-  // Form validation
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // Selected dates
-  const [selectedDrawDate, setSelectedDrawDate] = useState<Date | null>(
-    formData.drawDate ? new Date(formData.drawDate) : null
-  );
-  
-  const [selectedScheduledDate, setSelectedScheduledDate] = useState<Date | null>(
-    formData.scheduledDate ? new Date(formData.scheduledDate) : null
-  );
-  
-  // Effect para atualizar o formulário quando totalNumbers muda
+  // Efeito para ajustar categorias de prêmios quando totalNumbers muda
   useEffect(() => {
-    if (formData.totalNumbers && formData.prizeCategories) {
+    if (totalNumbers && prizeCategories) {
       // Verificar se alguma categoria excede o total de números
-      const totalAssigned = Object.values(formData.prizeCategories).reduce((sum, category) => 
+      const totalAssigned = Object.values(prizeCategories).reduce((sum, category) => 
         category.active ? sum + category.quantity : sum, 0
       );
       
       // Se o total atribuído excede o total disponível, ajustar proporcionalmente
-      if (totalAssigned > formData.totalNumbers) {
-        const ratio = formData.totalNumbers / totalAssigned;
+      if (totalAssigned > totalNumbers) {
+        const ratio = totalNumbers / totalAssigned;
         
-        const updatedCategories = { ...formData.prizeCategories };
+        const updatedCategories = { ...prizeCategories };
         let needsUpdate = false;
         
         Object.keys(updatedCategories).forEach(key => {
@@ -843,125 +2098,102 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         });
         
         if (needsUpdate) {
-          setFormData({
-            ...formData,
-            prizeCategories: updatedCategories
-          });
+          setValue('prizeCategories', updatedCategories);
         }
       }
     }
-  }, [formData.totalNumbers]);
+  }, [totalNumbers, prizeCategories, setValue]);
   
-  // Handle input change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
+  // Efeito para atualizar a lista de prêmios quando o número de vencedores muda
+  useEffect(() => {
+    const currentPrizes = [...prizes];
     
-    // For number inputs, convert value to number
-    if (type === 'number') {
-      setFormData({ ...formData, [name]: parseFloat(value) || 0 });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-    
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-  
-  // Handle toggle change
-  const handleToggleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData({ ...formData, [name]: checked });
-  };
-  
-  // Handle date change for draw date
-  const handleDrawDateChange = (date: Date | null) => {
-    setSelectedDrawDate(date);
-    if (date) {
-      setFormData({ ...formData, drawDate: date.toISOString() });
-      
-      // Clear error
-      if (errors.drawDate) {
-        setErrors({ ...errors, drawDate: '' });
+    // Se aumentou o número de vencedores, adicionar novos prêmios vazios
+    if (winnerCount > currentPrizes.length) {
+      for (let i = currentPrizes.length + 1; i <= winnerCount; i++) {
+        currentPrizes.push({
+          position: i,
+          name: '',
+          value: '',
+          image: ''
+        });
       }
-    } else {
-      setFormData({ ...formData, drawDate: '' });
+    } 
+    // Se diminuiu o número de vencedores, remover os excedentes
+    else if (winnerCount < currentPrizes.length) {
+      currentPrizes.splice(winnerCount);
     }
-  };
-  
-  // Handle date change for scheduled date
-  const handleScheduledDateChange = (date: Date | null) => {
-    setSelectedScheduledDate(date);
-    if (date) {
-      setFormData({ ...formData, scheduledDate: date.toISOString() });
-      
-      // Clear error
-      if (errors.scheduledDate) {
-        setErrors({ ...errors, scheduledDate: '' });
-      }
-    } else {
-      setFormData({ ...formData, scheduledDate: '' });
-    }
-  };
-  
-  // Handle image upload
-  const handleImagesChange = (files: File[]) => {
-    setFormData({ ...formData, images: files });
     
-    // Clear error for images
-    if (errors.images) {
-      setErrors({ ...errors, images: '' });
+    setValue('prizes', currentPrizes);
+  }, [winnerCount, setValue]);
+  
+  // Efeito para sincronizar o prêmio principal selecionado com o primeiro prêmio
+  useEffect(() => {
+    if (selectedPrize && prizes?.length > 0) {
+      const updatedPrizes = [...prizes];
+      updatedPrizes[0] = {
+        ...updatedPrizes[0],
+        prizeId: selectedPrize._id?.toString(),
+        name: selectedPrize.name,
+        value: selectedPrize.value,
+        image: selectedPrize.image
+      };
+      setValue('prizes', updatedPrizes);
     }
-  };
+  }, [selectedPrize, setValue]);
   
-  // Handle Prize Config Change
-  const handlePrizeConfigChange = (config: PrizeCategoriesConfig) => {
-    setFormData(prev => ({ ...prev, prizeCategories: config }));
-  };
-  
-  // Manter handlers originais para compatibilidade
-  const handleAddInstantPrize = () => {
-    const newId = `prize-${Date.now()}`;
-    setFormData(prev => ({
-      ...prev,
-      instantPrizes: [...prev.instantPrizes, { id: newId, number: '', value: 0 }]
-    }));
-  };
-  
-  // Prize selector handlers
+  // Handlers para Prize Selector
   const openPrizeSelector = () => {
     setShowPrizeSelector(true);
   };
   
-  const closePrizeSelector = () => {
+  let closePrizeSelector = () => {
     setShowPrizeSelector(false);
-    setSearchTerm('');
   };
   
-  const handleSelectPrize = (prize: IPrize) => {
+  const openNewPrizeModal = () => {
+    setShowNewPrizeModal(true);
+  };
+  
+  const closeNewPrizeModal = () => {
+    setShowNewPrizeModal(false);
+  };
+  
+  let handleSelectPrize = (prize: IPrize) => {
     setSelectedPrize(prize);
     closePrizeSelector();
   };
   
-  const handleClearSelectedPrize = () => {
-    setSelectedPrize(null);
-    setFormData(prev => ({
-      ...prev,
-      mainPrize: '',
-      valuePrize: ''
-    }));
+  const handlePrizeCreated = (prize: IPrize) => {
+    // Adicionar o novo prêmio à lista
+    setAvailablePrizes(prev => [prize, ...prev]);
+    // Selecionar o prêmio recém-criado
+    setSelectedPrize(prize);
+    // Fechar o modal
+    closeNewPrizeModal();
   };
   
-  const filteredPrizes = searchTerm 
-    ? availablePrizes.filter(prize => 
-        prize.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        prize.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : availablePrizes;
+  const handleClearSelectedPrize = () => {
+    setSelectedPrize(null);
+    setValue('mainPrize', '');
+    setValue('valuePrize', '');
+  };
+  
+  // Handlers para Instant Prizes
+  const handleAddInstantPrize = () => {
+    const currentPrizes = getValues('instantPrizes');
+    const newId = `prize-${Date.now()}`;
+    setValue('instantPrizes', [...currentPrizes, { id: newId, number: '', value: 0 }]);
+  };
+  
+  const handleRemoveInstantPrize = (id: string) => {
+    const currentPrizes = getValues('instantPrizes');
+    setValue('instantPrizes', currentPrizes.filter(prize => prize.id !== id));
+  };
   
   const handleInstantPrizeChange = (id: string, field: 'number' | 'value', value: string) => {
-    const updatedPrizes = formData.instantPrizes.map(prize => {
+    const currentPrizes = getValues('instantPrizes');
+    const updatedPrizes = currentPrizes.map(prize => {
       if (prize.id === id) {
         if (field === 'value') {
           return { ...prize, [field]: parseFloat(value) || 0 };
@@ -971,94 +2203,117 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       return prize;
     });
     
-    setFormData({ ...formData, instantPrizes: updatedPrizes });
+    setValue('instantPrizes', updatedPrizes);
   };
   
-  const handleRemoveInstantPrize = (id: string) => {
-    const updatedPrizes = formData.instantPrizes.filter(prize => prize.id !== id);
-    setFormData({ ...formData, instantPrizes: updatedPrizes });
+  // Add these state variables near the top of the component, with other state declarations
+  const [currentPrizeSelectHandler, setCurrentPrizeSelectHandler] = useState<(prize: IPrize) => void>(() => handleSelectPrize);
+  const [currentCloseHandler, setCurrentCloseHandler] = useState<() => void>(() => closePrizeSelector);
+
+  // Replace the handleSelectPrizeForPosition function with this version
+  const handleSelectPrizeForPosition = (position: number) => {
+    console.log('handleSelectPrizeForPosition - availablePrizes:', availablePrizes);
+    
+    // Create a handler for this specific position
+    const onSelectForPosition = (prize: IPrize) => {
+      const updatedPrizes = [...prizes];
+      updatedPrizes[position - 1] = {
+        position,
+        prizeId: prize._id?.toString(),
+        name: prize.name,
+        value: prize.value,
+        image: prize.image
+      };
+      setValue('prizes', updatedPrizes);
+      
+      // If it's the first position, update the main prize too
+      if (position === 1) {
+        setSelectedPrize(prize);
+        setValue('mainPrize', prize.name);
+        setValue('valuePrize', prize.value);
+      }
+      
+      setShowPrizeSelector(false);
+    };
+    
+    // Store the original handlers in state
+    setCurrentPrizeSelectHandler(() => onSelectForPosition);
+    setCurrentCloseHandler(() => {
+      return () => {
+        // Reset to default handlers when modal closes
+        setCurrentPrizeSelectHandler(() => handleSelectPrize);
+        setCurrentCloseHandler(() => closePrizeSelector);
+        closePrizeSelector();
+      };
+    });
+    
+    // Open the modal
+    setShowPrizeSelector(true);
   };
   
-  // Form validation function
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.title.trim()) {
-      newErrors.title = 'O título é obrigatório';
-    }
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'A descrição é obrigatória';
-    }
-    
-    if (formData.price <= 0) {
-      newErrors.price = 'O preço deve ser maior que zero';
-    }
-    
-    if (formData.totalNumbers <= 0) {
-      newErrors.totalNumbers = 'O número de bilhetes deve ser maior que zero';
-    }
-    
-    if (!formData.drawDate) {
-      newErrors.drawDate = 'A data do sorteio é obrigatória';
-    }
-    
-    if (formData.images.length === 0) {
-      newErrors.images = 'Pelo menos uma imagem é obrigatória';
-    }
-    
-    if (formData.isScheduled && !formData.scheduledDate) {
-      newErrors.scheduledDate = 'A data de agendamento é obrigatória quando agendado';
-    }
-    
-    // Validar que pelo menos uma categoria de prêmio está ativa
-    const hasActivePrizeCategory = formData.prizeCategories && 
-      (formData.prizeCategories.diamante.active || 
-       formData.prizeCategories.master.active || 
-       formData.prizeCategories.premiado.active);
-       
-    if (!hasActivePrizeCategory && formData.instantPrizes.length === 0) {
-      newErrors.prizeCategories = 'Pelo menos uma categoria de prêmio deve estar ativa';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  // Opções para o dropdown de quantidade de vencedores
+  const winnerOptions = [
+    { value: '1', label: '1 vencedor' },
+    { value: '2', label: '2 vencedores' },
+    { value: '3', label: '3 vencedores' },
+    { value: '4', label: '4 vencedores' },
+    { value: '5', label: '5 vencedores' }
+  ];
+  
+  // Handler para alteração do número de vencedores
+  const handleWinnerCountChange = (value: string) => {
+    setValue('winnerCount', parseInt(value));
   };
   
-  // Form submission handler
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      // Converter dados antes de enviar para a API
-      const apiFormData = prepareFormDataForApi(formData);
-      onSubmit(apiFormData);
-    } else {
-      // Scroll to first error
-      const firstError = Object.keys(errors)[0];
-      const element = document.getElementsByName(firstError)[0];
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-  
-  // Prepara os dados do formulário para a API
-  const prepareFormDataForApi = (data: RaffleFormData): RaffleFormData => {
+  // Função para preparar dados para API
+  const prepareFormDataForApi = (data: RaffleFormData): any => {
     const apiData = { ...data };
     
-    // Converter categorias de prêmios para o formato de instantPrizes se necessário
-    if (apiData.prizeCategories) {
-      const { diamante, master, premiado } = apiData.prizeCategories;
-      const newInstantPrizes = [...apiData.instantPrizes];
+    // Formatar dados para a estrutura da API
+    const formattedData = {
+      title: data.title,
+      description: data.description,
+      individualNumberPrice: data.price,
+      totalNumbers: data.totalNumbers,
+      drawDate: new Date(data.drawDate),
+      images: data.images,
+      regulation: data.regulation || '',
+      returnExpected: data.returnExpected || '',
+      isScheduled: data.isScheduled,
+      scheduledActivationDate: data.isScheduled && data.scheduledDate ? new Date(data.scheduledDate) : null,
       
-      // Incluir prêmios das categorias ativas
+      // Configurar distribuição de prêmios para múltiplos vencedores
+      prizeDistribution: data.prizes.map((prize, index) => ({
+        position: index + 1,
+        prizes: prize.prizeId ? [prize.prizeId] : [],
+        description: `${index === 0 ? 'Prêmio principal' : `${index + 1}º lugar`}: ${prize.name || 'Não especificado'}`
+      })),
+      
+      // Prêmios instantâneos serão enviados separadamente
+      instantPrizes: [] as Array<{
+        number: string;
+        value: number;
+        categoryId?: string;
+      }>
+    };
+    
+    // Adicionar ID do prêmio principal se estiver disponível
+    if (selectedPrize && selectedPrize._id) {
+      formattedData.prizeDistribution[0].prizes.push(selectedPrize._id as never);
+    }
+    
+    // Converter categorias de prêmios para o formato de instantPrizes
+    if (data.prizeCategories) {
+      const { diamante, master, premiado } = data.prizeCategories;
+      
       // Diamante
       if (diamante.active) {
         const startNumber = 1001; // Número inicial para categoria diamante
         for (let i = 0; i < diamante.quantity; i++) {
-          newInstantPrizes.push({
-            id: `prize-diamante-${i}`,
+          formattedData.instantPrizes.push({
             number: String(startNumber + i).padStart(6, '0'),
-            value: diamante.value
+            value: diamante.value,
+            categoryId: 'diamante' // Você precisará do ID real da categoria
           });
         }
       }
@@ -1067,10 +2322,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       if (master.active) {
         const startNumber = 1101; // Número inicial para categoria master
         for (let i = 0; i < master.quantity; i++) {
-          newInstantPrizes.push({
-            id: `prize-master-${i}`,
+          formattedData.instantPrizes.push({
             number: String(startNumber + i).padStart(6, '0'),
-            value: master.value
+            value: master.value,
+            categoryId: 'master' // Você precisará do ID real da categoria
           });
         }
       }
@@ -1079,172 +2334,321 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       if (premiado.active) {
         const startNumber = 1201; // Número inicial para categoria premiado
         for (let i = 0; i < premiado.quantity; i++) {
-          newInstantPrizes.push({
-            id: `prize-premiado-${i}`,
+          formattedData.instantPrizes.push({
             number: String(startNumber + i).padStart(6, '0'),
-            value: premiado.value
+            value: premiado.value,
+            categoryId: 'premiado' // Você precisará do ID real da categoria
           });
         }
       }
-      
-      apiData.instantPrizes = newInstantPrizes;
     }
     
-    return apiData;
+    // Adicionar prêmios instantâneos definidos manualmente
+    data.instantPrizes.forEach(prize => {
+      formattedData.instantPrizes.push({
+        number: prize.number,
+        value: prize.value
+      });
+    });
+    
+    return formattedData;
+  };
+  
+  // Filtrar prêmios com base na busca
+  
+  // Handler para envio do formulário
+  const onFormSubmit = (data: RaffleFormData) => {
+    console.log('data', data);
+    const apiData = prepareFormDataForApi(data);
+    onSubmit(apiData);
   };
   
   return (
     <FormContainer>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onFormSubmit as any)}>
         {/* Basic Information Section */}
         <FormSection>
           <SectionTitle>
             <FaInfo /> Informações Básicas
           </SectionTitle>
           
-          <FormInput
-            id="title"
-            label="Título da Rifa"
-            icon={<FaEdit />}
-            placeholder="Ex: iPhone 15 Pro Max - 256GB"
-            value={formData.title}
-            onChange={handleChange}
-            error={errors.title}
-            disabled={isSubmitting}
-            required
-            fullWidth
+          <Controller
+            name="title"
+            control={control}
+            render={({ field }) => (
+              <FormInput
+                id="title"
+                label="Título da Rifa"
+                icon={<FaEdit />}
+                placeholder="Ex: iPhone 15 Pro Max - 256GB"
+                value={field.value}
+                onChange={e => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                error={errors.title?.message}
+                disabled={isSubmitting}
+                fullWidth
+              />
+            )}
           />
           
-          <FormTextArea
-            id="description"
-            label="Descrição"
-            icon={<FaEdit />}
-            placeholder="Descreva a sua rifa em detalhes"
-            value={formData.description}
-            onChange={handleChange}
-            error={errors.description}
-            disabled={isSubmitting}
-            required
-            fullWidth
-            rows={5}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <FormTextArea
+                id="description"
+                label="Descrição"
+                icon={<FaEdit />}
+                placeholder="Descreva a sua rifa em detalhes"
+                value={field.value}
+                onChange={e => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                error={errors.description?.message}
+                disabled={isSubmitting}
+                fullWidth
+                rows={5}
+              />
+            )}
           />
           <HelpText>Uma boa descrição aumenta as chances de venda dos números.</HelpText>
           
           <SubSectionDivider />
           
-          {selectedPrize ? (
-            <SelectedPrizeCard>
-              <SelectedPrizeImage 
-                style={{ backgroundImage: `url(${selectedPrize.image})` }} 
-              />
-              <SelectedPrizeDetails>
-                <SelectedPrizeName>{selectedPrize.name}</SelectedPrizeName>
-                <SelectedPrizeValue>{selectedPrize.value}</SelectedPrizeValue>
-                {selectedPrize.description && (
-                  <SelectedPrizeDescription>
-                    {selectedPrize.description}
-                  </SelectedPrizeDescription>
+          {/* Nova seção de configuração de prêmios */}
+          <PrizeSectionHeader>
+            <div>
+              <PrizeSectionTitle>
+                <FaTrophy /> Configuração de Prêmios
+              </PrizeSectionTitle>
+              <WinnerInfoText>
+                <FaInfoCircle /> 
+                {winnerCount === 1 
+                  ? 'Rifa com um único grande vencedor' 
+                  : `Rifa com ${winnerCount} vencedores premiados`}
+              </WinnerInfoText>
+            </div>
+            
+            <WinnerDropdownContainer>
+              <Controller
+                name="winnerCount"
+                control={control}
+                render={({ field }) => (
+                  <CustomDropdown
+                    options={winnerOptions}
+                    value={field.value.toString()}
+                    onChange={handleWinnerCountChange}
+                    placeholder="Número de vencedores"
+                    disabled={isSubmitting}
+                  />
                 )}
-              </SelectedPrizeDetails>
-              <RemoveSelectedPrize 
-                onClick={handleClearSelectedPrize}
-                title="Remover prêmio selecionado"
-              >
-                <FaTrashAlt />
-              </RemoveSelectedPrize>
-            </SelectedPrizeCard>
-          ) : (
-            <PrizeSelectorButton onClick={openPrizeSelector}>
-              <FaPlusCircle />
-              Selecionar um prêmio existente
-            </PrizeSelectorButton>
-          )}
+              />
+            </WinnerDropdownContainer>
+          </PrizeSectionHeader>
+
+          <TotalPrizeDisplay>
+            <PrizeAmountValue>
+              <FaMoneyBillWave />
+              R$ {totalPrizeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span>valor total em prêmios</span>
+            </PrizeAmountValue>
+            
+            <PrizeCountBadge>
+              <FaTrophy /> {prizes.filter(p => p.name).length} de {winnerCount} prêmios configurados
+            </PrizeCountBadge>
+          </TotalPrizeDisplay>
+
+          <PrizeListContainer>
+            {prizes.map((prize, index) => (
+              prize.name ? (
+                <NewPrizeCard key={`prize-position-${index}`} $position={index + 1}>
+                  <NewPositionBadge $position={index + 1}>
+                    {index === 0 ? '🏆 Grande Prêmio' : index === 1 ? '🥈 2º Lugar' : index === 2 ? '🥉 3º Lugar' : `🎖️ ${index + 1}º Lugar`}
+                  </NewPositionBadge>
+                  
+                  <NewPrizeContent>
+                    {prize.image && (
+                      <NewPrizeImageContainer>
+                        <NewPrizeImage src={prize.image} alt={prize.name} />
+                      </NewPrizeImageContainer>
+                    )}
+                    
+                    <NewPrizeInfo>
+                      <NewPrizeName>{prize.name}</NewPrizeName>
+                      <NewPrizeValue>
+                        <FaMoneyBill /> 
+                        {prize.value}
+                      </NewPrizeValue>
+                    </NewPrizeInfo>
+                  </NewPrizeContent>
+                  
+                  <NewPrizeActions>
+                    <PrizeActionButton 
+                      $variant="danger"
+                      onClick={() => {
+                        const updatedPrizes = [...prizes];
+                        updatedPrizes[index] = {
+                          position: index + 1,
+                          name: '',
+                          value: '',
+                          image: ''
+                        };
+                        setValue('prizes', updatedPrizes);
+                        
+                        if (index === 0) {
+                          handleClearSelectedPrize();
+                        }
+                      }}
+                      title="Remover prêmio"
+                    >
+                      <FaTrashAlt /> Remover prêmio
+                    </PrizeActionButton>
+                  </NewPrizeActions>
+                </NewPrizeCard>
+              ) : index === 0 ? (
+                // Interface especial para o primeiro prêmio quando está vazio
+                <EmptyFirstPrize 
+                  key={`prize-position-${index}`}
+                  onClick={() => handleSelectPrizeForPosition(index + 1)}
+                >
+                  <EmptyFirstPrizeIcon>
+                    <FaTrophy />
+                  </EmptyFirstPrizeIcon>
+                  
+                  <div>
+                    <EmptyFirstPrizeTitle>Adicione o Prêmio Principal</EmptyFirstPrizeTitle>
+                    <EmptyFirstPrizeText>
+                      Escolha um prêmio atrativo para sua rifa. Um bom prêmio principal aumenta significativamente o interesse e as vendas.
+                    </EmptyFirstPrizeText>
+                  </div>
+                  
+                  <PrizeButtonGroup>
+                    <PrizeSelectButton 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectPrizeForPosition(index + 1);
+                      }}
+                    >
+                      <FaPlusCircle /> Selecionar prêmio existente
+                    </PrizeSelectButton>
+                    
+                    {/* <PrizeCreationButton 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openNewPrizeModal();
+                      }}
+                    >
+                      <FaPlus /> Criar novo prêmio
+                    </PrizeCreationButton> */}
+                  </PrizeButtonGroup>
+                </EmptyFirstPrize>
+              ) : (
+                // Interface para os prêmios secundários quando vazios
+                <ModernEmptyPrizeCard key={`prize-position-${index}`}>
+                  <NewPositionBadge $position={index + 1}>
+                    {index === 1 ? '🥈 2º Lugar' : index === 2 ? '🥉 3º Lugar' : `🎖️ ${index + 1}º Lugar`}
+                  </NewPositionBadge>
+                  
+                  <ModernEmptyPrizeContainer>
+                    <ModernEmptyPrizeIcon>
+                      <FaGift />
+                    </ModernEmptyPrizeIcon>
+                    <ModernEmptyPrizeText>
+                      Adicione um prêmio para o {index + 1}º lugar
+                    </ModernEmptyPrizeText>
+                    
+                    <PrizeSelectButton 
+                      onClick={() => handleSelectPrizeForPosition(index + 1)}
+                    >
+                      <FaPlusCircle /> Selecionar prêmio
+                    </PrizeSelectButton>
+                  </ModernEmptyPrizeContainer>
+                </ModernEmptyPrizeCard>
+              )
+            ))}
+          </PrizeListContainer>
+
+          <FormRow>
+            <Controller
+              name="price"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  id="price"
+                  label="Preço por Número"
+                  icon={<FaMoneyBillWave />}
+                  placeholder="Ex: 10.00"
+                  type="number"
+                  value={field.value || ''}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  onBlur={field.onBlur}
+                  error={errors.price?.message}
+                  disabled={isSubmitting}
+                  required
+                  min={0}
+                  step="0.01"
+                />
+              )}
+            />
+            
+            <Controller
+              name="totalNumbers"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  id="totalNumbers"
+                  label="Total de Números"
+                  icon={<FaHashtag />}
+                  placeholder="Ex: 100"
+                  type="number"
+                  value={field.value || ''}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  onBlur={field.onBlur}
+                  error={errors.totalNumbers?.message}
+                  disabled={isSubmitting}
+                  required
+                  min={1}
+                  step="1"
+                />
+              )}
+            />
+          </FormRow>
           
-          <FormInput
-            id="mainPrize"
-            label="Prêmio Principal"
-            icon={<FaTrophy />}
-            placeholder="Ex: iPhone 15 Pro Max - 256GB"
-            value={formData.mainPrize}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            fullWidth
+          <Controller
+            name="drawDate"
+            control={control}
+            render={({ field }) => (
+              <FormDatePicker
+                id="drawDate"
+                label="Data do Sorteio"
+                icon={<FaCalendarAlt />}
+                placeholder="Selecione a data"
+                selected={field.value ? new Date(field.value) : null}
+                onChange={(date) => field.onChange(date ? date.toISOString() : '')}
+                onBlur={field.onBlur}
+                error={errors.drawDate?.message}
+                disabled={isSubmitting}
+                required
+                minDate={new Date()}
+                showYearDropdown
+                showMonthDropdown
+                dateFormat="dd/MM/yyyy"
+                showTimeSelect={false}
+                isClearable
+              />
+            )}
           />
-          
-          <FormRow>
-            <FormInput
-              id="valuePrize"
-              label="Valor do Prêmio"
-              icon={<FaMoneyBill />}
-              placeholder="Ex: R$ 10.000,00"
-              value={formData.valuePrize}
-              onChange={handleChange}
-              disabled={isSubmitting}
-            />
-            
-            <FormInput
-              id="returnExpected"
-              label="Retorno Esperado"
-              icon={<FaPercentage />}
-              placeholder="Ex: R$ 5.000,00"
-              value={formData.returnExpected}
-              onChange={handleChange}
-              disabled={isSubmitting}
-            />
-          </FormRow>
 
+          {/* Seção de Combos com Desconto */}
           <SubSectionDivider />
-
-          <FormInput
-              id="totalNumbers"
-              label="Total de Números"
-              icon={<FaHashtag />}
-              placeholder="Ex: 100"
-              type="number"
-              value={formData.totalNumbers || ''}
-              onChange={handleChange}
-              error={errors.totalNumbers}
-              disabled={isSubmitting}
-              required
-              min={1}
-              step="1"
-            />
           
-          <FormRow>
-            <FormInput
-              id="price"
-              label="Preço por Número"
-              icon={<FaMoneyBillWave />}
-              placeholder="Ex: 10.00"
-              type="number"
-              value={formData.price || ''}
-              onChange={handleChange}
-              error={errors.price}
-              disabled={isSubmitting}
-              required
-              min={0}
-              step="0.01"
-            />
-            
-            
-            <FormDatePicker
-              id="drawDate"
-              label="Data do Sorteio"
-              icon={<FaCalendarAlt />}
-              placeholder="Selecione a data"
-              selected={selectedDrawDate}
-              onChange={handleDrawDateChange}
-              error={errors.drawDate}
-              disabled={isSubmitting}
-              required
-              minDate={new Date()}
-              showYearDropdown
-              showMonthDropdown
-              dateFormat="dd/MM/yyyy"
-              showTimeSelect={false}
-              isClearable
-            />
-          </FormRow>
+          <ComboDiscountSectionComponent 
+            control={control}
+            watch={watch}
+            initialData={initialData}
+            isSubmitting={isSubmitting}
+          />
         </FormSection>
         
         {/* Upload Images Section */}
@@ -1253,15 +2657,22 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             <FaCloudUploadAlt /> Imagens
           </SectionTitle>
           
-          <MultipleImageUploader
-            maxImages={10}
-            onChange={handleImagesChange}
-            value={formData.images}
-            maxSizeInMB={5}
+          <Controller
+            name="images"
+            control={control}
+            render={({ field }) => (
+              <MultipleImageUploader
+                maxImages={10}
+                onChange={files => field.onChange(files)}
+                value={field.value}
+                maxSizeInMB={5}
+              />
+            )}
           />
+          
           {errors.images && (
             <ErrorText>
-              <FaExclamationTriangle /> {errors.images}
+              <FaExclamationTriangle /> {errors.images.message}
             </ErrorText>
           )}
           <HelpText>
@@ -1275,16 +2686,22 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             <FaListOl /> Regulamento
           </SectionTitle>
           
-          <WysiwygEditor
-            id="regulation"
-            label="Regulamento da Rifa"
-            icon={<FaListOl />}
-            placeholder="Descreva as regras e condições da sua rifa..."
-            value={formData.regulation}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            fullWidth
-            minHeight="250px"
+          <Controller
+            name="regulation"
+            control={control}
+            render={({ field }) => (
+              <WysiwygEditor
+                id="regulation"
+                label="Regulamento da Rifa"
+                icon={<FaListOl />}
+                placeholder="Descreva as regras e condições da sua rifa..."
+                value={field.value}
+                onChange={value => field.onChange(value)}
+                disabled={isSubmitting}
+                fullWidth
+                minHeight="250px"
+              />
+            )}
           />
           <HelpText>
             Descreva as regras de forma clara e detalhada para evitar mal-entendidos com os participantes.
@@ -1300,12 +2717,17 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           
           <ToggleContainer>
             <ToggleSwitch>
-              <input
-                type="checkbox"
+              <Controller
                 name="isScheduled"
-                checked={formData.isScheduled}
-                onChange={handleToggleChange}
-                disabled={isSubmitting}
+                control={control}
+                render={({ field }) => (
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={e => field.onChange(e.target.checked)}
+                    disabled={isSubmitting}
+                  />
+                )}
               />
               <ToggleSlider />
             </ToggleSwitch>
@@ -1314,17 +2736,23 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             </ToggleLabel>
           </ToggleContainer>
           
-          {formData.isScheduled && (
-            <AdvancedDateTimePicker
-              value={selectedScheduledDate}
-              onChange={handleScheduledDateChange}
-              minDate={new Date()}
-              label="Data de Publicação"
-              icon={<FaRegCalendarAlt />}
-              placeholder="Selecione a data e hora"
-              required={formData.isScheduled}
-              error={errors.scheduledDate}
-              disabled={isSubmitting}
+          {isScheduled && (
+            <Controller
+              name="scheduledDate"
+              control={control}
+              render={({ field }) => (
+                <AdvancedDateTimePicker
+                  value={field.value ? new Date(field.value) : null}
+                  onChange={(date) => field.onChange(date ? date.toISOString() : '')}
+                  minDate={new Date()}
+                  label="Data de Publicação"
+                  icon={<FaRegCalendarAlt />}
+                  placeholder="Selecione a data e hora"
+                  required={isScheduled}
+                  error={errors.scheduledDate?.message}
+                  disabled={isSubmitting}
+                />
+              )}
             />
           )}
         </FormSection>
@@ -1335,72 +2763,39 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             <FaGift /> Configuração de Prêmios
           </SectionTitle>
           
-          <PrizeConfigForm
-            totalNumbers={formData.totalNumbers}
-            onPrizeConfigChange={handlePrizeConfigChange}
-            disabled={isSubmitting}
+          <Controller
+            name="prizeCategories"
+            control={control}
+            render={({ field }) => (
+              <PrizeConfigForm
+                totalNumbers={totalNumbers}
+                onPrizeConfigChange={config => field.onChange(config)}
+                disabled={isSubmitting}
+              />
+            )}
           />
+          
           {errors.prizeCategories && (
             <ErrorText>
-              <FaExclamationTriangle /> {errors.prizeCategories}
+              <FaExclamationTriangle /> {errors.prizeCategories.message}
             </ErrorText>
           )}
         </FormSection>
       </form>
       
-      {/* Prize Selector Modal */}
-      {showPrizeSelector && (
-        <ModalOverlay>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <FaTrophy /> Selecione um Prêmio Existente
-              </ModalTitle>
-              <CloseButton onClick={closePrizeSelector} title="Fechar">
-                &times;
-              </CloseButton>
-            </ModalHeader>
-            
-            <SearchBox>
-              <FaSearch />
-              <input
-                type="text"
-                placeholder="Buscar prêmios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                autoFocus
-              />
-            </SearchBox>
-            
-            {filteredPrizes.length > 0 ? (
-              <PrizeGrid>
-                {filteredPrizes.map((prize) => (
-                  <PrizeCard 
-                    key={prize._id} 
-                    onClick={() => handleSelectPrize(prize)}
-                  >
-                    <PrizeImage 
-                      style={{ backgroundImage: `url(${prize.image})` }} 
-                    />
-                    <PrizeDetails>
-                      <PrizeName>{prize.name}</PrizeName>
-                      <PrizeValue>
-                        <FaMoneyBillWave /> {prize.value}
-                      </PrizeValue>
-                    </PrizeDetails>
-                  </PrizeCard>
-                ))}
-              </PrizeGrid>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '30px 0' }}>
-                <p style={{ color: '#6b7280', fontSize: '1rem' }}>
-                  Nenhum prêmio encontrado com o termo "{searchTerm}".
-                </p>
-              </div>
-            )}
-          </ModalContent>
-        </ModalOverlay>
-      )}
+      {/* Usar os modais modulares */}
+      <PrizeSelectorModal 
+        isOpen={showPrizeSelector}
+        onClose={currentCloseHandler}
+        onSelectPrize={currentPrizeSelectHandler}
+        availablePrizes={availablePrizes}
+      />
+      
+      <PrizeCreatorModal
+        isOpen={showNewPrizeModal}
+        onClose={closeNewPrizeModal}
+        onPrizeCreated={handlePrizeCreated}
+      />
     </FormContainer>
   );
 };
