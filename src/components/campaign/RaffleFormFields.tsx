@@ -42,6 +42,7 @@ import PrizeSelectorModal from '../prize/PrizeSelectorModal';
 import PrizeCreatorModal from '../prize/PrizeCreatorModal';
 import CustomDropdown from '../common/CustomDropdown';
 import ComboDiscountSectionComponent from './ComboDiscountSection';
+import MultiPrizePosition, { PrizeItemProps } from './MultiPrizePosition';
 
 // Prize category interface
 interface PrizeCategory {
@@ -74,7 +75,15 @@ export type RaffleFormData = {
   prizeCategories?: PrizeCategoriesConfig;
   instantPrizes: Array<{id: string, number: string, value: number}>;
   winnerCount: number;
-  prizes: Array<{position: number, prizeId?: string, name: string, value: string, image?: string}>;
+  prizes: Array<{
+    position: number, 
+    prizes: Array<{
+      prizeId?: string, 
+      name: string, 
+      value: string, 
+      image?: string
+    }>
+  }>;
   enableCombos: boolean;
   combos: Array<{ quantity: number, discountPercentage: number }>;
 };
@@ -99,10 +108,14 @@ const raffleFormSchema = z.object({
   prizes: z.array(
     z.object({
       position: z.number(),
-      prizeId: z.string().optional(),
-      name: z.string(),
-      value: z.string(),
-      image: z.string().optional()
+      prizes: z.array(
+        z.object({
+          prizeId: z.string().optional(),
+          name: z.string(),
+          value: z.string(),
+          image: z.string().optional()
+        })
+      ).min(1, 'Pelo menos um prêmio é necessário por posição')
     })
   ).min(1, 'Pelo menos um prêmio é necessário'),
   enableCombos: z.boolean().optional().default(false),
@@ -1987,12 +2000,18 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     },
     instantPrizes: initialData.instantPrizes || [],
     winnerCount: initialData.winnerCount || 1,
-    prizes: initialData.prizes || [{
-      position: 1,
-      name: initialData.mainPrize || '',
-      value: initialData.valuePrize || '',
-      image: ''
-    }],
+    prizes: initialData.prizes || [
+      {
+        position: 1,
+        prizes: [
+          {
+            name: initialData.mainPrize || '',
+            value: initialData.valuePrize || '',
+            image: ''
+          }
+        ]
+      }
+    ],
     enableCombos: initialData.enableCombos || false,
     combos: initialData.combos || [
       { quantity: 5, discountPercentage: 5 },
@@ -2043,22 +2062,98 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Adicionar o efeito para calcular o valor total dos prêmios
   useEffect(() => {
     if (prizes && prizes.length > 0) {
-      const total = prizes.reduce((sum: number, prize) => {
-        if (!prize.name || !prize.value) return sum;
+      const total = prizes.reduce((sum: number, positionObj) => {
+        if (!positionObj.prizes || positionObj.prizes.length === 0) return sum;
         
-        console.log('prize.value', prize.value);
-        // Verificar se o valor é uma string numérica e convertê-la
-        const prizeValue = typeof prize.value === 'string' 
-          ? parseFloat(prize.value.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.')) || 0 
-          : 0;
-        console.log('parsed prizeValue:', prizeValue);
-        return sum + prizeValue;
+        const positionTotal = positionObj.prizes.reduce((prizeSum, prize) => {
+          if (!prize.name || !prize.value) return prizeSum;
+          
+          // Verificar se o valor é uma string numérica e convertê-la
+          const prizeValue = typeof prize.value === 'string' 
+            ? parseFloat(prize.value.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.')) || 0 
+            : 0;
+          
+          return prizeSum + prizeValue;
+        }, 0);
+        
+        return sum + positionTotal;
       }, 0);
+      
       setTotalPrizeValue(total);
     } else {
       setTotalPrizeValue(0);
     }
   }, [prizes]);
+  
+  // Adicionar handlers para os múltiplos prêmios por posição
+  const handleAddPrizeToPosition = (position: number) => {
+    // Abrir o seletor de prêmios para adicionar um novo prêmio à posição
+    const onSelectForPosition = (prize: IPrize) => {
+      const currentPrizes = [...prizes];
+      const positionIndex = currentPrizes.findIndex(p => p.position === position);
+      
+      if (positionIndex >= 0) {
+        // Adicionar o prêmio à posição existente
+        currentPrizes[positionIndex].prizes.push({
+          prizeId: prize._id?.toString(),
+          name: prize.name,
+          value: prize.value,
+          image: prize.image
+        });
+      } else {
+        // Criar nova posição com o prêmio
+        currentPrizes.push({
+          position,
+          prizes: [{
+            prizeId: prize._id?.toString(),
+            name: prize.name,
+            value: prize.value,
+            image: prize.image
+          }]
+        });
+      }
+      
+      setValue('prizes', currentPrizes);
+      setShowPrizeSelector(false);
+    };
+    
+    // Configurar os handlers para o seletor de prêmios
+    setCurrentPrizeSelectHandler(() => onSelectForPosition);
+    setCurrentCloseHandler(() => {
+      return () => {
+        setCurrentPrizeSelectHandler(() => handleSelectPrize);
+        setCurrentCloseHandler(() => closePrizeSelector);
+        closePrizeSelector();
+      };
+    });
+    
+    // Abrir o seletor de prêmios
+    setShowPrizeSelector(true);
+  };
+  
+  const handleRemovePrizeFromPosition = (position: number, prizeIndex: number) => {
+    const currentPrizes = [...prizes];
+    const positionIndex = currentPrizes.findIndex(p => p.position === position);
+    
+    if (positionIndex >= 0) {
+      // Remover o prêmio específico da posição
+      currentPrizes[positionIndex].prizes.splice(prizeIndex, 1);
+      
+      // Se não sobrou nenhum prêmio nesta posição e não for a primeira, remover a posição
+      if (currentPrizes[positionIndex].prizes.length === 0 && position > 1) {
+        currentPrizes.splice(positionIndex, 1);
+      } else if (currentPrizes[positionIndex].prizes.length === 0) {
+        // Para a posição 1, manter com um prêmio vazio
+        currentPrizes[positionIndex].prizes = [{
+          name: '',
+          value: '',
+          image: ''
+        }];
+      }
+      
+      setValue('prizes', currentPrizes);
+    }
+  };
   
   // Efeito para atualizar campos quando um prêmio é selecionado
   useEffect(() => {
@@ -2067,6 +2162,55 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       setValue('valuePrize', selectedPrize.value);
       if (selectedPrize.description) {
         setValue('description', selectedPrize.description);
+      }
+    }
+  }, [selectedPrize, setValue]);
+  
+  // Efeito para atualizar a lista de prêmios quando o número de vencedores muda
+  useEffect(() => {
+    const currentPrizes = [...prizes];
+    
+    // Mapeamento das posições atuais
+    const currentPositions = currentPrizes.map(p => p.position);
+    
+    // Se aumentou o número de vencedores, adicionar novas posições vazias
+    for (let i = 1; i <= winnerCount; i++) {
+      if (!currentPositions.includes(i)) {
+        currentPrizes.push({
+          position: i,
+          prizes: [{
+            name: '',
+            value: '',
+            image: ''
+          }]
+        });
+      }
+    }
+    
+    // Se diminuiu o número de vencedores, remover as posições excedentes
+    const updatedPrizes = currentPrizes.filter(p => p.position <= winnerCount);
+    
+    // Ordenar por posição
+    updatedPrizes.sort((a, b) => a.position - b.position);
+    
+    setValue('prizes', updatedPrizes);
+  }, [winnerCount, setValue]);
+  
+  // Efeito para sincronizar o prêmio principal selecionado com o primeiro prêmio
+  useEffect(() => {
+    if (selectedPrize && prizes?.length > 0) {
+      const updatedPrizes = [...prizes];
+      const firstPosition = updatedPrizes.find(p => p.position === 1);
+      
+      if (firstPosition && firstPosition.prizes.length > 0) {
+        firstPosition.prizes[0] = {
+          prizeId: selectedPrize._id?.toString(),
+          name: selectedPrize.name,
+          value: selectedPrize.value,
+          image: selectedPrize.image
+        };
+        
+        setValue('prizes', updatedPrizes);
       }
     }
   }, [selectedPrize, setValue]);
@@ -2103,44 +2247,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       }
     }
   }, [totalNumbers, prizeCategories, setValue]);
-  
-  // Efeito para atualizar a lista de prêmios quando o número de vencedores muda
-  useEffect(() => {
-    const currentPrizes = [...prizes];
-    
-    // Se aumentou o número de vencedores, adicionar novos prêmios vazios
-    if (winnerCount > currentPrizes.length) {
-      for (let i = currentPrizes.length + 1; i <= winnerCount; i++) {
-        currentPrizes.push({
-          position: i,
-          name: '',
-          value: '',
-          image: ''
-        });
-      }
-    } 
-    // Se diminuiu o número de vencedores, remover os excedentes
-    else if (winnerCount < currentPrizes.length) {
-      currentPrizes.splice(winnerCount);
-    }
-    
-    setValue('prizes', currentPrizes);
-  }, [winnerCount, setValue]);
-  
-  // Efeito para sincronizar o prêmio principal selecionado com o primeiro prêmio
-  useEffect(() => {
-    if (selectedPrize && prizes?.length > 0) {
-      const updatedPrizes = [...prizes];
-      updatedPrizes[0] = {
-        ...updatedPrizes[0],
-        prizeId: selectedPrize._id?.toString(),
-        name: selectedPrize.name,
-        value: selectedPrize.value,
-        image: selectedPrize.image
-      };
-      setValue('prizes', updatedPrizes);
-    }
-  }, [selectedPrize, setValue]);
   
   // Handlers para Prize Selector
   const openPrizeSelector = () => {
@@ -2217,13 +2323,42 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     // Create a handler for this specific position
     const onSelectForPosition = (prize: IPrize) => {
       const updatedPrizes = [...prizes];
-      updatedPrizes[position - 1] = {
-        position,
-        prizeId: prize._id?.toString(),
-        name: prize.name,
-        value: prize.value,
-        image: prize.image
-      };
+      const positionIndex = updatedPrizes.findIndex(p => p.position === position);
+      
+      if (positionIndex >= 0) {
+        // Posição já existe, atualizar o primeiro prêmio
+        if (updatedPrizes[positionIndex].prizes.length > 0) {
+          updatedPrizes[positionIndex].prizes[0] = {
+            prizeId: prize._id?.toString(),
+            name: prize.name,
+            value: prize.value,
+            image: prize.image
+          };
+        } else {
+          // Se não houver prêmios, adicionar um
+          updatedPrizes[positionIndex].prizes.push({
+            prizeId: prize._id?.toString(),
+            name: prize.name,
+            value: prize.value,
+            image: prize.image
+          });
+        }
+      } else {
+        // Criar nova posição com o prêmio
+        updatedPrizes.push({
+          position,
+          prizes: [{
+            prizeId: prize._id?.toString(),
+            name: prize.name,
+            value: prize.value,
+            image: prize.image
+          }]
+        });
+        
+        // Ordenar por posição
+        updatedPrizes.sort((a, b) => a.position - b.position);
+      }
+      
       setValue('prizes', updatedPrizes);
       
       // If it's the first position, update the main prize too
@@ -2282,11 +2417,17 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       isScheduled: data.isScheduled,
       scheduledActivationDate: data.isScheduled && data.scheduledDate ? new Date(data.scheduledDate) : null,
       
-      // Configurar distribuição de prêmios para múltiplos vencedores
-      prizeDistribution: data.prizes.map((prize, index) => ({
-        position: index + 1,
-        prizes: prize.prizeId ? [prize.prizeId] : [],
-        description: `${index === 0 ? 'Prêmio principal' : `${index + 1}º lugar`}: ${prize.name || 'Não especificado'}`
+      // Configurar distribuição de prêmios para múltiplos vencedores com múltiplos prêmios por posição
+      prizeDistribution: data.prizes.map(positionData => ({
+        position: positionData.position,
+        prizes: positionData.prizes
+          .filter(prize => prize.name) // Filtrar apenas prêmios válidos
+          .map(prize => prize.prizeId || null), // Extrair apenas os IDs dos prêmios
+        description: `${positionData.position === 1 ? 'Prêmio principal' : `${positionData.position}º lugar`}: ${
+          positionData.prizes.length > 1 
+            ? `${positionData.prizes.length} prêmios` 
+            : positionData.prizes[0]?.name || 'Não especificado'
+        }`
       })),
       
       // Prêmios instantâneos serão enviados separadamente
@@ -2296,11 +2437,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         categoryId?: string;
       }>
     };
-    
-    // Adicionar ID do prêmio principal se estiver disponível
-    if (selectedPrize && selectedPrize._id) {
-      formattedData.prizeDistribution[0].prizes.push(selectedPrize._id as never);
-    }
     
     // Converter categorias de prêmios para o formato de instantPrizes
     if (data.prizeCategories) {
@@ -2453,119 +2589,21 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             </PrizeAmountValue>
             
             <PrizeCountBadge>
-              <FaTrophy /> {prizes.filter(p => p.name).length} de {winnerCount} prêmios configurados
+              <FaTrophy /> {prizes.flatMap(p => p.prizes).filter(p => p.name).length} prêmios configurados
             </PrizeCountBadge>
           </TotalPrizeDisplay>
 
           <PrizeListContainer>
-            {prizes.map((prize, index) => (
-              prize.name ? (
-                <NewPrizeCard key={`prize-position-${index}`} $position={index + 1}>
-                  <NewPositionBadge $position={index + 1}>
-                    {index === 0 ? '🏆 Grande Prêmio' : index === 1 ? '🥈 2º Lugar' : index === 2 ? '🥉 3º Lugar' : `🎖️ ${index + 1}º Lugar`}
-                  </NewPositionBadge>
-                  
-                  <NewPrizeContent>
-                    {prize.image && (
-                      <NewPrizeImageContainer>
-                        <NewPrizeImage src={prize.image} alt={prize.name} />
-                      </NewPrizeImageContainer>
-                    )}
-                    
-                    <NewPrizeInfo>
-                      <NewPrizeName>{prize.name}</NewPrizeName>
-                      <NewPrizeValue>
-                        <FaMoneyBill /> 
-                        {prize.value}
-                      </NewPrizeValue>
-                    </NewPrizeInfo>
-                  </NewPrizeContent>
-                  
-                  <NewPrizeActions>
-                    <PrizeActionButton 
-                      $variant="danger"
-                      onClick={() => {
-                        const updatedPrizes = [...prizes];
-                        updatedPrizes[index] = {
-                          position: index + 1,
-                          name: '',
-                          value: '',
-                          image: ''
-                        };
-                        setValue('prizes', updatedPrizes);
-                        
-                        if (index === 0) {
-                          handleClearSelectedPrize();
-                        }
-                      }}
-                      title="Remover prêmio"
-                    >
-                      <FaTrashAlt /> Remover prêmio
-                    </PrizeActionButton>
-                  </NewPrizeActions>
-                </NewPrizeCard>
-              ) : index === 0 ? (
-                // Interface especial para o primeiro prêmio quando está vazio
-                <EmptyFirstPrize 
-                  key={`prize-position-${index}`}
-                  onClick={() => handleSelectPrizeForPosition(index + 1)}
-                >
-                  <EmptyFirstPrizeIcon>
-                    <FaTrophy />
-                  </EmptyFirstPrizeIcon>
-                  
-                  <div>
-                    <EmptyFirstPrizeTitle>Adicione o Prêmio Principal</EmptyFirstPrizeTitle>
-                    <EmptyFirstPrizeText>
-                      Escolha um prêmio atrativo para sua rifa. Um bom prêmio principal aumenta significativamente o interesse e as vendas.
-                    </EmptyFirstPrizeText>
-                  </div>
-                  
-                  <PrizeButtonGroup>
-                    <PrizeSelectButton 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectPrizeForPosition(index + 1);
-                      }}
-                    >
-                      <FaPlusCircle /> Selecionar prêmio existente
-                    </PrizeSelectButton>
-                    
-                    {/* <PrizeCreationButton 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openNewPrizeModal();
-                      }}
-                    >
-                      <FaPlus /> Criar novo prêmio
-                    </PrizeCreationButton> */}
-                  </PrizeButtonGroup>
-                </EmptyFirstPrize>
-              ) : (
-                // Interface para os prêmios secundários quando vazios
-                <ModernEmptyPrizeCard key={`prize-position-${index}`}>
-                  <NewPositionBadge $position={index + 1}>
-                    {index === 1 ? '🥈 2º Lugar' : index === 2 ? '🥉 3º Lugar' : `🎖️ ${index + 1}º Lugar`}
-                  </NewPositionBadge>
-                  
-                  <ModernEmptyPrizeContainer>
-                    <ModernEmptyPrizeIcon>
-                      <FaGift />
-                    </ModernEmptyPrizeIcon>
-                    <ModernEmptyPrizeText>
-                      Adicione um prêmio para o {index + 1}º lugar
-                    </ModernEmptyPrizeText>
-                    
-                    <PrizeSelectButton 
-                      onClick={() => handleSelectPrizeForPosition(index + 1)}
-                    >
-                      <FaPlusCircle /> Selecionar prêmio
-                    </PrizeSelectButton>
-                  </ModernEmptyPrizeContainer>
-                </ModernEmptyPrizeCard>
-              )
+            {prizes.map((prizePosition, index) => (
+              <MultiPrizePosition
+                key={`prize-position-${prizePosition.position}`}
+                position={prizePosition.position}
+                prizes={prizePosition.prizes}
+                onAddPrize={handleAddPrizeToPosition}
+                onRemovePrize={handleRemovePrizeFromPosition}
+                onCreatePrize={openNewPrizeModal}
+                maxPrizes={5}
+              />
             ))}
           </PrizeListContainer>
 

@@ -282,7 +282,7 @@ const PrizeCreatorModal: React.FC<PrizeCreatorModalProps> = ({
       // Em um ambiente real, você enviaria isso para uma API
       // Simular dados do prêmio
       const createdPrize: IPrize = {
-        _id: new mongoose.Types.ObjectId(),
+        _id: new mongoose.Types.ObjectId().toString(),
         name: data.name,
         description: data.description || '',
         value: data.value,

@@ -268,6 +268,7 @@ const QuantityInput = styled.input`
   border: 1px solid #6a11cb;
   border-radius: 6px;
   text-align: center;
+  background-color: white;
 `;
 
 const ComboDiscount = styled.div`

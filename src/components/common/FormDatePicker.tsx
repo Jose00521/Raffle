@@ -94,7 +94,7 @@ const DatePickerWrapper = styled.div<{ $hasError?: boolean; $isFocused?: boolean
       background-color: ${props => props.$isFocused ? 'white' : '#f8f9fa'};
       font-size: 1.0rem;
       transition: all 0.2s ease;
-
+      color: #333;
       
       &:focus {
         outline: none;
