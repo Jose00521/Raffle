@@ -110,7 +110,7 @@ const Card = styled.div`
   path {
     stroke-dasharray: 90;
     animation: ${loop} 4s infinite;
-    stroke: #6a11cb;
+   
   }
 `;
 

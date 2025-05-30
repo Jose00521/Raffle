@@ -115,7 +115,7 @@ export default function PrivateLayout({
         
         // Validar o token via API com timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch('/api/auth/validate-token', {
           signal: controller.signal,

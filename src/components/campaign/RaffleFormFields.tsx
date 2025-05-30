@@ -2437,7 +2437,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         categoryId?: string;
       }>
     };
-    
+      
     // Converter categorias de prêmios para o formato de instantPrizes
     if (data.prizeCategories) {
       const { diamante, master, premiado } = data.prizeCategories;
@@ -2497,6 +2497,18 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     console.log('data', data);
     const apiData = prepareFormDataForApi(data);
     onSubmit(apiData);
+  };
+  
+  // Add state for cover image index
+  const [coverImageIndex, setCoverImageIndex] = useState<number>(0);
+  
+  // Add handler for cover image change
+  const handleCoverImageChange = (index: number) => {
+    console.log('Cover image changed to index:', index);
+    setCoverImageIndex(index);
+    
+    // If you need to update some form field based on the cover image
+    // you can do it here
   };
   
   return (
@@ -2565,19 +2577,19 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             </div>
             
             <WinnerDropdownContainer>
-              <Controller
+          <Controller
                 name="winnerCount"
-                control={control}
-                render={({ field }) => (
+            control={control}
+            render={({ field }) => (
                   <CustomDropdown
                     options={winnerOptions}
                     value={field.value.toString()}
                     onChange={handleWinnerCountChange}
                     placeholder="Número de vencedores"
-                    disabled={isSubmitting}
-                  />
-                )}
+                disabled={isSubmitting}
               />
+            )}
+          />
             </WinnerDropdownContainer>
           </PrizeSectionHeader>
 
@@ -2603,10 +2615,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 onRemovePrize={handleRemovePrizeFromPosition}
                 onCreatePrize={openNewPrizeModal}
                 maxPrizes={5}
-              />
+                />
             ))}
           </PrizeListContainer>
-
+            
           <FormRow>
             <Controller
               name="price"
@@ -2629,54 +2641,54 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 />
               )}
             />
-            
-            <Controller
-              name="totalNumbers"
-              control={control}
-              render={({ field }) => (
-                <FormInput
-                  id="totalNumbers"
-                  label="Total de Números"
-                  icon={<FaHashtag />}
-                  placeholder="Ex: 100"
-                  type="number"
-                  value={field.value || ''}
-                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                  onBlur={field.onBlur}
-                  error={errors.totalNumbers?.message}
-                  disabled={isSubmitting}
-                  required
-                  min={1}
-                  step="1"
-                />
-              )}
-            />
-          </FormRow>
-          
+
           <Controller
-            name="drawDate"
+            name="totalNumbers"
             control={control}
             render={({ field }) => (
-              <FormDatePicker
-                id="drawDate"
-                label="Data do Sorteio"
-                icon={<FaCalendarAlt />}
-                placeholder="Selecione a data"
-                selected={field.value ? new Date(field.value) : null}
-                onChange={(date) => field.onChange(date ? date.toISOString() : '')}
+              <FormInput
+                id="totalNumbers"
+                label="Total de Números"
+                icon={<FaHashtag />}
+                placeholder="Ex: 100"
+                type="number"
+                value={field.value || ''}
+                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                 onBlur={field.onBlur}
-                error={errors.drawDate?.message}
+                error={errors.totalNumbers?.message}
                 disabled={isSubmitting}
                 required
-                minDate={new Date()}
-                showYearDropdown
-                showMonthDropdown
-                dateFormat="dd/MM/yyyy"
-                showTimeSelect={false}
-                isClearable
+                min={1}
+                step="1"
               />
             )}
           />
+          </FormRow>
+            
+            <Controller
+              name="drawDate"
+              control={control}
+              render={({ field }) => (
+                <FormDatePicker
+                  id="drawDate"
+                  label="Data do Sorteio"
+                  icon={<FaCalendarAlt />}
+                  placeholder="Selecione a data"
+                  selected={field.value ? new Date(field.value) : null}
+                  onChange={(date) => field.onChange(date ? date.toISOString() : '')}
+                  onBlur={field.onBlur}
+                  error={errors.drawDate?.message}
+                  disabled={isSubmitting}
+                  required
+                  minDate={new Date()}
+                  showYearDropdown
+                  showMonthDropdown
+                  dateFormat="dd/MM/yyyy"
+                  showTimeSelect={false}
+                  isClearable
+                />
+              )}
+            />
 
           {/* Seção de Combos com Desconto */}
           <SubSectionDivider />
@@ -2704,6 +2716,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 onChange={files => field.onChange(files)}
                 value={field.value}
                 maxSizeInMB={5}
+                onCoverImageChange={handleCoverImageChange}
               />
             )}
           />
@@ -2827,7 +2840,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         onClose={currentCloseHandler}
         onSelectPrize={currentPrizeSelectHandler}
         availablePrizes={availablePrizes}
-      />
+                    />
       
       <PrizeCreatorModal
         isOpen={showNewPrizeModal}
