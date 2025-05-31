@@ -969,13 +969,16 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ 
+    id,
+    disabled: image.isCover // Desabilitar arrasto se for imagem de capa
+  });
 
   const itemStyle = {
     transform: CSS.Transform.toString(transform),
     transition: transition,
     opacity: isDragging ? 0.7 : 1,
-    zIndex: isDragging ? 100 : 1,
+    zIndex: isDragging ? 100 : image.isCover ? 10 : 1, // Dar z-index maior para capa
     position: 'relative' as const
   };
 
@@ -984,9 +987,9 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
       ref={setNodeRef}
       style={itemStyle}
       className={`${image.isCover ? 'is-cover' : ''} ${isDragging ? 'dragging' : ''}`}
-      {...attributes}
-      {...listeners}
-      title="Clique e arraste para reordenar"
+      {...(image.isCover ? {} : attributes)} // Não adicionar atributos de arrasto se for capa
+      {...(image.isCover ? {} : listeners)} // Não adicionar listeners de arrasto se for capa
+      title={image.isCover ? "Imagem de capa" : "Clique e arraste para reordenar"}
     >
       {image.isCover && (
         <CoverBadge>
@@ -1254,25 +1257,21 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
         
-        // Não permitir mover a imagem de capa
+        // Se a imagem que está sendo arrastada é a de capa, não permitir movê-la
         if (items[oldIndex].isCover) {
           return items;
         }
         
-        // Reordenar o array
+        // Se a posição de destino é onde está a imagem de capa, não permitir sobrepor
+        if (items[newIndex].isCover) {
+          return items;
+        }
+        
+        // Reordenar o array normalmente se não envolver a imagem de capa
         const newArray = arrayMove(items, oldIndex, newIndex);
         
         // Atualizar o onChange com a nova ordem de arquivos
         onChange(newArray.map(img => img.file));
-        
-        // Adicionar feedback visual (opcional)
-        try {
-          const audio = new Audio('/sounds/drop.mp3');
-          audio.volume = 0.2;
-          audio.play().catch(() => {});
-        } catch (error) {
-          // Ignorar erros de áudio
-        }
         
         return newArray;
       });
@@ -1281,7 +1280,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   
   // Abrir diálogo de arquivo
   const openFileDialog = () => {
-    fileInputRef.current?.click();
+    console.log("openFileDialog called", fileInputRef.current);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
   
   // Alternar seção de ajuda
@@ -1296,8 +1298,25 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   // Filtrar apenas as imagens que não são capa para exibir na seção de miniaturas
   const nonCoverImages = images.filter(img => !img.isCover);
   
+  // Input de arquivo compartilhado - colocado fora dos componentes condicionais
+  const fileInputElement = (
+    <FileInput
+      {...props}
+      id={id}
+      ref={fileInputRef}
+      type="file"
+      accept={allowedTypes.join(',')}
+      multiple
+      onChange={(e) => handleFileSelect(e.target.files)}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+  
   return (
     <UploaderContainer className={className}>
+      {/* Incluir o input de arquivo no início para garantir que esteja sempre no DOM */}
+      {fileInputElement}
+      
       <UploaderHeader>
         <HeaderLeft>
           <UploaderTitle>
@@ -1327,26 +1346,25 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={openFileDialog}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openFileDialog();
+          }}
         >
           <UploadIcon>
             <FaCloudUploadAlt />
           </UploadIcon>
           <DropText>
-            Arraste e solte imagens aqui ou <BrowseText>escolha arquivos</BrowseText>
+            Arraste e solte imagens aqui ou <BrowseText onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openFileDialog();
+            }}>escolha arquivos</BrowseText>
           </DropText>
           <HelpText>
             JPG, PNG, WebP • Máximo de {maxSizeInMB}MB por arquivo
           </HelpText>
-          <FileInput
-            {...props}
-            id={id}
-            ref={fileInputRef}
-            type="file"
-            accept={allowedTypes.join(',')}
-            multiple
-            onChange={(e) => handleFileSelect(e.target.files)}
-          />
         </DropZone>
       ) : (
         // Exibir galeria quando há imagens
@@ -1429,8 +1447,13 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
             {/* Apenas um botão de adicionar mais imagens */}
             {images.length < maxImages && (
               <AddMoreButton 
-                onClick={openFileDialog}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openFileDialog();
+                }}
                 className="main-add-button"
+                type="button"
               >
                 <FaPlus /> Adicionar mais imagens
               </AddMoreButton>

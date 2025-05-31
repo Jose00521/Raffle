@@ -13,15 +13,17 @@ export async function uploadToS3(
   ): Promise<string> {
     const fileName = `${uuidv4()}-${Date.now()}.webp`;
     const key = `rifas/prizes/${userId}/${fileName}`;
+
+    // Definir o nome do bucket com um valor padrão caso a variável de ambiente não esteja definida
+    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'raffle-bucket-100';
     
     const multipartUpload = new Upload({
       client: s3Client,
       params: {
-        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Bucket: bucketName,
         Key: key,
         Body: buffer,
         ContentType: 'image/webp',
-        ACL: 'public-read',
         Metadata: {
           'original-name': encodeURIComponent(originalName)
         }
@@ -30,5 +32,5 @@ export async function uploadToS3(
   
     await multipartUpload.done();
     
-    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
   }

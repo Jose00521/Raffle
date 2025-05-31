@@ -38,6 +38,7 @@ export class PrizeRepository implements IPrizeRepository {
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
             await this.db.connect();
+            console.log("prize repository",prize);
 
             const prizeData = await Prize.create(prize);
 

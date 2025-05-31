@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import config from '@/lib/upload-service/config/config'
+import { ApiError } from "@/server/utils/errorHandler/ApiError";
 
 
 /**
@@ -37,8 +38,12 @@ export async function processImage(file: File): Promise<{ buffer: Buffer, origin
         originalName: file.name
       };
     } catch (error) {
-      console.error('Erro ao processar imagem:', error);
-      return null;
+      throw new ApiError({
+        success: false,
+        message: 'Erro ao processar imagem',
+        statusCode: 500,
+        cause: error as Error
+      });
     }
   }
 

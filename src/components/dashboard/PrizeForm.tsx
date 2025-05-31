@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags, FaExclamationCircle } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
@@ -12,6 +12,8 @@ import { prizeSchema } from '@/zod/prize.schema';
 import { useForm } from 'react-hook-form';
 import type { PrizeForm } from '@/zod/prize.schema';
 import { useHookFormMask } from 'use-mask-input';
+import { fadeIn } from '@/styles/registration.styles';
+import CurrencyInput from '../common/CurrencyInput';
 
 interface PrizeFormProps {
   initialData?: Partial<IPrize>;
@@ -51,6 +53,7 @@ const FormTitle = styled.h2`
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
+  position: relative;
 `;
 
 const FormLabel = styled.label`
@@ -218,12 +221,45 @@ const RemoveImageButton = styled.button`
   }
 `;
 
+const ErrorText = styled.div`
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: ${fadeIn} 0.2s ease;
+  position: relative;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+  
+  @media (max-height: 800px) {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+`;
+
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 16px;
+  min-height: 16px;
+  color: #ef4444;
+`;
+
 // Styled component that extends MultipleImageUploader
 const ProductImagesUploader = styled(MultipleImageUploader)`
   h3 {
     &:first-child {
       &::after {
-        
         display: inline;
       }
       span:first-child {
@@ -238,7 +274,6 @@ const BannerImageUploader = styled(MultipleImageUploader)`
   h3 {
     &:first-child {
       &::after {
-        
         display: inline;
       }
       span:first-child {
@@ -247,6 +282,23 @@ const BannerImageUploader = styled(MultipleImageUploader)`
     }
   }
 `;
+
+// Prevent form submission when interacting with image uploaders
+const PreventSubmitWrapper = ({ children }: { children: React.ReactNode }) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Apenas previne submits com Enter, mas permite outros eventos
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  
+  return (
+    <div onKeyDown={handleKeyDown}>
+      {children}
+    </div>
+  );
+};
 
 // Mock category data
 const MOCK_CATEGORIES = [
@@ -337,6 +389,31 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     };
   }, [additionalImageFiles]);
 
+  // Verificar se há imagens no carregamento inicial
+  useEffect(() => {
+    if (additionalImageFiles.length === 0 && !initialData?.images?.length) {
+      setErrorsImage({ image: 'É necessário pelo menos uma imagem' });
+    }
+  }, []);
+  
+  // Forçar a verificação de imagens antes do submit
+  const validateImagesBeforeSubmit = () => {
+    if (additionalImageFiles.length === 0) {
+      setErrorsImage({ image: 'É necessário pelo menos uma imagem' });
+      
+      // Adicionar um pequeno delay para garantir que o erro seja exibido
+      setTimeout(() => {
+        const errorElement = document.getElementById('images-error');
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
+      return false;
+    }
+    
+    return true;
+  };
   
   const handleBannerImageChange = (files: File[]) => {
     // If files array is not empty, use the first file as main image
@@ -360,6 +437,10 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   const handleAdditionalImagesChange = (files: File[]) => {
     setAdditionalImageFiles(files);
+    // Limpar erros quando imagens são adicionadas
+    if (files.length > 0 && errorsImage.image) {
+      setErrorsImage({});
+    }
   };
   
   const handleCategoryChange = (value: string) => {
@@ -375,23 +456,26 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   
   const onSubmitForm = async (data: Partial<IPrize>) => {
+    // Prevent default form submission behavior
+    
+    // Validar imagens primeiro
+    if (!validateImagesBeforeSubmit()) {
+      return;
+    }
     
     // In a real application, you would upload the images to your server/cloud storage
     // and get back URLs to store in the database
     // For this demonstration, we'll just pass the current state
-
-    // Create temporary URLs for the banner image (if new)
-
-    // Create temporary URLs for the new additional images
-    // const newImageUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
+    console.log("additionalImageFiles",additionalImageFiles);
+    console.log("mainImageFile",mainImageFile);
     
     // Create submission data
     const submissionData = {
       ...data,
-      // In a real app, you would replace these with actual uploaded URLs
-      image: mainImageFile as unknown as File,
-      // Combine existing images with new ones
-      images: [ ...additionalImageFiles],
+      // A primeira imagem é a imagem principal
+      image: additionalImageFiles[0],
+      // Todas as imagens a partir da segunda são imagens adicionais
+      images: additionalImageFiles.slice(1),
     };
     
     // Add category if selected
@@ -403,7 +487,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       submissionData.categoryId = selectedCategory as unknown as mongoose.Types.ObjectId;
     }
 
-    
+    console.log("submissionData",submissionData);
+
     onSubmit(submissionData);
   };
   
@@ -413,23 +498,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
         {initialData?._id ? 'Editar Prêmio' : 'Adicionar Novo Prêmio'}
       </FormTitle>
       
-      <form onSubmit={handleSubmit(onSubmitForm)}>
-        <ImageUploadContainer>
-          
-          <BannerImageUploader
-            id="image"
-            maxImages={1}
-            onChange={handleBannerImageChange}
-            value={mainImageFile ? [mainImageFile] : []}
-            label="Imagem Banner"
-            maxSizeInMB={5}
-            allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
-          />
-          
-          {errorsImage.image && (
-            <ErrorMessage>{errorsImage.image}</ErrorMessage>
-          )}
-        </ImageUploadContainer>
+      <form onSubmit={handleSubmit(onSubmitForm)} noValidate>
+
         
         
         <FormGroup>
@@ -442,6 +512,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
             maxSizeInMB={5}
             allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
           />
+          
           {formData.images && formData.images.length > 0 && (
             <div style={{ marginTop: '16px' }}>
               <FormLabel>Imagens existentes</FormLabel>
@@ -451,7 +522,11 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
                     <PreviewImage src={url} alt={`Imagem adicional ${index + 1}`} />
                     <RemoveImageButton 
                       type="button" 
-                      onClick={() => handleRemoveExistingImage(index)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRemoveExistingImage(index);
+                      }}
                       aria-label={`Remove image ${index + 1}`}
                     >
                       <FaTimes />
@@ -463,6 +538,18 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
                 Estas são as imagens já salvas. Novas imagens serão adicionadas a estas quando salvar.
               </div>
             </div>
+          )}
+
+          {errorsImage.image ? (
+            <ErrorText id="images-error">
+              <ErrorIcon />
+              {errorsImage.image}
+            </ErrorText>
+          ) : (
+            <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
+              <ErrorIcon />
+              &nbsp;
+            </ErrorText>  
           )}
         </FormGroup>
         
@@ -508,16 +595,17 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
         </FormGroup>
         
         <FormGroup>
-          <FormInput
+          <CurrencyInput
             id="value"  
             label="Valor"
             icon={<FaMoneyBillWave />}
-            {...registerWithMask('value', '0.000.000.000,00')}
+            {...register('value')}
             placeholder="Ex: R$ 5.000,00" 
             disabled={isLoading}
             error={errors.value?.message}
             required
             fullWidth
+            currency="R$"
           />
         </FormGroup>
         
@@ -534,7 +622,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <Button 
             type="submit" 
             $variant="primary"
-           
+            disabled={isLoading}
           >
             <FaSave />
             {isLoading ? 'Salvando...' : 'Salvar Prêmio'}

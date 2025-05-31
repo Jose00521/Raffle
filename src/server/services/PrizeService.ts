@@ -37,8 +37,6 @@ export class PrizeService implements IPrizeService {
         images: File[];
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
-
-
             const limiter = rateLimit({
                 interval: 60 * 1000,
                 uniqueTokenPerInterval: 500,
@@ -48,11 +46,13 @@ export class PrizeService implements IPrizeService {
             const session = await getServerSession(nextAuthOptions);
             logger.info("Verificando sessão", session);
 
+            console.log("Session",session);
+
             if (!session?.user?.id) {
                 return createErrorResponse('Não autorizado', 401);
             }
 
-                // Aplicar rate limiting
+            // Aplicar rate limiting
             try {
                 await limiter.check(10, `${session.user.id}:premio-create`);
             } catch {
@@ -61,15 +61,34 @@ export class PrizeService implements IPrizeService {
             }
 
             logger.info("Sessão válida", session);
+            
+            // Log para debugging - verificar entradas
+            logger.info("Objeto prize recebido:", {
+                name: prize.name,
+                description: prize.description,
+                value: prize.value,
+                hasImage: !!prize.image,
+                imagesCount: prize.images?.length || 0
+            });
 
             logger.info("Processando imagens");
             const processedImages = await Promise.all(
-                [prize.image, ...prize.images].map(async (image) => processImage(image))
+                [prize.image, ...prize.images].map(async (image, index) => {
+                    logger.info(`Processando imagem ${index}`, {
+                        type: image?.type,
+                        size: image?.size
+                    });
+                    return processImage(image);
+                })
             );
+
+            console.log("processedImages",processedImages);
+            console.log("processedImages.length", processedImages.length);
 
             logger.info("Imagens processadas", processedImages);
 
             const validImages = processedImages.filter(Boolean) as { buffer: Buffer, originalName: string }[];
+            logger.info("Número de imagens válidas:", validImages.length);
 
             if (!validImages.length) {
                 return createErrorResponse('Nenhuma imagem válida para upload', 400);
@@ -79,19 +98,31 @@ export class PrizeService implements IPrizeService {
 
             logger.info("Realizando upload das imagens");
 
-            const uploadPromises = validImages.map( img => 
-                uploadToS3(img.buffer, session.user.id, img.originalName)
-            );
+            const uploadPromises = validImages.map((img, index) => {
+                logger.info(`Iniciando upload da imagem ${index}`, {
+                    originalName: img.originalName,
+                    bufferSize: img.buffer.length
+                });
+                return uploadToS3(img.buffer, session.user.id, img.originalName);
+            });
 
             const imageUrls = await Promise.all(uploadPromises);
 
-            logger.info("Upload das imagens realizado");
+            console.log("imageUrls",imageUrls);
+            console.log("imageUrls.length", imageUrls.length);
+
+            logger.info("Upload das imagens realizado", {
+                urlsCount: imageUrls.length,
+                urls: imageUrls
+            });
 
             const mainImageUrl = imageUrls[0];
             const otherImagesUrls = imageUrls.slice(1);
-
-
-
+            
+            logger.info("URLs separadas", {
+                mainImageUrl,
+                otherImagesCount: otherImagesUrls.length
+            });
 
             return await this.prizeRepository.createPrize({
                 name: prize.name,
@@ -102,9 +133,10 @@ export class PrizeService implements IPrizeService {
             });
 
         } catch (error) {
+            logger.error("Erro ao salvar imagens:", error);
             throw new ApiError({
                 success: false,
-                message: 'Erro ao criar prêmio',
+                message: 'Service: Erro ao Salvar as imagens',
                 statusCode: 500,
                 cause: error as Error
             });

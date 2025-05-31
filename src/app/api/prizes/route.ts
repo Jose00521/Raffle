@@ -5,6 +5,7 @@ import { container } from '../../../server/container/container';
 import { UserController } from '@/server/controllers/UserController';
 import { createErrorResponse } from '@/server/utils/errorHandler/api';
 import { PrizeController } from '@/server/controllers/PrizeController';
+import logger from "@/lib/logger/logger";
 /**
  * Endpoint GET: Obter detalhes de uma campanha específica por ID
  */
@@ -13,21 +14,54 @@ import { PrizeController } from '@/server/controllers/PrizeController';
 export async function POST( request: Request,response: Response) {
     try {
         const formData = await request.formData();
+        
+        // Logs detalhados para debug
+        logger.info("FormData recebido na API:");
+        for (const key of formData.keys()) {
+            if (key === 'data') {
+                logger.info(`- ${key}: ${formData.get(key)}`);
+            } else {
+                const value = formData.get(key);
+                logger.info(`- ${key}: ${value instanceof File ? `File: ${value.name}, type: ${value.type}, size: ${value.size}` : value}`);
+            }
+        }
+        
+        // Verificar imagens - mais detalhado
+        const images = formData.getAll('images');
+        logger.info(`Total de imagens recebidas: ${images.length}`);
+        images.forEach((img, i) => {
+            if (img instanceof File) {
+                logger.info(`Imagem ${i}: ${img.name}, tipo: ${img.type}, tamanho: ${img.size}`);
+            } else {
+                logger.info(`Imagem ${i}: não é um arquivo, é ${typeof img}`);
+            }
+        });
+        
         const prizeText  = JSON.parse(formData.get('data') as string);
         
         const image = formData.get('image') as File;
-        const images = formData.getAll('images') as File[];
-
         const prize = {
             ...prizeText,
             image: image,
-            images: images
+            images: images as File[]
         }
+
+        logger.info("Dados do prêmio montados:", {
+            ...prizeText,
+            hasImage: !!image,
+            imageType: image?.type,
+            imageSize: image?.size,
+            imagesCount: images.length
+        });
 
         const prizeController = container.resolve(PrizeController);
         const prizeCreate = await prizeController.createPrize(prize);
 
-
+        return NextResponse.json({
+            success: true,
+            message: 'Prêmio criado com sucesso',
+            data: prizeCreate
+        });
 
       } catch (error) {
         // Log detalhado do erro no servidor

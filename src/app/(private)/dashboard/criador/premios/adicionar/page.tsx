@@ -70,6 +70,12 @@ export default function AddPrizePage() {
       // to create a new prize in your database
       const formData = new FormData();
       
+      // Log dos dados para debug
+      console.log("Dados a serem enviados:", data);
+      console.log("Image:", data.image);
+      console.log("Images array:", data.images);
+      console.log("Images length:", data.images?.length || 0);
+      
       formData.append('data', JSON.stringify({
         name: data.name,
         description: data.description,
@@ -77,20 +83,42 @@ export default function AddPrizePage() {
         categoryId: data.categoryId,
       }));
 
-      formData.append('image', data.image as File);
-      data.images?.forEach(image => {
-        formData.append('images', image as File);
-      }); 
+      // Verificando se a imagem principal existe
+      if (data.image) {
+        formData.append('image', data.image);
+      } else {
+        throw new Error('É necessário pelo menos uma imagem principal');
+      }
+      
+      // Verificando e adicionando imagens adicionais
+      if (data.images && data.images.length > 0) {
+        // Usar um nome de campo diferente para cada imagem
+        data.images.forEach((image, index) => {
+          formData.append('images', image);
+          console.log(`Adicionando imagem ${index} ao FormData`);
+        });
+      }
+
+      // Log do FormData para verificar o que estamos enviando
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
       const result = await prizeAPIClient.createPrize(formData);
-
       console.log('result', result);
       
+      if (result.success) {
+        router.push('/dashboard/criador/premios');
+      } else {
+        alert('Erro ao criar prêmio: ' + result.message);
+      }
       
     } catch (error) {
       console.error('Error adding prize:', error);
+      alert('Erro ao adicionar prêmio: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+    } finally {
       setIsSubmitting(false);
-      // In a real app, you would show an error notification
     }
   };
   
