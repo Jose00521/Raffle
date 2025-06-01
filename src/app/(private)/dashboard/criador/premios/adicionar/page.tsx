@@ -10,6 +10,7 @@ import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import prizeAPIClient from '@/API/prizeAPIClient';
 import mongoose from 'mongoose';
+import { toast, ToastContainer } from 'react-toastify';
 
 const PageHeader = styled.div`
   display: flex;
@@ -87,7 +88,7 @@ export default function AddPrizePage() {
       if (data.image) {
         formData.append('image', data.image);
       } else {
-        throw new Error('É necessário pelo menos uma imagem principal');
+        toast.error('É necessário pelo menos uma imagem principal');
       }
       
       // Verificando e adicionando imagens adicionais
@@ -109,14 +110,15 @@ export default function AddPrizePage() {
       console.log('result', result);
       
       if (result.success) {
+        toast.success('Prêmio criado com sucesso!');
         router.push('/dashboard/criador/premios');
       } else {
-        alert('Erro ao criar prêmio: ' + result.message);
+        toast.error(result.message);
       }
       
     } catch (error) {
       console.error('Error adding prize:', error);
-      alert('Erro ao adicionar prêmio: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      toast.error('Erro ao adicionar prêmio: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setIsSubmitting(false);
     }
@@ -128,6 +130,7 @@ export default function AddPrizePage() {
   
   return (
     <CreatorDashboard>
+      <ToastContainer />
       <PageHeader>
         <BackButton onClick={handleCancel}>
           <FaArrowLeft />

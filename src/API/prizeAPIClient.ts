@@ -1,6 +1,21 @@
 import { ApiResponse } from "@/server/utils/errorHandler/api";
 
 const prizeAPIClient = {
+
+  getAllPrizes: async () => {
+    try {
+      const response = await fetch('/api/prizes');
+      return response.json(); 
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 500,
+        message: 'Erro ao comunicar com o servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      };
+    }
+  },
+
     createPrize: async (prize: any) => {
         try {
             const response = await fetch('/api/prizes', {

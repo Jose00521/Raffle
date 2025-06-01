@@ -257,13 +257,34 @@ const formatCurrency = (value: string, currencySymbol: string = 'R$'): string =>
 
 // Função para obter o valor numérico sem formatação
 const parseCurrencyToNumber = (formattedValue: string): number => {
-  // Remove o símbolo da moeda e espaços
-  const cleanValue = formattedValue.replace(/[^\d.,]/g, '')
-    // Substitui vírgula por ponto para cálculos
-    .replace(',', '.');
-  
-  // Converte para número
-  return parseFloat(cleanValue) || 0;
+  try {
+    // Se o valor for vazio ou não for uma string, retornar 0
+    if (!formattedValue || typeof formattedValue !== 'string') {
+      return 0;
+    }
+
+    // Remover o símbolo da moeda (R$) e espaços
+    let cleanValue = formattedValue.replace(/[R$\s]/g, '');
+    
+    // Tratar formato brasileiro (1.234,56):
+    // 1. Remover pontos (separadores de milhar)
+    cleanValue = cleanValue.replace(/\./g, '');
+    
+    // 2. Substituir vírgula por ponto para o JavaScript entender como decimal
+    cleanValue = cleanValue.replace(/,/g, '.');
+    
+    // Converter para número com parseFloat para preservar os decimais
+    const numericValue = parseFloat(cleanValue);
+    
+    // Log para depuração
+    console.log(`Conversão de valor monetário: "${formattedValue}" → "${cleanValue}" → ${numericValue}`);
+    
+    // Retornar 0 se não for um número válido
+    return isNaN(numericValue) ? 0 : numericValue;
+  } catch (error) {
+    console.error("Erro ao converter valor monetário:", error);
+    return 0;
+  }
 };
 
 const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({

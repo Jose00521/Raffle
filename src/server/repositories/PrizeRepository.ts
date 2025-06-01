@@ -10,6 +10,7 @@ import { processImage } from '@/lib/upload-service/processImage'
 import { uploadToS3 } from "@/lib/upload-service/client/uploadToS3";
 
 export interface IPrizeRepository {
+    getAllPrizes(): Promise<ApiResponse<IPrize[]>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -27,6 +28,22 @@ export class PrizeRepository implements IPrizeRepository {
         @inject('db') db: IDBConnection
     ) {
         this.db = db;
+    }
+
+
+    async getAllPrizes(): Promise<ApiResponse<IPrize[]>> {
+        try {
+            await this.db.connect();
+            const prizes = await Prize.find();
+            return createSuccessResponse(prizes, 'Prêmios encontrados com sucesso', 200);
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar prêmios',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
     }
 
     async createPrize(prize: {

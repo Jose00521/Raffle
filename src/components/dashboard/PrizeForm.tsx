@@ -466,8 +466,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     // In a real application, you would upload the images to your server/cloud storage
     // and get back URLs to store in the database
     // For this demonstration, we'll just pass the current state
-    console.log("additionalImageFiles",additionalImageFiles);
-    console.log("mainImageFile",mainImageFile);
+    console.log('value',data.value);
+
     
     // Create submission data
     const submissionData = {

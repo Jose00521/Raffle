@@ -37,12 +37,14 @@ import WysiwygEditor from '../common/WysiwygEditor';
 import PrizeConfigForm from '../raffle/PrizeConfigForm';
 import { MOCK_PRIZES } from '@/app/(private)/dashboard/criador/premios/page';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+// Importar as funções formatPrizeValue e extractNumericValue
 // Importar os novos componentes modulares
 import PrizeSelectorModal from '../prize/PrizeSelectorModal';
 import PrizeCreatorModal from '../prize/PrizeCreatorModal';
 import CustomDropdown from '../common/CustomDropdown';
 import ComboDiscountSectionComponent from './ComboDiscountSection';
 import MultiPrizePosition, { PrizeItemProps } from './MultiPrizePosition';
+import prizeAPIClient from '@/API/prizeAPIClient';
 
 // Prize category interface
 interface PrizeCategory {
@@ -2052,11 +2054,46 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Observar número de vencedores
   const winnerCount = watch('winnerCount');
   const prizes = watch('prizes');
+
+  const extractNumericValue = (valueString: string): number => {
+    try {
+      // Remove qualquer caractere que não seja dígito
+      const numericString = valueString.replace(/[^\d]/g, '');
+      
+      // Converte para número
+      const value = parseInt(numericString, 10);
+      
+      // Retorna 0 se não for um número válido
+      return isNaN(value) ? 0 : value;
+    } catch (error) {
+      console.error("Erro ao extrair valor numérico:", error);
+      return 0;
+    }
+  };
+
+  const formatPrizeValue = (value: string): string => {
+    // Verificar se o valor já está formatado como moeda
+    if (value.includes('R$')) {
+      return value;
+    }
+    
+    // Tenta converter para número
+    const numericValue = extractNumericValue(value);
+    
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue / 100); // Divide por 100 se o valor estiver em centavos
+  };
   
   // Carregar prêmios mock quando o componente montar
   useEffect(() => {
-    console.log('Loading MOCK_PRIZES:', MOCK_PRIZES);
-    setAvailablePrizes(MOCK_PRIZES);
+    const fetchPrizes = async () => {
+      const prizes = await prizeAPIClient.getAllPrizes();
+      setAvailablePrizes(prizes.data);
+    };
+    fetchPrizes();
   }, []);
   
   // Adicionar o efeito para calcular o valor total dos prêmios
@@ -2068,10 +2105,30 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         const positionTotal = positionObj.prizes.reduce((prizeSum, prize) => {
           if (!prize.name || !prize.value) return prizeSum;
           
-          // Verificar se o valor é uma string numérica e convertê-la
-          const prizeValue = typeof prize.value === 'string' 
-            ? parseFloat(prize.value.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.')) || 0 
-            : 0;
+          // Extrair valor numérico da string formatada em moeda brasileira
+          // R$ 2.152.987,68 -> 2152987.68
+          let prizeValue = 0;
+          
+          if (typeof prize.value === 'string') {
+            try {
+              // Remover o símbolo da moeda (R$) e espaços
+              let cleanValue = prize.value.replace(/[R$\s]/g, '');
+              
+              // Remover pontos (separadores de milhar)
+              cleanValue = cleanValue.replace(/\./g, '');
+              
+              // Substituir vírgula por ponto para o JavaScript entender como decimal
+              cleanValue = cleanValue.replace(/,/g, '.');
+              
+              // Converter para número usando parseFloat para preservar decimais
+              prizeValue = parseFloat(cleanValue);
+              
+              if (isNaN(prizeValue)) prizeValue = 0;
+            } catch (error) {
+              console.error("Erro ao converter valor do prêmio:", prize.value, error);
+              prizeValue = 0;
+            }
+          }
           
           return prizeSum + prizeValue;
         }, 0);
@@ -2596,7 +2653,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           <TotalPrizeDisplay>
             <PrizeAmountValue>
               <FaMoneyBillWave />
-              R$ {totalPrizeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatPrizeValue(totalPrizeValue.toString())}
               <span>valor total em prêmios</span>
             </PrizeAmountValue>
             

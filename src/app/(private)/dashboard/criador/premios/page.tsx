@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
+import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp, FaMoneyBillWave } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { motion } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import InputWithIcon from '@/components/common/InputWithIcon';
 import Link from 'next/link';
+import prizeAPIClient from '@/API/prizeAPIClient';
+import { ApiResponse } from '@/server/utils/errorHandler/api';
 
 // Mock data for initial development
 export const MOCK_PRIZES: IPrize[] = [
@@ -308,37 +310,90 @@ const cardVariants = {
   })
 };
 
+// Componente para mostrar o valor do prêmio com cor e formatação específicas
+const FormatPrizeValueBox = styled.div`
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6a11cb;
+  background: rgba(106, 17, 203, 0.1);
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+`;
+
 export default function PrizesDashboard() {
   const [prizes, setPrizes] = useState<IPrize[]>(MOCK_PRIZES);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortDesc, setSortDesc] = useState(false);
   
-  useEffect(() => {
+  useEffect(()=> {
     // Simulando carregamento de dados da API
     setLoading(true);
-    setTimeout(() => {
-      setPrizes(MOCK_PRIZES);
-      setLoading(false);
-    }, 800);
+    const fetchPrizes = async () => {
+      const response = await prizeAPIClient.getAllPrizes();
+      if (response.success) {
+        console.log("Prêmios recebidos da API:", response.data);
+        setPrizes(response.data);
+        setLoading(false);
+      }
+    };
+
+    fetchPrizes();
   }, []);
   
   // Filter prizes based on search query
-  const filteredPrizes = prizes.filter(prize => 
+  const filteredPrizes = prizes.filter((prize: IPrize) => 
     prize.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     prize.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
+  // Função para extrair o valor numérico de uma string (ex: R$ 1.500,00 -> 1500)
+  const extractNumericValue = (valueString: string): number => {
+    try {
+      // Remove qualquer caractere que não seja dígito
+      const numericString = valueString.replace(/[^\d]/g, '');
+      
+      // Converte para número
+      const value = parseInt(numericString, 10);
+      
+      // Retorna 0 se não for um número válido
+      return isNaN(value) ? 0 : value;
+    } catch (error) {
+      console.error("Erro ao extrair valor numérico:", error);
+      return 0;
+    }
+  };
+  
   // Sort prizes by value
-  const sortedPrizes = [...filteredPrizes].sort((a, b) => {
-    const valueA = parseInt(a.value.replace(/[^\d]/g, ''));
-    const valueB = parseInt(b.value.replace(/[^\d]/g, ''));
+  const sortedPrizes = [...filteredPrizes].sort((a: IPrize, b: IPrize) => {
+    const valueA = extractNumericValue(a.value);
+    const valueB = extractNumericValue(b.value);
     
     return sortDesc ? valueB - valueA : valueA - valueB;
   });
   
   const handleSortToggle = () => {
     setSortDesc(!sortDesc);
+  };
+  
+  // Formatar valor do prêmio para exibição
+  const formatPrizeValue = (value: string): string => {
+    // Verificar se o valor já está formatado como moeda
+    if (value.includes('R$')) {
+      return value;
+    }
+    
+    // Tenta converter para número
+    const numericValue = extractNumericValue(value);
+    
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue / 100); // Divide por 100 se o valor estiver em centavos
   };
   
   return (
@@ -397,7 +452,7 @@ export default function PrizesDashboard() {
         <div>Carregando...</div>
       ) : sortedPrizes.length > 0 ? (
         <PrizesGrid>
-          {sortedPrizes.map((prize, index) => (
+          {sortedPrizes.map((prize: IPrize, index: number) => (
             <Link href={`/dashboard/criador/premios/detalhes/${prize._id}`} key={prize._id}>
             <PrizeCard 
               key={prize._id}
@@ -410,7 +465,7 @@ export default function PrizesDashboard() {
               <PrizeImageContainer>
                 <PrizeImage src={prize.image} alt={prize.name} />
                 <PrizeOverlay>
-                  <PrizeValue>{prize.value}</PrizeValue>
+                  <PrizeValue>{formatPrizeValue(prize.value)}</PrizeValue>
                 </PrizeOverlay>
                 <CategoryBadge>Premiado</CategoryBadge>
               </PrizeImageContainer>
@@ -418,6 +473,9 @@ export default function PrizesDashboard() {
               <PrizeContent>
                 <PrizeName>{prize.name}</PrizeName>
                 <PrizeDescription>{prize.description}</PrizeDescription>
+                <FormatPrizeValueBox>
+                  <FaMoneyBillWave /> {formatPrizeValue(prize.value)}
+                </FormatPrizeValueBox>
               </PrizeContent>
             </PrizeCard>
             </Link>

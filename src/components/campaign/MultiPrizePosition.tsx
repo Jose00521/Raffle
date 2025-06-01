@@ -391,6 +391,37 @@ const MultiPrizePosition: React.FC<MultiPrizePositionProps> = ({
         return <>🎖️ {position}º Lugar</>;
     }
   };
+  const extractNumericValue = (valueString: string): number => {
+    try {
+      // Remove qualquer caractere que não seja dígito
+      const numericString = valueString.replace(/[^\d]/g, '');
+      
+      // Converte para número
+      const value = parseInt(numericString, 10);
+      
+      // Retorna 0 se não for um número válido
+      return isNaN(value) ? 0 : value;
+    } catch (error) {
+      console.error("Erro ao extrair valor numérico:", error);
+      return 0;
+    }
+  };
+
+  const formatPrizeValue = (value: string): string => {
+    // Verificar se o valor já está formatado como moeda
+    if (value.includes('R$')) {
+      return value;
+    }
+    
+    // Tenta converter para número
+    const numericValue = extractNumericValue(value);
+    
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue / 100); // Divide por 100 se o valor estiver em centavos
+  };
 
   return (
     <PrizePositionCard $position={position}>
@@ -421,7 +452,7 @@ const MultiPrizePosition: React.FC<MultiPrizePositionProps> = ({
                 <PrizeInfo>
                   <PrizeName>{prize.name}</PrizeName>
                   <PrizeValue>
-                    <FaMoneyBill /> {prize.value}
+                    <FaMoneyBill /> {formatPrizeValue(prize.value)}
                   </PrizeValue>
                 </PrizeInfo>
                 

@@ -324,18 +324,6 @@ const PrizeCreatorModal: React.FC<PrizeCreatorModalProps> = ({
         <PrizeFormContainer>
           <form onSubmit={handleSubmit(onSubmitForm)}>
             <FormGroup>
-              <BannerImageUploader
-                id="mainImage"
-                maxImages={1}
-                onChange={handleBannerImageChange}
-                value={mainImageFile ? [mainImageFile] : []}
-                label="Imagem Banner"
-                maxSizeInMB={5}
-                allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
-              />
-            </FormGroup>
-            
-            <FormGroup>
               <MultipleImageUploader
                 id="additionalImages"
                 maxImages={8}

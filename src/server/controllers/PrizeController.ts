@@ -8,6 +8,7 @@ import { IPrize } from "@/models/interfaces/IPrizeInterfaces";
 import type { IPrizeService } from "../services/PrizeService";
 
 export interface IPrizeController {
+    getAllPrizes(): Promise<ApiResponse<IPrize[]>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -25,6 +26,10 @@ export class PrizeController implements IPrizeController {
         @inject('prizeService') prizeService: IPrizeService
     ) {
         this.prizeService = prizeService;
+    }
+
+    async getAllPrizes(): Promise<ApiResponse<IPrize[]>> {
+        return await this.prizeService.getAllPrizes();
     }
 
     async createPrize(prize: {

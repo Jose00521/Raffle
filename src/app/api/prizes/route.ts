@@ -11,6 +11,15 @@ import logger from "@/lib/logger/logger";
  */
 
 
+export async function GET(request: Request,response: Response) {
+    const prizeController = container.resolve(PrizeController);
+    const prizes = await prizeController.getAllPrizes();
+    return NextResponse.json(prizes);
+}
+
+
+
+
 export async function POST( request: Request,response: Response) {
     try {
         const formData = await request.formData();

@@ -10,6 +10,7 @@ import { nextAuthOptions } from "@/lib/auth/nextAuthOptions";
 import logger from "@/lib/logger/logger";
 import { rateLimit } from "@/lib/rateLimit";
 export interface IPrizeService {
+    getAllPrizes(): Promise<ApiResponse<IPrize[]>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -27,6 +28,10 @@ export class PrizeService implements IPrizeService {
         @inject('prizeRepository') prizeRepository: IPrizeRepository
     ) {
         this.prizeRepository = prizeRepository;
+    }
+
+    async getAllPrizes(): Promise<ApiResponse<IPrize[]>> {
+        return await this.prizeRepository.getAllPrizes();
     }
 
     async createPrize(prize: {
@@ -71,6 +76,11 @@ export class PrizeService implements IPrizeService {
                 imagesCount: prize.images?.length || 0
             });
 
+            // Verificação inicial para garantir que pelo menos uma imagem principal foi fornecida
+            if (!prize.image) {
+                return createErrorResponse('A imagem principal é obrigatória', 400);
+            }
+
             logger.info("Processando imagens");
             const processedImages = await Promise.all(
                 [prize.image, ...prize.images].map(async (image, index) => {
@@ -94,49 +104,84 @@ export class PrizeService implements IPrizeService {
                 return createErrorResponse('Nenhuma imagem válida para upload', 400);
             }
 
+            // Verificar se a imagem principal está entre as válidas
+            if (!processedImages[0]) {
+                return createErrorResponse('A imagem principal não é válida', 400);
+            }
+
             logger.info("Imagens válidas", validImages);
 
             logger.info("Realizando upload das imagens");
 
-            const uploadPromises = validImages.map((img, index) => {
-                logger.info(`Iniciando upload da imagem ${index}`, {
-                    originalName: img.originalName,
-                    bufferSize: img.buffer.length
+            try {
+                // Usando um array para coletar erros durante o upload
+                const uploadErrors: Error[] = [];
+                const imageUrls: string[] = [];
+
+                // Upload de cada imagem individualmente para capturar erros específicos
+                for (let i = 0; i < validImages.length; i++) {
+                    const img = validImages[i];
+                    try {
+                        logger.info(`Iniciando upload da imagem ${i}`, {
+                            originalName: img.originalName,
+                            bufferSize: img.buffer.length
+                        });
+                        
+                        const url = await uploadToS3(img.buffer, session.user.id, img.originalName);
+                        imageUrls.push(url);
+                        
+                        logger.info(`Upload da imagem ${i} concluído: ${url}`);
+                    } catch (error) {
+                        logger.error(`Erro ao fazer upload da imagem ${i}:`, error);
+                        uploadErrors.push(error as Error);
+                    }
+                }
+
+                // Se houver qualquer erro de upload, não prosseguir com a criação do prêmio
+                if (uploadErrors.length > 0) {
+                    logger.error(`${uploadErrors.length} erros ocorreram durante o upload das imagens`);
+                    return createErrorResponse(`Falha no upload de ${uploadErrors.length} imagens. O prêmio não foi criado.`, 500);
+                }
+
+                // Verificar se temos pelo menos a imagem principal
+                if (imageUrls.length === 0) {
+                    return createErrorResponse('Nenhuma imagem foi enviada com sucesso', 500);
+                }
+
+                console.log("imageUrls", imageUrls);
+                console.log("imageUrls.length", imageUrls.length);
+
+                logger.info("Upload das imagens realizado com sucesso", {
+                    urlsCount: imageUrls.length,
+                    urls: imageUrls
                 });
-                return uploadToS3(img.buffer, session.user.id, img.originalName);
-            });
 
-            const imageUrls = await Promise.all(uploadPromises);
+                const mainImageUrl = imageUrls[0];
+                const otherImagesUrls = imageUrls.slice(1);
+                
+                logger.info("URLs separadas", {
+                    mainImageUrl,
+                    otherImagesCount: otherImagesUrls.length
+                });
 
-            console.log("imageUrls",imageUrls);
-            console.log("imageUrls.length", imageUrls.length);
-
-            logger.info("Upload das imagens realizado", {
-                urlsCount: imageUrls.length,
-                urls: imageUrls
-            });
-
-            const mainImageUrl = imageUrls[0];
-            const otherImagesUrls = imageUrls.slice(1);
-            
-            logger.info("URLs separadas", {
-                mainImageUrl,
-                otherImagesCount: otherImagesUrls.length
-            });
-
-            return await this.prizeRepository.createPrize({
-                name: prize.name,
-                description: prize.description,
-                value: prize.value,
-                image: mainImageUrl,
-                images: otherImagesUrls
-            });
+                // Criar o prêmio apenas se todas as imagens foram enviadas com sucesso
+                return await this.prizeRepository.createPrize({
+                    name: prize.name,
+                    description: prize.description,
+                    value: prize.value,
+                    image: mainImageUrl,
+                    images: otherImagesUrls
+                });
+            } catch (error) {
+                logger.error("Erro durante o processo de upload:", error);
+                return createErrorResponse('Falha no processo de upload das imagens. O prêmio não foi criado.', 500);
+            }
 
         } catch (error) {
-            logger.error("Erro ao salvar imagens:", error);
+            logger.error("Erro ao processar requisição de criação de prêmio:", error);
             throw new ApiError({
                 success: false,
-                message: 'Service: Erro ao Salvar as imagens',
+                message: 'Service: Erro ao processar a criação do prêmio',
                 statusCode: 500,
                 cause: error as Error
             });
