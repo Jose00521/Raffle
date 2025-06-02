@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { inject, injectable } from "tsyringe";
 import type {IUserService} from "../services/UserService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
@@ -8,7 +9,7 @@ import { IPrize } from "@/models/interfaces/IPrizeInterfaces";
 import type { IPrizeService } from "../services/PrizeService";
 
 export interface IPrizeController {
-    getAllPrizes(): Promise<ApiResponse<IPrize[]>>;
+    getAllPrizes(): Promise<ApiResponse<IPrize[] | ApiResponse<null>>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -16,6 +17,8 @@ export interface IPrizeController {
         image: File;
         images: File[];
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
+    getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
+    deletePrize(id: string): Promise<ApiResponse<null>>;
 }
 
 @injectable()
@@ -28,8 +31,16 @@ export class PrizeController implements IPrizeController {
         this.prizeService = prizeService;
     }
 
-    async getAllPrizes(): Promise<ApiResponse<IPrize[]>> {
-        return await this.prizeService.getAllPrizes();
+    async getAllPrizes(): Promise<ApiResponse<IPrize[] | ApiResponse<null>>> {
+        return await this.prizeService.getAllPrizes() as ApiResponse<IPrize[] | ApiResponse<null>>;
+    }
+
+    async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
+        return await this.prizeService.getPrizeById(id);
+    }
+
+    async deletePrize(id: string): Promise<ApiResponse<null>> {
+        return await this.prizeService.deletePrize(id);
     }
 
     async createPrize(prize: {

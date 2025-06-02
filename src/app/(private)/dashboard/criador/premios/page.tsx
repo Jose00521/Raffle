@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp, FaMoneyBillWave } from 'react-icons/fa';
+import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { motion } from 'framer-motion';
@@ -71,7 +71,7 @@ const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   
   @media (max-width: 768px) {
     flex-direction: column;
@@ -96,7 +96,7 @@ const PageTitle = styled.h1`
 
 const HeaderActions = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 16px;
   
   @media (max-width: 768px) {
     width: 100%;
@@ -121,17 +121,17 @@ const AddButton = styled.button`
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
+  border-radius: 10px;
+  padding: 12px 24px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(106, 17, 203, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 12px rgba(106, 17, 203, 0.2);
+    box-shadow: 0 8px 16px rgba(106, 17, 203, 0.3);
   }
   
   &:active {
@@ -143,16 +143,18 @@ const FiltersBar = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: white;
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 16px;
   }
 `;
 
@@ -167,47 +169,74 @@ const FilterGroup = styled.div`
 `;
 
 const FilterButton = styled.button<{ $active?: boolean }>`
-  background-color: ${props => props.$active ? 'rgba(106, 17, 203, 0.1)' : 'transparent'};
-  color: ${props => props.$active ? '#6a11cb' : '#666'};
-  border: ${props => props.$active ? '1px solid rgba(106, 17, 203, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)'};
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  background-color: ${props => props.$active ? 'rgba(106, 17, 203, 0.1)' : 'rgba(255, 255, 255, 0.7)'};
+  color: ${props => props.$active ? '#6a11cb' : '#64748b'};
+  border: ${props => props.$active ? '1px solid rgba(106, 17, 203, 0.3)' : '1px solid rgba(226, 232, 240, 0.8)'};
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    background-color: ${props => props.$active ? 'rgba(106, 17, 203, 0.15)' : 'rgba(0, 0, 0, 0.05)'};
+    background-color: ${props => props.$active ? 'rgba(106, 17, 203, 0.15)' : 'rgba(255, 255, 255, 0.9)'};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+`;
+
+const ResultsCount = styled.div`
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  span {
+    color: #6a11cb;
+    font-weight: 600;
   }
 `;
 
 const PrizesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px;
   
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 `;
 
 const PrizeCard = styled(motion.div)`
   background-color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  
+  &:hover {
+    box-shadow: 0 15px 35px rgba(106, 17, 203, 0.15);
+    transform: translateY(-5px);
+  }
 `;
 
 const PrizeImageContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 220px;
   overflow: hidden;
 `;
 
@@ -216,10 +245,10 @@ const PrizeImage = styled.img`
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s ease;
   
   ${PrizeCard}:hover & {
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 `;
 
@@ -228,73 +257,173 @@ const PrizeOverlay = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 20px 16px 16px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+  padding: 30px 20px 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
   color: white;
+  transition: opacity 0.3s ease;
+  z-index: 2;
 `;
 
 const PrizeValue = styled.div`
   font-weight: 700;
   font-size: 1.1rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: visible;
+  
+  svg {
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+    flex-shrink: 0;
+  }
 `;
 
 const PrizeContent = styled.div`
-  padding: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Faz com que essa seção expanda para preencher o espaço disponível */
 `;
 
 const PrizeName = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  margin: 0 0 8px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0 0 10px;
+  color: #1e293b;
+  line-height: 1.3;
+  transition: color 0.2s ease;
+  
+  ${PrizeCard}:hover & {
+    color: #6a11cb;
+  }
 `;
 
 const PrizeDescription = styled.p`
   font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin: 0;
-  line-height: 1.4;
+  color: #64748b;
+  margin: 0 0 auto; /* Empurra para cima, deixando espaço para o valor abaixo */
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const CategoryBadge = styled.span`
   position: absolute;
-  top: 12px;
-  right: 12px;
-  background-color: rgba(0, 0, 0, 0.6);
+  top: 16px;
+  right: 16px;
+  background: rgba(106, 17, 203, 0.9);
   color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.8rem;
   font-weight: 600;
   backdrop-filter: blur(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  svg {
+    font-size: 0.7rem;
+  }
+  
+  ${PrizeCard}:hover & {
+    background: rgba(106, 17, 203, 1);
+  }
+`;
+
+const PrizeFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+`;
+
+const PrizeDate = styled.div`
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const FormatPrizeValueBox = styled.div`
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6a11cb;
+  background: rgba(106, 17, 203, 0.08);
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  min-width: fit-content;
+  white-space: nowrap;
+  overflow: visible;
+  
+  ${PrizeCard}:hover & {
+    background: rgba(106, 17, 203, 0.12);
+  }
+  
+  svg {
+    color: #7c3aed;
+    flex-shrink: 0;
+  }
 `;
 
 const EmptyState = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  padding: 48px 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border-radius: 16px;
+  padding: 64px 32px;
   text-align: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(8px);
 `;
 
 const EmptyStateIcon = styled.div`
-  font-size: 3rem;
-  color: #d1d5db;
-  margin-bottom: 16px;
+  font-size: 3.5rem;
+  color: rgba(106, 17, 203, 0.2);
+  margin-bottom: 24px;
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+  }
 `;
 
 const EmptyStateTitle = styled.h3`
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0 0 8px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #1e293b;
 `;
 
 const EmptyStateText = styled.p`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin: 0 0 24px;
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0 auto 32px;
+  max-width: 500px;
+  line-height: 1.6;
 `;
 
 const cardVariants = {
@@ -309,19 +438,6 @@ const cardVariants = {
     }
   })
 };
-
-// Componente para mostrar o valor do prêmio com cor e formatação específicas
-const FormatPrizeValueBox = styled.div`
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #6a11cb;
-  background: rgba(106, 17, 203, 0.1);
-  padding: 5px 10px;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-`;
 
 export default function PrizesDashboard() {
   const [prizes, setPrizes] = useState<IPrize[]>(MOCK_PRIZES);
@@ -350,14 +466,19 @@ export default function PrizesDashboard() {
     prize.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Função para extrair o valor numérico de uma string (ex: R$ 1.500,00 -> 1500)
+  
+  
+  // Formatar valor do prêmio para exibição
   const extractNumericValue = (valueString: string): number => {
     try {
-      // Remove qualquer caractere que não seja dígito
-      const numericString = valueString.replace(/[^\d]/g, '');
+      // Remove qualquer caractere que não seja dígito, ponto ou vírgula
+      const cleanString = valueString.replace(/[^\d,.]/g, '');
+      
+      // Substitui vírgula por ponto para processamento numérico
+      const normalizedString = cleanString.replace(/,/g, '.');
       
       // Converte para número
-      const value = parseInt(numericString, 10);
+      const value = parseFloat(normalizedString);
       
       // Retorna 0 se não for um número válido
       return isNaN(value) ? 0 : value;
@@ -366,34 +487,54 @@ export default function PrizesDashboard() {
       return 0;
     }
   };
-  
-  // Sort prizes by value
-  const sortedPrizes = [...filteredPrizes].sort((a: IPrize, b: IPrize) => {
-    const valueA = extractNumericValue(a.value);
-    const valueB = extractNumericValue(b.value);
+
+    // Sort prizes by value
+    const sortedPrizes = [...filteredPrizes].sort((a: IPrize, b: IPrize) => {
+      const valueA = extractNumericValue(a.value);
+      const valueB = extractNumericValue(b.value);
+      
+      return sortDesc ? valueB - valueA : valueA - valueB;
+    });
     
-    return sortDesc ? valueB - valueA : valueA - valueB;
-  });
-  
-  const handleSortToggle = () => {
-    setSortDesc(!sortDesc);
-  };
-  
-  // Formatar valor do prêmio para exibição
-  const formatPrizeValue = (value: string): string => {
+    const handleSortToggle = () => {
+      setSortDesc(!sortDesc);
+    };
+
+  const formatPrizeValue = (value: string | number): string => {
+    if (!value) return 'R$ 0,00';
+    
+    // Se for um número, converte para string
+    const valueString = typeof value === 'number' ? value.toString() : value;
+    
     // Verificar se o valor já está formatado como moeda
-    if (value.includes('R$')) {
-      return value;
+    if (valueString.includes('R$')) {
+      return valueString;
     }
     
     // Tenta converter para número
-    const numericValue = extractNumericValue(value);
+    const numericValue = extractNumericValue(valueString);
     
     // Formata como moeda brasileira
     return new Intl.NumberFormat('pt-BR', { 
       style: 'currency', 
       currency: 'BRL' 
-    }).format(numericValue / 100); // Divide por 100 se o valor estiver em centavos
+    }).format(numericValue);
+  };
+  
+  // Função para formatar data no formato brasileiro (dia/mês/ano)
+  const formatDate = (date?: Date | string): string => {
+    if (!date) return 'Data não disponível';
+    
+    try {
+      return new Date(date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return 'Data inválida';
+    }
   };
   
   return (
@@ -428,7 +569,7 @@ export default function PrizesDashboard() {
       <FiltersBar>
         <FilterGroup>
           <FilterButton>
-            <FaFilter size={12} />
+            <FaFilter size={14} />
             Filtrar
           </FilterButton>
           
@@ -436,16 +577,14 @@ export default function PrizesDashboard() {
             $active={true}
             onClick={handleSortToggle}
           >
-            {sortDesc ? <FaSortAmountDown size={12} /> : <FaSortAmountUp size={12} />}
-            Ordenar por valor
+            {sortDesc ? <FaSortAmountDown size={14} /> : <FaSortAmountUp size={14} />}
+            {sortDesc ? 'Maior valor' : 'Menor valor'}
           </FilterButton>
         </FilterGroup>
         
-        <div>
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>
-            {sortedPrizes.length} prêmios encontrados
-          </span>
-        </div>
+        <ResultsCount>
+          Mostrando <span>{sortedPrizes.length}</span> prêmios
+        </ResultsCount>
       </FiltersBar>
       
       {loading ? (
@@ -453,31 +592,45 @@ export default function PrizesDashboard() {
       ) : sortedPrizes.length > 0 ? (
         <PrizesGrid>
           {sortedPrizes.map((prize: IPrize, index: number) => (
-            <Link href={`/dashboard/criador/premios/detalhes/${prize._id}`} key={prize._id}>
-            <PrizeCard 
-              key={prize._id}
-              initial="hidden"
-              animate="visible"
-              custom={index}
-              variants={cardVariants}
-              whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.12)' }}
-            >
-              <PrizeImageContainer>
-                <PrizeImage src={prize.image} alt={prize.name} />
-                <PrizeOverlay>
-                  <PrizeValue>{formatPrizeValue(prize.value)}</PrizeValue>
-                </PrizeOverlay>
-                <CategoryBadge>Premiado</CategoryBadge>
-              </PrizeImageContainer>
-              
-              <PrizeContent>
-                <PrizeName>{prize.name}</PrizeName>
-                <PrizeDescription>{prize.description}</PrizeDescription>
-                <FormatPrizeValueBox>
-                  <FaMoneyBillWave /> {formatPrizeValue(prize.value)}
-                </FormatPrizeValueBox>
-              </PrizeContent>
-            </PrizeCard>
+            <Link href={`/dashboard/criador/premios/detalhes/${prize.prizeCode}`} key={prize.prizeCode || prize._id}>
+              <PrizeCard 
+                key={prize._id}
+                initial="hidden"
+                animate="visible"
+                custom={index}
+                variants={cardVariants}
+                whileHover={{ y: -5, boxShadow: '0 15px 35px rgba(106, 17, 203, 0.15)' }}
+              >
+                <PrizeImageContainer>
+                  <PrizeImage src={prize.image} alt={prize.name} />
+                  <PrizeOverlay>
+                    <PrizeValue>
+                      <FaMoneyBillWave />
+                      {formatPrizeValue(prize.value)}
+                    </PrizeValue>
+                  </PrizeOverlay>
+                  <CategoryBadge>
+                    <FaTrophy />
+                    Premiado
+                  </CategoryBadge>
+                </PrizeImageContainer>
+                
+                <PrizeContent>
+                  <PrizeName>{prize.name}</PrizeName>
+                  <PrizeDescription>{prize.description}</PrizeDescription>
+                  
+                  <PrizeFooter>
+                    <PrizeDate>
+                      <FaCalendarAlt size={12} />
+                      {formatDate(prize.createdAt)}
+                    </PrizeDate>
+                    <FormatPrizeValueBox>
+                      <FaMoneyBillWave /> 
+                      {formatPrizeValue(prize.value)}
+                    </FormatPrizeValueBox>
+                  </PrizeFooter>
+                </PrizeContent>
+              </PrizeCard>
             </Link>
           ))}
         </PrizesGrid>
@@ -488,7 +641,7 @@ export default function PrizesDashboard() {
           </EmptyStateIcon>
           <EmptyStateTitle>Nenhum prêmio encontrado</EmptyStateTitle>
           <EmptyStateText>
-            Comece adicionando prêmios para suas rifas.
+            Adicione prêmios para usá-los em suas campanhas de rifas. Os prêmios criados poderão ser facilmente selecionados ao configurar novas rifas.
           </EmptyStateText>
           <Link href="/dashboard/criador/premios/adicionar">
             <AddButton>
@@ -500,4 +653,4 @@ export default function PrizesDashboard() {
       )}
     </CreatorDashboard>
   );
-} 
+}

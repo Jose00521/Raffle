@@ -1,5 +1,6 @@
 'use client';
 
+import 'reflect-metadata';
 import type { Metadata } from "next";
 import StyledComponentsRegistry from '../lib/registry';
 import { SessionProvider } from 'next-auth/react';

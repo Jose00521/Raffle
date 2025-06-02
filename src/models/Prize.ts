@@ -17,6 +17,11 @@ const PrizeSchema = new mongoose.Schema<IPrize>(
       type: String,
       trim: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PrizeCategory',

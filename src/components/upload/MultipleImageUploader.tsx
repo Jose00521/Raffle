@@ -1058,7 +1058,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     })
   );
 
-  // Inicializar imagens a partir das props no mount
+  // Encontrar e corrigir a função de inicialização de imagens a partir das props
   useEffect(() => {
     if (value.length > 0 && images.length === 0) {
       const initialImages: ImageFile[] = value.map((file, index) => {
@@ -1071,8 +1071,15 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         };
       });
       setImages(initialImages);
+      
+      // Notificar sobre a imagem de capa no próximo ciclo de renderização, evitando atualização durante render
+      if (initialImages.length > 0 && onCoverImageChange) {
+        setTimeout(() => {
+          onCoverImageChange(0);
+        }, 0);
+      }
     }
-  }, [value, images.length]);
+  }, [value, images.length, onCoverImageChange]);
   
   // Limpar URLs de objeto quando o componente desmontar
   useEffect(() => {
@@ -1148,7 +1155,9 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Notificar sobre a imagem de capa se for o primeiro upload
     if (images.length === 0 && newImages.length > 0 && onCoverImageChange) {
-      onCoverImageChange(0);
+      setTimeout(() => {
+        onCoverImageChange(0);
+      }, 0);
     }
   };
   
@@ -1190,22 +1199,27 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     // Atualizar o estado
     setImages(updatedImages);
     
-    // Notificar sobre a mudança da imagem de capa
-    if (onCoverImageChange) {
-      onCoverImageChange(0); // Sempre será o índice 0 agora
-    }
-    
     // Atualizar o onChange com a nova ordem de arquivos
     onChange(updatedImages.map(img => img.file));
     
-    // Adicionar classe de animação
-    const coverElement = document.getElementById('cover-image-container');
-    if (coverElement) {
-      coverElement.classList.remove('has-cover');
-      // Trigger reflow
-      void coverElement.offsetWidth;
-      coverElement.classList.add('has-cover');
+    // Notificar sobre a mudança da imagem de capa em um setTimeout
+    // para evitar atualização durante a renderização
+    if (onCoverImageChange) {
+      setTimeout(() => {
+        onCoverImageChange(0); // Sempre será o índice 0 agora
+      }, 0);
     }
+    
+    // Adicionar classe de animação
+    setTimeout(() => {
+      const coverElement = document.getElementById('cover-image-container');
+      if (coverElement) {
+        coverElement.classList.remove('has-cover');
+        // Trigger reflow
+        void coverElement.offsetWidth;
+        coverElement.classList.add('has-cover');
+      }
+    }, 0);
   };
   
   // Manipular exclusão
@@ -1224,11 +1238,6 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       
       // Definir a primeira imagem como capa
       newImages[0].isCover = true;
-      
-      // Notificar sobre a mudança da imagem de capa
-      if (onCoverImageChange) {
-        onCoverImageChange(0);
-      }
     }
     
     setImages(newImages);
@@ -1244,6 +1253,13 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     // Revogar a URL do objeto para evitar vazamentos de memória
     if (imageToDelete) {
       URL.revokeObjectURL(imageToDelete.preview);
+    }
+    
+    // Notificar sobre a mudança da imagem de capa se necessário
+    if (wasCover && newImages.length > 0 && onCoverImageChange) {
+      setTimeout(() => {
+        onCoverImageChange(0);
+      }, 0);
     }
   };
   

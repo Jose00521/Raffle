@@ -407,20 +407,44 @@ const MultiPrizePosition: React.FC<MultiPrizePositionProps> = ({
     }
   };
 
-  const formatPrizeValue = (value: string): string => {
-    // Verificar se o valor já está formatado como moeda
-    if (value.includes('R$')) {
+  const formatPrizeValue = (value: string | number): string => {
+    // If value is a number, convert to string
+    if (typeof value === 'number') {
+      return new Intl.NumberFormat('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      }).format(value);
+    }
+    
+    // If already formatted as currency, return as is
+    if (typeof value === 'string' && value.includes('R$')) {
       return value;
     }
     
-    // Tenta converter para número
-    const numericValue = extractNumericValue(value);
-    
-    // Formata como moeda brasileira
-    return new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(numericValue / 100); // Divide por 100 se o valor estiver em centavos
+    // Try to convert to number
+    try {
+      // Remove any non-digit character except commas and dots
+      let cleanValue = value.replace(/[R$\s]/g, '');
+      
+      // Remove dots (thousand separators)
+      cleanValue = cleanValue.replace(/\./g, '');
+      
+      // Replace comma with dot for decimal places
+      cleanValue = cleanValue.replace(/,/g, '.');
+      
+      // Convert to number
+      const numericValue = parseFloat(cleanValue);
+      
+      // Format as Brazilian currency
+      return new Intl.NumberFormat('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      }).format(numericValue);
+    } catch (error) {
+      console.error("Error formatting prize value:", value, error);
+      // Return a fallback value
+      return 'R$ 0,00';
+    }
   };
 
   return (

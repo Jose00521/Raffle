@@ -1,53 +1,114 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash } from 'react-icons/fa';
-import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
+import { motion } from 'framer-motion';
+import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash, FaCalendarAlt, FaBarcode, FaClock, FaInfoCircle, FaDollarSign, FaCheck } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
-
-// Mock data for demonstration purposes
-import { MOCK_PRIZES } from '../../page';
+import prizeAPIClient from '@/API/prizeAPIClient';
+import ImageCarousel from '@/components/ui/ImageCarousel';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { toast, ToastContainer } from 'react-toastify';
 
-const PageHeader = styled.div`
+// ======== ENHANCED PROFESSIONAL UI COMPONENTS ========
+
+const Container = styled.div`
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  
+  @media (max-width: 768px) {
+    padding: 0 16px;
+  }
+`;
+
+const Header = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  padding: 24px 0;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(to right, #6366f1, #818cf8);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px 0;
+    margin-bottom: 32px;
+  }
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  width: 42px;
+  height: 42px;
   border: none;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  font-size: 0.9rem;
+  background-color: #f8fafc;
+  color: #475569;
+  border-radius: 10px;
   cursor: pointer;
-  padding: 8px;
-  margin-left: -8px;
-  border-radius: 6px;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   
   &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    background-color: #f1f5f9;
+    color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    width: 38px;
+    height: 38px;
   }
 `;
 
-const PageTitle = styled.h1`
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0 0 0 16px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+const HeaderContent = styled.div`
+  margin-left: 18px;
+`;
+
+const HeaderTitle = styled.h1`
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  letter-spacing: -0.01em;
   
-  @media (max-width: 768px) {
-    font-size: 1.4rem;
+  svg {
+    color: #6366f1;
+  }
+`;
+
+const HeaderSubtitle = styled.div`
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  svg {
+    font-size: 12px;
   }
 `;
 
@@ -55,6 +116,10 @@ const ActionButtons = styled.div`
   display: flex;
   gap: 12px;
   margin-left: auto;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button<{ $variant?: 'primary' | 'danger' }>`
@@ -62,35 +127,50 @@ const Button = styled.button<{ $variant?: 'primary' | 'danger' }>`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   
-  ${({ $variant }) => 
-    $variant === 'danger' 
-      ? `
+  ${({ $variant }) => $variant === 'danger' 
+    ? `
+      color: #ef4444;
+      background-color: #fef2f2;
+      border-color: #fee2e2;
+      
+      &:hover {
         background-color: #fee2e2;
-        color: #ef4444;
-        border: 1px solid #fecaca;
-        
-        &:hover {
-          background-color: #fecaca;
-        }
-      `
-      : `
-        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 6px rgba(106, 17, 203, 0.1);
-        
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 10px rgba(106, 17, 203, 0.2);
-        }
-      `
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+      }
+    ` 
+    : `
+      color: white;
+      background: linear-gradient(to right, #4f46e5, #6366f1);
+      
+      &:hover {
+        background: linear-gradient(to right, #4338ca, #4f46e5);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+      }
+    `
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0 14px;
+    
+    span {
+      display: none;
+    }
   }
 `;
 
@@ -99,8 +179,8 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  padding: 72px 0;
+  color: #64748b;
 `;
 
 const LoadingSpinner = styled.div`
@@ -108,6 +188,8 @@ const LoadingSpinner = styled.div`
   
   svg {
     animation: spin 1s linear infinite;
+    color: #6366f1;
+    filter: drop-shadow(0 4px 6px rgba(99, 102, 241, 0.1));
   }
   
   @keyframes spin {
@@ -116,160 +198,289 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-const DetailContainer = styled.div`
+const ErrorMessage = styled.div`
+  background-color: #fef2f2;
+  color: #ef4444;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #fee2e2;
+  text-align: center;
+  max-width: 500px;
+  margin: 40px auto;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+  
+  svg {
+    margin-right: 8px;
+  }
+`;
+
+const ContentLayout = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 40px;
   
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
+  @media (min-width: 992px) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
   }
 `;
 
 const ImageSection = styled.div`
   background-color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-`;
-
-const MainImage = styled.div`
-  width: 100%;
-  height: 300px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.06);
   position: relative;
   
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  @media (min-width: 768px) {
-    height: 400px;
-  }
-`;
-
-const AdditionalImages = styled.div`
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  overflow-x: auto;
-  
-  &::-webkit-scrollbar {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 4px;
+    background: linear-gradient(to right, #4f46e5, #6366f1);
+    z-index: 10;
   }
   
-  &::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
+  @media (min-width: 992px) {
+    position: sticky;
+    top: 24px;
   }
 `;
 
-const ThumbnailImage = styled.div<{ $selected?: boolean }>`
-  width: 60px;
-  height: 60px;
-  flex-shrink: 0;
-  cursor: pointer;
-  border-radius: 6px;
+const ContentSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+`;
+
+const Card = styled.div`
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  border: 2px solid ${props => props.$selected ? '#6a11cb' : 'transparent'};
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   
   &:hover {
-    opacity: 0.9;
+    transform: translateY(-4px);
+    box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.08);
   }
 `;
 
-const InfoSection = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+const CardHeader = styled.div`
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  background-color: #f8fafc;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #4f46e5, #6366f1);
+  }
 `;
 
-const PrizeName = styled.h2`
-  font-size: 1.8rem;
+const CardTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  svg {
+    color: #6366f1;
+  }
+`;
+
+const CardContent = styled.div`
+  padding: 28px;
+`;
+
+const PrizeName = styled.h1`
+  font-size: 28px;
   font-weight: 700;
-  margin: 0 0 12px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0 0 20px;
+  color: #0f172a;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  
+  @media (min-width: 768px) {
+    font-size: 32px;
+  }
 `;
 
 const PrizeValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 24px;
-  color: #6a11cb;
-  display: inline-block;
-  padding: 6px 16px;
-  background-color: rgba(106, 17, 203, 0.1);
-  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: #4f46e5;
+  background: linear-gradient(to right, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.15));
+  margin-bottom: 28px;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1);
+  
+  svg {
+    color: #6366f1;
+  }
 `;
 
 const PrizeDescription = styled.div`
-  font-size: 1rem;
-  line-height: 1.6;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin-bottom: 24px;
-`;
-
-const InfoItem = styled.div`
-  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #475569;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
   
-  &:last-child {
+  p {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+  
+  p:last-child {
     margin-bottom: 0;
   }
 `;
 
-const InfoLabel = styled.div`
-  font-size: 0.85rem;
+const DetailsList = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const DetailItem = styled.div`
+  padding: 20px;
+  background: linear-gradient(to right, rgba(248, 250, 252, 0.6), rgba(241, 245, 249, 0.8));
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+`;
+
+const DetailLabel = styled.div`
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    font-size: 14px;
+    color: #6366f1;
+  }
+`;
+
+const DetailValue = styled.div`
+  font-size: 16px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin-bottom: 4px;
+  color: #0f172a;
+  letter-spacing: -0.01em;
 `;
 
-const InfoValue = styled.div`
-  font-size: 0.95rem;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+// Status badge for additional details
+const StatusBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #047857;
+  background-color: #ecfdf5;
+  padding: 4px 8px;
+  border-radius: 16px;
+  margin-top: 8px;
+  border: 1px solid #d1fae5;
+  
+  svg {
+    font-size: 10px;
+  }
 `;
 
-interface DetailPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function PrizeDetailPage({ params }: DetailPageProps) {
+// Main component
+export default function PrizeDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   
   const [prize, setPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Funções de formatação de valor monetário
+  const extractNumericValue = (valueString: string): number => {
+    try {
+      // Remove qualquer caractere que não seja dígito, ponto ou vírgula
+      const cleanString = valueString.replace(/[^\d,.]/g, '');
+      
+      // Substitui vírgula por ponto para processamento numérico
+      const normalizedString = cleanString.replace(/,/g, '.');
+      
+      // Converte para número
+      const value = parseFloat(normalizedString);
+      
+      // Retorna 0 se não for um número válido
+      return isNaN(value) ? 0 : value;
+    } catch (error) {
+      console.error("Erro ao extrair valor numérico:", error);
+      return 0;
+    }
+  };
+
+  const formatPrizeValue = (value: string | number): string => {
+    if (!value) return 'R$ 0,00';
+    
+    // Se for um número, converte para string
+    const valueString = typeof value === 'number' ? value.toString() : value;
+    
+    // Verificar se o valor já está formatado como moeda
+    if (valueString.includes('R$')) {
+      return valueString;
+    }
+    
+    // Tenta converter para número
+    const numericValue = extractNumericValue(valueString);
+    
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue);
+  };
   
   // Fetch prize data
   useEffect(() => {
     const fetchPrize = async () => {
       try {
-        setIsLoading(true);
-        
-        // In a real application, you would make an API call here
-        // For demonstration, we'll use our mock data
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
-        
-        const foundPrize = MOCK_PRIZES.find((p: IPrize) => p._id === id);
-        
-        if (foundPrize) {
-          setPrize(foundPrize);
-          setSelectedImage(foundPrize.image);
-        } else {
-          setError('Prêmio não encontrado');
+        console.log('prize id',id);
+        const response = await prizeAPIClient.getPrizeById(id as string);
+        console.log('response',response);
+        if (!response || response.error) {
+          throw new Error(response?.message || 'Erro ao carregar o prêmio');
         }
+        setPrize(response.data || response);
       } catch (err) {
         setError('Erro ao carregar o prêmio');
         console.error('Error loading prize:', err);
@@ -289,116 +500,192 @@ export default function PrizeDetailPage({ params }: DetailPageProps) {
     router.push(`/dashboard/criador/premios/${id}`);
   };
   
-  const handleDelete = () => {
-    // In a real app, you would navigate to the edit page and open the delete confirmation
-    // or implement the delete functionality directly here
-    router.push(`/dashboard/criador/premios/${id}`);
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
   };
   
-  const handleSelectImage = (image: string) => {
-    setSelectedImage(image);
+  const handleConfirmDelete = async () => {
+    if (!id) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      const response = await prizeAPIClient.deletePrize(id as string);
+      console.log('response',response);
+      
+      // Fechar o modal e redirecionar para a lista de prêmios
+
+      if(response.success){
+        setShowDeleteModal(false);
+        router.push('/dashboard/criador/premios');
+      }
+
+      if(response.error){
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.error('Erro ao excluir o prêmio:', err);
+      // Aqui você poderia exibir uma mensagem de erro no modal
+    } finally {
+      setIsDeleting(false);
+    }
   };
   
-  // Create a list of all images (main + additional)
-  const allImages = prize ? [prize.image, ...(prize.images || [])] : [];
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+  };
+  
+  // Create a list of all images
+  const allImages = prize ? [prize.image, ...(prize.images || [])].filter(Boolean) : [];
+  
+  // Format date for better display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
   
   return (
     <CreatorDashboard>
-      <PageHeader>
-        <BackButton onClick={handleBack}>
-          <FaArrowLeft />
-        </BackButton>
-        <PageTitle>
-          <FaTrophy style={{ color: '#f59e0b' }} />
-          Detalhes do Prêmio
-        </PageTitle>
-        
-        {prize && (
-          <ActionButtons>
-            <Button onClick={handleEdit}>
-              <FaEdit />
-              Editar
-            </Button>
-            <Button $variant="danger" onClick={handleDelete}>
-              <FaTrash />
-              Excluir
-            </Button>
-          </ActionButtons>
-        )}
-      </PageHeader>
-      
-      {isLoading ? (
-        <LoadingContainer>
-          <LoadingSpinner>
-            <FaSpinner size={32} />
-          </LoadingSpinner>
-          <div>Carregando prêmio...</div>
-        </LoadingContainer>
-      ) : error ? (
-        <div>{error}</div>
-      ) : prize ? (
-        <DetailContainer>
-          <ImageSection>
-            <MainImage>
-              <img src={selectedImage || prize.image} alt={prize.name} />
-            </MainImage>
-            
-            {allImages.length > 1 && (
-              <AdditionalImages>
-                {allImages.map((image, index) => (
-                  <ThumbnailImage 
-                    key={index}
-                    $selected={image === selectedImage}
-                    onClick={() => handleSelectImage(image)}
-                  >
-                    <img src={image} alt={`${prize.name} - imagem ${index + 1}`} />
-                  </ThumbnailImage>
-                ))}
-              </AdditionalImages>
-            )}
-          </ImageSection>
+      <Container>
+        <ToastContainer />
+        <Header>
+          <BackButton onClick={handleBack}>
+            <FaArrowLeft size={18} />
+          </BackButton>
           
-          <InfoSection>
-            <PrizeName>{prize.name}</PrizeName>
-            <PrizeValue>{prize.value}</PrizeValue>
+          <HeaderContent>
+            <HeaderTitle>
+              <FaTrophy />
+              Detalhes do Prêmio
+            </HeaderTitle>
+            {prize && <HeaderSubtitle><FaBarcode size={12} /> {prize.prizeCode}</HeaderSubtitle>}
+          </HeaderContent>
+          
+          {prize && (
+            <ActionButtons>
+              <Button onClick={handleEdit}>
+                <FaEdit size={16} />
+                <span>Editar</span>
+              </Button>
+              
+              <Button $variant="danger" onClick={handleDeleteClick}>
+                <FaTrash size={16} />
+                <span>Excluir</span>
+              </Button>
+            </ActionButtons>
+          )}
+        </Header>
+        
+        {isLoading ? (
+          <LoadingContainer>
+            <LoadingSpinner>
+              <FaSpinner size={36} />
+            </LoadingSpinner>
+            <div>Carregando detalhes do prêmio...</div>
+          </LoadingContainer>
+        ) : error ? (
+          <ErrorMessage>
+            <FaInfoCircle />
+            {error}
+          </ErrorMessage>
+        ) : prize ? (
+          <ContentLayout>
+            <ImageSection>
+              <ImageCarousel 
+                images={allImages}
+                showZoomIndicator={true}
+                aspectRatio="1/1"
+              />
+            </ImageSection>
             
-            {prize.description && (
-              <PrizeDescription>
-                {prize.description}
-              </PrizeDescription>
-            )}
-            
-            <InfoItem>
-              <InfoLabel>ID do Prêmio</InfoLabel>
-              <InfoValue>{prize._id}</InfoValue>
-            </InfoItem>
-            
-            <InfoItem>
-              <InfoLabel>Data de Cadastro</InfoLabel>
-              <InfoValue>
-                {prize.createdAt ? new Date(prize.createdAt).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric'
-                }) : ''}
-              </InfoValue>
-            </InfoItem>
-            
-            <InfoItem>
-              <InfoLabel>Última Atualização</InfoLabel>
-              <InfoValue>
-                {prize.updatedAt ? new Date(prize.updatedAt).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric'
-                }) : ''}
-              </InfoValue>
-            </InfoItem>
-          </InfoSection>
-        </DetailContainer>
-      ) : (
-        <div>Prêmio não encontrado</div>
-      )}
+            <ContentSection>
+              <Card>
+                <CardContent>
+                  <PrizeName>{prize.name}</PrizeName>
+                  <PrizeValue>
+                    {formatPrizeValue(prize.value)}
+                  </PrizeValue>
+                  
+                  {prize.description && (
+                    <PrizeDescription>
+                      {prize.description}
+                    </PrizeDescription>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <FaInfoCircle />
+                    Informações Detalhadas
+                  </CardTitle>
+                </CardHeader>
+                
+                <CardContent>
+                  <DetailsList>
+                    <DetailItem>
+                      <DetailLabel>
+                        <FaBarcode />
+                        ID do Prêmio
+                      </DetailLabel>
+                      <DetailValue>{prize.prizeCode}</DetailValue>
+                      <StatusBadge>
+                        <FaCheck />
+                        Ativo
+                      </StatusBadge>
+                    </DetailItem>
+                    
+                    <DetailItem>
+                      <DetailLabel>
+                        <FaCalendarAlt />
+                        Data de Cadastro
+                      </DetailLabel>
+                      <DetailValue>
+                        {formatDate(prize.createdAt?.toString())}
+                      </DetailValue>
+                    </DetailItem>
+                    
+                    <DetailItem>
+                      <DetailLabel>
+                        <FaClock />
+                        Última Atualização
+                      </DetailLabel>
+                      <DetailValue>
+                        {formatDate(prize.updatedAt?.toString())}
+                      </DetailValue>
+                    </DetailItem>
+                  </DetailsList>
+                </CardContent>
+              </Card>
+            </ContentSection>
+          </ContentLayout>
+        ) : (
+          <ErrorMessage>
+            <FaInfoCircle />
+            Prêmio não encontrado
+          </ErrorMessage>
+        )}
+        
+        {/* Modal de confirmação de exclusão */}
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir o prêmio "${prize?.name}"? Esta ação não pode ser desfeita.`}
+          confirmText={isDeleting ? "Excluindo..." : "Sim, Excluir"}
+          cancelText="Cancelar"
+          type="danger"
+        />
+      </Container>
     </CreatorDashboard>
   );
 } 

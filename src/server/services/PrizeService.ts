@@ -10,7 +10,7 @@ import { nextAuthOptions } from "@/lib/auth/nextAuthOptions";
 import logger from "@/lib/logger/logger";
 import { rateLimit } from "@/lib/rateLimit";
 export interface IPrizeService {
-    getAllPrizes(): Promise<ApiResponse<IPrize[]>>;
+    getAllPrizes(): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -18,6 +18,8 @@ export interface IPrizeService {
         image: File;
         images: File[];
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
+    getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
+    deletePrize(id: string): Promise<ApiResponse<null>>;
 }
 
 @injectable()
@@ -30,8 +32,37 @@ export class PrizeService implements IPrizeService {
         this.prizeRepository = prizeRepository;
     }
 
-    async getAllPrizes(): Promise<ApiResponse<IPrize[]>> {
-        return await this.prizeRepository.getAllPrizes();
+    async getAllPrizes(): Promise<ApiResponse<IPrize[]> | ApiResponse<null>> {
+        try {
+            const session = await getServerSession(nextAuthOptions);
+            logger.info("Verificando sessão", session);
+
+            console.log("Session",session);
+
+            if (!session?.user?.id) {
+                return createErrorResponse('Não autorizado', 401);
+            }
+
+            const userCode = session?.user?.id;
+
+            // Use type assertion to match our return type
+            return await this.prizeRepository.getAllPrizes(userCode) as ApiResponse<IPrize[]>;
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Service: Erro ao buscar prêmios',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
+        return await this.prizeRepository.getPrizeById(id);
+    }
+
+    async deletePrize(id: string): Promise<ApiResponse<null>> {
+        return await this.prizeRepository.deletePrize(id);
     }
 
     async createPrize(prize: {
@@ -169,6 +200,7 @@ export class PrizeService implements IPrizeService {
                     name: prize.name,
                     description: prize.description,
                     value: prize.value,
+                    userCode: session.user.id,
                     image: mainImageUrl,
                     images: otherImagesUrls
                 });

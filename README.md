@@ -118,3 +118,68 @@ Este projeto foi desenvolvido como parte de um esforço para criar uma plataform
 ## Licença
 
 Este projeto é privado e não está licenciado para uso público.
+
+## Componentes Reutilizáveis
+
+### ImageCarousel
+
+O componente `ImageCarousel` é um carrossel de imagens reutilizável com funcionalidades como:
+
+- Navegação por setas
+- Navegação por indicadores de pontos
+- Suporte a deslize/swipe em dispositivos móveis e desktop
+- Miniaturas das imagens
+- Indicador de zoom
+- Autoplay com pausa na interação do usuário
+
+#### Como usar
+
+```tsx
+import ImageCarousel from '@/components/ui/ImageCarousel';
+import ImageModal from '@/components/ui/ImageModal'; // Opcional, para visualização ampliada
+
+// No seu componente
+const [showImageModal, setShowImageModal] = useState(false);
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+// Exemplo de uso básico
+<ImageCarousel 
+  images={arrayDeImagens}
+  onImageClick={(index) => {
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  }}
+/>
+
+// Com opções personalizadas
+<ImageCarousel 
+  images={arrayDeImagens}
+  showZoomIndicator={true}
+  aspectRatio="4/3"  // Padrão é "16/9"
+  autoplayInterval={3000}  // Padrão é 5000ms
+  showThumbnails={true}  // Padrão é true
+/>
+
+// Modal para visualização ampliada (opcional)
+<ImageModal 
+  isOpen={showImageModal}
+  onClose={() => setShowImageModal(false)}
+  images={arrayDeImagens}
+  currentIndex={currentImageIndex}
+/>
+```
+
+#### Props
+
+| Prop | Tipo | Padrão | Descrição |
+|------|------|--------|-----------|
+| `images` | `string[]` | Obrigatório | Array com URLs das imagens |
+| `onImageClick` | `(index: number) => void` | - | Função chamada ao clicar em uma imagem |
+| `autoplayInterval` | `number` | `5000` | Intervalo em ms para troca automática de imagens |
+| `showZoomIndicator` | `boolean` | `false` | Exibe ícone de zoom ao passar o mouse sobre a imagem |
+| `showThumbnails` | `boolean` | `true` | Exibe miniaturas das imagens abaixo do carrossel |
+| `aspectRatio` | `string` | `"16/9"` | Define a proporção de aspecto do carrossel |
+
+#### Exemplo
+
+Veja um exemplo completo de uso em `src/examples/ImageCarouselUsage.tsx`.

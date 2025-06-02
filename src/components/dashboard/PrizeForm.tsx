@@ -437,10 +437,13 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   const handleAdditionalImagesChange = (files: File[]) => {
     setAdditionalImageFiles(files);
-    // Limpar erros quando imagens são adicionadas
-    if (files.length > 0 && errorsImage.image) {
-      setErrorsImage({});
-    }
+    // Envolver em setTimeout para evitar atualização durante renderização
+    setTimeout(() => {
+      // Limpar erros quando imagens são adicionadas
+      if (files.length > 0 && errorsImage.image) {
+        setErrorsImage({});
+      }
+    }, 0);
   };
   
   const handleCategoryChange = (value: string) => {

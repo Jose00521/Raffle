@@ -6,6 +6,7 @@ export interface IPrize {
     name: string;
     description?: string;
     categoryId?: mongoose.Types.ObjectId;
+    createdBy?: mongoose.Types.ObjectId;
     image: string;
     images: string[];
     value: string;

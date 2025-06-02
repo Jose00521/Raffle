@@ -16,6 +16,37 @@ const prizeAPIClient = {
     }
   },
 
+  getPrizeById: async (id: string) => {
+    try {
+      const response = await fetch(`/api/prizes/detalhes/${id}`);
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 500,
+        message: 'Erro ao comunicar com o servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      };
+    }
+  },
+
+  deletePrize: async (id: string) => {
+    try {
+      const response = await fetch(`/api/prizes/detalhes/${id}`, {
+        method: 'DELETE'
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 500,
+        message: 'Erro ao comunicar com o servidor',  
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      };
+    }
+  },
+
+
     createPrize: async (prize: any) => {
         try {
             const response = await fetch('/api/prizes', {
