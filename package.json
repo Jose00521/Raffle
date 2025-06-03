@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "set NODE_OPTIONS=--max-old-space-size=8192 && tsx server.ts",
     "build": "next build",
-    "start": "set NODE_ENV=production && node server.js",
+    "start": "set NODE_ENV=production && set NODE_OPTIONS=--max-old-space-size=8192 && node server.js",
     "lint": "next lint",
     "migrate:list": "npx migrate list",
     "migrate:up": "npx migrate up",

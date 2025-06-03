@@ -25,6 +25,7 @@ export interface IPrizeRepository {
         userCode: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     deletePrize(id: string): Promise<ApiResponse<null>>;
+    updatePrize(id: string, updatedData: Record<string, any>, userCode?: string): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -53,7 +54,7 @@ export class PrizeRepository implements IPrizeRepository {
 
 
 
-            const prizes = await Prize.find({ createdBy: user?._id });
+            const prizes = await Prize.find({ createdBy: user?._id },'-_id');
 
             return createSuccessResponse(prizes, 'Prêmios encontrados com sucesso', 200);
         } catch (error) {
@@ -70,12 +71,57 @@ export class PrizeRepository implements IPrizeRepository {
     async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
         try {
             await this.db.connect();
-            const prize = await Prize.findOne({ prizeCode: id });
+            const prize = await Prize.findOne({ prizeCode: id },'-_id');
             return createSuccessResponse(prize, 'Prêmio encontrado com sucesso', 200);
         } catch (error) {
             throw new ApiError({
                 success: false,
                 message: 'Erro ao buscar prêmio',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async updatePrize(id: string, updatedData: Record<string, any>, userCode?: string): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
+        try {
+            await this.db.connect();
+            
+            // Find the prize
+            const prize = await Prize.findOne({ prizeCode: id });
+            
+            if (!prize) {
+                return createErrorResponse('Prêmio não encontrado', 404);
+            }
+            
+            // If userCode is provided, verify that the user owns the prize
+            if (userCode) {
+                const user = await User.findOne({ userCode });
+                
+                if (!user) {
+                    return createErrorResponse('Usuário não encontrado', 404);
+                }
+                
+                // Check if the prize belongs to the user
+                if (prize.createdBy && prize.createdBy.toString() !== user._id.toString()) {
+                    return createErrorResponse('Você não tem permissão para atualizar este prêmio', 403);
+                }
+            }
+            
+            // Update the prize
+            Object.keys(updatedData).forEach(key => {
+                prize[key] = updatedData[key];
+            });
+            
+            prize.updatedAt = new Date();
+            
+            await prize.save();
+            
+            return createSuccessResponse(prize, 'Prêmio atualizado com sucesso', 200);
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Repository: Erro ao atualizar prêmio',
                 statusCode: 500,
                 cause: error as Error
             });

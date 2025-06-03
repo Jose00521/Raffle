@@ -9,7 +9,7 @@ export interface PrizeItemProps {
   prizeId?: string;
   name: string;
   value: string;
-  image?: string;
+  image?: string | File;
   position?: number;
 }
 

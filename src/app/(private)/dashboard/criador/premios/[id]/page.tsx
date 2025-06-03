@@ -1,81 +1,100 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { FaArrowLeft, FaTrophy, FaSpinner, FaTrash } from 'react-icons/fa';
-import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
-import PrizeForm from '@/components/dashboard/PrizeForm';
-import { IPrize } from '@/models/Prize';
-
-// Mock data for demonstration purposes
-import { MOCK_PRIZES } from '../../premios/page';
+import { toast } from 'react-toastify';
+import { FaArrowLeft, FaSpinner } from 'react-icons/fa';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import prizeAPIClient from '@/API/prizeAPIClient';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import PrizeUpdateForm from '@/components/dashboard/PrizeUpdateForm';
 
-const PageHeader = styled.div`
+const Container = styled.div`
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  
+  @media (max-width: 768px) {
+    padding: 0 16px;
+  }
+`;
+
+const Header = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  padding: 24px 0;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(to right, #6366f1, #818cf8);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px 0;
+    margin-bottom: 32px;
+  }
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  width: 42px;
+  height: 42px;
   border: none;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  font-size: 0.9rem;
+  background-color: #f8fafc;
+  color: #475569;
+  border-radius: 10px;
   cursor: pointer;
-  padding: 8px;
-  margin-left: -8px;
-  border-radius: 6px;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   
   &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    background-color: #f1f5f9;
+    color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
-`;
-
-const PageTitle = styled.h1`
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0 0 0 16px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  
+  &:active {
+    transform: translateY(0);
+  }
   
   @media (max-width: 768px) {
-    font-size: 1.4rem;
+    width: 38px;
+    height: 38px;
   }
 `;
 
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-left: auto;
+const HeaderContent = styled.div`
+  margin-left: 18px;
 `;
 
-const DeleteButton = styled.button`
+const HeaderTitle = styled.h1`
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: #fee2e2;
-  color: #ef4444;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background-color: #fecaca;
-  }
+  gap: 10px;
+  letter-spacing: -0.01em;
+`;
+
+const HeaderSubtitle = styled.div`
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 6px;
 `;
 
 const LoadingContainer = styled.div`
@@ -83,8 +102,8 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  padding: 72px 0;
+  color: #64748b;
 `;
 
 const LoadingSpinner = styled.div`
@@ -92,6 +111,8 @@ const LoadingSpinner = styled.div`
   
   svg {
     animation: spin 1s linear infinite;
+    color: #6366f1;
+    filter: drop-shadow(0 4px 6px rgba(99, 102, 241, 0.1));
   }
   
   @keyframes spin {
@@ -100,112 +121,27 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-const ConfirmationModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-`;
-
-const ModalTitle = styled.h3`
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin: 0 0 16px;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
-`;
-
-const ModalText = styled.p`
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin: 0 0 24px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-`;
-
-const ModalButtons = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-`;
-
-const ModalButton = styled.button<{ $variant?: 'danger' | 'secondary' }>`
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  ${({ $variant }) => 
-    $variant === 'danger' 
-      ? `
-        background-color: #ef4444;
-        color: white;
-        border: none;
-        
-        &:hover {
-          background-color: #dc2626;
-        }
-      `
-      : `
-        background-color: #f3f4f6;
-        color: #374151;
-        border: 1px solid #e5e7eb;
-        
-        &:hover {
-          background-color: #e5e7eb;
-        }
-      `
-  }
-`;
-
-interface EditPrizePageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function EditPrizePage({ params }: EditPrizePageProps) {
+export default function EditPrizePage() {
   const router = useRouter();
   const { id } = useParams();
   
   const [prize, setPrize] = useState<IPrize | null>(null);
+  const [originalPrize, setOriginalPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch prize data
   useEffect(() => {
     const fetchPrize = async () => {
       try {
-        setIsLoading(true);
-        
-        // In a real application, you would make an API call here
-        // For demonstration, we'll use our mock data
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
-        
-        const foundPrize = MOCK_PRIZES.find((p: IPrize) => p._id === id);
-        
-        if (foundPrize) {
-          setPrize(foundPrize);
+        const response = await prizeAPIClient.getPrizeById(id as string);
+
+        console.log("response",response);
+        if (response.success) {
+          setPrize(response.data);
+          setOriginalPrize(response.data);
         } else {
-          setError('Prêmio não encontrado');
+          setError(response.message || 'Erro ao carregar o prêmio');
         }
       } catch (err) {
         setError('Erro ao carregar o prêmio');
@@ -218,24 +154,76 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
     fetchPrize();
   }, [id]);
   
-  const handleSubmit = async (data: Partial<IPrize>) => {
-    setIsSubmitting(true);
+  const handleBack = () => {
+    router.push('/dashboard/criador/premios');
+  };
+  
+  const compareValues = (original: any, updated: any): boolean => {
+    if (original === updated) return true;
+    
+    // Handle comparing arrays (like images)
+    if (Array.isArray(original) && Array.isArray(updated)) {
+      if (original.length !== updated.length) return false;
+      
+      // Simple string comparison for URLs
+      if (typeof original[0] === 'string' && typeof updated[0] === 'string') {
+        return original.every((val, idx) => val === updated[idx]);
+      }
+      
+      // For File objects we consider them different since they're new uploads
+      return false;
+    }
+    
+    return false;
+  };
+  
+  const detectChanges = (originalData: IPrize, updatedData: Partial<IPrize>): string[] => {
+    const changedFields: string[] = [];
+    
+    // Compare each field to see if it's changed
+    Object.keys(updatedData).forEach(key => {
+      const typedKey = key as keyof IPrize;
+      if (!compareValues(originalData[typedKey], updatedData[typedKey])) {
+        changedFields.push(key);
+      }
+    });
+    
+    return changedFields;
+  };
+  
+  const handleSubmit = async (updatedData: Partial<IPrize>) => {
+    if (!originalPrize || !id) return;
     
     try {
-      // In a real application, you would make an API call here
-      // to update the prize in your database
-      console.log('Updating prize data:', data);
+      setIsSaving(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Detect which fields were actually changed
+      const modifiedFields = detectChanges(originalPrize, updatedData);
       
-      // Redirect back to prizes page on success
-      router.push('/dashboard/criador/premios');
+      if (modifiedFields.length === 0) {
+        toast.info('Nenhuma alteração detectada');
+        router.push('/dashboard/criador/premios');
+        return;
+      }
       
-    } catch (error) {
-      console.error('Error updating prize:', error);
-      setIsSubmitting(false);
-      // In a real app, you would show an error notification
+      // Only send the modified fields
+      const response = await prizeAPIClient.updatePrize(
+        id as string, 
+        updatedData, 
+        modifiedFields
+      );
+      
+      if (response.success) {
+        toast.success('Prêmio atualizado com sucesso!');
+        router.push('/dashboard/criador/premios');
+      } else {
+        toast.error(response.message || 'Erro ao atualizar o prêmio');
+      }
+    } catch (err) {
+      console.error('Error updating prize:', err);
+      toast.error('Erro ao atualizar o prêmio');
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -243,105 +231,44 @@ export default function EditPrizePage({ params }: EditPrizePageProps) {
     router.push('/dashboard/criador/premios');
   };
   
-  const handleShowDeleteConfirmation = () => {
-    setShowDeleteConfirmation(true);
-  };
-  
-  const handleCancelDelete = () => {
-    setShowDeleteConfirmation(false);
-  };
-  
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    
-    try {
-      // In a real application, you would make an API call here
-      // to delete the prize from your database
-      console.log('Deleting prize:', id);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirect back to prizes page on success
-      router.push('/dashboard/criador/premios');
-      
-    } catch (error) {
-      console.error('Error deleting prize:', error);
-      setIsDeleting(false);
-      setShowDeleteConfirmation(false);
-      // In a real app, you would show an error notification
-    }
-  };
-  
   return (
     <CreatorDashboard>
-      <PageHeader>
-        <BackButton onClick={handleCancel}>
-          <FaArrowLeft />
-        </BackButton>
-        <PageTitle>
-          <FaTrophy style={{ color: '#f59e0b' }} />
-          Editar Prêmio
-        </PageTitle>
+      <Container>
+        <Header>
+          <BackButton onClick={handleBack}>
+            <FaArrowLeft size={18} />
+          </BackButton>
+          
+          <HeaderContent>
+            <HeaderTitle>
+              Editar Prêmio
+            </HeaderTitle>
+            <HeaderSubtitle>
+              Atualize as informações do prêmio
+            </HeaderSubtitle>
+          </HeaderContent>
+        </Header>
         
-        {prize && (
-          <ActionButtons>
-            <DeleteButton 
-              onClick={handleShowDeleteConfirmation}
-              disabled={isSubmitting || isDeleting}
-            >
-              <FaTrash />
-              Excluir
-            </DeleteButton>
-          </ActionButtons>
+        {isLoading ? (
+          <LoadingContainer>
+            <LoadingSpinner>
+              <FaSpinner size={36} />
+            </LoadingSpinner>
+            <div>Carregando dados do prêmio...</div>
+          </LoadingContainer>
+        ) : error ? (
+          <div>{error}</div>
+        ) : prize ? (
+          <PrizeUpdateForm
+            initialData={prize}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={isSaving}
+          />
+        ) : (
+          <div>Prêmio não encontrado</div>
         )}
-      </PageHeader>
-      
-      {isLoading ? (
-        <LoadingContainer>
-          <LoadingSpinner>
-            <FaSpinner size={32} />
-          </LoadingSpinner>
-          <div>Carregando prêmio...</div>
-        </LoadingContainer>
-      ) : error ? (
-        <div>{error}</div>
-      ) : prize ? (
-        <PrizeForm
-          initialData={prize}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isLoading={isSubmitting || isDeleting}
-        />
-      ) : (
-        <div>Prêmio não encontrado</div>
-      )}
-      
-      {showDeleteConfirmation && (
-        <ConfirmationModal>
-          <ModalContent>
-            <ModalTitle>Confirmar exclusão</ModalTitle>
-            <ModalText>
-              Tem certeza que deseja excluir o prêmio "{prize?.name}"? Esta ação não pode ser desfeita.
-            </ModalText>
-            <ModalButtons>
-              <ModalButton 
-                onClick={handleCancelDelete}
-                disabled={isDeleting}
-              >
-                Cancelar
-              </ModalButton>
-              <ModalButton 
-                $variant="danger"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Excluindo...' : 'Excluir Prêmio'}
-              </ModalButton>
-            </ModalButtons>
-          </ModalContent>
-        </ConfirmationModal>
-      )}
+      </Container>
     </CreatorDashboard>
   );
 } 

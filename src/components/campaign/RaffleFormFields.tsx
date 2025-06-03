@@ -83,7 +83,7 @@ export type RaffleFormData = {
       prizeId?: string, 
       name: string, 
       value: string, 
-      image?: string
+      image?: string | File
     }>
   }>;
   enableCombos: boolean;

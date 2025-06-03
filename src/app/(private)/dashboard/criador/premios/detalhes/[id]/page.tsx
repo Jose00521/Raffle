@@ -8,6 +8,7 @@ import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash, FaCalendarAlt, FaBar
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import prizeAPIClient from '@/API/prizeAPIClient';
 import ImageCarousel from '@/components/ui/ImageCarousel';
+import ImageModal from '@/components/ui/ImageModal';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast, ToastContainer } from 'react-toastify';
@@ -106,6 +107,9 @@ const HeaderSubtitle = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   
   svg {
     font-size: 12px;
@@ -220,7 +224,7 @@ const ContentLayout = styled.div`
   gap: 40px;
   
   @media (min-width: 992px) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 1.2fr minmax(0, 1fr);
     gap: 56px;
     align-items: start;
   }
@@ -232,6 +236,7 @@ const ImageSection = styled.div`
   overflow: hidden;
   box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.06);
   position: relative;
+  padding: 0;
   
   &::before {
     content: '';
@@ -248,12 +253,61 @@ const ImageSection = styled.div`
     position: sticky;
     top: 24px;
   }
+  
+  /* Improved styling for carousel container */
+  > div {
+    width: 100%;
+  }
+  
+  /* Make images clickable with cursor pointer */
+  img {
+    cursor: pointer;
+  }
+  
+  /* Add zoom indicator on hover */
+  .carousel-slide {
+    position: relative;
+    
+    &:hover .zoom-indicator {
+      opacity: 1;
+    }
+  }
+  
+  .zoom-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 24px;
+    z-index: 5;
+  }
+  
+  /* Improved styling for thumbnails */
+  > div > div:last-child {
+    padding: 16px;
+    background: #f8fafc;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+  }
 `;
 
 const ContentSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 30px;
+  
+  @media (min-width: 992px) {
+    padding-top: 10px; /* Align better with the carousel */
+  }
 `;
 
 const Card = styled.div`
@@ -263,10 +317,6 @@ const Card = styled.div`
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.08);
-  }
 `;
 
 const CardHeader = styled.div`
@@ -360,7 +410,7 @@ const DetailsList = styled.div`
   gap: 20px;
   
   @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
   }
 `;
 
@@ -370,6 +420,7 @@ const DetailItem = styled.div`
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.6);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
   
   &:hover {
     transform: translateY(-2px);
@@ -397,6 +448,9 @@ const DetailValue = styled.div`
   font-weight: 600;
   color: #0f172a;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 // Status badge for additional details
@@ -418,6 +472,117 @@ const StatusBadge = styled.span`
   }
 `;
 
+const CustomCarouselStyles = styled.div`
+  /* Custom carousel styles that override the default ImageCarousel component */
+  width: 100%;
+  
+  .carousel-dots {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 10;
+  }
+  
+  .carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &.active {
+      background-color: white;
+      transform: scale(1.2);
+    }
+    
+    &:hover {
+      background-color: white;
+    }
+  }
+  
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    &.prev {
+      left: 16px;
+    }
+    
+    &.next {
+      right: 16px;
+    }
+  }
+  
+  /* Thumbnail styling */
+  .carousel-thumbnails {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    background: #f8fafc;
+    
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  }
+  
+  .carousel-thumbnail {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    
+    &.active {
+      border-color: #4f46e5;
+    }
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+`;
+
 // Main component
 export default function PrizeDetailPage() {
   const router = useRouter();
@@ -428,6 +593,8 @@ export default function PrizeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Funções de formatação de valor monetário
   const extractNumericValue = (valueString: string): number => {
@@ -538,6 +705,19 @@ export default function PrizeDetailPage() {
   // Create a list of all images
   const allImages = prize ? [prize.image, ...(prize.images || [])].filter(Boolean) : [];
   
+  // Convert File objects to strings (for display only)
+  const getImageUrl = (image: string | File): string => {
+    return typeof image === 'string' ? image : URL.createObjectURL(image);
+  };
+  
+  const allImageUrls = allImages.map(getImageUrl);
+  
+  // Handle image click to open the modal
+  const handleImageClick = (index: number) => {
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  };
+  
   // Format date for better display
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -598,11 +778,16 @@ export default function PrizeDetailPage() {
         ) : prize ? (
           <ContentLayout>
             <ImageSection>
-              <ImageCarousel 
-                images={allImages}
-                showZoomIndicator={true}
-                aspectRatio="1/1"
-              />
+              <CustomCarouselStyles>
+                <ImageCarousel 
+                  images={allImageUrls}
+                  showZoomIndicator={true}
+                  aspectRatio="16/9"
+                  showThumbnails={true}
+                  autoplayInterval={5000}
+                  onImageClick={handleImageClick}
+                />
+              </CustomCarouselStyles>
             </ImageSection>
             
             <ContentSection>
@@ -636,7 +821,7 @@ export default function PrizeDetailPage() {
                         <FaBarcode />
                         ID do Prêmio
                       </DetailLabel>
-                      <DetailValue>{prize.prizeCode}</DetailValue>
+                      <DetailValue title={prize.prizeCode}>{prize.prizeCode}</DetailValue>
                       <StatusBadge>
                         <FaCheck />
                         Ativo
@@ -684,6 +869,16 @@ export default function PrizeDetailPage() {
           confirmText={isDeleting ? "Excluindo..." : "Sim, Excluir"}
           cancelText="Cancelar"
           type="danger"
+        />
+        
+        {/* Modal para visualização de imagens em tela cheia */}
+        <ImageModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          images={allImageUrls}
+          currentIndex={currentImageIndex}
+          campaignTitle={prize?.name || "Prêmio"}
+          campaignPrice={prize?.value ? formatPrizeValue(prize.value) : ""}
         />
       </Container>
     </CreatorDashboard>

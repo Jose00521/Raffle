@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags, FaExclamationCircle } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
@@ -21,8 +21,8 @@ interface PrizeFormProps {
     name: string;
     description: string;
     value: string;
-    image: File;
-    images: File[];
+    image: File | string;
+    images: Array<File | string>;
     categoryId: mongoose.Types.ObjectId;
   }>) => void;
   onCancel: () => void;
@@ -310,6 +310,32 @@ const MOCK_CATEGORIES = [
   { value: "others", label: "Outros" }
 ];
 
+// Função para formatar valores monetários
+const formatCurrency = (value: string | number | undefined): string => {
+  if (!value) return '';
+  
+  // Se já estiver formatado como moeda, retornar como está
+  if (typeof value === 'string' && value.includes('R$')) {
+    return value;
+  }
+  
+  // Converter para número
+  let numValue: number;
+  if (typeof value === 'string') {
+    // Remover caracteres não numéricos
+    numValue = parseFloat(value.replace(/\D/g, ''));
+  } else {
+    numValue = value;
+  }
+  
+  // Formatar como moeda brasileira
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2
+  }).format(numValue); // Divide por 100 para considerar centavos
+};
+
 const PrizeForm: React.FC<PrizeFormProps> = ({
   initialData,
   onSubmit,
@@ -318,9 +344,13 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
 }) => {
   // Helper function to convert MongoDB ObjectId to string if needed
   const getCategoryIdAsString = (category?: mongoose.Types.ObjectId | string): string => {
+    console.log("category",category);
     if (!category) return '';
     return category.toString();
   };
+  
+  // Estado para rastrear se o formulário foi modificado
+  const [isFormDirty, setIsFormDirty] = useState(false);
   
   const [formData, setFormData] = useState<Partial<IPrize>>({
     image: '',
@@ -328,26 +358,50 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     ...initialData
   });
 
+  // Formatar o valor para exibição
+  const formattedValue = initialData?.value ? formatCurrency(initialData.value) : '';
+  console.log("Valor original:", initialData?.value);
+  console.log("Valor formatado:", formattedValue);
+
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    setValue,
+    watch,
+    formState: { errors, isDirty }
   } = useForm<PrizeForm>({
     resolver: zodResolver(prizeSchema),
     mode: 'all',
     defaultValues: {
-      name: '',
-      description: '',
-      value: '',
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      value: initialData?.value || '',
     }
   });
 
-  const registerWithMask = useHookFormMask(register);
-  
-  // Keep track of the selected category as a string for the dropdown
+  // Observar os valores do formulário para detectar alterações
+  const watchedValues = watch();
+
+    // Keep track of the selected category as a string for the dropdown
   const [selectedCategory, setSelectedCategory] = useState<string>(
     getCategoryIdAsString(initialData?.categoryId)
   );
+  
+  // Estado para rastrear alterações nas imagens
+  const [imagesModified, setImagesModified] = useState(false);
+
+  // Verificar se o formulário foi modificado
+  useEffect(() => {
+    const hasFormChanges = isDirty || imagesModified || 
+                          selectedCategory !== getCategoryIdAsString(initialData?.categoryId)
+                          || watchedValues.value !== initialData?.value;
+    
+    setIsFormDirty(hasFormChanges);
+    console.log("Form dirty:", hasFormChanges);
+  }, [isDirty, imagesModified, selectedCategory, initialData]);
+
+  const registerWithMask = useHookFormMask(register);
+  
   
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [bannerImageFiles, setBannerImageFiles] = useState<File[]>([]);
@@ -356,15 +410,17 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   // Preview URLs for uploaded images
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(
-    formData.image || null
+    typeof formData.image === 'string' ? formData.image : null
   );
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
-    formData.images || []
+    Array.isArray(formData.images) 
+      ? formData.images.filter((img): img is string => typeof img === 'string')
+      : []
   );
   
   // Update preview when main image file changes
   useEffect(() => {
-    console.log("mainImageFile",mainImageFile);
+    console.log('initialData',initialData);
     if (!mainImageFile) return;
     
     const objectUrl = URL.createObjectURL(mainImageFile);
@@ -379,7 +435,9 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     const objectUrls = additionalImageFiles.map(file => URL.createObjectURL(file));
     setAdditionalImagePreviews(prev => {
       // Keep existing URLs for images that were already in formData
-      const originalUrls = formData.images || [];
+      const originalUrls = Array.isArray(formData.images) 
+        ? formData.images.filter((img): img is string => typeof img === 'string')
+        : [];
       return [...originalUrls, ...objectUrls];
     });
     
@@ -437,6 +495,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   const handleAdditionalImagesChange = (files: File[]) => {
     setAdditionalImageFiles(files);
+    setImagesModified(true); // Marcar que as imagens foram modificadas
+    
     // Envolver em setTimeout para evitar atualização durante renderização
     setTimeout(() => {
       // Limpar erros quando imagens são adicionadas
@@ -452,11 +512,28 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   };
   
   const handleRemoveExistingImage = (index: number) => {
-    const newImages = [...(formData.images || [])];
+    if (!formData.images) return;
+    
+    // Create a copy of the images array that we can safely modify
+    const newImages = [...formData.images].filter((img): img is string => typeof img === 'string');
     newImages.splice(index, 1);
-    setFormData(prev => ({ ...prev, images: newImages }));
+    
+    // Marcar que as imagens foram modificadas
+    setImagesModified(true);
+    
+    // Update the formData state with the new images array
+    setFormData(prev => ({ 
+      ...prev, 
+      images: newImages as Array<string | File>
+    }));
+    
+    // Also update the additionalImagePreviews state
+    setAdditionalImagePreviews(prev => {
+      const newPreviews = [...prev];
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
   };
-  
   
   const onSubmitForm = async (data: Partial<IPrize>) => {
     // Prevent default form submission behavior
@@ -469,7 +546,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     // In a real application, you would upload the images to your server/cloud storage
     // and get back URLs to store in the database
     // For this demonstration, we'll just pass the current state
-    console.log('value',data.value);
+    console.log('data onSubmitForm',data);
 
     
     // Create submission data
@@ -601,6 +678,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <CurrencyInput
             id="value"  
             label="Valor"
+            value={initialData?.value || ''}
             icon={<FaMoneyBillWave />}
             {...register('value')}
             placeholder="Ex: R$ 5.000,00" 
@@ -625,7 +703,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <Button 
             type="submit" 
             $variant="primary"
-            disabled={isLoading}
+            disabled={isLoading || (initialData && !isFormDirty)}
           >
             <FaSave />
             {isLoading ? 'Salvando...' : 'Salvar Prêmio'}

@@ -20,6 +20,7 @@ export interface IPrizeService {
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
     deletePrize(id: string): Promise<ApiResponse<null>>;
+    updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -219,4 +220,124 @@ export class PrizeService implements IPrizeService {
             });
         }
     }       
+
+    async updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
+        try {
+            const session = await getServerSession(nextAuthOptions);
+            logger.info("Verificando sessão para atualização de prêmio", session);
+
+            if (!session?.user?.id) {
+                return createErrorResponse('Não autorizado', 401);
+            }
+
+            const userCode = session.user.id;
+
+            // Aplicar rate limiting
+            const limiter = rateLimit({
+                interval: 60 * 1000,
+                uniqueTokenPerInterval: 500,
+                tokensPerInterval: 15 // Permitir mais atualizações que criações
+            });
+
+            try {
+                await limiter.check(15, `${userCode}:premio-update`);
+            } catch {
+                return createErrorResponse('Muitas requisições, tente novamente mais tarde', 429);
+            }
+
+            // Verificar se o prêmio existe e pertence ao usuário
+            const existingPrizeResponse = await this.prizeRepository.getPrizeById(id);
+            
+            if (!existingPrizeResponse.success) {
+                return createErrorResponse('Prêmio não encontrado', 404);
+            }
+
+            const existingPrize = existingPrizeResponse.data;
+            
+            // Processar imagens se foram atualizadas
+            const processedUpdates: Record<string, any> = { ...updatedData };
+            delete processedUpdates.image; // Remover temporariamente para processamento separado
+            delete processedUpdates.images; // Remover temporariamente para processamento separado
+
+            // Processar imagem principal se foi atualizada
+            if (updatedData.image && typeof updatedData.image !== 'string') {
+                logger.info("Processando nova imagem principal");
+                try {
+                    const processedImage = await processImage(updatedData.image);
+                    
+                    if (processedImage) {
+                        const imageUrl = await uploadToS3(
+                            processedImage.buffer, 
+                            userCode, 
+                            processedImage.originalName
+                        );
+                        processedUpdates.image = imageUrl;
+                        logger.info("Nova imagem principal processada com sucesso", { imageUrl });
+                    } else {
+                        return createErrorResponse('Falha ao processar a imagem principal', 400);
+                    }
+                } catch (error) {
+                    logger.error("Erro ao processar imagem principal:", error);
+                    return createErrorResponse('Erro ao processar a imagem principal', 500);
+                }
+            } else if (updatedData.image) {
+                // Se a imagem é uma string (URL), mantê-la como está
+                processedUpdates.image = updatedData.image;
+            }
+
+            // Processar imagens adicionais se foram atualizadas
+            if (updatedData.images && Array.isArray(updatedData.images)) {
+                logger.info("Processando novas imagens adicionais");
+                
+                const imagesToProcess = updatedData.images.filter(img => 
+                    img && typeof img !== 'string' && 'name' in img && 'type' in img && 'size' in img
+                );
+                
+                const existingImageUrls = updatedData.images.filter(img => 
+                    typeof img === 'string'
+                );
+                
+                if (imagesToProcess.length > 0) {
+                    try {
+                        const processedImages = await Promise.all(
+                            imagesToProcess.map(async (image) => {
+                                return await processImage(image as File);
+                            })
+                        );
+                        
+                        const validImages = processedImages.filter(Boolean) as { buffer: Buffer, originalName: string }[];
+                        
+                        const uploadedImageUrls = await Promise.all(
+                            validImages.map(async (img) => {
+                                return await uploadToS3(img.buffer, userCode, img.originalName);
+                            })
+                        );
+                        
+                        // Combinar URLs existentes com novas URLs
+                        processedUpdates.images = [...existingImageUrls, ...uploadedImageUrls];
+                        logger.info("Novas imagens adicionais processadas com sucesso", { 
+                            count: processedUpdates.images.length 
+                        });
+                    } catch (error) {
+                        logger.error("Erro ao processar imagens adicionais:", error);
+                        return createErrorResponse('Erro ao processar as imagens adicionais', 500);
+                    }
+                } else {
+                    // Se todas as imagens são strings (URLs), mantê-las como estão
+                    processedUpdates.images = existingImageUrls;
+                }
+            }
+            
+            // Atualizar o prêmio no banco de dados
+            return await this.prizeRepository.updatePrize(id, processedUpdates, userCode);
+        } catch (error) {
+            logger.error("Erro ao processar atualização de prêmio:", error);
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao atualizar o prêmio',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
 }

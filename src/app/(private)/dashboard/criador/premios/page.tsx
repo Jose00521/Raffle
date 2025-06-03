@@ -96,6 +96,7 @@ const PageTitle = styled.h1`
 
 const HeaderActions = styled.div`
   display: flex;
+  align-items: center;
   gap: 16px;
   
   @media (max-width: 768px) {
@@ -273,10 +274,16 @@ const PrizeValue = styled.div`
   gap: 6px;
   white-space: nowrap;
   overflow: visible;
+  padding: 4px 10px;
+  max-width: 100%;
   
   svg {
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
     flex-shrink: 0;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
   }
 `;
 
@@ -344,6 +351,8 @@ const PrizeFooter = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(226, 232, 240, 0.8);
+  flex-wrap: wrap;
+  gap: 12px;
 `;
 
 const PrizeDate = styled.div`
@@ -359,13 +368,14 @@ const FormatPrizeValueBox = styled.div`
   font-weight: 700;
   color: #6a11cb;
   background: rgba(106, 17, 203, 0.08);
-  padding: 8px 12px;
+  padding: 12px 20px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   transition: all 0.2s ease;
   min-width: fit-content;
+  max-width: 100%;
   white-space: nowrap;
   overflow: visible;
   
@@ -376,7 +386,137 @@ const FormatPrizeValueBox = styled.div`
   svg {
     color: #7c3aed;
     flex-shrink: 0;
+    font-size: 1rem;
   }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+  }
+`;
+
+// Loading skeleton components
+const LoadingSkeletonGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px;
+  
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+`;
+
+const LoadingSkeletonCard = styled.div`
+  background-color: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(106, 17, 203, 0.1);
+  }
+`;
+
+const SkeletonImage = styled.div`
+  height: 220px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 50%;
+    }
+    50% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+`;
+
+const SkeletonContent = styled.div`
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+`;
+
+const SkeletonTitle = styled.div`
+  height: 24px;
+  margin-bottom: 16px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.1s;
+  border-radius: 4px;
+`;
+
+const SkeletonDescription = styled.div`
+  height: 16px;
+  margin-bottom: 8px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.2s;
+  border-radius: 4px;
+  width: 100%;
+  
+  &:last-of-type {
+    width: 70%;
+    animation-delay: 0.3s;
+  }
+`;
+
+const SkeletonFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+`;
+
+const SkeletonDate = styled.div`
+  height: 14px;
+  width: 90px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+  border-radius: 4px;
+`;
+
+const SkeletonPrice = styled.div`
+  height: 32px;
+  width: 100px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.5s;
+  border-radius: 8px;
+`;
+
+const SkeletonBadge = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  height: 24px;
+  width: 80px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.2s;
+  border-radius: 30px;
 `;
 
 const EmptyState = styled.div`
@@ -588,7 +728,23 @@ export default function PrizesDashboard() {
       </FiltersBar>
       
       {loading ? (
-        <div>Carregando...</div>
+        <LoadingSkeletonGrid>
+          {Array.from({ length: 6 }, (_, index) => (
+            <LoadingSkeletonCard key={index}>
+              <SkeletonImage />
+              <SkeletonBadge />
+              <SkeletonContent>
+                <SkeletonTitle />
+                <SkeletonDescription />
+                <SkeletonDescription />
+                <SkeletonFooter>
+                  <SkeletonDate />
+                  <SkeletonPrice />
+                </SkeletonFooter>
+              </SkeletonContent>
+            </LoadingSkeletonCard>
+          ))}
+        </LoadingSkeletonGrid>
       ) : sortedPrizes.length > 0 ? (
         <PrizesGrid>
           {sortedPrizes.map((prize: IPrize, index: number) => (
@@ -624,10 +780,28 @@ export default function PrizesDashboard() {
                       <FaCalendarAlt size={12} />
                       {formatDate(prize.createdAt)}
                     </PrizeDate>
-                    <FormatPrizeValueBox>
-                      <FaMoneyBillWave /> 
-                      {formatPrizeValue(prize.value)}
-                    </FormatPrizeValueBox>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Link href={`/dashboard/criador/premios/${prize.prizeCode}`} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center',
+                              padding: '6px 12px',
+                              background: 'rgba(99, 102, 241, 0.1)',
+                              borderRadius: '6px',
+                              color: '#4f46e5',
+                              fontWeight: 600,
+                              fontSize: '0.8rem',
+                              transition: 'all 0.2s ease',
+                            }}
+                            title="Editar prêmio"
+                      >
+                        Editar
+                      </Link>
+                      <FormatPrizeValueBox>
+                        <FaMoneyBillWave /> 
+                        {formatPrizeValue(prize.value)}
+                      </FormatPrizeValueBox>
+                    </div>
                   </PrizeFooter>
                 </PrizeContent>
               </PrizeCard>

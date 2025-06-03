@@ -69,12 +69,6 @@ const Card = styled.div`
  
   border-radius: 12px;
 
-  &:hover {
-    transform: scale(1.05);
-    transition: 0.2s;
-    filter: drop-shadow(0px 0px 10px rgba(106, 17, 203, 0.5));
-  }
-
   &::after {
     content: "autenticando";
     height: fit-content;

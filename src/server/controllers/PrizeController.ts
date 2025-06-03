@@ -19,6 +19,7 @@ export interface IPrizeController {
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
     deletePrize(id: string): Promise<ApiResponse<null>>;
+    updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -41,6 +42,19 @@ export class PrizeController implements IPrizeController {
 
     async deletePrize(id: string): Promise<ApiResponse<null>> {
         return await this.prizeService.deletePrize(id);
+    }
+
+    async updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
+        try {
+            return await this.prizeService.updatePrize(id, updatedData);
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro interno do servidor ao atualizar prêmio',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
     }
 
     async createPrize(prize: {
