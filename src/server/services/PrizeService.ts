@@ -17,6 +17,7 @@ export interface IPrizeService {
         value: string;
         image: File;
         images: File[];
+        categoryId: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
     deletePrize(id: string): Promise<ApiResponse<null>>;
@@ -72,6 +73,7 @@ export class PrizeService implements IPrizeService {
         value: string;
         image: File;
         images: File[];
+        categoryId: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
             const limiter = rateLimit({
@@ -202,6 +204,7 @@ export class PrizeService implements IPrizeService {
                     description: prize.description,
                     value: prize.value,
                     userCode: session.user.id,
+                    categoryCode: prize.categoryId,
                     image: mainImageUrl,
                     images: otherImagesUrls
                 });

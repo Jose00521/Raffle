@@ -11,7 +11,7 @@ export enum NumberStatusEnum {
   export interface INumberStatus {
     _id?: string;
     campaignId?: mongoose.Types.ObjectId | string;
-    number: number;
+    number: string;
     status: NumberStatusEnum;
     userId?: mongoose.Types.ObjectId | string;
     reservedAt?: Date;

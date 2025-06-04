@@ -23,7 +23,8 @@ import {
   FaTimes,
   FaSave,
   FaUpload,
-  FaInfoCircle
+  FaInfoCircle,
+  FaCalculator
 } from 'react-icons/fa';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +46,8 @@ import CustomDropdown from '../common/CustomDropdown';
 import ComboDiscountSectionComponent from './ComboDiscountSection';
 import MultiPrizePosition, { PrizeItemProps } from './MultiPrizePosition';
 import prizeAPIClient from '@/API/prizeAPIClient';
+import { Currency } from 'lucide-react';
+import CurrencyInput from '../common/CurrencyInput';
 
 // Prize category interface
 interface PrizeCategory {
@@ -60,54 +63,100 @@ interface PrizeCategoriesConfig {
   premiado: PrizeCategory;
 }
 
+// Interface para InstantPrize
+interface InstantPrize {
+  id?: string; // ID temporário para UI
+  categoryId?: string;
+  number: string;
+  value: number;
+  claimed?: boolean;
+}
+
 // Define a simple type for the form data
 export type RaffleFormData = {
+  // Campos básicos da campanha
   title: string;
   description: string;
-  price: number;
+  individualNumberPrice: number; // Renomeado de price para individualNumberPrice
   totalNumbers: number;
   drawDate: string;
-  images: File[];
-  regulation: string;
-  mainPrize: string;
-  valuePrize: string;
-  returnExpected: string;
+  status: string; // Enum status (ACTIVE, COMPLETED, PENDING)
+  canceled: boolean;
+  
+  // Configuração de ativação agendada
   isScheduled: boolean;
-  scheduledDate?: string;
-  prizeCategories?: PrizeCategoriesConfig;
-  instantPrizes: Array<{id: string, number: string, value: number}>;
-  winnerCount: number;
-  prizes: Array<{
-    position: number, 
+  scheduledActivationDate?: string;
+  
+  // Configuração de vencedores
+  winnerPositions: number; // Renomeado de winnerCount para winnerPositions
+  
+  // Distribuição de prêmios para cada posição
+  prizeDistribution: Array<{
+    position: number,
     prizes: Array<{
-      prizeId?: string, 
-      name: string, 
-      value: string, 
+      prizeId?: string,
+      name: string,
+      value: string,
       image?: string | File
-    }>
+    }>,
+    description?: string
   }>;
-  enableCombos: boolean;
-  combos: Array<{ quantity: number, discountPercentage: number }>;
+  
+  // Lista de vencedores (inicialmente vazia)
+  winners: Array<string>;
+  
+  // Pacotes de números (combos)
+  enablePackages: boolean; // Flag para habilitar pacotes
+  numberPackages: Array<{
+    name: string,
+    description?: string,
+    quantity: number,
+    price: number,
+    discount: number,
+    isActive: boolean,
+    highlight: boolean,
+    order: number,
+    maxPerUser?: number
+  }>;
+  
+  // Configuração de prêmios instantâneos
+  instantPrizes: InstantPrize[];
+  
+  // Configuração de categorias de prêmios (usado para gerar instantPrizes)
+  prizeCategories?: PrizeCategoriesConfig;
+  
+  // Campos para detalhes e regulamento
+  regulation: string;
+  returnExpected: string;
+  
+  // Imagens da campanha
+  images: File[];
+  
+  // Campos temporários para UI (não fazem parte do modelo final)
+  mainPrize?: string; // Campo temporário para facilitar a UI
+  valuePrize?: string; // Campo temporário para facilitar a UI
 };
 
 // Simplified schema that matches the type
 const raffleFormSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório'),
   description: z.string().min(1, 'A descrição é obrigatória'),
-  price: z.number().min(0.01, 'O preço deve ser maior que zero'),
+  individualNumberPrice: z.number().min(0.01, 'O preço deve ser maior que zero'),
   totalNumbers: z.number().min(1, 'O número de bilhetes deve ser maior que zero'),
   drawDate: z.string().min(1, 'A data do sorteio é obrigatória'),
   images: z.array(z.any()).min(1, 'Pelo menos uma imagem é obrigatória'),
-  regulation: z.string().optional(),
+  regulation: z.string().min(1, 'A regra é obrigatória'),
+  status: z.string().optional().default('ACTIVE'),
+  canceled: z.boolean().optional().default(false),
   mainPrize: z.string().optional(),
   valuePrize: z.string().optional(),
   returnExpected: z.string().optional(),
   isScheduled: z.boolean(),
-  scheduledDate: z.string().optional(),
+  scheduledActivationDate: z.string().optional(),
   prizeCategories: z.any().optional(),
   instantPrizes: z.array(z.any()),
-  winnerCount: z.number().min(1, 'Pelo menos um vencedor é necessário').max(5, 'Máximo de 5 vencedores permitidos'),
-  prizes: z.array(
+  winnerPositions: z.number().min(1, 'Pelo menos um vencedor é necessário').max(5, 'Máximo de 5 vencedores permitidos'),
+  prizeDistribution: z.array(
     z.object({
       position: z.number(),
       prizes: z.array(
@@ -117,16 +166,25 @@ const raffleFormSchema = z.object({
           value: z.string(),
           image: z.string().optional()
         })
-      ).min(1, 'Pelo menos um prêmio é necessário por posição')
+      ).min(1, 'Pelo menos um prêmio é necessário por posição'),
+      description: z.string().optional()
     })
   ).min(1, 'Pelo menos um prêmio é necessário'),
-  enableCombos: z.boolean().optional().default(false),
-  combos: z.array(
+  enablePackages: z.boolean().optional().default(false),
+  numberPackages: z.array(
     z.object({
+      name: z.string(),
+      description: z.string().optional(),
       quantity: z.number().min(2, 'Quantidade mínima de 2 números'),
-      discountPercentage: z.number().min(1, 'Desconto mínimo de 1%').max(50, 'Desconto máximo de 50%')
+      price: z.number().min(1, 'Preço mínimo de 1 real'),
+      discount: z.number().min(1, 'Desconto mínimo de 1%').max(50, 'Desconto máximo de 50%'),
+      isActive: z.boolean().optional().default(true),
+      highlight: z.boolean().optional().default(false),
+      order: z.number().min(1, 'Ordem mínima de 1'),
+      maxPerUser: z.number().min(1, 'Máximo de 1 usuário por pacote').optional()
     })
-  ).optional().default([])
+  ).optional().default([]),
+  winners: z.array(z.string()).optional().default([])
 }) as z.ZodType<RaffleFormData>;
 
 interface RaffleFormFieldsProps {
@@ -1976,6 +2034,105 @@ const ComboSectionDescription = styled.p`
   max-width: 500px;
 `;
 
+// Componente de alerta informativo
+const InfoAlert = styled.div`
+  background-color: rgba(37, 117, 252, 0.1);
+  border-left: 4px solid #2575fc;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  
+  svg {
+    color: #2575fc;
+    font-size: 1.2rem;
+    margin-top: 2px;
+  }
+  
+  div {
+    flex: 1;
+    
+    h5 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #2575fc;
+      margin: 0 0 4px 0;
+    }
+    
+    p {
+      font-size: 0.85rem;
+      color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+`;
+
+// Componente para exibir o cálculo da quantidade de números
+const CalculationDisplay = styled.div`
+  background-color: rgba(106, 17, 203, 0.05);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0 16px;
+  
+  h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6a11cb;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    svg {
+      font-size: 1rem;
+    }
+  }
+  
+  .calculation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px;
+    
+    .formula-item {
+      background: white;
+      border: 1px solid rgba(106, 17, 203, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: center;
+    }
+    
+    .operator {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #6a11cb;
+    }
+    
+    .result {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      color: white;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-weight: 700;
+      min-width: 80px;
+      text-align: center;
+    }
+  }
+  
+  .explanation {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+    margin-top: 8px;
+  }
+`;
+
 const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   onSubmit,
   initialData = {},
@@ -1985,24 +2142,15 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   const defaultValues = {
     title: initialData.title || '',
     description: initialData.description || '',
-    price: initialData.price || 0,
+    individualNumberPrice: initialData.individualNumberPrice || 0,
     totalNumbers: initialData.totalNumbers || 100,
     drawDate: initialData.drawDate || '',
-    images: initialData.images || [],
-    regulation: initialData.regulation || '',
-    mainPrize: initialData.mainPrize || '',
-    valuePrize: initialData.valuePrize || '',
-    returnExpected: initialData.returnExpected || '',
+    status: initialData.status || 'ACTIVE',
+    canceled: initialData.canceled || false,
     isScheduled: initialData.isScheduled || false,
-    scheduledDate: initialData.scheduledDate || '',
-    prizeCategories: initialData.prizeCategories || {
-      diamante: { active: false, quantity: 10, value: 2000 },
-      master: { active: false, quantity: 20, value: 1000 },
-      premiado: { active: false, quantity: 50, value: 500 }
-    },
-    instantPrizes: initialData.instantPrizes || [],
-    winnerCount: initialData.winnerCount || 1,
-    prizes: initialData.prizes || [
+    scheduledActivationDate: initialData.scheduledActivationDate || '',
+    winnerPositions: initialData.winnerPositions || 1,
+    prizeDistribution: initialData.prizeDistribution || [
       {
         position: 1,
         prizes: [
@@ -2014,12 +2162,32 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         ]
       }
     ],
-    enableCombos: initialData.enableCombos || false,
-    combos: initialData.combos || [
-      { quantity: 5, discountPercentage: 5 },
-      { quantity: 10, discountPercentage: 10 },
-      { quantity: 20, discountPercentage: 15 }
-    ]
+    winners: initialData.winners || [],
+    enablePackages: initialData.enablePackages || false,
+    numberPackages: initialData.numberPackages || [
+      {
+        name: 'Pacote 1',
+        description: 'Descrição do pacote 1',
+        quantity: 5,
+        price: 10,
+        discount: 5,
+        isActive: true,
+        highlight: false,
+        order: 1,
+        maxPerUser: 2
+      }
+    ],
+    instantPrizes: initialData.instantPrizes || [],
+    prizeCategories: initialData.prizeCategories || {
+      diamante: { active: false, quantity: 10, value: 2000 },
+      master: { active: false, quantity: 20, value: 1000 },
+      premiado: { active: false, quantity: 50, value: 500 }
+    },
+    regulation: initialData.regulation || '',
+    returnExpected: initialData.returnExpected || '',
+    images: initialData.images || [],
+    mainPrize: initialData.mainPrize || '',
+    valuePrize: initialData.valuePrize || ''
   } as RaffleFormData;
   
   const { 
@@ -2049,19 +2217,23 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   const totalNumbers = watch('totalNumbers');
   const isScheduled = watch('isScheduled');
   const prizeCategories = watch('prizeCategories');
-  const price = watch('price');
+  const price = watch('individualNumberPrice');
   
   // Observar número de vencedores
-  const winnerCount = watch('winnerCount');
-  const prizes = watch('prizes');
+  const winnerCount = watch('winnerPositions');
+  const prizes = watch('prizeDistribution');
 
+  // Formatar valor do prêmio para exibição
   const extractNumericValue = (valueString: string): number => {
     try {
-      // Remove qualquer caractere que não seja dígito
-      const numericString = valueString.replace(/[^\d]/g, '');
+      // Remove qualquer caractere que não seja dígito, ponto ou vírgula
+      const cleanString = valueString.replace(/[^\d,.]/g, '');
+      
+      // Substitui vírgula por ponto para processamento numérico
+      const normalizedString = cleanString.replace(/,/g, '.');
       
       // Converte para número
-      const value = parseInt(numericString, 10);
+      const value = parseFloat(normalizedString);
       
       // Retorna 0 se não for um número válido
       return isNaN(value) ? 0 : value;
@@ -2072,44 +2244,27 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   };
 
   const formatPrizeValue = (value: string | number): string => {
-    // If value is a number, convert to string
-    if (typeof value === 'number') {
-      return new Intl.NumberFormat('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL' 
-      }).format(value);
+    if (!value) return 'R$ 0,00';
+    
+    // Se for um número, converte para string
+    const valueString = typeof value === 'number' ? value.toString() : value;
+    
+    // Verificar se o valor já está formatado como moeda
+    if (valueString.includes('R$')) {
+      return valueString;
     }
     
-    // If already formatted as currency, return as is
-    if (typeof value === 'string' && value.includes('R$')) {
-      return value;
-    }
+    // Tenta converter para número
+    const numericValue = extractNumericValue(valueString);
     
-    // Try to convert to number
-    try {
-      // Remove any non-digit character except commas and dots
-      let cleanValue = value.replace(/[R$\s]/g, '');
-      
-      // Remove dots (thousand separators)
-      cleanValue = cleanValue.replace(/\./g, '');
-      
-      // Replace comma with dot for decimal places
-      cleanValue = cleanValue.replace(/,/g, '.');
-      
-      // Convert to number
-      const numericValue = parseFloat(cleanValue);
-      
-      // Format as Brazilian currency
-      return new Intl.NumberFormat('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL' 
-      }).format(numericValue);
-    } catch (error) {
-      console.error("Error formatting prize value:", value, error);
-      // Return a fallback value
-      return 'R$ 0,00';
-    }
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue);
   };
+
+  
   
   // Carregar prêmios mock quando o componente montar
   useEffect(() => {
@@ -2131,28 +2286,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           
           // Extrair valor numérico da string formatada em moeda brasileira
           // R$ 2.152.987,68 -> 2152987.68
-          let prizeValue = 0;
-          
-          if (typeof prize.value === 'string') {
-            try {
-              // Remover o símbolo da moeda (R$) e espaços
-              let cleanValue = prize.value.replace(/[R$\s]/g, '');
-              
-              // Remover pontos (separadores de milhar)
-              cleanValue = cleanValue.replace(/\./g, '');
-              
-              // Substituir vírgula por ponto para o JavaScript entender como decimal
-              cleanValue = cleanValue.replace(/,/g, '.');
-              
-              // Converter para número usando parseFloat para preservar decimais
-              prizeValue = parseFloat(cleanValue);
-              
-              if (isNaN(prizeValue)) prizeValue = 0;
-            } catch (error) {
-              console.error("Erro ao converter valor do prêmio:", prize.value, error);
-              prizeValue = 0;
-            }
-          }
+          let prizeValue = parseFloat(prize.value);
           
           return prizeSum + prizeValue;
         }, 0);
@@ -2170,31 +2304,51 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   const handleAddPrizeToPosition = (position: number) => {
     // Abrir o seletor de prêmios para adicionar um novo prêmio à posição
     const onSelectForPosition = (prize: IPrize) => {
+      console.log('Selecionando prêmio completo:', prize);
+      
+      const prizeIdentifier = prize.prizeCode;
+      console.log('Identificador do prêmio para posição:', {
+        name: prize.name,
+        id: prize._id,
+        prizeCode: prize.prizeCode,
+        identificador: prizeIdentifier
+      });
+      
       const currentPrizes = [...prizes];
       const positionIndex = currentPrizes.findIndex(p => p.position === position);
       
       if (positionIndex >= 0) {
         // Adicionar o prêmio à posição existente
         currentPrizes[positionIndex].prizes.push({
-          prizeId: prize._id?.toString(),
+          prizeId: prizeIdentifier,
           name: prize.name,
           value: prize.value,
           image: prize.image
+        });
+        
+        console.log(`Prêmio adicionado à posição ${position}:`, {
+          name: prize.name,
+          id: prizeIdentifier
         });
       } else {
         // Criar nova posição com o prêmio
         currentPrizes.push({
           position,
           prizes: [{
-            prizeId: prize._id?.toString(),
+            prizeId: prizeIdentifier,
             name: prize.name,
             value: prize.value,
             image: prize.image
           }]
         });
+        
+        console.log(`Nova posição ${position} criada com prêmio:`, {
+          name: prize.name,
+          id: prizeIdentifier
+        });
       }
       
-      setValue('prizes', currentPrizes);
+      setValue('prizeDistribution', currentPrizes);
       setShowPrizeSelector(false);
     };
     
@@ -2232,7 +2386,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         }];
       }
       
-      setValue('prizes', currentPrizes);
+      setValue('prizeDistribution', currentPrizes);
     }
   };
   
@@ -2274,7 +2428,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     // Ordenar por posição
     updatedPrizes.sort((a, b) => a.position - b.position);
     
-    setValue('prizes', updatedPrizes);
+    setValue('prizeDistribution', updatedPrizes);
   }, [winnerCount, setValue]);
   
   // Efeito para sincronizar o prêmio principal selecionado com o primeiro prêmio
@@ -2284,14 +2438,17 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       const firstPosition = updatedPrizes.find(p => p.position === 1);
       
       if (firstPosition && firstPosition.prizes.length > 0) {
+        console.log('Atualizando primeiro prêmio com:', selectedPrize);
+        console.log('prizeCode do prêmio selecionado:', selectedPrize.prizeCode);
+        
         firstPosition.prizes[0] = {
-          prizeId: selectedPrize._id?.toString(),
+          prizeId: selectedPrize.prizeCode || '',
           name: selectedPrize.name,
           value: selectedPrize.value,
           image: selectedPrize.image
         };
         
-        setValue('prizes', updatedPrizes);
+        setValue('prizeDistribution', updatedPrizes);
       }
     }
   }, [selectedPrize, setValue]);
@@ -2347,6 +2504,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   };
   
   let handleSelectPrize = (prize: IPrize) => {
+    console.log('Prêmio selecionado (principal):', prize);
+    console.log('prizeCode do prêmio principal:', prize.prizeCode);
     setSelectedPrize(prize);
     closePrizeSelector();
   };
@@ -2369,8 +2528,13 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Handlers para Instant Prizes
   const handleAddInstantPrize = () => {
     const currentPrizes = getValues('instantPrizes');
-    const newId = `prize-${Date.now()}`;
-    setValue('instantPrizes', [...currentPrizes, { id: newId, number: '', value: 0 }]);
+    const newPrize: InstantPrize = {
+      id: `prize-${Date.now()}`,
+      number: '',
+      value: 0,
+      claimed: false
+    };
+    setValue('instantPrizes', [...currentPrizes, newPrize]);
   };
   
   const handleRemoveInstantPrize = (id: string) => {
@@ -2378,13 +2542,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     setValue('instantPrizes', currentPrizes.filter(prize => prize.id !== id));
   };
   
-  const handleInstantPrizeChange = (id: string, field: 'number' | 'value', value: string) => {
+  const handleInstantPrizeChange = (id: string, field: 'number' | 'value' | 'categoryId', value: string | number) => {
     const currentPrizes = getValues('instantPrizes');
     const updatedPrizes = currentPrizes.map(prize => {
       if (prize.id === id) {
-        if (field === 'value') {
-          return { ...prize, [field]: parseFloat(value) || 0 };
-        }
         return { ...prize, [field]: value };
       }
       return prize;
@@ -2403,6 +2564,11 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     
     // Create a handler for this specific position
     const onSelectForPosition = (prize: IPrize) => {
+      console.log('Prêmio selecionado completo:', prize);
+      
+      const prizeIdentifier = prize.prizeCode || prize._id?.toString() || '';
+      console.log('Identificador do prêmio:', prizeIdentifier);
+      
       const updatedPrizes = [...prizes];
       const positionIndex = updatedPrizes.findIndex(p => p.position === position);
       
@@ -2410,15 +2576,21 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         // Posição já existe, atualizar o primeiro prêmio
         if (updatedPrizes[positionIndex].prizes.length > 0) {
           updatedPrizes[positionIndex].prizes[0] = {
-            prizeId: prize._id?.toString(),
+            prizeId: prizeIdentifier,
             name: prize.name,
             value: prize.value,
             image: prize.image
           };
+          
+          console.log('Prêmio selecionado para posição:', {
+            position,
+            name: prize.name,
+            id: prizeIdentifier
+          });
         } else {
           // Se não houver prêmios, adicionar um
           updatedPrizes[positionIndex].prizes.push({
-            prizeId: prize._id?.toString(),
+            prizeId: prizeIdentifier,
             name: prize.name,
             value: prize.value,
             image: prize.image
@@ -2429,7 +2601,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         updatedPrizes.push({
           position,
           prizes: [{
-            prizeId: prize._id?.toString(),
+            prizeId: prizeIdentifier,
             name: prize.name,
             value: prize.value,
             image: prize.image
@@ -2440,7 +2612,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         updatedPrizes.sort((a, b) => a.position - b.position);
       }
       
-      setValue('prizes', updatedPrizes);
+      setValue('prizeDistribution', updatedPrizes);
       
       // If it's the first position, update the main prize too
       if (position === 1) {
@@ -2478,95 +2650,150 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   
   // Handler para alteração do número de vencedores
   const handleWinnerCountChange = (value: string) => {
-    setValue('winnerCount', parseInt(value));
+    setValue('winnerPositions', parseInt(value));
   };
   
   // Função para preparar dados para API
   const prepareFormDataForApi = (data: RaffleFormData): any => {
-    const apiData = { ...data };
-    
     // Formatar dados para a estrutura da API
     const formattedData = {
+      // Campos básicos
       title: data.title,
       description: data.description,
-      individualNumberPrice: data.price,
+      individualNumberPrice: data.individualNumberPrice,
       totalNumbers: data.totalNumbers,
       drawDate: new Date(data.drawDate),
-      images: data.images,
+      status: data.status || 'ACTIVE',
+      canceled: data.canceled || false,
+      
+      // Configuração de agendamento
+      isScheduled: data.isScheduled,
+      scheduledActivationDate: data.isScheduled && data.scheduledActivationDate 
+        ? new Date(data.scheduledActivationDate) 
+        : null,
+      
+      // Configuração de vencedores
+      winnerPositions: data.winnerPositions,
+      winners: data.winners || [],
+      
+      // Distribuição de prêmios (prizeDistribution)
+      prizeDistribution: data.prizeDistribution.map(positionData => {
+        console.log('Processando posição:', positionData.position);
+        console.log('Prêmios da posição:', positionData.prizes);
+        
+        return {
+          position: positionData.position,
+          prizes: positionData.prizes
+            .filter(prize => prize.name) // Filtrar apenas prêmios válidos com nome
+            .map(prize => {
+              // Log detalhado para depuração
+              console.log(`Prêmio "${prize.name}" - prizeId:`, prize.prizeId);
+              
+              // Avisar se o prizeId estiver vazio
+              if (!prize.prizeId) {
+                console.warn(`⚠️ ATENÇÃO: Prêmio "${prize.name}" não tem prizeId!`);
+              }
+              
+              // Simplesmente usar o prizeId como está, que deve ser o prizeCode
+              return prize.prizeId;
+            }),
+          description: positionData.description || 
+            `${positionData.position === 1 ? 'Prêmio principal' : `${positionData.position}º lugar`}: ${
+              positionData.prizes.length > 1 
+                ? `${positionData.prizes.length} prêmios` 
+                : positionData.prizes[0]?.name || 'Não especificado'
+            }`
+        };
+      }),
+      
+      // Pacotes de números (numberPackages)
+      numberPackages: data.enablePackages ? data.numberPackages.map(pkg => ({
+        name: pkg.name,
+        description: pkg.description || '',
+        quantity: pkg.quantity,
+        price: pkg.price,
+        discount: pkg.discount,
+        isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+        highlight: pkg.highlight || false,
+        order: pkg.order || 1,
+        maxPerUser: pkg.maxPerUser
+      })) : [],
+      
+      // Detalhes adicionais
       regulation: data.regulation || '',
       returnExpected: data.returnExpected || '',
-      isScheduled: data.isScheduled,
-      scheduledActivationDate: data.isScheduled && data.scheduledDate ? new Date(data.scheduledDate) : null,
       
-      // Configurar distribuição de prêmios para múltiplos vencedores com múltiplos prêmios por posição
-      prizeDistribution: data.prizes.map(positionData => ({
-        position: positionData.position,
-        prizes: positionData.prizes
-          .filter(prize => prize.name) // Filtrar apenas prêmios válidos
-          .map(prize => prize.prizeId || null), // Extrair apenas os IDs dos prêmios
-        description: `${positionData.position === 1 ? 'Prêmio principal' : `${positionData.position}º lugar`}: ${
-          positionData.prizes.length > 1 
-            ? `${positionData.prizes.length} prêmios` 
-            : positionData.prizes[0]?.name || 'Não especificado'
-        }`
-      })),
+      // Imagens
+      images: data.images,
       
-      // Prêmios instantâneos serão enviados separadamente
+      // Prêmios instantâneos - Utilizamos diretamente os números já gerados
       instantPrizes: [] as Array<{
+        categoryId?: string;
         number: string;
         value: number;
-        categoryId?: string;
+        claimed: boolean;
       }>
     };
       
-    // Converter categorias de prêmios para o formato de instantPrizes
-    if (data.prizeCategories) {
-      const { diamante, master, premiado } = data.prizeCategories;
+    // Conjunto para controlar números já usados
+    const usedNumbers = new Set<string>();
+    
+    console.log('🏆 Status dos prêmios instantâneos:');
+    
+    // Usar diretamente os instantPrizes já gerados no formulário
+    if (data.instantPrizes && data.instantPrizes.length > 0) {
+      console.log('Usando prêmios instantâneos já gerados:', data.instantPrizes.length);
       
-      // Diamante
-      if (diamante.active) {
-        const startNumber = 1001; // Número inicial para categoria diamante
-        for (let i = 0; i < diamante.quantity; i++) {
-          formattedData.instantPrizes.push({
-            number: String(startNumber + i).padStart(6, '0'),
-            value: diamante.value,
-            categoryId: 'diamante' // Você precisará do ID real da categoria
-          });
+      // Adicionar diretamente os prêmios do formulário
+      data.instantPrizes.forEach(prize => {
+        // Garantir que o número esteja no formato de 6 dígitos
+        let formattedNumber = prize.number;
+        if (formattedNumber.length < 6) {
+          formattedNumber = formattedNumber.padStart(6, '0');
+        } else if (formattedNumber.length > 6) {
+          formattedNumber = formattedNumber.slice(-6);
         }
-      }
+        
+        // Verificar se este número já foi usado para evitar duplicatas
+        if (!usedNumbers.has(formattedNumber)) {
+          usedNumbers.add(formattedNumber);
+          
+          formattedData.instantPrizes.push({
+            categoryId: prize.categoryId,
+            number: formattedNumber,
+            value: prize.value,
+            claimed: prize.claimed || false
+          });
+        } else {
+          console.warn(`Número duplicado ignorado: ${formattedNumber}`);
+        }
+      });
       
-      // Master
-      if (master.active) {
-        const startNumber = 1101; // Número inicial para categoria master
-        for (let i = 0; i < master.quantity; i++) {
-          formattedData.instantPrizes.push({
-            number: String(startNumber + i).padStart(6, '0'),
-            value: master.value,
-            categoryId: 'master' // Você precisará do ID real da categoria
-          });
-        }
-      }
-      
-      // Premiado
-      if (premiado.active) {
-        const startNumber = 1201; // Número inicial para categoria premiado
-        for (let i = 0; i < premiado.quantity; i++) {
-          formattedData.instantPrizes.push({
-            number: String(startNumber + i).padStart(6, '0'),
-            value: premiado.value,
-            categoryId: 'premiado' // Você precisará do ID real da categoria
-          });
-        }
-      }
+      // Log para mostrar quais números estão sendo enviados
+      console.log('Exemplos de números que serão enviados:');
+      const examples = formattedData.instantPrizes.slice(0, Math.min(5, formattedData.instantPrizes.length));
+      examples.forEach((prize, index) => {
+        console.log(`- #${index+1}: ${prize.number} (${prize.categoryId || 'sem categoria'}, R$ ${prize.value})`);
+      });
+    } else {
+      console.log('Nenhum prêmio instantâneo definido no formulário');
     }
     
-    // Adicionar prêmios instantâneos definidos manualmente
-    data.instantPrizes.forEach(prize => {
-      formattedData.instantPrizes.push({
-        number: prize.number,
-        value: prize.value
+    // Log final de resumo dos prêmios instantâneos
+    console.log(`📊 Total de prêmios instantâneos: ${formattedData.instantPrizes.length}`);
+    if (formattedData.instantPrizes.length > 0) {
+      // Contar por categoria
+      const categoryCounts: {[key: string]: number} = {};
+      formattedData.instantPrizes.forEach(prize => {
+        const category = prize.categoryId || 'sem-categoria';
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
       });
-    });
+      
+      console.log('Distribuição por categoria:');
+      Object.entries(categoryCounts).forEach(([category, count]) => {
+        console.log(`- ${category}: ${count} prêmios`);
+      });
+    }
     
     return formattedData;
   };
@@ -2575,8 +2802,31 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   
   // Handler para envio do formulário
   const onFormSubmit = (data: RaffleFormData) => {
-    console.log('data', data);
+    console.log('Formulário original:', data);
+    
+    // Log para debug dos prêmios e seus IDs
+    data.prizeDistribution.forEach((pos, posIndex) => {
+      console.log(`Posição ${pos.position} (${posIndex}):`);
+      pos.prizes.forEach((prize, prizeIndex) => {
+        console.log(`  Prêmio ${prizeIndex+1}: ${prize.name}, prizeId: [${prize.prizeId}], Valor: ${prize.value}`);
+      });
+    });
+    
     const apiData = prepareFormDataForApi(data);
+    console.log('Dados para API:', apiData);
+    
+    // Log para debug dos prizeIds enviados para API
+    apiData.prizeDistribution.forEach((pos: any, index: number) => {
+      console.log(`Posição ${pos.position} (API), prizes:`, JSON.stringify(pos.prizes));
+    });
+    
+    // Verificação final antes de enviar
+    console.log('🔍 Verificação final dos prizeIds:');
+    apiData.prizeDistribution.forEach((pos: any) => {
+      console.log(`Posição ${pos.position}:`, 
+        pos.prizes.map((id: string) => `[${id}]`).join(', '));
+    });
+    
     onSubmit(apiData);
   };
   
@@ -2659,7 +2909,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             
             <WinnerDropdownContainer>
           <Controller
-                name="winnerCount"
+                name="winnerPositions"
             control={control}
             render={({ field }) => (
                   <CustomDropdown
@@ -2702,49 +2952,86 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             
           <FormRow>
             <Controller
-              name="price"
+              name="individualNumberPrice"
               control={control}
               render={({ field }) => (
-                <FormInput
-                  id="price"
+                <CurrencyInput
+                  id="individualNumberPrice"
                   label="Preço por Número"
                   icon={<FaMoneyBillWave />}
-                  placeholder="Ex: 10.00"
-                  type="number"
-                  value={field.value || ''}
-                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                  onBlur={field.onBlur}
-                  error={errors.price?.message}
+                  placeholder="Ex: R$10,00"
+                  onChange={e => {
+                    const price = parseFloat(e.target.value) || 0;
+                    field.onChange(price);
+                    
+                    // Se temos um retorno esperado e preço > 0, calcular total de números
+                    const returnExpected = getValues('returnExpected');
+                    if (returnExpected && price > 0) {
+                      const returnValue = extractNumericValue(returnExpected);
+                      const totalNumbers = Math.ceil(returnValue / price);
+                      setValue('totalNumbers', totalNumbers);
+                    }
+                  }}
+                  error={errors.individualNumberPrice?.message}
                   disabled={isSubmitting}
                   required
-                  min={0}
-                  step="0.01"
+                  currency="R$"
                 />
               )}
             />
 
-          <Controller
-            name="totalNumbers"
-            control={control}
-            render={({ field }) => (
-              <FormInput
-                id="totalNumbers"
-                label="Total de Números"
-                icon={<FaHashtag />}
-                placeholder="Ex: 100"
-                type="number"
-                value={field.value || ''}
-                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                onBlur={field.onBlur}
-                error={errors.totalNumbers?.message}
-                disabled={isSubmitting}
-                required
-                min={1}
-                step="1"
-              />
-            )}
-          />
+            <Controller
+              name="returnExpected"
+              control={control}
+              render={({ field }) => (
+                <CurrencyInput
+                  id="returnExpected"
+                  label="Retorno Esperado"
+                  icon={<FaMoneyBill />}
+                  placeholder="Ex: R$10.000,00"
+                  onChange={e => {
+                    field.onChange(e.target.value);
+                    
+                    // Se temos preço por número > 0, calcular total de números
+                    const price = getValues('individualNumberPrice') || 0;
+                    if (price > 0) {
+                      const returnValue = extractNumericValue(e.target.value);
+                      const totalNumbers = Math.ceil(returnValue / price);
+                      setValue('totalNumbers', totalNumbers);
+                    }
+                  }}
+                  error={errors.returnExpected?.message}
+                  disabled={isSubmitting}
+                  currency="R$"
+                  helpText="O valor total que você deseja arrecadar com esta rifa"
+                />
+              )}
+            />
           </FormRow>
+          
+          <FormRow>
+            <Controller
+              name="totalNumbers"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  id="totalNumbers"
+                  label="Total de Números"
+                  icon={<FaHashtag />}
+                  placeholder="Ex: 100"
+                  type="number"
+                  value={field.value || ''}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  onBlur={field.onBlur}
+                  error={errors.totalNumbers?.message}
+                  disabled={isSubmitting}
+                  required
+                  min={1}
+                  step="1"
+                  helpText="Calculado automaticamente com base no preço e retorno esperado"
+                />
+              )}
+            />
             
             <Controller
               name="drawDate"
@@ -2770,7 +3057,39 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 />
               )}
             />
-
+          </FormRow>
+            
+          {watch('individualNumberPrice') > 0 && watch('returnExpected') && (
+            <CalculationDisplay>
+              <h5><FaCalculator /> Cálculo do Total de Números</h5>
+              <div className="calculation">
+                <div className="formula-item">
+                  R$ {formatPrizeValue(watch('returnExpected'))}
+                </div>
+                <div className="operator">÷</div>
+                <div className="formula-item">
+                  R$ {(watch('individualNumberPrice')).toFixed(2).replace('.', ',')}
+                </div>
+                <div className="operator">=</div>
+                <div className="result">
+                  {watch('totalNumbers')} números
+                </div>
+              </div>
+              <div className="explanation">
+                Retorno esperado ÷ Preço por número = Total de números a serem vendidos
+              </div>
+            </CalculationDisplay>
+          )}
+          
+          <InfoAlert>
+            <FaInfoCircle />
+            <div>
+              <h5>Importante!</h5>
+              <p>Configure o preço por número e o retorno esperado primeiro. O total de números será calculado automaticamente. 
+              Estas informações são essenciais antes de configurar os combos com desconto e os prêmios instantâneos.</p>
+            </div>
+          </InfoAlert>
+          
           {/* Seção de Combos com Desconto */}
           <SubSectionDivider />
           
@@ -2870,7 +3189,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           
           {isScheduled && (
             <Controller
-              name="scheduledDate"
+              name="scheduledActivationDate"
               control={control}
               render={({ field }) => (
                 <AdvancedDateTimePicker
@@ -2881,7 +3200,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   icon={<FaRegCalendarAlt />}
                   placeholder="Selecione a data e hora"
                   required={isScheduled}
-                  error={errors.scheduledDate?.message}
+                  error={errors.scheduledActivationDate?.message}
                   disabled={isSubmitting}
                 />
               )}
@@ -2901,7 +3220,14 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             render={({ field }) => (
               <PrizeConfigForm
                 totalNumbers={totalNumbers}
-                onPrizeConfigChange={config => field.onChange(config)}
+                onPrizeConfigChange={config => {
+                  field.onChange(config);
+                }}
+                onPrizesGenerated={prizes => {
+                  // Atualizar instantPrizes no formulário com os prêmios gerados
+                  console.log('Prêmios gerados pelo PrizeConfigForm:', prizes.length);
+                  setValue('instantPrizes', prizes);
+                }}
                 disabled={isSubmitting}
               />
             )}

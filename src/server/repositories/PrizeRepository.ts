@@ -12,6 +12,7 @@ import { uploadToS3 } from "@/lib/upload-service/client/uploadToS3";
 import { Creator, User } from "@/models/User";
 import { nextAuthOptions } from "@/lib/auth/nextAuthOptions";
 import logger from "@/lib/logger/logger";
+import PrizeCategory from "@/models/PrizeCategory";
 
 export interface IPrizeRepository {
     getAllPrizes(userCode: string): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
@@ -19,6 +20,7 @@ export interface IPrizeRepository {
     createPrize(prize: {
         name: string;
         description: string;
+        categoryCode: string;
         value: string;
         image: string;
         images: string[];
@@ -52,9 +54,18 @@ export class PrizeRepository implements IPrizeRepository {
                 return createErrorResponse('Usuário não encontrado', 404);
             }
 
-
-
-            const prizes = await Prize.find({ createdBy: user?._id },'-_id');
+            // Usar populate para incluir os dados completos do usuário e da categoria
+            const prizes = await Prize.find({ createdBy: user?._id }, '-_id')
+                .populate({
+                    path: 'createdBy',
+                    model: 'User',
+                    select: 'name email userCode profileImage -_id' // Selecionar apenas os campos necessários
+                })
+                .populate({
+                    path: 'categoryId',
+                    model: 'PrizeCategory',
+                    select: 'name categoryCode -_id' // Selecionar apenas os campos necessários
+                });
 
             return createSuccessResponse(prizes, 'Prêmios encontrados com sucesso', 200);
         } catch (error) {
@@ -71,7 +82,20 @@ export class PrizeRepository implements IPrizeRepository {
     async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
         try {
             await this.db.connect();
-            const prize = await Prize.findOne({ prizeCode: id },'-_id');
+            
+            // Usar populate para incluir os dados do usuário e da categoria
+            const prize = await Prize.findOne({ prizeCode: id }, '-_id')
+                .populate({
+                    path: 'createdBy',
+                    model: 'User',
+                    select: 'name email userCode -_id'
+                })
+                .populate({
+                    path: 'categoryId',
+                    model: 'PrizeCategory',
+                    select: 'name categoryCode -_id'
+                });
+                
             return createSuccessResponse(prize, 'Prêmio encontrado com sucesso', 200);
         } catch (error) {
             throw new ApiError({
@@ -134,12 +158,16 @@ export class PrizeRepository implements IPrizeRepository {
         value: string;
         image: string;  
         images: string[];
+        categoryCode: string;
         userCode: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
             await this.db.connect();
             console.log("prize repository",prize);
             const user = await User.findOne({ userCode: prize.userCode });
+            const category = await PrizeCategory.findOne({ categoryCode: prize.categoryCode });
+
+            console.log("category from repository",category);
 
             if(!user){
                 return createErrorResponse('Usuário não encontrado', 404);
@@ -152,6 +180,7 @@ export class PrizeRepository implements IPrizeRepository {
 
             prizeData.prizeCode = generateEntityCode(prizeData._id, 'PR');
             prizeData.createdBy = user?._id;
+            prizeData.categoryId = category?._id;
 
             await prizeData.save();
 

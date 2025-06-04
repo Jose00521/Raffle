@@ -23,6 +23,15 @@ import { IPrizeService } from '../services/PrizeService';
 import { PrizeService } from '../services/PrizeService';
 import { IPrizeController } from '../controllers/PrizeController';
 import { PrizeController } from '../controllers/PrizeController';
+import { IPrizeCategoryRepository } from '../repositories/PrizeCategoryRepository';
+import { PrizeCategoryRepository } from '../repositories/PrizeCategoryRepository';
+import { IPrizeCategoryService } from '../services/PrizeCategoryService';
+import { PrizeCategoryService } from '../services/PrizeCategoryService';
+import { IPrizeCategoryController } from '../controllers/PrizeCategoryController';
+import { PrizeCategoryController } from '../controllers/PrizeCategoryController';
+
+
+
 // Register dependencies
 container.register<IDBConnection>('db', { useClass: DBConnection })
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
@@ -38,6 +47,9 @@ container.register<ICreatorController>('creatorController', { useClass: CreatorC
 container.register<IPrizeRepository>('prizeRepository', { useClass: PrizeRepository });
 container.register<IPrizeService>('prizeService', { useClass: PrizeService });
 container.register<IPrizeController>('prizeController', { useClass: PrizeController });
+container.register<IPrizeCategoryRepository>('prizeCategoryRepository', { useClass: PrizeCategoryRepository });
+container.register<IPrizeCategoryService>('prizeCategoryService', { useClass: PrizeCategoryService });
+container.register<IPrizeCategoryController>('prizeCategoryController', { useClass: PrizeCategoryController });
 
 
 // Export configured container

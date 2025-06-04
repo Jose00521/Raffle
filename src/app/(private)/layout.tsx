@@ -79,6 +79,12 @@ export default function PrivateLayout({
 
   // Validar o token apenas se necessário
   useEffect(() => {
+    // Função para adicionar um atraso exponencial entre tentativas
+    const delay = (attempt: number): Promise<void> => {
+      const backoff = Math.min(2000 * Math.pow(2, attempt), 10000); // máximo de 10 segundos
+      return new Promise(resolve => setTimeout(resolve, backoff));
+    };
+    
     const validateTokenIfNeeded = async () => {
       if (status === 'loading' || !session) return;
       
@@ -108,51 +114,89 @@ export default function PrivateLayout({
         return;
       }
       
+      // Lógica com retry para validação do token
+      let attempts = 0;
+      const maxAttempts = 3;
+      
       try {
         if (!tokenValidationCache.isValid) {
           setIsLoading(true);
         }
         
-        // Validar o token via API com timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const response = await fetch('/api/auth/validate-token', {
-          signal: controller.signal,
-          headers: {
-            // Adiciona um nonce para evitar cache do navegador
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'X-Request-ID': crypto.randomUUID()
+        while (attempts < maxAttempts) {
+          try {
+            // Validar o token via API com timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            
+            const response = await fetch('/api/auth/validate-token', {
+              signal: controller.signal,
+              headers: {
+                // Adiciona um nonce para evitar cache do navegador
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'X-Request-ID': crypto.randomUUID()
+              }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+              // Se falhar com erro 401/403, não tenta novamente (token inválido)
+              if (response.status === 401 || response.status === 403) {
+                console.error(`Token inválido (${response.status}), redirecionando para login`);
+                signOut({ redirect: true, callbackUrl: '/login?reason=invalid_token' });
+                return;
+              }
+              
+              // Para outros erros (500, 429, etc), tenta novamente
+              attempts++;
+              if (attempts < maxAttempts) {
+                console.warn(`Tentativa ${attempts} falhou, tentando novamente após delay...`);
+                await delay(attempts);
+                continue;
+              } else {
+                throw new Error(`Erro na resposta HTTP: ${response.status}`);
+              }
+            }
+
+            const data = await response.json();
+            
+            // Se o token estiver próximo de expirar, atualizar a sessão
+            if (data.warning === 'Token próximo de expirar') {
+              console.log(`Token expira em ${data.expiresIn} segundos, atualizando...`);
+              await update();
+            }
+
+            // Atualizar cache de validação
+            tokenValidationCache.isValid = true;
+            tokenValidationCache.timestamp = now;
+            
+            // Se chegou aqui, a validação foi bem-sucedida
+            break;
+          } catch (error: any) {
+            if (error.name === 'AbortError') {
+              console.error(`Timeout na validação do token (tentativa ${attempts + 1}/${maxAttempts})`);
+            } else {
+              console.error(`Erro ao validar token (tentativa ${attempts + 1}/${maxAttempts}):`, error);
+            }
+            
+            attempts++;
+            
+            // Se ainda não atingiu o máximo de tentativas, tentar novamente
+            if (attempts < maxAttempts) {
+              await delay(attempts);
+            } else {
+              // Esgotou as tentativas, repassa o erro
+              throw error;
+            }
           }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          console.error('Token inválido, redirecionando para login');
-          signOut({ redirect: true, callbackUrl: '/login?reason=invalid_token' });
-          return;
         }
-
-        const data = await response.json();
-        
-        // Se o token estiver próximo de expirar, atualizar a sessão
-        if (data.warning === 'Token próximo de expirar') {
-          console.log(`Token expira em ${data.expiresIn} segundos, atualizando...`);
-          await update();
-        }
-
-        // Atualizar cache de validação
-        tokenValidationCache.isValid = true;
-        tokenValidationCache.timestamp = now;
       } catch (error: unknown) {
         const err = error as Error;
-        if (err.name === 'AbortError') {
-          console.error('Timeout na validação do token');
-        } else {
-          console.error('Erro ao validar token:', err);
-        }
+        console.error('Erro após todas as tentativas:', err);
+        
+        // Se foi uma falha crítica após várias tentativas, fazer logout
         signOut({ redirect: true, callbackUrl: '/login?reason=validation_error' });
       } finally {
         setIsLoading(false);

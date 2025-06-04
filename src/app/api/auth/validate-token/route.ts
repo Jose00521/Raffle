@@ -28,6 +28,11 @@ function getClientIp(request: NextRequest): string {
 }
 
 /**
+ * Função utilitária para introduzir um atraso controlado
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * API endpoint para validar um token JWT
  * Usado pelo hook useTokenValidation para verificar se o token ainda é válido
  */
@@ -64,43 +69,55 @@ export async function GET(request: NextRequest) {
     const secureSessionToken = request.cookies.get('__Secure-next-auth.session-token')?.value;
     const tokenString = sessionToken || secureSessionToken;
 
-    logger.info('Token bruto do cookie',tokenString);
+    logger.info('Token bruto do cookie obtido');
+    
     // Se encontrou o token, validar
     if (tokenString) {
-      const isValid = await verifyToken(tokenString);
+      try {
+        // Adicionar um pequeno atraso para evitar sobrecarga em conexões lentas
+        if (process.env.NODE_ENV === 'production') {
+          await delay(Math.random() * 300); // Atraso de até 300ms
+        }
+        
+        const isValid = await verifyToken(tokenString);
 
-      logger.info('Token validado',isValid ? 'Sim' : 'Não');
-      
-      if (!isValid) {
+        logger.info('Token validado', isValid ? 'Sim' : 'Não');
+        
+        if (!isValid) {
+          logger.warn(`Token inválido para IP: ${ip}, User-Agent: ${userAgent}`);
+          return NextResponse.json(
+            createErrorResponse('Token inválido', 401),
+            { status: 401 }
+          );
+        }
 
-        logger.warn(`Token inválido para IP: ${ip}, User-Agent: ${userAgent}`);
-
+        // Verificar se o token está próximo de expirar
+        if (isValid.exp) {
+          const currentTime = Math.floor(Date.now() / 1000);
+          const timeToExpire = isValid.exp - currentTime;
+          
+          // Se faltar menos de 15 minutos para expirar, incluir aviso na resposta
+          if (timeToExpire < 15 * 60) {
+            logger.info('Token próximo de expirar, incluindo aviso na resposta');
+            return NextResponse.json(
+              { 
+                message: 'Token válido',
+                warning: 'Token próximo de expirar',
+                expiresIn: timeToExpire
+              },
+              { status: 200 }
+            );
+          }
+          logger.info('Token válido, sem aviso de expiração');
+        }
+      } catch (tokenError) {
+        logger.error(`Erro ao verificar token: ${tokenError}`);
         return NextResponse.json(
-          createErrorResponse('Token inválido', 401),
+          createErrorResponse('Erro na verificação do token', 401),
           { status: 401 }
         );
       }
-
-      // Verificar se o token está próximo de expirar
-      if (isValid.exp) {
-        const currentTime = Math.floor(Date.now() / 1000);
-        const timeToExpire = isValid.exp - currentTime;
-        
-        // Se faltar menos de 15 minutos para expirar, incluir aviso na resposta
-        if (timeToExpire < 15 * 60) {
-          logger.info('Token próximo de expirar, incluindo aviso na resposta');
-          return NextResponse.json(
-            { 
-              message: 'Token válido',
-              warning: 'Token próximo de expirar',
-              expiresIn: timeToExpire
-            },
-            { status: 200 }
-          );
-        }
-        logger.info('Token válido, sem aviso de expiração');
-      }
-    }else{
+    } else {
       logger.warn(`Token não encontrado para IP: ${ip}, User-Agent: ${userAgent}`);
       return NextResponse.json(
         createErrorResponse('Token não encontrado', 401),
@@ -119,7 +136,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logger.error('Erro ao validar token:', error);
     return NextResponse.json(
-      { message: 'Erro ao validar token' },
+      createErrorResponse('Erro ao validar token', 500),
       { status: 500 }
     );
   }

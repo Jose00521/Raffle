@@ -424,7 +424,7 @@ export default function NovaRifaPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Show success overlay
-      setShowSuccess(true);
+      // setShowSuccess(true);
       
     } catch (error) {
       console.error("Error creating raffle:", error);

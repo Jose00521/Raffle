@@ -391,13 +391,17 @@ const MultiPrizePosition: React.FC<MultiPrizePositionProps> = ({
         return <>🎖️ {position}º Lugar</>;
     }
   };
+  // Formatar valor do prêmio para exibição
   const extractNumericValue = (valueString: string): number => {
     try {
-      // Remove qualquer caractere que não seja dígito
-      const numericString = valueString.replace(/[^\d]/g, '');
+      // Remove qualquer caractere que não seja dígito, ponto ou vírgula
+      const cleanString = valueString.replace(/[^\d,.]/g, '');
+      
+      // Substitui vírgula por ponto para processamento numérico
+      const normalizedString = cleanString.replace(/,/g, '.');
       
       // Converte para número
-      const value = parseInt(numericString, 10);
+      const value = parseFloat(normalizedString);
       
       // Retorna 0 se não for um número válido
       return isNaN(value) ? 0 : value;
@@ -406,45 +410,26 @@ const MultiPrizePosition: React.FC<MultiPrizePositionProps> = ({
       return 0;
     }
   };
-
+  
   const formatPrizeValue = (value: string | number): string => {
-    // If value is a number, convert to string
-    if (typeof value === 'number') {
-      return new Intl.NumberFormat('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL' 
-      }).format(value);
+    if (!value) return 'R$ 0,00';
+    
+    // Se for um número, converte para string
+    const valueString = typeof value === 'number' ? value.toString() : value;
+    
+    // Verificar se o valor já está formatado como moeda
+    if (valueString.includes('R$')) {
+      return valueString;
     }
     
-    // If already formatted as currency, return as is
-    if (typeof value === 'string' && value.includes('R$')) {
-      return value;
-    }
+    // Tenta converter para número
+    const numericValue = extractNumericValue(valueString);
     
-    // Try to convert to number
-    try {
-      // Remove any non-digit character except commas and dots
-      let cleanValue = value.replace(/[R$\s]/g, '');
-      
-      // Remove dots (thousand separators)
-      cleanValue = cleanValue.replace(/\./g, '');
-      
-      // Replace comma with dot for decimal places
-      cleanValue = cleanValue.replace(/,/g, '.');
-      
-      // Convert to number
-      const numericValue = parseFloat(cleanValue);
-      
-      // Format as Brazilian currency
-      return new Intl.NumberFormat('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL' 
-      }).format(numericValue);
-    } catch (error) {
-      console.error("Error formatting prize value:", value, error);
-      // Return a fallback value
-      return 'R$ 0,00';
-    }
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(numericValue);
   };
 
   return (

@@ -13,8 +13,8 @@ const InstantPrizeSchema = new mongoose.Schema(
       index: true
     },
     categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'InstantPrizeCategory',
+      type: String,
+      required: true
     },
     number: {
       type: String,

@@ -332,28 +332,40 @@ const CoverWrapper = styled.div`
 
 const CoverBadge = styled.div`
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: #eab308;
+  top: 8px;
+  left: 8px;
+  background-color: rgba(245, 158, 11, 0.9);
   color: white;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  z-index: 5;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 3;
   
   svg {
-    font-size: 0.8rem;
+    margin-right: 3px;
+    font-size: 0.6rem;
   }
-  
-  @media (max-width: 768px) {
-    padding: 3px 6px;
-    font-size: 0.7rem;
-  }
+`;
+
+const PositionBadge = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(37, 99, 235, 0.85);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  z-index: 2;
 `;
 
 const CoverPlaceholder = styled.div`
@@ -982,6 +994,21 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
     position: 'relative' as const
   };
 
+  const handleCoverClick = (e: React.MouseEvent) => {
+    console.log("Clique no botão de capa", id);
+    e.preventDefault();
+    e.stopPropagation();
+    onSetCover(id);
+    return false;
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete(id);
+    return false;
+  };
+
   return (
     <ThumbnailItem
       ref={setNodeRef}
@@ -990,6 +1017,7 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
       {...(image.isCover ? {} : attributes)} // Não adicionar atributos de arrasto se for capa
       {...(image.isCover ? {} : listeners)} // Não adicionar listeners de arrasto se for capa
       title={image.isCover ? "Imagem de capa" : "Clique e arraste para reordenar"}
+      onClick={(e) => e.stopPropagation()}
     >
       {image.isCover && (
         <CoverBadge>
@@ -997,26 +1025,30 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
         </CoverBadge>
       )}
       
+      <PositionBadge>{index + 1}</PositionBadge>
+      
       <ImagePreview $backgroundImage={image.preview}>
         <ProgressOverlay $uploading={!!image.uploading}>
           {image.uploading ? 'Enviando...' : ''}
         </ProgressOverlay>
       </ImagePreview>
       
-      <ImageActions className="thumbnail-actions">
+      <ImageActions className="thumbnail-actions" onClick={(e) => e.stopPropagation()}>
         {!image.isCover && (
           <ActionButtonSmall
             className="cover-btn"
-            onClick={() => onSetCover(image.id)}
+            onClick={handleCoverClick}
             title="Definir como capa"
+            type="button"
           >
             <FaStar />
           </ActionButtonSmall>
         )}
         <ActionButtonSmall
           className="delete-btn"
-          onClick={() => onDelete(image.id)}
+          onClick={handleDeleteClick}
           title="Remover imagem"
+          type="button"
         >
           <FaTrashAlt />
         </ActionButtonSmall>
@@ -1151,7 +1183,11 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Atualizar o onChange com a nova ordem de arquivos
     const orderedFiles = allImages.map(img => img.file);
-    onChange(orderedFiles);
+    
+    // Usar um setTimeout para evitar atualização durante a renderização
+    setTimeout(() => {
+      onChange(orderedFiles);
+    }, 0);
     
     // Notificar sobre a imagem de capa se for o primeiro upload
     if (images.length === 0 && newImages.length > 0 && onCoverImageChange) {
@@ -1179,9 +1215,16 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   
   // Definir uma imagem como capa
   const handleSetCover = (id: string) => {
+    console.log("Definindo imagem como capa:", id);
+    
     // Encontrar a imagem que será definida como capa
     const coverImageIndex = images.findIndex(img => img.id === id);
-    if (coverImageIndex === -1) return;
+    if (coverImageIndex === -1) {
+      console.log("Imagem não encontrada:", id);
+      return;
+    }
+
+    console.log("Índice da imagem:", coverImageIndex);
 
     // Criar uma cópia do array de imagens e remover a imagem selecionada
     const newImages = [...images];
@@ -1196,11 +1239,15 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     // Colocar a imagem de capa na primeira posição
     const updatedImages = [coverImage, ...newImages];
     
+    console.log("Novas imagens:", updatedImages.map(img => ({ id: img.id, isCover: img.isCover })));
+    
     // Atualizar o estado
     setImages(updatedImages);
     
-    // Atualizar o onChange com a nova ordem de arquivos
-    onChange(updatedImages.map(img => img.file));
+    // Atualizar o onChange com a nova ordem de arquivos - usar setTimeout para evitar erro
+    setTimeout(() => {
+      onChange(updatedImages.map(img => img.file));
+    }, 0);
     
     // Notificar sobre a mudança da imagem de capa em um setTimeout
     // para evitar atualização durante a renderização
@@ -1242,8 +1289,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     setImages(newImages);
     
-    // Atualizar o onChange com a nova ordem de arquivos
-    onChange(newImages.map(img => img.file));
+    // Atualizar o onChange com a nova ordem de arquivos usando setTimeout
+    setTimeout(() => {
+      onChange(newImages.map(img => img.file));
+    }, 0);
     
     // Limpar erro se agora estamos abaixo do limite
     if (newImages.length < maxImages && error?.includes('máximo')) {
@@ -1286,8 +1335,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         // Reordenar o array normalmente se não envolver a imagem de capa
         const newArray = arrayMove(items, oldIndex, newIndex);
         
-        // Atualizar o onChange com a nova ordem de arquivos
-        onChange(newArray.map(img => img.file));
+        // Atualizar o onChange com a nova ordem de arquivos - usando setTimeout para evitar erro
+        setTimeout(() => {
+          onChange(newArray.map(img => img.file));
+        }, 0);
         
         return newArray;
       });
@@ -1329,7 +1380,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   );
   
   return (
-    <UploaderContainer className={className}>
+    <UploaderContainer className={className} onClick={(e) => e.stopPropagation()}>
       {/* Incluir o input de arquivo no início para garantir que esteja sempre no DOM */}
       {fileInputElement}
       
@@ -1339,9 +1390,14 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
             <FaImages /> {label}
           </UploaderTitle>
           <HelpButton 
-            onClick={toggleHelp} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleHelp();
+            }} 
             title={showHelp ? "Ocultar ajuda" : "Mostrar ajuda"}
             className={showHelp ? "active help-visible" : "help-hidden"}
+            type="button"
           >
             <FaQuestionCircle />
           </HelpButton>
@@ -1406,6 +1462,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
                       className="delete-btn"
                       onClick={() => handleDelete(coverImage.id)}
                       title="Remover imagem"
+                      type="button"
                     >
                       <FaTrashAlt />
                     </ActionButtonSmall>
@@ -1445,7 +1502,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
                 items={images.map(img => img.id)}
                 strategy={horizontalListSortingStrategy}
               >
-                <ThumbnailsGrid>
+                <ThumbnailsGrid onClick={(e) => e.stopPropagation()}>
                   {images.map((img, index) => (
                     <SortableImageItem
                       key={img.id}

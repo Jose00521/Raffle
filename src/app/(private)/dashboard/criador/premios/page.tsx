@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaGift, FaPlus, FaSearch, FaTrophy, FaFilter, FaSortAmountDown, FaSortAmountUp, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa';
+import { FaGift, FaPlus, FaSearch, FaTrophy,FaEdit, FaFilter, FaSortAmountDown, FaSortAmountUp, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { motion } from 'framer-motion';
@@ -11,6 +11,7 @@ import InputWithIcon from '@/components/common/InputWithIcon';
 import Link from 'next/link';
 import prizeAPIClient from '@/API/prizeAPIClient';
 import { ApiResponse } from '@/server/utils/errorHandler/api';
+import { useRouter } from 'next/navigation';
 
 // Mock data for initial development
 export const MOCK_PRIZES: IPrize[] = [
@@ -206,18 +207,32 @@ const ResultsCount = styled.div`
 
 const PrizesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 32px;
+  padding: 8px 4px;
+  
+  @media (min-width: 1400px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  @media (max-width: 1200px) and (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 767px) and (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
   
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 28px;
+    padding: 4px 0;
   }
 `;
 
 const PrizeCard = styled(motion.div)`
   background-color: white;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -229,16 +244,20 @@ const PrizeCard = styled(motion.div)`
   border: 1px solid rgba(226, 232, 240, 0.8);
   
   &:hover {
-    box-shadow: 0 15px 35px rgba(106, 17, 203, 0.15);
-    transform: translateY(-5px);
+    box-shadow: 0 18px 38px rgba(106, 17, 203, 0.15);
+    transform: translateY(-8px);
   }
 `;
 
 const PrizeImageContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 240px;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    height: 220px;
+  }
 `;
 
 const PrizeImage = styled.img`
@@ -267,37 +286,39 @@ const PrizeOverlay = styled.div`
 
 const PrizeValue = styled.div`
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
   overflow: visible;
-  padding: 4px 10px;
+  padding: 6px 12px;
   max-width: 100%;
   
   svg {
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
     flex-shrink: 0;
+    font-size: 1.1rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 `;
 
 const PrizeContent = styled.div`
-  padding: 20px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* Faz com que essa seção expanda para preencher o espaço disponível */
+  flex-grow: 1;
+  gap: 12px;
 `;
 
 const PrizeName = styled.h3`
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0;
   color: #1e293b;
   line-height: 1.3;
   transition: color 0.2s ease;
@@ -307,16 +328,69 @@ const PrizeName = styled.h3`
   }
 `;
 
+const Button = styled.button<{ $variant?: 'primary' | 'danger' }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  
+  ${({ $variant }) => $variant === 'danger' 
+    ? `
+      color: #ef4444;
+      background-color: #fef2f2;
+      border-color: #fee2e2;
+      
+      &:hover {
+        background-color: #fee2e2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+      }
+    ` 
+    : `
+      color: white;
+      background: linear-gradient(to right, #4f46e5, #6366f1);
+      
+      &:hover {
+        background: linear-gradient(to right, #4338ca, #4f46e5);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+      }
+    `
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0 14px;
+    
+    span {
+      display: none;
+    }
+  }
+`;
+
 const PrizeDescription = styled.p`
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #64748b;
-  margin: 0 0 auto; /* Empurra para cima, deixando espaço para o valor abaixo */
-  line-height: 1.5;
+  margin: 0 0 auto;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 3rem;
 `;
 
 const CategoryBadge = styled.span`
@@ -325,22 +399,24 @@ const CategoryBadge = styled.span`
   right: 16px;
   background: rgba(106, 17, 203, 0.9);
   color: white;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 30px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   backdrop-filter: blur(4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   gap: 6px;
+  z-index: 3;
   
   svg {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
   
   ${PrizeCard}:hover & {
     background: rgba(106, 17, 203, 1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -348,28 +424,33 @@ const PrizeFooter = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid rgba(226, 232, 240, 0.8);
-  flex-wrap: wrap;
   gap: 12px;
+  
+  @media (max-width: 360px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 const PrizeDate = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #94a3b8;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 6px 0;
 `;
 
 const FormatPrizeValueBox = styled.div`
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #6a11cb;
   background: rgba(106, 17, 203, 0.08);
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -386,11 +467,11 @@ const FormatPrizeValueBox = styled.div`
   svg {
     color: #7c3aed;
     flex-shrink: 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     padding: 10px 16px;
   }
 `;
@@ -398,12 +479,26 @@ const FormatPrizeValueBox = styled.div`
 // Loading skeleton components
 const LoadingSkeletonGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 32px;
+  padding: 8px 4px;
+  
+  @media (min-width: 1400px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  @media (max-width: 1200px) and (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 767px) and (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
   
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 28px;
+    padding: 4px 0;
   }
 `;
 
@@ -580,6 +675,8 @@ const cardVariants = {
 };
 
 export default function PrizesDashboard() {
+  const router = useRouter();
+  
   const [prizes, setPrizes] = useState<IPrize[]>(MOCK_PRIZES);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -605,6 +702,10 @@ export default function PrizesDashboard() {
     prize.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     prize.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleEdit = (id: string | undefined) => {
+    router.push(`/dashboard/criador/premios/${id}`);
+  };
   
   
   
@@ -755,7 +856,7 @@ export default function PrizesDashboard() {
                 animate="visible"
                 custom={index}
                 variants={cardVariants}
-                whileHover={{ y: -5, boxShadow: '0 15px 35px rgba(106, 17, 203, 0.15)' }}
+                whileHover={{ y: -8, boxShadow: '0 18px 38px rgba(106, 17, 203, 0.15)' }}
               >
                 <PrizeImageContainer>
                   <PrizeImage src={prize.image} alt={prize.name} />
@@ -777,26 +878,17 @@ export default function PrizesDashboard() {
                   
                   <PrizeFooter>
                     <PrizeDate>
-                      <FaCalendarAlt size={12} />
+                      <FaCalendarAlt size={14} />
                       {formatDate(prize.createdAt)}
                     </PrizeDate>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <Link href={`/dashboard/criador/premios/${prize.prizeCode}`} 
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center',
-                              padding: '6px 12px',
-                              background: 'rgba(99, 102, 241, 0.1)',
-                              borderRadius: '6px',
-                              color: '#4f46e5',
-                              fontWeight: 600,
-                              fontSize: '0.8rem',
-                              transition: 'all 0.2s ease',
-                            }}
-                            title="Editar prêmio"
-                      >
-                        Editar
-                      </Link>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <Button onClick={(e) => {
+                        e.preventDefault();
+                        handleEdit(prize.prizeCode);
+                      }}>
+                        <FaEdit size={16} />
+                        <span>Editar</span>
+                      </Button>
                       <FormatPrizeValueBox>
                         <FaMoneyBillWave /> 
                         {formatPrizeValue(prize.value)}

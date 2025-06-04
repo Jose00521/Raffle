@@ -63,6 +63,7 @@ export class PrizeController implements IPrizeController {
         value: string;
         image: File;
         images: File[];
+        categoryId: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
             return await this.prizeService.createPrize(prize);

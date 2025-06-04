@@ -1,4 +1,8 @@
 const webpack = require('webpack')
+const EventEmitter = require('events');
+
+// Increase max listeners to prevent memory leak warnings
+EventEmitter.defaultMaxListeners = 50;
 
 const { parsed: myEnv } = require('dotenv').config({
   path:'.env.local'

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags, FaExclamationCircle } from 'react-icons/fa';
-import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { ICategory, IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import mongoose from 'mongoose';
@@ -14,6 +14,7 @@ import type { PrizeForm } from '@/zod/prize.schema';
 import { useHookFormMask } from 'use-mask-input';
 import { fadeIn } from '@/styles/registration.styles';
 import CurrencyInput from '../common/CurrencyInput';
+import prizeCategoryAPIClient from '@/API/prizeCategoryAPIClient';
 
 interface PrizeFormProps {
   initialData?: Partial<IPrize>;
@@ -192,6 +193,24 @@ const ImagePreview = styled.div`
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const PositionBadge = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(37, 99, 235, 0.85);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  z-index: 2;
 `;
 
 const PreviewImage = styled.img`
@@ -386,6 +405,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>(
     getCategoryIdAsString(initialData?.categoryId)
   );
+
+  const [categories, setCategories] = useState<ICategory[]>([]);
   
   // Estado para rastrear alterações nas imagens
   const [imagesModified, setImagesModified] = useState(false);
@@ -453,6 +474,15 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       setErrorsImage({ image: 'É necessário pelo menos uma imagem' });
     }
   }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const response = await prizeCategoryAPIClient.getAllCategories();
+      console.log("response",response); 
+      setCategories(response.data);
+    };
+    fetchCategories();
+  }, []);
   
   // Forçar a verificação de imagens antes do submit
   const validateImagesBeforeSubmit = () => {
@@ -493,12 +523,14 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     }
   };
   
+  // Função para tratar mudança nas imagens adicionais
   const handleAdditionalImagesChange = (files: File[]) => {
     setAdditionalImageFiles(files);
-    setImagesModified(true); // Marcar que as imagens foram modificadas
     
-    // Envolver em setTimeout para evitar atualização durante renderização
+    // Executar em um setTimeout para evitar atualização durante a renderização
     setTimeout(() => {
+      setImagesModified(true); // Marcar que as imagens foram modificadas
+
       // Limpar erros quando imagens são adicionadas
       if (files.length > 0 && errorsImage.image) {
         setErrorsImage({});
@@ -572,13 +604,30 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     onSubmit(submissionData);
   };
   
+  // Manipulador para prevenir submissão acidental do formulário
+  const handleFormSubmit = (e: React.FormEvent) => {
+    // Verificar se o submit foi acionado pelo botão de submit
+    const target = e.target as HTMLFormElement;
+    const submitter = (e as any).nativeEvent?.submitter;
+    
+    if (!submitter || submitter.type !== 'submit') {
+      e.preventDefault();
+      return false;
+    }
+  };
+  
   return (
     <FormWrapper>
       <FormTitle>
         {initialData?._id ? 'Editar Prêmio' : 'Adicionar Novo Prêmio'}
       </FormTitle>
       
-      <form onSubmit={handleSubmit(onSubmitForm)} noValidate>
+      <form onSubmit={handleSubmit(onSubmitForm)} noValidate onKeyDown={(e) => {
+        // Prevenir submissão do formulário ao pressionar Enter
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      }}>
 
         
         
@@ -600,6 +649,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
                 {formData.images.map((url, index) => (
                   <ImagePreview key={index}>
                     <PreviewImage src={url} alt={`Imagem adicional ${index + 1}`} />
+                    <PositionBadge>{index + 1}</PositionBadge>
                     <RemoveImageButton 
                       type="button" 
                       onClick={(e) => {
@@ -650,7 +700,10 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
         <FormGroup>
           <FormLabel htmlFor="category">Categoria</FormLabel>
           <CustomDropdown
-            options={MOCK_CATEGORIES}
+            options={categories.map(category => ({
+              value: category.categoryCode,
+              label: category.name
+            }))}
             value={selectedCategory}
             onChange={handleCategoryChange}
             placeholder="Selecione uma categoria"

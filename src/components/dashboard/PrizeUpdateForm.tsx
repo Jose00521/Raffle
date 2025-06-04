@@ -235,6 +235,23 @@ const CoverBadge = styled.div`
   }
 `;
 
+const PositionBadge = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(37, 99, 235, 0.85);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+`;
+
 const ImageActions = styled.div`
   position: absolute;
   bottom: 0;
@@ -252,12 +269,15 @@ const ImageActions = styled.div`
   }
 `;
 
-const ImageActionButton = styled.button<{ $variant?: 'danger' }>`
+const ImageActionButton = styled.button<{ $variant?: 'danger' | 'primary' }>`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: ${({ $variant }) => $variant === 'danger' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 255, 255, 0.9)'};
-  color: ${({ $variant }) => $variant === 'danger' ? 'white' : '#1f2937'};
+  background-color: ${({ $variant }) => 
+    $variant === 'danger' ? 'rgba(239, 68, 68, 0.9)' : 
+    $variant === 'primary' ? 'rgba(37, 99, 235, 0.9)' : 
+    'rgba(255, 255, 255, 0.9)'};
+  color: ${({ $variant }) => $variant === 'danger' || $variant === 'primary' ? 'white' : '#1f2937'};
   border: none;
   display: flex;
   align-items: center;
@@ -265,11 +285,26 @@ const ImageActionButton = styled.button<{ $variant?: 'danger' }>`
   cursor: pointer;
   font-size: 0.7rem;
   transition: all 0.2s ease;
+  margin: 0 2px;
   
   &:hover {
     transform: scale(1.1);
-    background-color: ${({ $variant }) => $variant === 'danger' ? 'rgba(239, 68, 68, 1)' : 'rgba(255, 255, 255, 1)'};
+    background-color: ${({ $variant }) => 
+      $variant === 'danger' ? 'rgba(239, 68, 68, 1)' : 
+      $variant === 'primary' ? 'rgba(37, 99, 235, 1)' : 
+      'rgba(255, 255, 255, 1)'};
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const ImageActionsGroup = styled.div`
+  display: flex;
+  gap: 4px;
 `;
 
 const UploadButton = styled.button`
@@ -477,25 +512,49 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
   
   // Manipulador para definir imagem como capa
   const handleSetCover = (id: string) => {
-    setImages(prevImages => 
-      prevImages.map(img => ({
-        ...img,
-        isCover: img.id === id
-      }))
-    );
+    setImages(prevImages => {
+      const index = prevImages.findIndex(img => img.id === id);
+      if (index < 0) return prevImages;
+      
+      // Create a copy of the images array
+      const newImages = [...prevImages];
+      
+      // Get the image to set as cover
+      const newCoverImage = {...newImages[index], isCover: true};
+      
+      // Remove the image from its current position
+      newImages.splice(index, 1);
+      
+      // Move the new cover image to the first position
+      newImages.unshift(newCoverImage);
+      
+      // Make sure all other images are not covers
+      for (let i = 1; i < newImages.length; i++) {
+        newImages[i].isCover = false;
+      }
+      
+      return newImages;
+    });
     setImagesModified(true);
   };
   
   // Manipulador para remover imagem
   const handleRemoveImage = (id: string) => {
     const imageToRemove = images.find(img => img.id === id);
-    const wasCover = imageToRemove?.isCover || false;
+    if (!imageToRemove) return;
     
+    const wasCover = imageToRemove.isCover;
     const updatedImages = images.filter(img => img.id !== id);
     
-    // Se a imagem removida era a capa, definir a primeira imagem como capa
+    // Se a imagem removida era a capa e ainda há outras imagens,
+    // definir a primeira imagem restante como capa
     if (wasCover && updatedImages.length > 0) {
       updatedImages[0].isCover = true;
+      
+      // Garantir que as outras não são capas
+      for (let i = 1; i < updatedImages.length; i++) {
+        updatedImages[i].isCover = false;
+      }
     }
     
     setImages(updatedImages);
@@ -519,16 +578,26 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     }
     
     // Criar novos itens de imagem
-    const newImages: ImageItem[] = Array.from(files).map(file => ({
+    const newImageItems: ImageItem[] = Array.from(files).map(file => ({
       id: generateId(),
       type: 'file',
       file,
       preview: URL.createObjectURL(file),
-      isCover: images.length === 0 // Primeira imagem como capa se não houver outras
+      isCover: false // Inicialmente nenhuma nova imagem é capa
     }));
     
-    // Atualizar o estado
-    setImages(prevImages => [...prevImages, ...newImages]);
+    setImages(prevImages => {
+      // Se não houver imagens, a primeira nova imagem será a capa
+      if (prevImages.length === 0 && newImageItems.length > 0) {
+        newImageItems[0].isCover = true;
+        return [...newImageItems];
+      }
+      
+      // Se já existem imagens, manter a estrutura existente
+      // A primeira imagem já deve ser a capa
+      return [...prevImages, ...newImageItems];
+    });
+    
     setImagesModified(true);
     setErrorsImage(null);
     
@@ -558,6 +627,40 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     return true;
   };
   
+  // Manipulador para mover a imagem para cima na ordem
+  const handleMoveImageUp = (id: string) => {
+    setImages(prevImages => {
+      const index = prevImages.findIndex(img => img.id === id);
+      // Não permitir mover para cima se for a primeira imagem (capa) ou a segunda imagem
+      if (index <= 0 || index === 1) return prevImages;
+      
+      const newImages = [...prevImages];
+      const temp = newImages[index];
+      newImages[index] = newImages[index - 1];
+      newImages[index - 1] = temp;
+      
+      return newImages;
+    });
+    setImagesModified(true);
+  };
+  
+  // Manipulador para mover a imagem para baixo na ordem
+  const handleMoveImageDown = (id: string) => {
+    setImages(prevImages => {
+      const index = prevImages.findIndex(img => img.id === id);
+      // Não permitir mover se for a imagem de capa (índice 0) ou a última imagem
+      if (index < 0 || index === 0 || index >= prevImages.length - 1) return prevImages;
+      
+      const newImages = [...prevImages];
+      const temp = newImages[index];
+      newImages[index] = newImages[index + 1];
+      newImages[index + 1] = temp;
+      
+      return newImages;
+    });
+    setImagesModified(true);
+  };
+  
   const onSubmitForm = async (data: PrizeForm) => {
     // Validar imagens primeiro
     if (!validateImagesBeforeSubmit()) {
@@ -571,9 +674,9 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     
     // Processar imagens para submissão
     if (images.length > 0) {
-      // Encontrar a imagem de capa
-      const coverImage = images.find(img => img.isCover);
-      const additionalImages = images.filter(img => !img.isCover);
+      // A primeira imagem é sempre a capa
+      const coverImage = images[0];
+      const additionalImages = images.slice(1);
       
       // Definir imagem de capa
       if (coverImage) {
@@ -633,14 +736,15 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
           <HelpText>
             <FaInfo />
             <span>
-              A primeira imagem definida como capa será usada como imagem principal do prêmio.
-              Você pode adicionar até 8 imagens no total. Clique em uma imagem para definir como capa.
+              A primeira imagem é sempre a capa do prêmio.
+              Você pode adicionar até 8 imagens no total. Clique em uma imagem e selecione a estrela para definir como capa, que será automaticamente movida para a primeira posição.
+              Use os botões de seta para alterar a ordem das demais imagens.
             </span>
           </HelpText>
           
           <ImageGrid>
             {/* Mostrar imagens existentes */}
-            {images.map((image) => (
+            {images.map((image, index) => (
               <ImageCard 
                 key={image.id} 
                 $isCover={image.isCover}
@@ -652,26 +756,59 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
                     <FaStar /> Capa
                   </CoverBadge>
                 )}
+                <PositionBadge>
+                  {index + 1}
+                </PositionBadge>
                 <ImageActions>
-                  <ImageActionButton 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSetCover(image.id);
-                    }}
-                  >
-                    <FaStar />
-                  </ImageActionButton>
-                  <ImageActionButton 
-                    type="button"
-                    $variant="danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveImage(image.id);
-                    }}
-                  >
-                    <FaTrash />
-                  </ImageActionButton>
+                  <ImageActionsGroup>
+                    <ImageActionButton 
+                      type="button"
+                      $variant="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveImageUp(image.id);
+                      }}
+                      disabled={index === 0 || index === 1}
+                      title={index === 0 ? "A imagem de capa não pode ser movida" : index === 1 ? "Não é possível mover acima da capa" : "Mover para cima"}
+                    >
+                      <FaArrowUp />
+                    </ImageActionButton>
+                    <ImageActionButton 
+                      type="button"
+                      $variant="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveImageDown(image.id);
+                      }}
+                      disabled={index === 0 || index === images.length - 1}
+                      title={index === 0 ? "A imagem de capa não pode ser movida" : "Mover para baixo"}
+                    >
+                      <FaArrowDown />
+                    </ImageActionButton>
+                  </ImageActionsGroup>
+                  <ImageActionsGroup>
+                    <ImageActionButton 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSetCover(image.id);
+                      }}
+                      title="Definir como capa"
+                    >
+                      <FaStar />
+                    </ImageActionButton>
+                    <ImageActionButton 
+                      type="button"
+                      $variant="danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage(image.id);
+                      }}
+                      title="Remover imagem"
+                    >
+                      <FaTrash />
+                    </ImageActionButton>
+                  </ImageActionsGroup>
                 </ImageActions>
               </ImageCard>
             ))}

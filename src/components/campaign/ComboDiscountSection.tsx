@@ -1,14 +1,27 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaPercentage, FaInfoCircle, FaTrashAlt, FaPlusCircle, FaEdit, FaCheck } from 'react-icons/fa';
-import { Controller, Control } from 'react-hook-form';
-import { RaffleFormData } from './RaffleFormFields';
+import { Control, UseFormWatch, useForm, Controller, UseFormSetValue } from 'react-hook-form';
+import { RaffleFormData } from '@/components/campaign/RaffleFormFields';
+
+// Interface para representar um pacote de números
+interface Package {
+  name: string;
+  description?: string;
+  quantity: number;
+  price: number;
+  discount: number;
+  isActive: boolean;
+  highlight: boolean;
+  order: number;
+  maxPerUser?: number;
+}
 
 interface ComboDiscountSectionProps {
   control: Control<RaffleFormData>;
-  watch: any;
+  watch: UseFormWatch<RaffleFormData>;
   initialData: Partial<RaffleFormData>;
   isSubmitting?: boolean;
 }
@@ -603,6 +616,15 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
   const [editingQuantityIndex, setEditingQuantityIndex] = useState<number | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>("");
   const quantityInputRef = useRef<HTMLInputElement>(null);
+  
+  // Obter o preço individual dos números
+  const individualNumberPrice = watch('individualNumberPrice');
+  
+  // Função para calcular o preço final de um pacote
+  const calculatePackagePrice = (quantity: number, discount: number): number => {
+    console.log('individualNumberPrice', individualNumberPrice);
+    return individualNumberPrice * quantity * (1 - discount/100);
+  };
 
   // Função para iniciar a edição da quantidade
   const startEditingQuantity = (index: number, currentValue: number) => {
@@ -644,9 +666,9 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
       </ComboSectionHeader>
       
       <Controller
-        name="enableCombos"
+        name="enablePackages"
         control={control}
-        defaultValue={initialData.enableCombos || false}
+        defaultValue={initialData.enablePackages || false}
         render={({ field }) => (
           <ToggleComboContainer>
             <ToggleSwitch>
@@ -665,13 +687,13 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
         )}
       />
       
-      {watch('enableCombos') && (
+      {watch('enablePackages') && (
         <CombosBuilderContainer>
           <ComboVisualizer>
             <ComboVisualizerHeader>
               <ComboPriceInfo>
                 <span>Preço por número:</span>
-                <strong>R$ {watch('price').toFixed(2).replace('.', ',')}</strong>
+                <strong>R$ {(watch('individualNumberPrice') || 0).toFixed(2).replace('.', ',')}</strong>
               </ComboPriceInfo>
               <ComboInfoText>
                 <FaInfoCircle /> Arraste para ajustar os descontos até 100%
@@ -680,16 +702,16 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
             
             <ComboCardsContainer>
               <Controller
-                name="combos"
+                name="numberPackages"
                 control={control}
-                defaultValue={initialData.combos || [
-                  { quantity: 5, discountPercentage: 5 },
-                  { quantity: 10, discountPercentage: 10 },
-                  { quantity: 20, discountPercentage: 15 }
+                defaultValue={initialData.numberPackages || [
+                  { name: 'Combo Pequeno', quantity: 5, price: 0, discount: 5, isActive: true, highlight: false, order: 1 },
+                  { name: 'Combo Médio', quantity: 10, price: 0, discount: 10, isActive: true, highlight: false, order: 2 },
+                  { name: 'Combo Grande', quantity: 20, price: 0, discount: 15, isActive: true, highlight: false, order: 3 }
                 ]}
                 render={({ field }) => (
                   <>
-                    {field.value.map((combo, index) => (
+                    {field.value.map((combo: Package, index: number) => (
                       <ComboCard key={index}>
                         <ComboCardHeader>
                           {editingQuantityIndex === index ? (
@@ -721,24 +743,24 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                               {combo.quantity} números <FaEdit size={14} style={{ marginLeft: 5, opacity: 0.6 }} />
                             </ComboQuantity>
                           )}
-                          <DiscountBadge $percentage={combo.discountPercentage}>
-                            {combo.discountPercentage}% OFF
+                          <DiscountBadge $percentage={combo.discount}>
+                            {combo.discount}% OFF
                           </DiscountBadge>
                         </ComboCardHeader>
                         
                         <ComboDiscount>
                           <DiscountLabel>
                             <span>Desconto:</span>
-                            <span>{combo.discountPercentage}%</span>
+                            <span>{combo.discount}%</span>
                           </DiscountLabel>
                           <DiscountSlider
                             type="range"
                             min={1}
                             max={100}
-                            value={combo.discountPercentage}
+                            value={combo.discount}
                             onChange={(e) => {
                               const newCombos = [...field.value];
-                              newCombos[index].discountPercentage = parseInt(e.target.value);
+                              newCombos[index].discount = parseInt(e.target.value);
                               field.onChange(newCombos);
                             }}
                           />
@@ -748,19 +770,19 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                           <PriceRow>
                             <PriceLabel>Preço original:</PriceLabel>
                             <PriceValue>
-                              <s>R$ {(watch('price') * combo.quantity).toFixed(2).replace('.', ',')}</s>
+                              <s>R$ {((watch('individualNumberPrice') || 0) * combo.quantity).toFixed(2).replace('.', ',')}</s>
                             </PriceValue>
                           </PriceRow>
                           <PriceRow>
                             <PriceLabel>Com desconto:</PriceLabel>
                             <DiscountedValue>
-                              R$ {(watch('price') * combo.quantity * (1 - combo.discountPercentage/100)).toFixed(2).replace('.', ',')}
+                              R$ {calculatePackagePrice(combo.quantity, combo.discount).toFixed(2).replace('.', ',')}
                             </DiscountedValue>
                           </PriceRow>
                           <PriceRow>
                             <PriceLabel>Economia:</PriceLabel>
                             <SavingsValue>
-                              R$ {(watch('price') * combo.quantity * (combo.discountPercentage/100)).toFixed(2).replace('.', ',')}
+                              R$ {((watch('individualNumberPrice') || 0) * combo.quantity * (combo.discount/100)).toFixed(2).replace('.', ',')}
                             </SavingsValue>
                           </PriceRow>
                         </ComboPriceCalculation>
@@ -807,11 +829,21 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                         onClick={() => {
                           const lastCombo = field.value[field.value.length - 1];
                           const newQuantity = lastCombo ? lastCombo.quantity * 2 : 5;
-                          const newDiscount = lastCombo ? Math.min(lastCombo.discountPercentage + 5, 100) : 5;
+                          const newDiscount = lastCombo ? Math.min(lastCombo.discount + 5, 100) : 5;
+                          const newPrice = calculatePackagePrice(newQuantity, newDiscount);
                           
                           field.onChange([
                             ...field.value,
-                            { quantity: newQuantity, discountPercentage: newDiscount }
+                            { 
+                              name: `Combo de ${newQuantity}`,
+                              description: `Pacote com ${newQuantity} números`,
+                              quantity: newQuantity, 
+                              price: newPrice, 
+                              discount: newDiscount,
+                              isActive: true,
+                              highlight: false,
+                              order: field.value.length + 1
+                            }
                           ]);
                         }}
                       >
@@ -830,19 +862,19 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
               <FaPercentage /> Pré-visualização dos Combos
             </ComboPreviewTitle>
             <ComboPreviewContainer>
-              {watch('combos')?.map((combo: { quantity: number, discountPercentage: number }, index: number) => (
+              {watch('numberPackages') && watch('numberPackages').map((combo: Package, index: number) => (
                 <ComboPreviewItem key={index}>
-                  <ComboPreviewBadge $percentage={combo.discountPercentage}>
-                    {combo.discountPercentage}% OFF
+                  <ComboPreviewBadge $percentage={combo.discount}>
+                    {combo.discount}% OFF
                   </ComboPreviewBadge>
                   <ComboPreviewQuantity>{combo.quantity}</ComboPreviewQuantity>
                   <ComboPreviewLabel>números</ComboPreviewLabel>
                   <ComboPreviewPrice>
                     <ComboPreviewOriginalPrice>
-                      R$ {(watch('price') * combo.quantity).toFixed(2).replace('.', ',')}
+                      R$ {((watch('individualNumberPrice') || 0) * combo.quantity).toFixed(2).replace('.', ',')}
                     </ComboPreviewOriginalPrice>
                     <ComboPreviewDiscountedPrice>
-                      R$ {(watch('price') * combo.quantity * (1 - combo.discountPercentage/100)).toFixed(2).replace('.', ',')}
+                      R$ {calculatePackagePrice(combo.quantity, combo.discount).toFixed(2).replace('.', ',')}
                     </ComboPreviewDiscountedPrice>
                   </ComboPreviewPrice>
                 </ComboPreviewItem>

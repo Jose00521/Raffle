@@ -18,6 +18,7 @@ export interface IPrize {
   export interface ICategory {
     _id?: string;
     name: string;
+    categoryCode: string;
     createdAt: Date;
     updatedAt: Date;
   }

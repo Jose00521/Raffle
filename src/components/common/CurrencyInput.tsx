@@ -2,7 +2,7 @@
 
 import React, { useState, ReactNode, useEffect, useRef, useCallback, forwardRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
 
 interface FormInputProps {
   id: string;
@@ -26,6 +26,7 @@ interface FormInputProps {
   className?: string;
   mask?: 'cpf' | 'phone' | 'cep' | 'uf' | string;
   currency?: string;
+  helpText?: string;
   ref?: React.Ref<HTMLInputElement>;
 }
 
@@ -53,20 +54,30 @@ const InputGroup = styled.div<{ $fullWidth?: boolean }>`
   }
 `;
 
-const InputLabel = styled.label`
-  display: block;
+const LabelContainer = styled.div`
+  display: flex;
+  align-items: center;
   margin-bottom: 8px;
+  
+  @media (max-height: 800px) {
+    margin-bottom: 6px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-bottom: 4px;
+  }
+`;
+
+const InputLabel = styled.label`
   font-size: 0.9rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
   
   @media (max-height: 800px) {
-    margin-bottom: 6px;
     font-size: 0.85rem;
   }
   
   @media (max-height: 700px) {
-    margin-bottom: 4px;
     font-size: 0.8rem;
   }
 `;
@@ -74,6 +85,28 @@ const InputLabel = styled.label`
 const RequiredMark = styled.span`
   color: #ef4444;
   margin-left: 4px;
+`;
+
+const HelpIconWrapper = styled.div`
+  position: relative;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+`;
+
+const HelpIcon = styled(FaInfoCircle)`
+  color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+  font-size: 16px;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: ${({ theme }) => theme.colors?.secondary || '#2575fc'};
+  }
+  
+  @media (max-height: 800px) {
+    font-size: 14px;
+  }
 `;
 
 const InputWrapper = styled.div`
@@ -226,6 +259,45 @@ const ErrorIcon = styled(FaExclamationCircle)`
   min-height: 14px;
 `;
 
+const fadeInTooltip = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const Tooltip = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: max-content;
+  max-width: 250px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  font-size: 0.85rem;
+  color: #333;
+  z-index: 100;
+  opacity: ${props => props.$visible ? 1 : 0};
+  visibility: ${props => props.$visible ? 'visible' : 'hidden'};
+  animation: ${props => props.$visible ? css`${fadeInTooltip} 0.2s ease` : 'none'};
+  font-weight: 400;
+  line-height: 1.5;
+  pointer-events: none;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  
+  &:after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: white transparent transparent transparent;
+  }
+`;
+
 // Função para formatar valor como moeda
 const formatCurrency = (value: string, currencySymbol: string = 'R$'): string => {
   // Remove todos os caracteres não numéricos exceto vírgula e ponto
@@ -308,12 +380,14 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   fullWidth = false,
   className,
   currency,
+  helpText,
   ...props
 }, ref) => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | undefined>(error);
   const [displayValue, setDisplayValue] = useState<string>('');
+  const [showTooltip, setShowTooltip] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   
   // Merge dos refs para permitir acesso ao ref interno e ao ref fornecido pelo usuário
@@ -409,10 +483,25 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
-      <InputLabel htmlFor={id}>
-        {label}
-        {required && <RequiredMark>*</RequiredMark>}
-      </InputLabel>
+      <LabelContainer>
+        <InputLabel htmlFor={id}>
+          {label}
+          {required && <RequiredMark>*</RequiredMark>}
+        </InputLabel>
+        
+        {helpText && (
+          <HelpIconWrapper 
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onClick={() => setShowTooltip(!showTooltip)}
+          >
+            <HelpIcon />
+            <Tooltip $visible={showTooltip}>
+              {helpText}
+            </Tooltip>
+          </HelpIconWrapper>
+        )}
+      </LabelContainer>
       
       <InputWrapper>
         {icon && <InputIcon>{icon}</InputIcon>}

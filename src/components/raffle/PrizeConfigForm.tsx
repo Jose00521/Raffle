@@ -10,6 +10,7 @@ interface PrizeCategory {
 interface PrizeConfigProps {
   totalNumbers: number;
   onPrizeConfigChange: (config: PrizeCategoriesConfig) => void;
+  onPrizesGenerated?: (prizes: InstantPrize[]) => void;
   disabled?: boolean;
 }
 
@@ -26,15 +27,25 @@ interface GeneratedPrize {
   category: 'diamante' | 'master' | 'premiado';
 }
 
+// Interface para o prêmio instantâneo que será enviado ao componente pai
+interface InstantPrize {
+  id?: string;
+  categoryId: string;
+  number: string;
+  value: number;
+  claimed: boolean;
+}
+
 const PrizeConfigForm: React.FC<PrizeConfigProps> = ({ 
   totalNumbers, 
   onPrizeConfigChange,
+  onPrizesGenerated,
   disabled = false
 }) => {
   const [prizeConfig, setPrizeConfig] = useState<PrizeCategoriesConfig>({
-    diamante: { active: false, quantity: 10, value: 2000 },
-    master: { active: false, quantity: 20, value: 1000 },
-    premiado: { active: false, quantity: 50, value: 500 }
+    diamante: { active: false, quantity: 0, value: 2000 },
+    master: { active: false, quantity: 0, value: 1000 },
+    premiado: { active: false, quantity: 0, value: 500 }
   });
   
   // Estado para armazenar os prêmios gerados
@@ -93,6 +104,40 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
       }
     }
   }, [totalNumbers]); // Only depend on totalNumbers, not prizeConfig or onPrizeConfigChange
+  
+  // Atualizar o useEffect para chamar onPrizesGenerated quando os prêmios forem alterados
+  useEffect(() => {
+    // Apenas se a função de callback foi fornecida
+    if (onPrizesGenerated) {
+      // Converter GeneratedPrize[] para InstantPrize[]
+      const allPrizes: InstantPrize[] = [
+        ...generatedPrizes.diamante.map(prize => ({
+          id: `diamante-${prize.number}`,
+          categoryId: 'diamante',
+          number: prize.number,
+          value: prize.value,
+          claimed: false
+        })),
+        ...generatedPrizes.master.map(prize => ({
+          id: `master-${prize.number}`,
+          categoryId: 'master',
+          number: prize.number,
+          value: prize.value,
+          claimed: false
+        })),
+        ...generatedPrizes.premiado.map(prize => ({
+          id: `premiado-${prize.number}`,
+          categoryId: 'premiado',
+          number: prize.number,
+          value: prize.value,
+          claimed: false
+        }))
+      ];
+      
+      // Notificar o componente pai sobre os novos prêmios
+      onPrizesGenerated(allPrizes);
+    }
+  }, [generatedPrizes, onPrizesGenerated]);
   
   const handleToggleCategory = (category: keyof PrizeCategoriesConfig) => {
     if (disabled) return;
