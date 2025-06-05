@@ -1,20 +1,96 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { CampaignController } from '@/server/controllers/CampaignController';
 import { container } from '@/server/container/container';
 
+// Interface atualizada para prêmios instantâneos no novo formato do frontend
+interface InstantPrizeData {
+  type: 'money' | 'item';
+  categoryId: string;
+  quantity?: number;      // Para money prizes
+  number?: string;        // Para item prizes (número temporário)
+  value: number;
+  prizeId?: string;       // Para item prizes
+}
+
+// Interface para o formato de entrada do frontend
+interface InstantPrizesPayload {
+  prizes: InstantPrizeData[];
+}
+
 /**
- * Endpoint GET: Listar todas as campanhas ativas
+ * 📊 Endpoint GET: Listar campanhas ativas
  */
 export async function GET() {
-  const campaignController = container.resolve(CampaignController);
-  const result = await campaignController.listarCampanhasAtivas();
-  
-  if (!result.success) {
-    return NextResponse.json(
-      { errors: result.errors },
-      { status: 500 }
-    );
+  try {
+    const campaignController = container.resolve(CampaignController);
+    const result = await campaignController.listarCampanhasAtivas();
+
+    return NextResponse.json(result, { status: result.statusCode || 200 });
+  } catch (error) {
+    console.error('Erro na API de listagem de campanhas:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Erro interno do servidor'
+    }, { status: 500 });
   }
-  
-  return NextResponse.json(result.data);
+}
+
+/**
+ * 🚀 ATUALIZADO Endpoint POST: Criar nova campanha com novo formato de prêmios instantâneos
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { campaign, instantPrizes } = body;
+
+    console.log("Body recebido:", body);
+
+    // Validações básicas
+    if (!campaign) {
+      return NextResponse.json({
+        success: false,
+        message: 'Dados da campanha são obrigatórios'
+      }, { status: 400 });
+    }
+
+    console.log(`🎯 API: Recebida solicitação de criação de campanha: ${campaign.title}`);
+    
+    if (instantPrizes) {
+      console.log(`📦 API: Recebidos prêmios instantâneos:`, instantPrizes);
+    }
+
+    // Resolver o controller
+    const campaignController = container.resolve(CampaignController);
+    
+    // Criar a campanha usando nossa implementação atualizada
+    const result = await campaignController.criarNovaCampanha(
+      campaign,
+      instantPrizes as InstantPrizesPayload
+    );
+
+    if (!result.success) {
+      return NextResponse.json({
+        success: false,
+        message: result.message || 'Erro ao criar campanha',
+        errors: result.errors
+      }, { status: result.statusCode || 500 });
+    }
+
+    console.log(`✅ API: Campanha criada com sucesso - ${result.data?._id}`);
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      message: result.message
+    }, { status: result.statusCode || 201 });
+
+  } catch (error) {
+    console.error('Erro na API de criação de campanha:', error);
+    
+    return NextResponse.json({
+      success: false,
+      message: 'Erro interno do servidor ao criar campanha',
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }, { status: 500 });
+  }
 } 

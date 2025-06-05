@@ -1186,7 +1186,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Usar um setTimeout para evitar atualização durante a renderização
     setTimeout(() => {
-      onChange(orderedFiles);
+    onChange(orderedFiles);
     }, 0);
     
     // Notificar sobre a imagem de capa se for o primeiro upload
@@ -1246,7 +1246,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Atualizar o onChange com a nova ordem de arquivos - usar setTimeout para evitar erro
     setTimeout(() => {
-      onChange(updatedImages.map(img => img.file));
+    onChange(updatedImages.map(img => img.file));
     }, 0);
     
     // Notificar sobre a mudança da imagem de capa em um setTimeout
@@ -1291,7 +1291,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Atualizar o onChange com a nova ordem de arquivos usando setTimeout
     setTimeout(() => {
-      onChange(newImages.map(img => img.file));
+    onChange(newImages.map(img => img.file));
     }, 0);
     
     // Limpar erro se agora estamos abaixo do limite
@@ -1337,7 +1337,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         
         // Atualizar o onChange com a nova ordem de arquivos - usando setTimeout para evitar erro
         setTimeout(() => {
-          onChange(newArray.map(img => img.file));
+        onChange(newArray.map(img => img.file));
         }, 0);
         
         return newArray;

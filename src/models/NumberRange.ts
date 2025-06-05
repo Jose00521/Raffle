@@ -7,7 +7,7 @@ export interface INumberRange {
   startNumber: number;
   endNumber: number;
   status: string;
-  excludedNumbers?: string[];
+  instantPrizeNumbers?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -40,6 +40,11 @@ const NumberRangeSchema = isServer ? new mongoose.Schema<INumberRange>(
       default: NumberStatusEnum.AVAILABLE,
       required: true
     },
+    instantPrizeNumbers: {
+      type: [String],
+      default: [],
+      index: true
+    }
   },
   {
     timestamps: true,
@@ -58,7 +63,7 @@ if (isServer && NumberRangeSchema) {
 
 // Interface para o modelo com métodos estáticos
 interface NumberRangeModel extends mongoose.Model<INumberRange> {
-  initializeForRifa(rifaId: string, totalNumbers: number, excludeNumbers?: string[]): Promise<INumberRange>;
+  initializeForRifa(rifaId: string, totalNumbers: number, instantPrizeNumbers?: string[]): Promise<INumberRange>;
   isNumberInRange(rifaId: string, number: number): Promise<boolean>;
 }
 
@@ -69,12 +74,16 @@ if (isServer && NumberRangeSchema) {
   NumberRangeSchema.statics.initializeForRifa = async function(
     rifaId: string, 
     totalNumbers: number,
-    excludeNumbers: string[] = []
+    instantPrizeNumbers: string[] = []
   ): Promise<INumberRange> {
     console.log(`Inicializando range para rifa ${rifaId} com ${totalNumbers} números`);
     
-    // Se houver muitas exclusões, não usar o array excludedNumbers
-    const useExcludedArray = excludeNumbers.length <= 10000;
+    if (instantPrizeNumbers.length > 0) {
+      console.log(`📋 ${instantPrizeNumbers.length} números com prêmios instantâneos registrados`);
+    }
+    
+    // Se houver muitos números com prêmios instantâneos, não usar o array no range
+    const useInstantPrizeArray = instantPrizeNumbers.length <= 10000;
     
     const rangeData: Partial<INumberRange> = {
       campaignId: rifaId,
@@ -83,8 +92,8 @@ if (isServer && NumberRangeSchema) {
       status: NumberStatusEnum.AVAILABLE
     };
     
-    if (useExcludedArray && excludeNumbers.length > 0) {
-      rangeData.excludedNumbers = excludeNumbers;
+    if (useInstantPrizeArray && instantPrizeNumbers.length > 0) {
+      rangeData.instantPrizeNumbers = instantPrizeNumbers;
     }
     
     return await this.create(rangeData);
@@ -108,18 +117,6 @@ if (isServer && NumberRangeSchema) {
     // Se não encontrou range, o número não está disponível
     if (!range) {
       return false;
-    }
-    
-    // Verificar se o número está na lista de exclusões
-    if (range.excludedNumbers && range.excludedNumbers.length > 0) {
-      // Formatar o número para garantir consistência
-      const formattedNumber = number.toString().padStart(
-        range.endNumber.toString().length, '0'
-      );
-      
-      if (range.excludedNumbers.includes(formattedNumber)) {
-        return false;
-      }
     }
     
     // Se passou pelas verificações, está em um range disponível

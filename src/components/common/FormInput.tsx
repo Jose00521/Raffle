@@ -459,10 +459,10 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
       <LabelContainer>
-        <InputLabel htmlFor={id}>
-          {label}
-          {required && <RequiredMark>*</RequiredMark>}
-        </InputLabel>
+      <InputLabel htmlFor={id}>
+        {label}
+        {required && <RequiredMark>*</RequiredMark>}
+      </InputLabel>
         
         {helpText && (
           <HelpIconWrapper 

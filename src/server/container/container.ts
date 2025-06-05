@@ -29,6 +29,7 @@ import { IPrizeCategoryService } from '../services/PrizeCategoryService';
 import { PrizeCategoryService } from '../services/PrizeCategoryService';
 import { IPrizeCategoryController } from '../controllers/PrizeCategoryController';
 import { PrizeCategoryController } from '../controllers/PrizeCategoryController';
+import { InstantPrizeService } from '../services/InstantPrizeService';
 
 
 
@@ -50,6 +51,7 @@ container.register<IPrizeController>('prizeController', { useClass: PrizeControl
 container.register<IPrizeCategoryRepository>('prizeCategoryRepository', { useClass: PrizeCategoryRepository });
 container.register<IPrizeCategoryService>('prizeCategoryService', { useClass: PrizeCategoryService });
 container.register<IPrizeCategoryController>('prizeCategoryController', { useClass: PrizeCategoryController });
+container.register<InstantPrizeService>('instantPrizeService', { useClass: InstantPrizeService });
 
 
 // Export configured container

@@ -1,10 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { FaGem, FaTrophy, FaAward, FaPlus, FaTimes, FaEdit, FaMoneyBillWave, FaGift } from 'react-icons/fa';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import prizeAPIClient from '@/API/prizeAPIClient';
+import PrizeSelectorModal from '../prize/PrizeSelectorModal';
+
+// Interface para prêmio individual (físico ou dinheiro)
+interface IndividualPrize {
+  id: string;
+  type: 'money' | 'item';
+  quantity: number;
+  value: number;
+  prizeId?: string; // Para prêmios físicos
+  name?: string; // Para prêmios físicos
+  image?: string; // Para prêmios físicos
+}
 
 interface PrizeCategory {
   active: boolean;
   quantity: number;
   value: number;
+  individualPrizes: IndividualPrize[]; // Nova propriedade para lista de prêmios
 }
 
 interface PrizeConfigProps {
@@ -34,7 +50,87 @@ interface InstantPrize {
   number: string;
   value: number;
   claimed: boolean;
+  type?: 'money' | 'item'; // Novo campo para tipo
+  prizeId?: string; // Novo campo para ID do prêmio físico
+  name?: string; // Novo campo para nome do prêmio físico
+  image?: string; // Novo campo para imagem do prêmio físico
 }
+
+// Money Prize Modal Component
+interface MoneyPrizeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (quantity: number, value: number) => void;
+  editingPrize?: IndividualPrize | null;
+}
+
+const MoneyPrizeModal: React.FC<MoneyPrizeModalProps> = ({ isOpen, onClose, onSave, editingPrize }) => {
+  const [quantity, setQuantity] = useState(1);
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (editingPrize) {
+      setQuantity(editingPrize.quantity);
+      setValue(editingPrize.value);
+    } else {
+      setQuantity(1);
+      setValue(0);
+    }
+  }, [editingPrize, isOpen]);
+
+  const handleSave = () => {
+    if (quantity > 0 && value > 0) {
+      onSave(quantity, value);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <ModalOverlay>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <FaMoneyBillWave /> {editingPrize ? 'Editar' : 'Adicionar'} Prêmio em Dinheiro
+          </ModalTitle>
+          <CloseButton onClick={onClose} title="Fechar">
+            &times;
+          </CloseButton>
+        </ModalHeader>
+        
+        <ModalBody>
+          <FormGroup>
+            <FormLabel>Quantidade de Prêmios</FormLabel>
+            <FormInput
+              type="number"
+              min="1"
+              max="100"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+            />
+          </FormGroup>
+          
+          <FormGroup>
+            <FormLabel>Valor de Cada Prêmio (R$)</FormLabel>
+            <FormInput
+              type="number"
+              min="1"
+              value={value}
+              onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
+            />
+          </FormGroup>
+        </ModalBody>
+        
+        <ModalFooter>
+          <CancelButton onClick={onClose}>Cancelar</CancelButton>
+          <SaveButton onClick={handleSave} disabled={quantity <= 0 || value <= 0}>
+            <FaMoneyBillWave /> {editingPrize ? 'Salvar' : 'Adicionar'}
+          </SaveButton>
+        </ModalFooter>
+      </ModalContent>
+    </ModalOverlay>
+  );
+};
 
 const PrizeConfigForm: React.FC<PrizeConfigProps> = ({ 
   totalNumbers, 
@@ -43,9 +139,9 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
   disabled = false
 }) => {
   const [prizeConfig, setPrizeConfig] = useState<PrizeCategoriesConfig>({
-    diamante: { active: false, quantity: 0, value: 2000 },
-    master: { active: false, quantity: 0, value: 1000 },
-    premiado: { active: false, quantity: 0, value: 500 }
+    diamante: { active: false, quantity: 0, value: 2000, individualPrizes: [] },
+    master: { active: false, quantity: 0, value: 1000, individualPrizes: [] },
+    premiado: { active: false, quantity: 0, value: 500, individualPrizes: [] }
   });
   
   // Estado para armazenar os prêmios gerados
@@ -67,9 +163,139 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
   // Set para controlar todos os números já usados, mantido como ref para persistir entre renders
   const usedNumbersRef = useRef<Set<number>>(new Set());
   
+  // Use useRef to track previous totalNumbers to avoid infinite loops
+  const prevTotalNumbers = useRef<number>(totalNumbers);
+  
+  // Estados para os modais
+  const [showPrizeSelector, setShowPrizeSelector] = useState(false);
+  const [showMoneyPrizeModal, setShowMoneyPrizeModal] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState<keyof PrizeCategoriesConfig | null>(null);
+  const [availablePrizes, setAvailablePrizes] = useState<IPrize[]>([]);
+  const [editingPrize, setEditingPrize] = useState<IndividualPrize | null>(null);
+  
+  // Carregar prêmios disponíveis
+  useEffect(() => {
+    const fetchPrizes = async () => {
+      try {
+        const response = await prizeAPIClient.getAllPrizes();
+        setAvailablePrizes(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar prêmios:', error);
+      }
+    };
+    fetchPrizes();
+  }, []);
+  
+  // Função para calcular totais de uma categoria
+  const calculateCategoryTotals = (category: PrizeCategory) => {
+    const totalQuantity = category.individualPrizes.reduce((sum, prize) => sum + prize.quantity, 0);
+    const totalValue = category.individualPrizes.reduce((sum, prize) => sum + (prize.quantity * prize.value), 0);
+    return { totalQuantity, totalValue };
+  };
+  
+  // Função para adicionar prêmio físico
+  const handleAddPhysicalPrize = (categoryKey: keyof PrizeCategoriesConfig) => {
+    setCurrentCategory(categoryKey);
+    setShowPrizeSelector(true);
+  };
+  
+  // Função para adicionar prêmio em dinheiro
+  const handleAddMoneyPrize = (categoryKey: keyof PrizeCategoriesConfig) => {
+    setCurrentCategory(categoryKey);
+    setEditingPrize(null);
+    setShowMoneyPrizeModal(true);
+  };
+  
+  // Função para selecionar prêmio físico
+  const handleSelectPhysicalPrize = (prize: IPrize) => {
+    if (!currentCategory) return;
+    
+    const newPrize: IndividualPrize = {
+      id: `${currentCategory}-${Date.now()}`,
+      type: 'item',
+      quantity: 1,
+      value: parseFloat(prize.value) || 0,
+      prizeId: prize.prizeCode,
+      name: prize.name,
+      image: typeof prize.image === 'string' ? prize.image : undefined
+    };
+    
+    const updatedConfig = { ...prizeConfig };
+    updatedConfig[currentCategory].individualPrizes.push(newPrize);
+    
+    // Atualizar totais da categoria
+    const { totalQuantity } = calculateCategoryTotals(updatedConfig[currentCategory]);
+    updatedConfig[currentCategory].quantity = totalQuantity;
+    
+    setPrizeConfig(updatedConfig);
+    onPrizeConfigChange(updatedConfig);
+    setShowPrizeSelector(false);
+    setCurrentCategory(null);
+  };
+  
+  // Função para salvar prêmio em dinheiro
+  const handleSaveMoneyPrize = (quantity: number, value: number) => {
+    if (!currentCategory) return;
+    
+    const updatedConfig = { ...prizeConfig };
+    
+    if (editingPrize) {
+      // Editando prêmio existente
+      const prizeIndex = updatedConfig[currentCategory].individualPrizes.findIndex(p => p.id === editingPrize.id);
+      if (prizeIndex >= 0) {
+        updatedConfig[currentCategory].individualPrizes[prizeIndex] = {
+          ...updatedConfig[currentCategory].individualPrizes[prizeIndex],
+          quantity,
+          value
+        };
+      }
+    } else {
+      // Criando novo prêmio
+      const newPrize: IndividualPrize = {
+        id: `${currentCategory}-money-${Date.now()}`,
+        type: 'money',
+        quantity,
+        value
+      };
+      updatedConfig[currentCategory].individualPrizes.push(newPrize);
+    }
+    
+    // Atualizar totais da categoria
+    const { totalQuantity } = calculateCategoryTotals(updatedConfig[currentCategory]);
+    updatedConfig[currentCategory].quantity = totalQuantity;
+    
+    setPrizeConfig(updatedConfig);
+    onPrizeConfigChange(updatedConfig);
+    setShowMoneyPrizeModal(false);
+    setCurrentCategory(null);
+    setEditingPrize(null);
+  };
+  
+  // Função para remover prêmio individual
+  const handleRemoveIndividualPrize = (categoryKey: keyof PrizeCategoriesConfig, prizeId: string) => {
+    const updatedConfig = { ...prizeConfig };
+    updatedConfig[categoryKey].individualPrizes = updatedConfig[categoryKey].individualPrizes.filter(p => p.id !== prizeId);
+    
+    // Atualizar totais da categoria
+    const { totalQuantity } = calculateCategoryTotals(updatedConfig[categoryKey]);
+    updatedConfig[categoryKey].quantity = totalQuantity;
+    
+    setPrizeConfig(updatedConfig);
+    onPrizeConfigChange(updatedConfig);
+  };
+  
+  // Função para editar prêmio em dinheiro
+  const handleEditMoneyPrize = (categoryKey: keyof PrizeCategoriesConfig, prize: IndividualPrize) => {
+    setCurrentCategory(categoryKey);
+    setEditingPrize(prize);
+    setShowMoneyPrizeModal(true);
+  };
+  
   // When totalNumbers changes, ensure quantities don't exceed the total
   useEffect(() => {
-    if (!totalNumbers) return;
+    if (!totalNumbers || totalNumbers === prevTotalNumbers.current) return;
+    
+    prevTotalNumbers.current = totalNumbers;
     
     let tempConfig = {...prizeConfig};
     let needsUpdate = false;
@@ -103,86 +329,71 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
         }, 0);
       }
     }
-  }, [totalNumbers]); // Only depend on totalNumbers, not prizeConfig or onPrizeConfigChange
+  }, [totalNumbers]); // Apenas totalNumbers nas dependências
   
   // Atualizar o useEffect para chamar onPrizesGenerated quando os prêmios forem alterados
   useEffect(() => {
     // Apenas se a função de callback foi fornecida
     if (onPrizesGenerated) {
-      // Converter GeneratedPrize[] para InstantPrize[]
-      const allPrizes: InstantPrize[] = [
-        ...generatedPrizes.diamante.map(prize => ({
-          id: `diamante-${prize.number}`,
-          categoryId: 'diamante',
-          number: prize.number,
-          value: prize.value,
-          claimed: false
-        })),
-        ...generatedPrizes.master.map(prize => ({
-          id: `master-${prize.number}`,
-          categoryId: 'master',
-          number: prize.number,
-          value: prize.value,
-          claimed: false
-        })),
-        ...generatedPrizes.premiado.map(prize => ({
-          id: `premiado-${prize.number}`,
-          categoryId: 'premiado',
-          number: prize.number,
-          value: prize.value,
-          claimed: false
-        }))
-      ];
+      // Converter IndividualPrize[] para InstantPrize[]
+      const allPrizes: InstantPrize[] = [];
+      
+      Object.entries(prizeConfig).forEach(([categoryKey, category]) => {
+        if (category.active && category.individualPrizes.length > 0) {
+          category.individualPrizes.forEach((individualPrize: IndividualPrize) => {
+            // Para cada prêmio individual, gerar os números baseados na quantidade
+            for (let i = 0; i < individualPrize.quantity; i++) {
+              const uniqueNum = generateUniqueRandomNumber(totalNumbers);
+              if (uniqueNum === -1) return; // Não há mais números disponíveis
+              
+              allPrizes.push({
+                id: `${categoryKey}-${individualPrize.id}-${i}`,
+                categoryId: categoryKey,
+                number: String(uniqueNum).padStart(6, '0'),
+                value: individualPrize.value,
+                claimed: false,
+                type: individualPrize.type,
+                prizeId: individualPrize.prizeId,
+                name: individualPrize.name,
+                image: individualPrize.image
+              });
+            }
+          });
+        }
+      });
       
       // Notificar o componente pai sobre os novos prêmios
       onPrizesGenerated(allPrizes);
     }
-  }, [generatedPrizes, onPrizesGenerated]);
+  }, [prizeConfig]); // Mudou para observar prizeConfig ao invés de generatedPrizes
   
   const handleToggleCategory = (category: keyof PrizeCategoriesConfig) => {
     if (disabled) return;
-    
-    // Calcular total atual de números em categorias ativas (exceto a que está sendo alterada)
-    const otherCategoriesTotal = Object.entries(prizeConfig)
-      .filter(([key]) => key !== category && prizeConfig[key as keyof PrizeCategoriesConfig].active)
-      .reduce((sum, [_, cat]) => sum + cat.quantity, 0);
       
     // Criar cópia do config
     const updatedConfig = { ...prizeConfig };
     
-    // Se estamos ativando a categoria, precisamos verificar se há espaço suficiente
+    // Se estamos ativando a categoria
     if (!prizeConfig[category].active) {
-      const requestedQuantity = prizeConfig[category].quantity;
-      const availableSpace = totalNumbers - otherCategoriesTotal;
-      
-      // Ajustar a quantidade para não exceder o espaço disponível
-      const adjustedQuantity = Math.min(requestedQuantity, availableSpace, 100);
-      
-      // Se não houver espaço (ou muito pouco), ajustar para pelo menos 1
       updatedConfig[category] = {
         ...updatedConfig[category],
         active: true,
-        quantity: Math.max(1, adjustedQuantity)
+        individualPrizes: [] // Inicializar com array vazio
       };
     } else {
       // Desativando a categoria simplesmente
       updatedConfig[category] = {
         ...updatedConfig[category],
-        active: false
+        active: false,
+        individualPrizes: [] // Limpar prêmios
       };
+      
+      // Limpar números usados desta categoria
+      clearCategoryNumbers(category);
     }
     
     setPrizeConfig(updatedConfig);
     onPrizeConfigChange(updatedConfig);
-    
-    // Gerar ou limpar números apenas para a categoria alterada
-    if (updatedConfig[category].active) {
-      // Se a categoria está sendo ativada, gerar novos números
-      generatePrizesForCategory(category, updatedConfig[category].quantity, updatedConfig[category].value);
-    } else {
-      // Se a categoria está sendo desativada, limpar seus números e remover do set de usados
-      clearCategoryNumbers(category);
-    }
   };
   
   const handleValueChange = (
@@ -400,28 +611,114 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
           </CategoryToggle>
           
           <CategoryBody $visible={prizeConfig.diamante.active}>
-            <InputGroup>
-              <InputLabel>Quantidade</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                max="100"
-                value={prizeConfig.diamante.quantity} 
-                onChange={(e) => handleValueChange('diamante', 'quantity', parseInt(e.target.value))}
-                disabled={!prizeConfig.diamante.active || disabled}
-              />
-            </InputGroup>
-            
-            <InputGroup>
-              <InputLabel>Valor do prêmio (R$)</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                value={prizeConfig.diamante.value} 
-                onChange={(e) => handleValueChange('diamante', 'value', parseInt(e.target.value))}
-                disabled={!prizeConfig.diamante.active || disabled}
-              />
-            </InputGroup>
+            {prizeConfig.diamante.individualPrizes.length === 0 ? (
+              <EmptyPrizeSection>
+                <EmptyPrizeIcon>🎁</EmptyPrizeIcon>
+                <EmptyPrizeText>Nenhum prêmio adicionado ainda</EmptyPrizeText>
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('diamante')}
+                    $variant="physical"
+                  >
+                    <FaGift /> Adicionar Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('diamante')}
+                    $variant="money"
+                  >
+                    <FaMoneyBillWave /> Adicionar Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+              </EmptyPrizeSection>
+            ) : (
+              <>
+                <IndividualPrizesList>
+                  {prizeConfig.diamante.individualPrizes.map((individualPrize: IndividualPrize) => (
+                    <IndividualPrizeCard key={individualPrize.id} $type={individualPrize.type}>
+                      <PrizeCardContent>
+                        {individualPrize.type === 'item' ? (
+                          <>
+                            <PrizeCardImage>
+                              {individualPrize.image && (
+                                <img 
+                                  src={typeof individualPrize.image === 'string' ? individualPrize.image : undefined} 
+                                  alt={individualPrize.name || 'Prize image'} 
+                                />
+                              )}
+                            </PrizeCardImage>
+                            <PrizeCardInfo>
+                              <PrizeCardName>{individualPrize.name}</PrizeCardName>
+                              <PrizeCardValue>
+                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                              </PrizeCardValue>
+                              <PrizeCardQuantity>
+                                Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
+                              </PrizeCardQuantity>
+                            </PrizeCardInfo>
+                          </>
+                        ) : (
+                          <PrizeCardInfo>
+                            <PrizeCardName>
+                              <FaMoneyBillWave /> Prêmio em Dinheiro
+                            </PrizeCardName>
+                            <PrizeCardValue>
+                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                            </PrizeCardValue>
+                            <PrizeCardQuantity>
+                              Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
+                            </PrizeCardQuantity>
+                          </PrizeCardInfo>
+                        )}
+                      </PrizeCardContent>
+                      <PrizeCardActions>
+                        {individualPrize.type === 'money' && (
+                          <ActionButton
+                            type="button"
+                            onClick={() => handleEditMoneyPrize('diamante', individualPrize)}
+                            $variant="edit"
+                          >
+                            <FaEdit />
+                          </ActionButton>
+                        )}
+                        <ActionButton
+                          type="button"
+                          onClick={() => handleRemoveIndividualPrize('diamante', individualPrize.id)}
+                          $variant="remove"
+                        >
+                          <FaTimes />
+                        </ActionButton>
+                      </PrizeCardActions>
+                    </IndividualPrizeCard>
+                  ))}
+                </IndividualPrizesList>
+                
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('diamante')}
+                    $variant="physical"
+                  >
+                    <FaPlus /> Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('diamante')}
+                    $variant="money"
+                  >
+                    <FaPlus /> Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+                
+                <CategorySummary>
+                  <SummaryText>
+                    <strong>Total: {prizeConfig.diamante.quantity} prêmios</strong> • 
+                    <strong>Valor total: R$ {calculateCategoryTotals(prizeConfig.diamante).totalValue.toLocaleString('pt-BR')}</strong>
+                  </SummaryText>
+                </CategorySummary>
+              </>
+            )}
           </CategoryBody>
         </CategoryCard>
         
@@ -480,28 +777,114 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
           </CategoryToggle>
           
           <CategoryBody $visible={prizeConfig.master.active}>
-            <InputGroup>
-              <InputLabel>Quantidade</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                max="100"
-                value={prizeConfig.master.quantity} 
-                onChange={(e) => handleValueChange('master', 'quantity', parseInt(e.target.value))}
-                disabled={!prizeConfig.master.active || disabled}
-              />
-            </InputGroup>
-            
-            <InputGroup>
-              <InputLabel>Valor do prêmio (R$)</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                value={prizeConfig.master.value} 
-                onChange={(e) => handleValueChange('master', 'value', parseInt(e.target.value))}
-                disabled={!prizeConfig.master.active || disabled}
-              />
-            </InputGroup>
+            {prizeConfig.master.individualPrizes.length === 0 ? (
+              <EmptyPrizeSection>
+                <EmptyPrizeIcon>🏆</EmptyPrizeIcon>
+                <EmptyPrizeText>Nenhum prêmio adicionado ainda</EmptyPrizeText>
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('master')}
+                    $variant="physical"
+                  >
+                    <FaGift /> Adicionar Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('master')}
+                    $variant="money"
+                  >
+                    <FaMoneyBillWave /> Adicionar Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+              </EmptyPrizeSection>
+            ) : (
+              <>
+                <IndividualPrizesList>
+                  {prizeConfig.master.individualPrizes.map((individualPrize: IndividualPrize) => (
+                    <IndividualPrizeCard key={individualPrize.id} $type={individualPrize.type}>
+                      <PrizeCardContent>
+                        {individualPrize.type === 'item' ? (
+                          <>
+                            <PrizeCardImage>
+                              {individualPrize.image && (
+                                <img 
+                                  src={typeof individualPrize.image === 'string' ? individualPrize.image : undefined} 
+                                  alt={individualPrize.name || 'Prize image'} 
+                                />
+                              )}
+                            </PrizeCardImage>
+                            <PrizeCardInfo>
+                              <PrizeCardName>{individualPrize.name}</PrizeCardName>
+                              <PrizeCardValue>
+                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                              </PrizeCardValue>
+                              <PrizeCardQuantity>
+                                Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
+                              </PrizeCardQuantity>
+                            </PrizeCardInfo>
+                          </>
+                        ) : (
+                          <PrizeCardInfo>
+                            <PrizeCardName>
+                              <FaMoneyBillWave /> Prêmio em Dinheiro
+                            </PrizeCardName>
+                            <PrizeCardValue>
+                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                            </PrizeCardValue>
+                            <PrizeCardQuantity>
+                              Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
+                            </PrizeCardQuantity>
+                          </PrizeCardInfo>
+                        )}
+                      </PrizeCardContent>
+                      <PrizeCardActions>
+                        {individualPrize.type === 'money' && (
+                          <ActionButton
+                            type="button"
+                            onClick={() => handleEditMoneyPrize('master', individualPrize)}
+                            $variant="edit"
+                          >
+                            <FaEdit />
+                          </ActionButton>
+                        )}
+                        <ActionButton
+                          type="button"
+                          onClick={() => handleRemoveIndividualPrize('master', individualPrize.id)}
+                          $variant="remove"
+                        >
+                          <FaTimes />
+                        </ActionButton>
+                      </PrizeCardActions>
+                    </IndividualPrizeCard>
+                  ))}
+                </IndividualPrizesList>
+                
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('master')}
+                    $variant="physical"
+                  >
+                    <FaPlus /> Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('master')}
+                    $variant="money"
+                  >
+                    <FaPlus /> Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+                
+                <CategorySummary>
+                  <SummaryText>
+                    <strong>Total: {prizeConfig.master.quantity} prêmios</strong> • 
+                    <strong>Valor total: R$ {calculateCategoryTotals(prizeConfig.master).totalValue.toLocaleString('pt-BR')}</strong>
+                  </SummaryText>
+                </CategorySummary>
+              </>
+            )}
           </CategoryBody>
         </CategoryCard>
         
@@ -560,28 +943,114 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
           </CategoryToggle>
           
           <CategoryBody $visible={prizeConfig.premiado.active}>
-            <InputGroup>
-              <InputLabel>Quantidade</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                max="100"
-                value={prizeConfig.premiado.quantity} 
-                onChange={(e) => handleValueChange('premiado', 'quantity', parseInt(e.target.value))}
-                disabled={!prizeConfig.premiado.active || disabled}
-              />
-            </InputGroup>
-            
-            <InputGroup>
-              <InputLabel>Valor do prêmio (R$)</InputLabel>
-              <Input 
-                type="number" 
-                min="1"
-                value={prizeConfig.premiado.value} 
-                onChange={(e) => handleValueChange('premiado', 'value', parseInt(e.target.value))}
-                disabled={!prizeConfig.premiado.active || disabled}
-              />
-            </InputGroup>
+            {prizeConfig.premiado.individualPrizes.length === 0 ? (
+              <EmptyPrizeSection>
+                <EmptyPrizeIcon>🏅</EmptyPrizeIcon>
+                <EmptyPrizeText>Nenhum prêmio adicionado ainda</EmptyPrizeText>
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('premiado')}
+                    $variant="physical"
+                  >
+                    <FaGift /> Adicionar Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('premiado')}
+                    $variant="money"
+                  >
+                    <FaMoneyBillWave /> Adicionar Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+              </EmptyPrizeSection>
+            ) : (
+              <>
+                <IndividualPrizesList>
+                  {prizeConfig.premiado.individualPrizes.map((individualPrize: IndividualPrize) => (
+                    <IndividualPrizeCard key={individualPrize.id} $type={individualPrize.type}>
+                      <PrizeCardContent>
+                        {individualPrize.type === 'item' ? (
+                          <>
+                            <PrizeCardImage>
+                              {individualPrize.image && (
+                                <img 
+                                  src={typeof individualPrize.image === 'string' ? individualPrize.image : undefined} 
+                                  alt={individualPrize.name || 'Prize image'} 
+                                />
+                              )}
+                            </PrizeCardImage>
+                            <PrizeCardInfo>
+                              <PrizeCardName>{individualPrize.name}</PrizeCardName>
+                              <PrizeCardValue>
+                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                              </PrizeCardValue>
+                              <PrizeCardQuantity>
+                                Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
+                              </PrizeCardQuantity>
+                            </PrizeCardInfo>
+                          </>
+                        ) : (
+                          <PrizeCardInfo>
+                            <PrizeCardName>
+                              <FaMoneyBillWave /> Prêmio em Dinheiro
+                            </PrizeCardName>
+                            <PrizeCardValue>
+                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                            </PrizeCardValue>
+                            <PrizeCardQuantity>
+                              Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
+                            </PrizeCardQuantity>
+                          </PrizeCardInfo>
+                        )}
+                      </PrizeCardContent>
+                      <PrizeCardActions>
+                        {individualPrize.type === 'money' && (
+                          <ActionButton
+                            type="button"
+                            onClick={() => handleEditMoneyPrize('premiado', individualPrize)}
+                            $variant="edit"
+                          >
+                            <FaEdit />
+                          </ActionButton>
+                        )}
+                        <ActionButton
+                          type="button"
+                          onClick={() => handleRemoveIndividualPrize('premiado', individualPrize.id)}
+                          $variant="remove"
+                        >
+                          <FaTimes />
+                        </ActionButton>
+                      </PrizeCardActions>
+                    </IndividualPrizeCard>
+                  ))}
+                </IndividualPrizesList>
+                
+                <PrizeButtonsContainer>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddPhysicalPrize('premiado')}
+                    $variant="physical"
+                  >
+                    <FaPlus /> Prêmio Físico
+                  </AddPrizeButton>
+                  <AddPrizeButton 
+                    type="button"
+                    onClick={() => handleAddMoneyPrize('premiado')}
+                    $variant="money"
+                  >
+                    <FaPlus /> Prêmio em Dinheiro
+                  </AddPrizeButton>
+                </PrizeButtonsContainer>
+                
+                <CategorySummary>
+                  <SummaryText>
+                    <strong>Total: {prizeConfig.premiado.quantity} prêmios</strong> • 
+                    <strong>Valor total: R$ {calculateCategoryTotals(prizeConfig.premiado).totalValue.toLocaleString('pt-BR')}</strong>
+                  </SummaryText>
+                </CategorySummary>
+              </>
+            )}
           </CategoryBody>
         </CategoryCard>
         
@@ -619,6 +1088,21 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
           </PrizeListContainer>
         )}
       </CategorySection>
+      
+      {/* Modais */}
+      <PrizeSelectorModal 
+        isOpen={showPrizeSelector}
+        onClose={() => setShowPrizeSelector(false)}
+        onSelectPrize={handleSelectPhysicalPrize}
+        availablePrizes={availablePrizes}
+      />
+      
+      <MoneyPrizeModal
+        isOpen={showMoneyPrizeModal}
+        onClose={() => setShowMoneyPrizeModal(false)}
+        onSave={handleSaveMoneyPrize}
+        editingPrize={editingPrize}
+      />
     </Container>
   );
 };
@@ -817,9 +1301,9 @@ const CategoryTitle = styled.div`
 `;
 
 const CategoryBody = styled.div<{ $visible: boolean }>`
-  padding: ${({ $visible }) => $visible ? '0 1rem 1rem' : '0 1rem'};
-  max-height: ${({ $visible }) => $visible ? '200px' : '0'};
-  overflow: hidden;
+  padding: ${({ $visible }) => $visible ? '1.5rem 1rem 1rem' : '0 1rem'};
+  max-height: ${({ $visible }) => $visible ? 'none' : '0'};
+  overflow: ${({ $visible }) => $visible ? 'visible' : 'hidden'};
   transition: all 0.3s ease;
   opacity: ${({ $visible }) => $visible ? 1 : 0};
 `;
@@ -979,7 +1463,7 @@ const ExpandButton = styled.button`
   background: none;
   border: 1px dashed rgba(0, 0, 0, 0.1);
   border-radius: 6px;
-  color: ${({ theme }) => theme.colors.primary || '#6a11cb'};
+  color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -997,8 +1481,455 @@ const ExpandButton = styled.button`
   }
   
   &:hover {
-    background-color: rgba(106, 17, 203, 0.05);
-    border-color: rgba(106, 17, 203, 0.2);
+    background-color: ${({ theme }) => theme.colors?.primary ? theme.colors.primary + '10' : 'rgba(106, 17, 203, 0.1)'};
+    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
+  }
+`;
+
+const EmptyPrizeSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border: 2px dashed rgba(106, 17, 203, 0.2);
+  border-radius: 12px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.02) 0%, rgba(37, 117, 252, 0.02) 100%);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(106, 17, 203, 0.3);
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.04) 0%, rgba(37, 117, 252, 0.04) 100%);
+  }
+`;
+
+const EmptyPrizeIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+`;
+
+const EmptyPrizeText = styled.div`
+  font-size: 1rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-bottom: 2rem;
+  font-weight: 500;
+`;
+
+const PrizeButtonsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+`;
+
+const AddPrizeButton = styled.button<{ $variant: 'physical' | 'money' }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: ${({ $variant }) => 
+    $variant === 'physical' 
+      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(21, 128, 61, 0.1) 100%)'
+      : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
+  };
+  border: 1px solid ${({ $variant }) => 
+    $variant === 'physical' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+  };
+  border-radius: 8px;
+  color: ${({ $variant }) => 
+    $variant === 'physical' ? '#16a34a' : '#3b82f6'
+  };
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+  
+  &:hover {
+    background: ${({ $variant }) => 
+      $variant === 'physical' 
+        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(21, 128, 61, 0.15) 100%)'
+        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)'
+    };
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${({ $variant }) => 
+      $variant === 'physical' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)'
+    };
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  svg {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const IndividualPrizesList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
+
+const IndividualPrizeCard = styled.div<{ $type: 'money' | 'item' }>`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: ${({ $type }) => 
+    $type === 'item' 
+      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(21, 128, 61, 0.03) 100%)'
+      : 'linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(37, 99, 235, 0.03) 100%)'
+  };
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  
+  &:hover {
+    background: ${({ $type }) => 
+      $type === 'item' 
+        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.06) 0%, rgba(21, 128, 61, 0.06) 100%)'
+        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(37, 99, 235, 0.06) 100%)'
+    };
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-color: ${({ $type }) => 
+      $type === 'item' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)'
+    };
+  }
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+`;
+
+const PrizeCardContent = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+`;
+
+const PrizeCardImage = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  @media (max-width: 640px) {
+    width: 50px;
+    height: 50px;
+  }
+`;
+
+const PrizeCardInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const PrizeCardName = styled.div`
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#1f2937'};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  svg {
+    font-size: 1.1rem;
+    color: #6a11cb;
+  }
+`;
+
+const PrizeCardValue = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#6b7280'};
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  svg {
+    font-size: 0.9rem;
+    color: #10b981;
+  }
+`;
+
+const PrizeCardQuantity = styled.div`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#9ca3af'};
+  font-weight: 500;
+`;
+
+const PrizeCardActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  
+  @media (max-width: 640px) {
+    width: 100%;
+    justify-content: flex-end;
+  }
+`;
+
+const ActionButton = styled.button<{ $variant: 'edit' | 'remove' }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid ${({ $variant }) => 
+    $variant === 'edit' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+  };
+  border-radius: 8px;
+  color: ${({ $variant }) => 
+    $variant === 'edit' ? '#3b82f6' : '#ef4444'
+  };
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: ${({ $variant }) => 
+      $variant === 'edit' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)'
+    };
+    border-color: ${({ $variant }) => 
+      $variant === 'edit' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+    };
+    transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  svg {
+    font-size: 0.9rem;
+  }
+`;
+
+const CategorySummary = styled.div`
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.05) 0%, rgba(37, 117, 252, 0.05) 100%);
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  border-radius: 10px;
+  text-align: center;
+`;
+
+const SummaryText = styled.div`
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#374151'};
+  font-weight: 600;
+  
+  strong {
+    color: #6a11cb;
+  }
+`;
+
+// Styled components for modals
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  padding: 20px;
+`;
+
+const ModalContent = styled.div`
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 30px;
+  animation: slideUp 0.3s ease forwards;
+  position: relative;
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-height: 90vh;
+  }
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0;
+  font-size: 1.3rem;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  svg {
+    color: #6a11cb;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+  }
+`;
+
+const ModalBody = styled.div`
+  margin-bottom: 24px;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+  }
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+`;
+
+const CancelButton = styled.button`
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f5f5f5;
+  }
+`;
+
+const SaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 

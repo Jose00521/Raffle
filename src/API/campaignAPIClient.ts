@@ -12,6 +12,22 @@ export interface RifaStats {
   percentComplete: number;
 }
 
+interface InstantPrizeData {
+  type: 'money' | 'item';
+  categoryId: string;
+  quantity?: number;      // Para money prizes
+  number?: string;        // Para item prizes (número temporário)
+  value: number;
+  prizeId?: string;       // Para item prizes
+  name?: string;          // Para item prizes
+  image?: string;         // Para item prizes
+}
+
+
+interface InstantPrizesPayload {
+  prizes: InstantPrizeData[];
+}
+
 /**
  * Funções da API para interagir com rifas e seus números
  */
@@ -40,6 +56,22 @@ const rifaAPI = {
         return [];
       }
     },
+
+    /** 
+     * Cria uma nova campanha com prêmios instantâneos
+     */
+    criarNovaCampanha: async (campaign: ICampaign, instantPrizes: InstantPrizesPayload): Promise<ICampaign> => {
+      const response = await fetch('/api/campanhas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ campaign, instantPrizes }),
+      });
+      return await response.json();
+    },
+
+
   /**
    * Obtém estatísticas dos números de uma rifa
    */

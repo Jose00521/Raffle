@@ -164,9 +164,9 @@ CampaignSchema.statics.findActiveByCreator = function(creatorId: mongoose.Types.
 };
 
 // Método adicional para obter estatísticas sobre números disponíveis/reservados/pagos
-CampaignSchema.methods.getNumbersStats = async function() {
-  return await NumberStatus!.countByStatus(this._id);
-};
+// CampaignSchema.methods.getNumbersStats = async function() {
+//   return await NumberStatus!.countByStatus(this._id);
+// };
 
 // Adicione antes do export
 CampaignSchema.index({ createdBy: 1 }); // Busca por criador

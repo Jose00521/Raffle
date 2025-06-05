@@ -787,27 +787,27 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
                     </ImageActionButton>
                   </ImageActionsGroup>
                   <ImageActionsGroup>
-                    <ImageActionButton 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSetCover(image.id);
-                      }}
+                  <ImageActionButton 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetCover(image.id);
+                    }}
                       title="Definir como capa"
-                    >
-                      <FaStar />
-                    </ImageActionButton>
-                    <ImageActionButton 
-                      type="button"
-                      $variant="danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveImage(image.id);
-                      }}
+                  >
+                    <FaStar />
+                  </ImageActionButton>
+                  <ImageActionButton 
+                    type="button"
+                    $variant="danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveImage(image.id);
+                    }}
                       title="Remover imagem"
-                    >
-                      <FaTrash />
-                    </ImageActionButton>
+                  >
+                    <FaTrash />
+                  </ImageActionButton>
                   </ImageActionsGroup>
                 </ImageActions>
               </ImageCard>

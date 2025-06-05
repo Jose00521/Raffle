@@ -7,7 +7,8 @@ import RaffleFormFields, { RaffleFormData } from '@/components/campaign/RaffleFo
 import { FaSave, FaArrowLeft, FaLightbulb, FaTrophy, FaImage, FaPen } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
+import campaignAPIClient from '@/API/campaignAPIClient';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 // Styled Components
 const Container = styled.div`
   max-width: 1200px;
@@ -408,20 +409,37 @@ const ActionButton = styled.button`
   }
 `;
 
+interface InstantPrizeData {
+  type: 'money' | 'item';
+  categoryId: string;
+  quantity?: number;      // Para money prizes
+  number?: string;        // Para item prizes (número temporário)
+  value: number;
+  prizeId?: string;       // Para item prizes
+  name?: string;          // Para item prizes
+  image?: string;         // Para item prizes
+}
+
+
+interface InstantPrizesPayload {
+  prizes: InstantPrizeData[];
+}
+
 export default function NovaRifaPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const router = useRouter();
   
-  const handleFormSubmit = async (data: RaffleFormData) => {
+  const handleFormSubmit = async ({campaign, instantPrizes}: {campaign: ICampaign, instantPrizes: InstantPrizesPayload}) => {
     setIsSubmitting(true);
     
     try {
       // TODO: Implement the API call to create a new raffle
-      console.log("Form data submitted:", data);
+      console.log("Form data submitted para criar nova rifa:", {campaign, instantPrizes});
       
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await campaignAPIClient.criarNovaCampanha(campaign, instantPrizes);
+      console.log("Resposta da API:", response);
       
       // Show success overlay
       // setShowSuccess(true);

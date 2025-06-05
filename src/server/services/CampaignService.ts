@@ -5,9 +5,27 @@ import type { ICampaignRepository } from '@/server/repositories/CampaignReposito
 import { ApiResponse, createSuccessResponse, createErrorResponse } from '../utils/errorHandler/api';
 import { ApiError } from '../utils/errorHandler/ApiError';
 
+// Interface atualizada para prêmios instantâneos no novo formato do frontend
+interface InstantPrizeData {
+  type: 'money' | 'item';
+  categoryId: string;
+  quantity?: number;      // Para money prizes
+  number?: string;        // Para item prizes (número temporário)
+  value: number;
+  prizeId?: string;       // Para item prizes
+  name?: string;          // Para item prizes
+  image?: string;         // Para item prizes
+}
+
+// Interface para o formato de entrada do frontend
+interface InstantPrizesPayload {
+  prizes: InstantPrizeData[];
+}
+
 export interface ICampaignService {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>>;
   obterDetalhesCampanha(id: string): Promise<ApiResponse<ICampaign | null>>;
+  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>>;
 }
 
 @injectable()
@@ -118,5 +136,41 @@ export class CampaignService implements ICampaignService {
       : 0;
     
     return stats;
+  }
+
+  /**
+   * 🚀 ATUALIZADO: Criar nova campanha com novo formato de prêmios instantâneos
+   */
+  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>> {
+    try {
+      console.log(`🎯 Service: Criando nova campanha ${campaignData.title}`);
+      
+      if (instantPrizesData) {
+        console.log(`📦 Service: Recebidos ${instantPrizesData.prizes?.length || 0} prêmios instantâneos`);
+      }
+      
+      // Usar o método atualizado do repository
+      const novaCampanha = await this.campaignRepository.criarNovaCampanha(
+        campaignData, 
+        instantPrizesData
+      );
+      
+      console.log(`✅ Service: Campanha criada com sucesso - ID: ${novaCampanha._id}`);
+      
+      return createSuccessResponse(
+        novaCampanha, 
+        'Campanha criada com sucesso. Números, ranges, partições e estatísticas inicializados.', 
+        201
+      );
+      
+    } catch (error) {
+      console.error('Erro no service ao criar nova campanha:', error);
+      throw new ApiError({
+        success: false,
+        message: 'Erro ao criar nova campanha',
+        statusCode: 500,
+        cause: error as Error
+      });
+    }
   }
 } 

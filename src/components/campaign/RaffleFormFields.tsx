@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { 
   FaInfo, 
@@ -48,12 +48,29 @@ import MultiPrizePosition, { PrizeItemProps } from './MultiPrizePosition';
 import prizeAPIClient from '@/API/prizeAPIClient';
 import { Currency } from 'lucide-react';
 import CurrencyInput from '../common/CurrencyInput';
+import PrizeIntelligentSummaryComponent from './PrizeIntelligentSummary';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { useSession } from 'next-auth/react';
 
 // Prize category interface
 interface PrizeCategory {
   active: boolean;
   quantity: number;
   value: number;
+  individualPrizes?: IndividualPrize[]; // Adicionando suporte para prêmios individuais
+}
+
+// Interface para IndividualPrize (híbrida para money e item)
+interface IndividualPrize {
+  id?: string;
+  type: 'money' | 'item';
+  quantity: number;
+  value: number;
+  // Campos específicos para itens físicos
+  prizeId?: string;
+  name?: string;
+  image?: string;
+  category?: string;
 }
 
 // Prize categories configuration interface
@@ -70,6 +87,11 @@ interface InstantPrize {
   number: string;
   value: number;
   claimed?: boolean;
+  // Campos adicionais para suporte híbrido
+  type?: 'money' | 'item';
+  prizeId?: string;
+  name?: string;
+  image?: string;
 }
 
 // Define a simple type for the form data
@@ -92,11 +114,11 @@ export type RaffleFormData = {
   
   // Distribuição de prêmios para cada posição
   prizeDistribution: Array<{
-    position: number,
+    position: number, 
     prizes: Array<{
-      prizeId?: string,
-      name: string,
-      value: string,
+      prizeId?: string, 
+      name: string, 
+      value: string, 
       image?: string | File
     }>,
     description?: string
@@ -187,11 +209,28 @@ const raffleFormSchema = z.object({
   winners: z.array(z.string()).optional().default([])
 }) as z.ZodType<RaffleFormData>;
 
+interface InstantPrizeData {
+  type: 'money' | 'item';
+  categoryId: string;
+  quantity?: number;      // Para money prizes
+  number?: string;        // Para item prizes (número temporário)
+  value: number;
+  prizeId?: string;       // Para item prizes
+  name?: string;          // Para item prizes
+  image?: string;         // Para item prizes
+}
+
+
+interface InstantPrizesPayload {
+  prizes: InstantPrizeData[];
+}
 interface RaffleFormFieldsProps {
-  onSubmit: (data: RaffleFormData) => void;
+  onSubmit: (data: {campaign: ICampaign, instantPrizes: InstantPrizesPayload}) => void;
   initialData?: Partial<RaffleFormData>;
   isSubmitting?: boolean;
 }
+
+
 
 // Styled components
 const   FormContainer = styled.div`
@@ -2133,6 +2172,577 @@ const CalculationDisplay = styled.div`
   }
 `;
 
+// 🚨 COMPONENTES PARA SEÇÕES DESABILITADAS
+const DisabledSection = styled.div<{ $disabled: boolean }>`
+  position: relative;
+  pointer-events: ${({ $disabled }) => $disabled ? 'none' : 'auto'};
+  opacity: ${({ $disabled }) => $disabled ? '0.6' : '1'};
+  filter: ${({ $disabled }) => $disabled ? 'grayscale(0.3)' : 'none'};
+  transition: all 0.3s ease;
+  
+  ${({ $disabled }) => $disabled && `
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.7);
+      z-index: 5;
+      border-radius: 16px;
+    }
+  `}
+`;
+
+const RequirementAlert = styled.div<{ $type: 'warning' | 'info' | 'error' }>`
+  background: ${({ $type }) => {
+    switch ($type) {
+      case 'warning': return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%)';
+      case 'error': return 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+      default: return 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)';
+    }
+  }};
+  border: 1px solid ${({ $type }) => {
+    switch ($type) {
+      case 'warning': return 'rgba(245, 158, 11, 0.3)';
+      case 'error': return 'rgba(239, 68, 68, 0.3)';
+      default: return 'rgba(59, 130, 246, 0.3)';
+    }
+  }};
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+  
+  svg {
+    color: ${({ $type }) => {
+      switch ($type) {
+        case 'warning': return '#f59e0b';
+        case 'error': return '#ef4444';
+        default: return '#3b82f6';
+      }
+    }};
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  div {
+    flex: 1;
+    
+    h5 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: ${({ $type }) => {
+        switch ($type) {
+          case 'warning': return '#f59e0b';
+          case 'error': return '#ef4444';
+          default: return '#3b82f6';
+        }
+      }};
+      margin: 0 0 4px 0;
+    }
+    
+    p {
+      font-size: 0.85rem;
+      color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    ul {
+      margin: 8px 0 0 0;
+      padding-left: 16px;
+      
+      li {
+        font-size: 0.85rem;
+        color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+        margin-bottom: 4px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+`;
+
+const RequirementProgress = styled.div`
+  background: rgba(106, 17, 203, 0.05);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+`;
+
+const ProgressHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  
+  h5 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6a11cb;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #666;
+  }
+`;
+
+const ProgressItem = styled.div<{ $completed: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  
+  svg {
+    color: ${({ $completed }) => $completed ? '#22c55e' : '#d1d5db'};
+    font-size: 1.1rem;
+  }
+  
+  span {
+    font-size: 0.9rem;
+    color: ${({ $completed }) => $completed ? '#22c55e' : '#9ca3af'};
+    font-weight: ${({ $completed }) => $completed ? '600' : '500'};
+  }
+`;
+
+const UnlockMessage = styled.div`
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(21, 128, 61, 0.1) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  svg {
+    color: #22c55e;
+    font-size: 1.2rem;
+  }
+  
+  div {
+    h5 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #22c55e;
+      margin: 0 0 4px 0;
+    }
+    
+    p {
+      font-size: 0.85rem;
+      color: #666;
+      margin: 0;
+    }
+  }
+`;
+
+// Styled components para o Resumo Inteligente dos Prêmios
+const PrizeIntelligentSummary = styled.div`
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.03) 0%, rgba(37, 117, 252, 0.03) 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 32px;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  box-shadow: 0 4px 20px rgba(106, 17, 203, 0.05);
+`;
+
+const SummaryHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(106, 17, 203, 0.1);
+  
+  h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+`;
+
+const SummaryBadge = styled.div`
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(106, 17, 203, 0.2);
+`;
+
+const SummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const SummaryCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(106, 17, 203, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(106, 17, 203, 0.15);
+  }
+`;
+
+const CardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  
+  svg {
+    color: #6a11cb;
+    font-size: 1.3rem;
+  }
+  
+  span {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+  }
+`;
+
+const CardValue = styled.div`
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #6a11cb;
+  margin-bottom: 8px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.6rem;
+  }
+`;
+
+const CardPercentage = styled.div`
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 500;
+`;
+
+const CategoryDistribution = styled.div`
+  margin-bottom: 32px;
+  
+  h5 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const CategoryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+`;
+
+const CategoryCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+`;
+
+const CategoryHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+const CategoryName = styled.h6`
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const CategoryBadge = styled.div<{ percentage: number }>`
+  background: ${({ percentage }) => 
+    percentage > 10 ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)' :
+    percentage > 5 ? 'linear-gradient(135deg, #ffa726 0%, #ff9800 100%)' :
+    'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)'
+  };
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+`;
+
+const CategoryStats = styled.div`
+  margin-bottom: 16px;
+`;
+
+const StatRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const StatLabel = styled.span`
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+`;
+
+const StatValue = styled.span<{ $highlight?: boolean }>`
+  font-size: 0.9rem;
+  font-weight: ${({ $highlight }) => $highlight ? '700' : '600'};
+  color: ${({ $highlight }) => $highlight ? '#6a11cb' : '#333'};
+`;
+
+const CategoryProgress = styled.div`
+  margin-top: 16px;
+`;
+
+const ProgressBar = styled.div<{ percentage: number }>`
+  width: 100%;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  
+  &::after {
+    content: '';
+    display: block;
+    width: ${({ percentage }) => Math.min(percentage, 100)}%;
+    height: 100%;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    transition: width 0.5s ease;
+  }
+`;
+
+const ProgressLabel = styled.div`
+  font-size: 0.8rem;
+  color: #888;
+  text-align: center;
+`;
+
+const PrizeActions = styled.div`
+  margin-bottom: 32px;
+  
+  h5 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const ActionsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ActionButton = styled.button<{ variant: 'download' | 'search' | 'stats' | 'preview' }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  background: ${({ variant }) => {
+    switch (variant) {
+      case 'download': return 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(21, 128, 61, 0.1) 100%)';
+      case 'search': return 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)';
+      case 'stats': return 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)';
+      case 'preview': return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%)';
+      default: return 'rgba(106, 17, 203, 0.1)';
+    }
+  }};
+  border: 1px solid ${({ variant }) => {
+    switch (variant) {
+      case 'download': return 'rgba(34, 197, 94, 0.2)';
+      case 'search': return 'rgba(59, 130, 246, 0.2)';
+      case 'stats': return 'rgba(168, 85, 247, 0.2)';
+      case 'preview': return 'rgba(245, 158, 11, 0.2)';
+      default: return 'rgba(106, 17, 203, 0.2)';
+    }
+  }};
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px ${({ variant }) => {
+      switch (variant) {
+        case 'download': return 'rgba(34, 197, 94, 0.15)';
+        case 'search': return 'rgba(59, 130, 246, 0.15)';
+        case 'stats': return 'rgba(168, 85, 247, 0.15)';
+        case 'preview': return 'rgba(245, 158, 11, 0.15)';
+        default: return 'rgba(106, 17, 203, 0.15)';
+      }
+    }};
+  }
+  
+  svg {
+    font-size: 1.5rem;
+    color: ${({ variant }) => {
+      switch (variant) {
+        case 'download': return '#22c55e';
+        case 'search': return '#3b82f6';
+        case 'stats': return '#a855f7';
+        case 'preview': return '#f59e0b';
+        default: return '#6a11cb';
+      }
+    }};
+  }
+  
+  span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  }
+  
+  small {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.3;
+  }
+`;
+
+const PrizeInsights = styled.div`
+  h5 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const InsightsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const InsightItem = styled.div<{ type: 'success' | 'info' | 'premium' }>`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  background: ${({ type }) => {
+    switch (type) {
+      case 'success': return 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(21, 128, 61, 0.1) 100%)';
+      case 'info': return 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)';
+      case 'premium': return 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)';
+      default: return 'rgba(106, 17, 203, 0.1)';
+    }
+  }};
+  border: 1px solid ${({ type }) => {
+    switch (type) {
+      case 'success': return 'rgba(34, 197, 94, 0.2)';
+      case 'info': return 'rgba(59, 130, 246, 0.2)';
+      case 'premium': return 'rgba(168, 85, 247, 0.2)';
+      default: return 'rgba(106, 17, 203, 0.2)';
+    }
+  }};
+  
+  svg {
+    color: ${({ type }) => {
+      switch (type) {
+        case 'success': return '#22c55e';
+        case 'info': return '#3b82f6';
+        case 'premium': return '#a855f7';
+        default: return '#6a11cb';
+      }
+    }};
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  span {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  }
+`;
+
 const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   onSubmit,
   initialData = {},
@@ -2189,6 +2799,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     mainPrize: initialData.mainPrize || '',
     valuePrize: initialData.valuePrize || ''
   } as RaffleFormData;
+
+  const session = useSession();
   
   const { 
     control, 
@@ -2222,6 +2834,27 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Observar número de vencedores
   const winnerCount = watch('winnerPositions');
   const prizes = watch('prizeDistribution');
+
+  // 🔒 VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS PARA FUNCIONALIDADES AVANÇADAS
+  const hasBasicRequirements = useMemo(() => {
+    return totalNumbers > 0 && price > 0;
+  }, [totalNumbers, price]);
+
+  const basicRequirementsMessage = useMemo(() => {
+    if (!price || price <= 0) {
+      return "Defina o preço por número primeiro";
+    }
+    if (!totalNumbers || totalNumbers <= 0) {
+      return "Defina a quantidade total de números primeiro";
+    }
+    return "";
+  }, [totalNumbers, price]);
+
+  // Memoizar valores para evitar loops infinitos
+  const instantPrizes = watch('instantPrizes') || [];
+  const safePrizeCategories = useMemo(() => {
+    return prizeCategories as PrizeCategoriesConfig || {};
+  }, [prizeCategories]);
 
   // Formatar valor do prêmio para exibição
   const extractNumericValue = (valueString: string): number => {
@@ -2258,10 +2891,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     const numericValue = extractNumericValue(valueString);
     
     // Formata como moeda brasileira
-    return new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(numericValue);
+      return new Intl.NumberFormat('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      }).format(numericValue);
   };
 
   
@@ -2653,13 +3286,14 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     setValue('winnerPositions', parseInt(value));
   };
   
-  // Função para preparar dados para API
+  // Função para preparar dados para API - VERSÃO OTIMIZADA
   const prepareFormDataForApi = (data: RaffleFormData): any => {
     // Formatar dados para a estrutura da API
     const formattedData = {
       // Campos básicos
       title: data.title,
       description: data.description,
+      createdBy: session.data?.user?.id,
       individualNumberPrice: data.individualNumberPrice,
       totalNumbers: data.totalNumbers,
       drawDate: new Date(data.drawDate),
@@ -2682,8 +3316,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         console.log('Prêmios da posição:', positionData.prizes);
         
         return {
-          position: positionData.position,
-          prizes: positionData.prizes
+        position: positionData.position,
+        prizes: positionData.prizes
             .filter(prize => prize.name) // Filtrar apenas prêmios válidos com nome
             .map(prize => {
               // Log detalhado para depuração
@@ -2699,10 +3333,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             }),
           description: positionData.description || 
             `${positionData.position === 1 ? 'Prêmio principal' : `${positionData.position}º lugar`}: ${
-              positionData.prizes.length > 1 
-                ? `${positionData.prizes.length} prêmios` 
-                : positionData.prizes[0]?.name || 'Não especificado'
-            }`
+          positionData.prizes.length > 1 
+            ? `${positionData.prizes.length} prêmios` 
+            : positionData.prizes[0]?.name || 'Não especificado'
+        }`
         };
       }),
       
@@ -2726,76 +3360,101 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       // Imagens
       images: data.images,
       
-      // Prêmios instantâneos - Utilizamos diretamente os números já gerados
-      instantPrizes: [] as Array<{
-        categoryId?: string;
-        number: string;
+      // 🎯 PRÊMIOS INSTANTÂNEOS - NOVO FORMATO SIMPLIFICADO
+      instantPrizes: {
+        prizes: [] as Array<{
+          type: 'money' | 'item';
+          categoryId: string;
+          quantity?: number;  // Para money
+          number?: string;    // Para item
         value: number;
-        claimed: boolean;
+          prizeId?: string;   // Para item
+          name?: string;      // Para item
+          image?: string;     // Para item
       }>
+      }
     };
       
-    // Conjunto para controlar números já usados
-    const usedNumbers = new Set<string>();
+    console.log('🎯 Processando prêmios instantâneos - FORMATO SIMPLIFICADO:');
     
-    console.log('🏆 Status dos prêmios instantâneos:');
-    
-    // Usar diretamente os instantPrizes já gerados no formulário
-    if (data.instantPrizes && data.instantPrizes.length > 0) {
-      console.log('Usando prêmios instantâneos já gerados:', data.instantPrizes.length);
+    // Processar prizeCategories se existir
+    if (data.prizeCategories) {
+      console.log('📊 Processando categorias de prêmios...');
       
-      // Adicionar diretamente os prêmios do formulário
-      data.instantPrizes.forEach(prize => {
-        // Garantir que o número esteja no formato de 6 dígitos
-        let formattedNumber = prize.number;
-        if (formattedNumber.length < 6) {
-          formattedNumber = formattedNumber.padStart(6, '0');
-        } else if (formattedNumber.length > 6) {
-          formattedNumber = formattedNumber.slice(-6);
-        }
-        
-        // Verificar se este número já foi usado para evitar duplicatas
-        if (!usedNumbers.has(formattedNumber)) {
-          usedNumbers.add(formattedNumber);
+      Object.entries(data.prizeCategories).forEach(([categoryKey, category]) => {
+        if (category.active && category.quantity > 0 && category.value > 0) {
+          console.log(`\n🔄 Processando categoria: ${categoryKey}`);
           
-          formattedData.instantPrizes.push({
-            categoryId: prize.categoryId,
-            number: formattedNumber,
-            value: prize.value,
-            claimed: prize.claimed || false
+          // Verificar se há prêmios individuais específicos para esta categoria
+          const individualPrizes = category.individualPrizes || [];
+          
+          // Se não há prêmios individuais, criar prêmios em dinheiro por padrão
+          if (individualPrizes.length === 0) {
+            console.log(`  💰 Criando categoria de prêmios em dinheiro: ${category.quantity}x R$ ${category.value}`);
+            
+            // Adicionar categoria de prêmios em dinheiro
+            formattedData.instantPrizes.prizes.push({
+              type: 'money',
+              categoryId: categoryKey,
+              quantity: category.quantity,
+              value: category.value
+            });
+          } else {
+            // Processar cada prêmio individual
+            console.log(`  🎁 Processando ${individualPrizes.length} prêmios individuais da categoria`);
+            
+            individualPrizes.forEach((individualPrize: IndividualPrize, index: number) => {
+              if (individualPrize.type === 'money') {
+                // Prêmio em dinheiro - agregar em categoria
+                console.log(`    💰 ${individualPrize.quantity}x R$ ${individualPrize.value} (dinheiro)`);
+                
+                formattedData.instantPrizes.prizes.push({
+                  type: 'money',
+                  categoryId: categoryKey,
+                  quantity: individualPrize.quantity,
+                  value: individualPrize.value
+                });
+                
+              } else if (individualPrize.type === 'item') {
+                // Prêmio físico - criar um objeto para cada quantidade
+                console.log(`    🎁 ${individualPrize.quantity}x ${individualPrize.name} (R$ ${individualPrize.value})`);
+                
+                // Para cada quantidade, criar um prêmio específico
+                // Por ora, vamos criar apenas um objeto representando todos (backend irá expandir)
+                for (let i = 0; i < individualPrize.quantity; i++) {
+                  // Gerar número temporário - o backend irá substituir por números aleatórios
+                  const tempNumber = `${categoryKey}-${individualPrize.prizeId}-${i + 1}`.padStart(6, '0');
+                  
+                  formattedData.instantPrizes.prizes.push({
+                    type: 'item',
+                    categoryId: categoryKey,
+                    number: tempNumber, // Número temporário
+                    value: individualPrize.value,
+                    prizeId: individualPrize.prizeId,
+                    name: individualPrize.name,
+                    image: individualPrize.image
           });
-        } else {
-          console.warn(`Número duplicado ignorado: ${formattedNumber}`);
+        }
+      }
+            });
+          }
         }
       });
       
-      // Log para mostrar quais números estão sendo enviados
-      console.log('Exemplos de números que serão enviados:');
-      const examples = formattedData.instantPrizes.slice(0, Math.min(5, formattedData.instantPrizes.length));
-      examples.forEach((prize, index) => {
-        console.log(`- #${index+1}: ${prize.number} (${prize.categoryId || 'sem categoria'}, R$ ${prize.value})`);
-      });
-    } else {
-      console.log('Nenhum prêmio instantâneo definido no formulário');
-    }
-    
-    // Log final de resumo dos prêmios instantâneos
-    console.log(`📊 Total de prêmios instantâneos: ${formattedData.instantPrizes.length}`);
-    if (formattedData.instantPrizes.length > 0) {
-      // Contar por categoria
-      const categoryCounts: {[key: string]: number} = {};
-      formattedData.instantPrizes.forEach(prize => {
-        const category = prize.categoryId || 'sem-categoria';
-        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-      });
-      
-      console.log('Distribuição por categoria:');
-      Object.entries(categoryCounts).forEach(([category, count]) => {
-        console.log(`- ${category}: ${count} prêmios`);
+      console.log(`✅ Total de prêmios processados: ${formattedData.instantPrizes.prizes.length}`);
+      console.log('📊 Distribuição:', {
+        money: formattedData.instantPrizes.prizes.filter(p => p.type === 'money').length,
+        item: formattedData.instantPrizes.prizes.filter(p => p.type === 'item').length
       });
     }
     
-    return formattedData;
+    // Log dos dados finais
+    console.log('✅ Dados formatados para API:', formattedData);
+    
+    return {
+      campaign: formattedData,
+      instantPrizes: formattedData.instantPrizes
+    };
   };
   
   // Filtrar prêmios com base na busca
@@ -2805,28 +3464,10 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     console.log('Formulário original:', data);
     
     // Log para debug dos prêmios e seus IDs
-    data.prizeDistribution.forEach((pos, posIndex) => {
-      console.log(`Posição ${pos.position} (${posIndex}):`);
-      pos.prizes.forEach((prize, prizeIndex) => {
-        console.log(`  Prêmio ${prizeIndex+1}: ${prize.name}, prizeId: [${prize.prizeId}], Valor: ${prize.value}`);
-      });
-    });
     
     const apiData = prepareFormDataForApi(data);
-    console.log('Dados para API:', apiData);
-    
-    // Log para debug dos prizeIds enviados para API
-    apiData.prizeDistribution.forEach((pos: any, index: number) => {
-      console.log(`Posição ${pos.position} (API), prizes:`, JSON.stringify(pos.prizes));
-    });
-    
-    // Verificação final antes de enviar
-    console.log('🔍 Verificação final dos prizeIds:');
-    apiData.prizeDistribution.forEach((pos: any) => {
-      console.log(`Posição ${pos.position}:`, 
-        pos.prizes.map((id: string) => `[${id}]`).join(', '));
-    });
-    
+
+
     onSubmit(apiData);
   };
   
@@ -3010,28 +3651,28 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           </FormRow>
           
           <FormRow>
-            <Controller
-              name="totalNumbers"
-              control={control}
-              render={({ field }) => (
-                <FormInput
-                  id="totalNumbers"
-                  label="Total de Números"
-                  icon={<FaHashtag />}
-                  placeholder="Ex: 100"
-                  type="number"
-                  value={field.value || ''}
-                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                  onBlur={field.onBlur}
-                  error={errors.totalNumbers?.message}
-                  disabled={isSubmitting}
-                  required
-                  min={1}
-                  step="1"
+          <Controller
+            name="totalNumbers"
+            control={control}
+            render={({ field }) => (
+              <FormInput
+                id="totalNumbers"
+                label="Total de Números"
+                icon={<FaHashtag />}
+                placeholder="Ex: 100"
+                type="number"
+                value={field.value || ''}
+                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                onBlur={field.onBlur}
+                error={errors.totalNumbers?.message}
+                disabled={isSubmitting}
+                required
+                min={1}
+                step="1"
                   helpText="Calculado automaticamente com base no preço e retorno esperado"
-                />
-              )}
-            />
+              />
+            )}
+          />
             
             <Controller
               name="drawDate"
@@ -3089,16 +3730,41 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
               Estas informações são essenciais antes de configurar os combos com desconto e os prêmios instantâneos.</p>
             </div>
           </InfoAlert>
-          
+
           {/* Seção de Combos com Desconto */}
           <SubSectionDivider />
+          
+          <DisabledSection $disabled={!hasBasicRequirements}>
+            {!hasBasicRequirements ? (
+              <RequirementAlert $type="warning">
+                <FaExclamationTriangle />
+                <div>
+                  <h5>Combos com Desconto Bloqueados</h5>
+                  <p>{basicRequirementsMessage}</p>
+                  <ul>
+                    <li>Configure o preço por número primeiro</li>
+                    <li>Defina a quantidade total de números</li>
+                    <li>Depois você poderá criar combos com desconto</li>
+                  </ul>
+                </div>
+              </RequirementAlert>
+            ) : (
+              <UnlockMessage>
+                <FaInfoCircle />
+                <div>
+                  <h5>Combos Liberados!</h5>
+                  <p>Agora você pode configurar pacotes com desconto para seus clientes.</p>
+                </div>
+              </UnlockMessage>
+            )}
           
           <ComboDiscountSectionComponent 
             control={control}
             watch={watch}
             initialData={initialData}
-            isSubmitting={isSubmitting}
+              isSubmitting={isSubmitting || !hasBasicRequirements}
           />
+          </DisabledSection>
         </FormSection>
         
         {/* Upload Images Section */}
@@ -3211,8 +3877,41 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         {/* Prize Configuration Section */}
         <FormSection>
           <SectionTitle>
-            <FaGift /> Configuração de Prêmios
+            <FaGift /> Configuração de Prêmios Instantâneos
           </SectionTitle>
+          
+          <DisabledSection $disabled={!hasBasicRequirements}>
+            {!hasBasicRequirements ? (
+              <RequirementAlert $type="error">
+                <FaExclamationTriangle />
+                <div>
+                  <h5>Prêmios Instantâneos Bloqueados</h5>
+                  <p>{basicRequirementsMessage}</p>
+                  <RequirementProgress>
+                    <ProgressHeader>
+                      <h5><FaInfoCircle /> Progresso da Configuração</h5>
+                      <span>{hasBasicRequirements ? '2/2' : (price > 0 ? '1/2' : '0/2')} completo</span>
+                    </ProgressHeader>
+                    <ProgressItem $completed={price > 0}>
+                      <FaMoneyBillWave />
+                      <span>Preço por número definido</span>
+                    </ProgressItem>
+                    <ProgressItem $completed={totalNumbers > 0}>
+                      <FaHashtag />
+                      <span>Quantidade total de números definida</span>
+                    </ProgressItem>
+                  </RequirementProgress>
+                </div>
+              </RequirementAlert>
+            ) : (
+              <UnlockMessage>
+                <FaInfoCircle />
+                <div>
+                  <h5>Prêmios Instantâneos Liberados!</h5>
+                  <p>Configure prêmios para distribuir durante a venda dos números.</p>
+                </div>
+              </UnlockMessage>
+            )}
           
           <Controller
             name="prizeCategories"
@@ -3220,18 +3919,29 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             render={({ field }) => (
               <PrizeConfigForm
                 totalNumbers={totalNumbers}
-                onPrizeConfigChange={config => {
-                  field.onChange(config);
-                }}
-                onPrizesGenerated={prizes => {
-                  // Atualizar instantPrizes no formulário com os prêmios gerados
-                  console.log('Prêmios gerados pelo PrizeConfigForm:', prizes.length);
-                  setValue('instantPrizes', prizes);
-                }}
-                disabled={isSubmitting}
+                  onPrizeConfigChange={config => {
+                    field.onChange(config);
+                  }}
+                  onPrizesGenerated={prizes => {
+                    // Atualizar instantPrizes no formulário com os prêmios gerados
+                    console.log('Prêmios gerados pelo PrizeConfigForm:', prizes.length);
+                    setValue('instantPrizes', prizes);
+                  }}
+                  disabled={isSubmitting || !hasBasicRequirements}
               />
             )}
           />
+          </DisabledSection>
+          
+          {/* Seção de Resumo Inteligente dos Prêmios */}
+          {instantPrizes.length > 0 && (
+            <PrizeIntelligentSummaryComponent 
+              instantPrizes={instantPrizes}
+              totalNumbers={totalNumbers}
+              prizeCategories={prizeCategories}
+              individualNumberPrice={price}
+            />
+          )}
           
           {errors.prizeCategories && (
             <ErrorText>

@@ -5,6 +5,7 @@ import { IEventNotifier, StatsEventType } from '../interfaces/IEventNotifier';
 import { CampaignStatsHistory } from '@/models/CampaignStatsHistory';
 import { CreatorStatsHistory } from '@/models/CreatorStatsHistory';
 import { ParticipantStatsHistory } from '@/models/ParticipantStatsHistory';
+import { RangePartitionProcessor } from './RangePartitionProcessor';
 import Campaign from '@/models/Campaign';
 import mongoose from 'mongoose';
 
@@ -14,9 +15,11 @@ import mongoose from 'mongoose';
  */
 export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStatsProcessor, ParticipantStatsProcessor {
   private readonly notifier: IEventNotifier;
+  private readonly rangePartitionProcessor: RangePartitionProcessor;
   
   constructor(notifier: IEventNotifier) {
     this.notifier = notifier;
+    this.rangePartitionProcessor = new RangePartitionProcessor();
   }
   
   /**
@@ -29,7 +32,22 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
     );
     
     if (relevantEvents.length === 0) return;
+
+    // 🚀 NOVO: Atualizar partições em paralelo com outras estatísticas
+    const statsUpdatePromise = this.updateAllStats(relevantEvents, session);
+    const partitionUpdatePromise = this.rangePartitionProcessor.processPaymentEvents(relevantEvents);
     
+    // Executar ambos em paralelo
+    await Promise.all([
+      statsUpdatePromise,
+      partitionUpdatePromise
+    ]);
+  }
+  
+  /**
+   * Atualiza todas as estatísticas tradicionais
+   */
+  private async updateAllStats(events: PaymentEvent[], session: ClientSession): Promise<void> {
     // Agrupar eventos por entidade para evitar processamento duplicado
     const campaignIds = new Set<string>();
     const participantIds = new Set<string>();
@@ -39,7 +57,7 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
     const campaignDetails: Record<string, any> = {};
     
     // Extrair IDs únicos e mapear pagamentos por campanha
-    for (const event of relevantEvents) {
+    for (const event of events) {
       const campaignId = event.campaignId.toString();
       const userId = event.userId.toString();
       
@@ -88,7 +106,7 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
     // Organizar pagamentos por participante
     const paymentsByParticipant: Record<string, PaymentEvent[]> = {};
     
-    for (const event of relevantEvents) {
+    for (const event of events) {
       const userId = event.userId.toString();
       
       if (!paymentsByParticipant[userId]) {

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { INumberStatus, NumberStatusEnum } from './interfaces/INumberStatusInterfaces';
 import NumberRange from './NumberRange';
+import RangePartition from './RangePartition';
 import { CampaignStatsHistory } from './CampaignStatsHistory';
 import InstantPrize from './InstantPrize';
 
@@ -61,6 +62,7 @@ interface NumberStatusModel extends mongoose.Model<INumberStatus> {
   reserveNumbers(rifaId: string, numbers: Array<number | string>, userId: string, expirationMinutes?: number): Promise<INumberStatus[]>;
   releaseReservedNumbers(rifaId: string, numbers: Array<number | string>, userId: string): Promise<any>;
   updateCampaignStats(rifaId: string, creatorId: string, updates: { available?: number, reserved?: number, paid?: number, revenue?: number }): Promise<any>;
+  processDirectPurchase(rifaId: string, numbers: number[], userId: string, paymentData?: any): Promise<{ purchased: INumberStatus[], instantPrizes: any[] }>;
 }
 
 // Adicionar os índices e métodos estáticos apenas se estiver no servidor
@@ -177,7 +179,7 @@ if (isServer && NumberStatusSchema) {
   };
 
   /**
-   * Método estático OTIMIZADO para inicializar rifa usando ranges
+   * Método estático OTIMIZADO para inicializar rifa usando ranges + partições
    */
   NumberStatusSchema.statics.initializeForRifa = async function(
     rifaId: string, 
@@ -186,7 +188,7 @@ if (isServer && NumberStatusSchema) {
     instantPrizes: InstantPrizeConfig[] = [], 
     session: mongoose.ClientSession | null = null
   ): Promise<void> {
-    console.log(`Inicializando rifa ${rifaId} com abordagem de ranges (${totalNumbers} números)`);
+    console.log(`Inicializando rifa ${rifaId} com abordagem de ranges + partições (${totalNumbers} números)`);
     
     try {
       // Usar transação se fornecida ou criar uma nova
@@ -212,10 +214,32 @@ if (isServer && NumberStatusSchema) {
           throw new Error('Existem números duplicados entre as diferentes categorias de prêmios instantâneos');
         }
         
-        // 1. Criar o range principal de números disponíveis
+        // 1. ✅ CORRIGIDO: Criar o range principal de números disponíveis
+        // IMPORTANTE: Números com prêmios instantâneos ESTÃO disponíveis para compra
         await NumberRange!.initializeForRifa(rifaId, totalNumbers, allInstantPrizeNumbers);
         
-        // 2. Inicializar/atualizar estatísticas da campanha
+        // 2. 🚀 NOVO: Inicializar partições para seleção aleatória otimizada
+        if (totalNumbers >= 100000) { // Usar partições apenas para rifas grandes
+          console.log(`🚀 Inicializando RangePartition para otimização (${totalNumbers} números)`);
+          
+          // Calcular tamanho da partição baseado no total de números
+          let partitionSize = 1000000; // Padrão: 1M por partição
+          
+          if (totalNumbers >= 50000000) {
+            partitionSize = 2000000; // 2M para rifas de 50M+
+          } else if (totalNumbers >= 10000000) {
+            partitionSize = 1000000; // 1M para rifas de 10M+
+          } else if (totalNumbers >= 1000000) {
+            partitionSize = 500000;  // 500K para rifas de 1M+
+          } else {
+            partitionSize = 100000;  // 100K para rifas menores
+          }
+          
+          await RangePartition!.initializeForCampaign(rifaId, totalNumbers, partitionSize);
+          console.log(`✅ RangePartition inicializado com partições de ${partitionSize} números`);
+        }
+        
+        // 3. Inicializar/atualizar estatísticas da campanha
         const availableCount = totalNumbers; // Todos os números estão disponíveis para algum propósito (regular ou prêmio instantâneo)
         
         // Usar cast para acessar o método no modelo
@@ -227,7 +251,7 @@ if (isServer && NumberStatusSchema) {
           revenue: 0
         });
         
-        // 3. Registrar os prêmios instantâneos
+        // 4. Registrar os prêmios instantâneos
         if (instantPrizes.length > 0) {
           console.log(`Registrando prêmios instantâneos para ${allInstantPrizeNumbers.length} números em ${instantPrizes.length} categorias`);
           
@@ -272,7 +296,7 @@ if (isServer && NumberStatusSchema) {
           await sessionToUse.commitTransaction();
         }
         
-        console.log(`Rifa ${rifaId} inicializada com sucesso usando ranges`);
+        console.log(`✅ Rifa ${rifaId} inicializada com sucesso usando ranges + partições`);
       } catch (error) {
         // Reverter transação se foi iniciada aqui
         if (!useTransaction) {
@@ -286,7 +310,7 @@ if (isServer && NumberStatusSchema) {
         }
       }
     } catch (error) {
-      console.error(`Erro ao inicializar rifa ${rifaId} com ranges:`, error);
+      console.error(`Erro ao inicializar rifa ${rifaId} com ranges + partições:`, error);
       throw error;
     }
   };
@@ -403,6 +427,15 @@ if (isServer && NumberStatusSchema) {
             reserved: stats.reservedNumbers + formattedNumbers.length
           }
         );
+      }
+      
+      // 🚀 NOVO: Atualizar estatísticas das partições (se existirem)
+      const numericNumbers = formattedNumbers.map(num => parseInt(num));
+      try {
+        const { OptimizedRandomSelector } = await import('@/services/OptimizedRandomSelector');
+        await OptimizedRandomSelector.updatePartitionStatsAfterReservation(rifaId, numericNumbers);
+      } catch (error) {
+        console.warn('⚠️ Erro ao atualizar partições (não crítico):', error);
       }
       
       // Commit da transação
@@ -525,16 +558,16 @@ if (isServer && NumberStatusSchema) {
       await this.updateMany(
         { 
           campaignId: rifaId, 
-          number: { $in: numbers },
-          userId,
-          status: NumberStatusEnum.RESERVED
-        },
-        {
-          $set: {
-            status: NumberStatusEnum.PAID,
-            paidAt: new Date(),
-            expiresAt: null // Remove a expiração
-          }
+        number: { $in: numbers },
+        userId,
+        status: NumberStatusEnum.RESERVED
+      },
+      {
+        $set: {
+          status: NumberStatusEnum.PAID,
+          paidAt: new Date(),
+          expiresAt: null // Remove a expiração
+        }
         },
         { session }
       );
@@ -635,6 +668,146 @@ if (isServer && NumberStatusSchema) {
     } catch (error) {
       // Rollback em caso de erro
       await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  };
+
+  /**
+   * Método para processar compra direta
+   */
+  NumberStatusSchema.statics.processDirectPurchase = async function(
+    rifaId: string,
+    numbers: number[],
+    userId: string,
+    paymentData?: any
+  ): Promise<{ purchased: INumberStatus[], instantPrizes: any[] }> {
+    // Iniciar uma transação
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // Converter números para strings formatadas
+      const formattedNumbers = numbers.map(num => num.toString());
+      
+      // Verificação final de disponibilidade (race condition protection)
+      for (const num of formattedNumbers) {
+        const thisModel = this as NumberStatusModel;
+        const isAvailable = await thisModel.isNumberAvailable(rifaId, num);
+        if (!isAvailable) {
+          throw new Error(`Número ${num} não está mais disponível`);
+        }
+      }
+      
+      // Preparar documentos para inserção direta como VENDIDOS
+      const docsToInsert = formattedNumbers.map(num => ({
+        campaignId: rifaId,
+        number: num,
+        status: NumberStatusEnum.PAID,
+        userId,
+        reservedAt: new Date(), // Marca quando começou o processo
+        paidAt: new Date(),     // Marca como pago imediatamente
+        expiresAt: null,        // Não expira pois já foi pago
+        metadata: paymentData ? new Map([['paymentData', paymentData]]) : undefined
+      }));
+      
+      // Inserir documentos de venda
+      const purchasedDocs = await this.insertMany(docsToInsert, { session });
+      
+      // Buscar campanha para obter o criador e preço dos números
+      const campaignDoc = await mongoose.model('Campaign').findById(rifaId, 'creatorId pricePerNumber').lean();
+      
+      if (!campaignDoc) {
+        throw new Error('Campanha não encontrada');
+      }
+      
+      const campaign = campaignDoc as any;
+      
+      // Atualizar estatísticas da campanha
+      const revenue = formattedNumbers.length * (campaign.pricePerNumber || paymentData?.pricePerNumber || 0);
+      
+      const stats = await CampaignStatsHistory.getLatestSnapshot(rifaId);
+      if (stats) {
+        const newTotalRevenue = stats.totalRevenue + revenue;
+        
+        const thisModel = this as NumberStatusModel;
+        await thisModel.updateCampaignStats(
+          rifaId,
+          campaign.creatorId,
+          {
+            available: stats.availableNumbers - formattedNumbers.length,
+            paid: stats.soldNumbers + formattedNumbers.length,
+            revenue: newTotalRevenue
+          }
+        );
+      }
+      
+      // Verificar se algum número ganhou prêmio instantâneo
+      const instantPrizes = await InstantPrize.find({
+        campaignId: rifaId,
+        number: { $in: formattedNumbers },
+        claimed: false
+      }).session(session);
+      
+      // Se houver prêmios instantâneos, atualizá-los
+      if (instantPrizes.length > 0) {
+        const prizeNumbers = instantPrizes.map(prize => prize.number);
+        
+        // Atualizar prêmios instantâneos
+        await InstantPrize.updateMany(
+          {
+            campaignId: rifaId,
+            number: { $in: prizeNumbers }
+          },
+          {
+            $set: {
+              winner: userId,
+              claimed: true,
+              claimedAt: new Date()
+            }
+          },
+          { session }
+        );
+        
+        // Adicionar metadados aos documentos de números
+        await this.updateMany(
+          {
+            campaignId: rifaId,
+            number: { $in: prizeNumbers },
+            userId
+          },
+          {
+            $set: {
+              'metadata.instantPrize': true,
+              'metadata.prizeDetails': instantPrizes.map(prize => ({
+                category: prize.categoryId,
+                value: prize.value
+              }))
+            }
+          },
+          { session }
+        );
+      }
+      
+      // Commit da transação
+      await session.commitTransaction();
+      
+      console.log(`✅ Compra direta processada: ${purchasedDocs.length} números, ${instantPrizes.length} prêmios`);
+      
+      return { 
+        purchased: purchasedDocs,
+        instantPrizes: instantPrizes.map(prize => ({
+          number: prize.number,
+          category: prize.categoryId,
+          value: prize.value
+        }))
+      };
+      
+    } catch (error) {
+      // Rollback em caso de erro
+      await session.abortTransaction();
+      console.error('Erro no processDirectPurchase:', error);
       throw error;
     } finally {
       session.endSession();
