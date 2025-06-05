@@ -20,3 +20,21 @@ export enum NumberStatusEnum {
     metadata?: Record<string, any>; // Para informações adicionais flexíveis
   }
   
+
+
+  export interface InstantPrizeData {
+    type: 'money' | 'item';
+    categoryId: string;
+    quantity?: number;      // Para money prizes
+    number?: string;  
+    numbers?: string[];      // Para item prizes (número temporário)
+    value: number;
+    prizeId?: string;       // Para item prizes (Snowflake ID)
+    name?: string;          // Para item prizes
+    image?: string;         // Para item prizes
+  }
+  
+  // Interface para o formato de entrada do frontend
+  export interface InstantPrizesPayload {
+    prizes: InstantPrizeData[];
+  }

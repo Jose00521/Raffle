@@ -30,11 +30,15 @@ import { PrizeCategoryService } from '../services/PrizeCategoryService';
 import { IPrizeCategoryController } from '../controllers/PrizeCategoryController';
 import { PrizeCategoryController } from '../controllers/PrizeCategoryController';
 import { InstantPrizeService } from '../services/InstantPrizeService';
+import { CampaignDataProcessorService } from '../services/CampaignDataProcessorService';
+import pino, { Logger } from 'pino';
+import logger from '@/lib/logger/logger';
 
 
 
 // Register dependencies
 container.register<IDBConnection>('db', { useClass: DBConnection })
+container.register<Logger>('logger', { useValue: logger });
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
 container.register<IUserService>('userService', { useClass: UserService });;
 container.register<IUserController>('userController', { useClass: UserController });
@@ -52,7 +56,8 @@ container.register<IPrizeCategoryRepository>('prizeCategoryRepository', { useCla
 container.register<IPrizeCategoryService>('prizeCategoryService', { useClass: PrizeCategoryService });
 container.register<IPrizeCategoryController>('prizeCategoryController', { useClass: PrizeCategoryController });
 container.register<InstantPrizeService>('instantPrizeService', { useClass: InstantPrizeService });
+container.register<CampaignDataProcessorService>(CampaignDataProcessorService, { useClass: CampaignDataProcessorService });
 
 
 // Export configured container
-export { container };   
+export { container };       

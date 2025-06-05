@@ -26,6 +26,15 @@ const CampaignSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide a description'],
     },
+    coverImage: {
+      type: String,
+      required: [true, 'Pelo menos uma imagem é obrigatória'],
+    },
+    images: {
+      type: [String], 
+      required: [true, 'Pelo menos uma imagem é obrigatória'],
+    },
+
     individualNumberPrice: {
       type: Number,
       required: [true, 'Preço do número individual é obrigatório'],

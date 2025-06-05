@@ -1,9 +1,8 @@
 import mongoose from 'mongoose';
-import { INumberStatus, NumberStatusEnum } from './interfaces/INumberStatusInterfaces';
-import NumberRange from './NumberRange';
-import RangePartition from './RangePartition';
+import { INumberStatus, NumberStatusEnum, InstantPrizeData } from './interfaces/INumberStatusInterfaces';
 import { CampaignStatsHistory } from './CampaignStatsHistory';
 import InstantPrize from './InstantPrize';
+import { BitMapService } from '../services/BitMapService';
 
 // Verificar se estamos no servidor
 const isServer = typeof window === 'undefined';
@@ -56,7 +55,7 @@ const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
 
 // Interface para o modelo com métodos estáticos
 interface NumberStatusModel extends mongoose.Model<INumberStatus> {
-  initializeForRifa(rifaId: string, creatorId: string, totalNumbers: number, instantPrizes: InstantPrizeConfig[], session: mongoose.ClientSession | null): Promise<void>;
+  initializeForRifa(rifaId: string, creatorId: string, totalNumbers: number, instantPrizes: InstantPrizeData[], session: mongoose.ClientSession | null): Promise<void>;
   confirmPayment(rifaId: string, numbers: string[], userId: string): Promise<any>;
   isNumberAvailable(rifaId: string, number: number | string): Promise<boolean>;
   reserveNumbers(rifaId: string, numbers: Array<number | string>, userId: string, expirationMinutes?: number): Promise<INumberStatus[]>;
@@ -179,16 +178,16 @@ if (isServer && NumberStatusSchema) {
   };
 
   /**
-   * Método estático OTIMIZADO para inicializar rifa usando ranges + partições
+   * Método estático OTIMIZADO para inicializar rifa usando Bitmap
    */
   NumberStatusSchema.statics.initializeForRifa = async function(
     rifaId: string, 
     creatorId: string,
     totalNumbers: number, 
-    instantPrizes: InstantPrizeConfig[] = [], 
+    instantPrizes: InstantPrizeData[] = [], 
     session: mongoose.ClientSession | null = null
   ): Promise<void> {
-    console.log(`Inicializando rifa ${rifaId} com abordagem de ranges + partições (${totalNumbers} números)`);
+    console.log(`Inicializando rifa ${rifaId} com abordagem de Bitmap (${totalNumbers} números)`);
     
     try {
       // Usar transação se fornecida ou criar uma nova
@@ -203,7 +202,7 @@ if (isServer && NumberStatusSchema) {
         // Extrair todos os números de prêmios instantâneos
         const allInstantPrizeNumbers: string[] = [];
         instantPrizes.forEach(prize => {
-          prize.numbers.forEach(num => {
+          prize.numbers?.forEach(num => {
             allInstantPrizeNumbers.push(num);
           });
         });
@@ -214,89 +213,63 @@ if (isServer && NumberStatusSchema) {
           throw new Error('Existem números duplicados entre as diferentes categorias de prêmios instantâneos');
         }
         
-        // 1. ✅ CORRIGIDO: Criar o range principal de números disponíveis
-        // IMPORTANTE: Números com prêmios instantâneos ESTÃO disponíveis para compra
-        await NumberRange!.initializeForRifa(rifaId, totalNumbers, allInstantPrizeNumbers);
+        // 1. ✅ NOVO: Inicializar o bitmap para a campanha
+        await BitMapService.initialize(rifaId, totalNumbers);
+        console.log(`✅ Bitmap inicializado para ${totalNumbers} números`);
         
-        // 2. 🚀 NOVO: Inicializar partições para seleção aleatória otimizada
-        if (totalNumbers >= 100000) { // Usar partições apenas para rifas grandes
-          console.log(`🚀 Inicializando RangePartition para otimização (${totalNumbers} números)`);
+        // 2. 🎁 CRIAR DOCUMENTOS DE PRÊMIOS INSTANTÂNEOS
+        if (allInstantPrizeNumbers.length > 0) {
+          console.log(`🎁 Criando ${allInstantPrizeNumbers.length} prêmios instantâneos...`);
           
-          // Calcular tamanho da partição baseado no total de números
-          let partitionSize = 1000000; // Padrão: 1M por partição
+          const instantPrizeDocuments: any[] = [];
           
-          if (totalNumbers >= 50000000) {
-            partitionSize = 2000000; // 2M para rifas de 50M+
-          } else if (totalNumbers >= 10000000) {
-            partitionSize = 1000000; // 1M para rifas de 10M+
-          } else if (totalNumbers >= 1000000) {
-            partitionSize = 500000;  // 500K para rifas de 1M+
-          } else {
-            partitionSize = 100000;  // 100K para rifas menores
+          instantPrizes.forEach(category => {
+            category.numbers?.forEach(number => {
+              if(category.type === 'money'){
+                instantPrizeDocuments.push({
+                  campaignId: rifaId,
+                  categoryId: category.categoryId,
+                  number: number,
+                  type: category.type,
+                  value: category.value
+                });
+              }else{  
+                instantPrizeDocuments.push({
+                  campaignId: rifaId,
+                  categoryId: category.categoryId,
+                  number: number,
+                  prizeRef: category.prizeId,
+                  type: category.type,
+                });
+              }
+            });
+          });
+          
+          if (instantPrizeDocuments.length > 0) {
+            await InstantPrize!.insertMany(instantPrizeDocuments, { session: sessionToUse });
+            console.log(`✅ ${instantPrizeDocuments.length} prêmios instantâneos criados`);
           }
-          
-          await RangePartition!.initializeForCampaign(rifaId, totalNumbers, partitionSize);
-          console.log(`✅ RangePartition inicializado com partições de ${partitionSize} números`);
         }
         
-        // 3. Inicializar/atualizar estatísticas da campanha
-        const availableCount = totalNumbers; // Todos os números estão disponíveis para algum propósito (regular ou prêmio instantâneo)
+        // 4. Inicializar/atualizar estatísticas da campanha
+        // Obter estatísticas diretamente do bitmap
+        const stats = await BitMapService.getAvailabilityStats(rifaId);
         
         // Usar cast para acessar o método no modelo
-        const thisModel = this as NumberStatusModel;
-        await thisModel.updateCampaignStats(rifaId, creatorId, {
-          available: availableCount,
-          reserved: 0,
-          paid: 0,
-          revenue: 0
-        });
-        
-        // 4. Registrar os prêmios instantâneos
-        if (instantPrizes.length > 0) {
-          console.log(`Registrando prêmios instantâneos para ${allInstantPrizeNumbers.length} números em ${instantPrizes.length} categorias`);
-          
-          // Processar cada categoria de prêmio
-          for (const prize of instantPrizes) {
-            console.log(`Processando categoria ${prize.category} com ${prize.numbers.length} números`);
-            
-            // Processar em lotes para evitar sobrecarga de memória
-            const BATCH_SIZE = 1000;
-            for (let i = 0; i < prize.numbers.length; i += BATCH_SIZE) {
-              const batch = prize.numbers.slice(i, i + BATCH_SIZE);
-              
-              // Criar documentos para prêmios instantâneos
-              const prizeDocsToInsert = batch.map(number => ({
-                campaignId: rifaId,
-                categoryId: prize.category,
-                number,
-                value: prize.value,
-                winner: null,
-                claimed: false,
-                claimedAt: null
-              }));
-              
-              if (prizeDocsToInsert.length > 0) {
-                // Usar bulkWrite com updateOne para garantir upsert
-                const bulkOps = prizeDocsToInsert.map(doc => ({
-                  updateOne: {
-                    filter: { campaignId: doc.campaignId, number: doc.number },
-                    update: { $set: doc },
-                    upsert: true
-                  }
-                }));
-                
-                await InstantPrize.bulkWrite(bulkOps, { session: sessionToUse });
-              }
-            }
-          }
-        }
+        // const thisModel = this as NumberStatusModel;
+        // await thisModel.updateCampaignStats(rifaId, creatorId, {
+        //   available: stats.available,
+        //   reserved: 0,
+        //   paid: 0,
+        //   revenue: 0
+        // });
         
         // Finalizar a transação se foi iniciada aqui
         if (!useTransaction) {
           await sessionToUse.commitTransaction();
         }
         
-        console.log(`✅ Rifa ${rifaId} inicializada com sucesso usando ranges + partições`);
+        console.log(`✅ Rifa ${rifaId} inicializada com sucesso usando Bitmap`);
       } catch (error) {
         // Reverter transação se foi iniciada aqui
         if (!useTransaction) {
@@ -310,7 +283,7 @@ if (isServer && NumberStatusSchema) {
         }
       }
     } catch (error) {
-      console.error(`Erro ao inicializar rifa ${rifaId} com ranges + partições:`, error);
+      console.error(`Erro ao inicializar rifa ${rifaId} com Bitmap:`, error);
       throw error;
     }
   };
@@ -322,14 +295,13 @@ if (isServer && NumberStatusSchema) {
     rifaId: string,
     number: number | string
   ): Promise<boolean> {
-    // Normalizar o número para string
+    // Normalizar o número para numérico
     const numValue = typeof number === 'string' ? parseInt(number, 10) : number;
-    const numStr = typeof number === 'string' ? number : numValue.toString();
     
     // 1. Verificar se existe documento individual para este número (reservado/vendido)
     const individualDoc = await this.findOne({
       campaignId: rifaId,
-      number: numStr
+      number: numValue.toString()
     }).lean();
     
     // Se existe documento individual de reserva/venda, o número não está disponível
@@ -337,22 +309,9 @@ if (isServer && NumberStatusSchema) {
       return false;
     }
     
-    // 2. Verificar se é um número de prêmio instantâneo
-    // (Esses números estão "disponíveis" para compra, mas têm um comportamento especial)
-    const instantPrize = await InstantPrize.findOne({
-      campaignId: rifaId,
-      number: numStr
-    }).lean();
-    
-    // 3. Se não for um número de reserva/venda nem de prêmio instantâneo,
-    // verificar se está em algum range disponível
-    if (!instantPrize) {
-      const isInRange = await NumberRange!.isNumberInRange(rifaId, numValue);
-      return isInRange;
-    }
-    
-    // Se for um número de prêmio instantâneo, está disponível para compra
-    return true;
+    // 2. Verificar disponibilidade no bitmap
+    // (Os números de prêmios instantâneos são mantidos disponíveis no bitmap)
+    return await BitMapService.isNumberAvailable(rifaId, numValue);
   };
 
   /**
@@ -429,14 +388,9 @@ if (isServer && NumberStatusSchema) {
         );
       }
       
-      // 🚀 NOVO: Atualizar estatísticas das partições (se existirem)
+      // 🔄 ATUALIZADO: Marcar números como indisponíveis no bitmap
       const numericNumbers = formattedNumbers.map(num => parseInt(num));
-      try {
-        const { OptimizedRandomSelector } = await import('@/services/OptimizedRandomSelector');
-        await OptimizedRandomSelector.updatePartitionStatsAfterReservation(rifaId, numericNumbers);
-      } catch (error) {
-        console.warn('⚠️ Erro ao atualizar partições (não crítico):', error);
-      }
+      await BitMapService.markNumbersAsTaken(rifaId, numericNumbers);
       
       // Commit da transação
       await session.commitTransaction();
@@ -517,6 +471,10 @@ if (isServer && NumberStatusSchema) {
           );
         }
       }
+      
+      // 🔄 ATUALIZADO: Restaurar números no bitmap
+      const numericNumbers = formattedNumbers.map(num => parseInt(num));
+      await BitMapService.restoreNumbers(rifaId, numericNumbers);
       
       // Commit da transação
       await session.commitTransaction();
@@ -742,6 +700,9 @@ if (isServer && NumberStatusSchema) {
           }
         );
       }
+      
+      // 🔄 ATUALIZADO: Marcar números como indisponíveis no bitmap
+      await BitMapService.markNumbersAsTaken(rifaId, numbers);
       
       // Verificar se algum número ganhou prêmio instantâneo
       const instantPrizes = await InstantPrize.find({

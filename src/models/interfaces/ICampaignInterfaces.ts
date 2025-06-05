@@ -41,6 +41,12 @@ export enum CampaignStatusEnum {
     winnerUser?: mongoose.Types.ObjectId | null;
     winner: Array<IWinner>;
     numberPackages: Array<INumberPackage>;
+    // Prêmios distribuídos por posição
+    prizeDistribution?: Array<{
+      position: number;
+      prizes: Array<mongoose.Types.ObjectId | string>;
+      description?: string;
+    }>;
     createdAt: Date;
     updatedAt: Date;
     activatedAt: Date | null;

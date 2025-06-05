@@ -151,7 +151,8 @@ export type RaffleFormData = {
   regulation: string;
   returnExpected: string;
   
-  // Imagens da campanha
+  // Imagens da campanha - separando capa das demais imagens
+  coverImage?: File | string;
   images: File[];
   
   // Campos temporários para UI (não fazem parte do modelo final)
@@ -166,7 +167,8 @@ const raffleFormSchema = z.object({
   individualNumberPrice: z.number().min(0.01, 'O preço deve ser maior que zero'),
   totalNumbers: z.number().min(1, 'O número de bilhetes deve ser maior que zero'),
   drawDate: z.string().min(1, 'A data do sorteio é obrigatória'),
-  images: z.array(z.any()).min(1, 'Pelo menos uma imagem é obrigatória'),
+  coverImage: z.any().refine(val => !!val, 'A imagem de capa é obrigatória'),
+  images: z.array(z.any()),
   regulation: z.string().min(1, 'A regra é obrigatória'),
   status: z.string().optional().default('ACTIVE'),
   canceled: z.boolean().optional().default(false),
@@ -207,6 +209,30 @@ const raffleFormSchema = z.object({
     })
   ).optional().default([]),
   winners: z.array(z.string()).optional().default([])
+}).superRefine((data, ctx) => {
+  // Only validate scheduledActivationDate if isScheduled is true
+  if (data.isScheduled) {
+    // Check if scheduledActivationDate is provided
+    if (!data.scheduledActivationDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A data de agendamento é obrigatória quando o agendamento está ativado',
+        path: ['scheduledActivationDate']
+      });
+    } else {
+      // Check if the date is in the future
+      const scheduledDate = new Date(data.scheduledActivationDate);
+      const now = new Date();
+      
+      if (scheduledDate <= now) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'A data de agendamento deve ser no futuro',
+          path: ['scheduledActivationDate']
+        });
+      }
+    }
+  }
 }) as z.ZodType<RaffleFormData>;
 
 interface InstantPrizeData {
@@ -2796,6 +2822,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     regulation: initialData.regulation || '',
     returnExpected: initialData.returnExpected || '',
     images: initialData.images || [],
+    coverImage: initialData.coverImage || (initialData.images && initialData.images.length > 0 ? initialData.images[0] : undefined),
     mainPrize: initialData.mainPrize || '',
     valuePrize: initialData.valuePrize || ''
   } as RaffleFormData;
@@ -3297,7 +3324,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       individualNumberPrice: data.individualNumberPrice,
       totalNumbers: data.totalNumbers,
       drawDate: new Date(data.drawDate),
-      status: data.status || 'ACTIVE',
+      // Set status to "PENDING" if scheduled for future date, otherwise "ACTIVE"
+      status: data.isScheduled ? 'PENDING' : (data.status || 'ACTIVE'),
       canceled: data.canceled || false,
       
       // Configuração de agendamento
@@ -3357,8 +3385,9 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       regulation: data.regulation || '',
       returnExpected: data.returnExpected || '',
       
-      // Imagens
-      images: data.images,
+      // Imagens - separando coverImage e outras imagens
+      coverImage: data.coverImage,
+      images: data.images.filter(img => img !== data.coverImage), // Remover a imagem de capa das outras imagens
       
       // 🎯 PRÊMIOS INSTANTÂNEOS - NOVO FORMATO SIMPLIFICADO
       instantPrizes: {
@@ -3428,14 +3457,11 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   formattedData.instantPrizes.prizes.push({
                     type: 'item',
                     categoryId: categoryKey,
-                    number: tempNumber, // Número temporário
-                    value: individualPrize.value,
                     prizeId: individualPrize.prizeId,
-                    name: individualPrize.name,
-                    image: individualPrize.image
-          });
-        }
-      }
+                    value: individualPrize.value
+                  });
+                }
+              }
             });
           }
         }
@@ -3479,9 +3505,55 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     console.log('Cover image changed to index:', index);
     setCoverImageIndex(index);
     
-    // If you need to update some form field based on the cover image
-    // you can do it here
+    // Get the current images array
+    const currentImages = getValues('images');
+    
+    // If we have images and the index is valid
+    if (currentImages && currentImages.length > 0 && index >= 0 && index < currentImages.length) {
+      // Set the selected image as coverImage
+      setValue('coverImage', currentImages[index]);
+    }
   };
+  
+  // Effect to initialize coverImage if not set but images are available
+  useEffect(() => {
+    const images = watch('images') || [];
+    const coverImage = watch('coverImage');
+    
+    // If we have images but no coverImage set, use the first image as cover
+    if (images.length > 0 && !coverImage) {
+      setValue('coverImage', images[0]);
+      setCoverImageIndex(0);
+    }
+  }, [watch, setValue]);
+  
+  // Set up a subscription to watch for changes to the images array
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'images') {
+        const images = value.images || [];
+        const coverImage = value.coverImage;
+        
+        // If we have images but no coverImage set, use the first image as cover
+        if (images.length > 0 && !coverImage) {
+          setValue('coverImage', images[0]);
+          setCoverImageIndex(0);
+        }
+        
+        // If the current cover image is removed, set a new one
+        if (coverImage && images.length > 0 && !images.includes(coverImage as unknown as File)) {
+          setValue('coverImage', images[0]);
+          setCoverImageIndex(0);
+        } else if (images.length === 0 && coverImage) {
+          // If all images are removed, clear the coverImage
+          setValue('coverImage', undefined);
+          setCoverImageIndex(-1);
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
   
   return (
     <FormContainer>
@@ -3779,13 +3851,46 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             render={({ field }) => (
               <MultipleImageUploader
                 maxImages={10}
-                onChange={files => field.onChange(files)}
+                onChange={(files) => {
+                  field.onChange(files);
+                  
+                  // If we have images but no cover image set, use the first one
+                  if (files.length > 0 && !getValues('coverImage')) {
+                    setValue('coverImage', files[0]);
+                    setCoverImageIndex(0);
+                  }
+                  
+                  // If the current cover image is removed, set a new one
+                  const coverImage = getValues('coverImage');
+                  const coverImageExists = coverImage && files.some(file => 
+                    // For File objects, compare directly
+                    (file instanceof File && coverImage instanceof File && file === coverImage) ||
+                    // For string paths, compare the paths
+                    (typeof file === 'string' && typeof coverImage === 'string' && file === coverImage)
+                  );
+                  
+                  if (coverImage && !coverImageExists) {
+                    if (files.length > 0) {
+                      setValue('coverImage', files[0]);
+                      setCoverImageIndex(0);
+                    } else {
+                      setValue('coverImage', undefined);
+                      setCoverImageIndex(-1);
+                    }
+                  }
+                }}
                 value={field.value}
                 maxSizeInMB={5}
                 onCoverImageChange={handleCoverImageChange}
               />
             )}
           />
+          
+          {errors.coverImage && (
+            <ErrorText>
+              <FaExclamationTriangle /> {errors.coverImage.message}
+            </ErrorText>
+          )}
           
           {errors.images && (
             <ErrorText>
@@ -3841,7 +3946,15 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   <input
                     type="checkbox"
                     checked={field.value}
-                    onChange={e => field.onChange(e.target.checked)}
+                    onChange={e => {
+                      const newValue = e.target.checked;
+                      field.onChange(newValue);
+                      
+                      // Clear scheduledActivationDate when scheduling is turned off
+                      if (!newValue) {
+                        setValue('scheduledActivationDate', '');
+                      }
+                    }}
                     disabled={isSubmitting}
                   />
                 )}

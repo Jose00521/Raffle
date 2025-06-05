@@ -5,7 +5,7 @@ import { IEventNotifier, StatsEventType } from '../interfaces/IEventNotifier';
 import { CampaignStatsHistory } from '@/models/CampaignStatsHistory';
 import { CreatorStatsHistory } from '@/models/CreatorStatsHistory';
 import { ParticipantStatsHistory } from '@/models/ParticipantStatsHistory';
-import { RangePartitionProcessor } from './RangePartitionProcessor';
+import { BitMapProcessor } from './BitMapProcessor';
 import Campaign from '@/models/Campaign';
 import mongoose from 'mongoose';
 
@@ -15,11 +15,11 @@ import mongoose from 'mongoose';
  */
 export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStatsProcessor, ParticipantStatsProcessor {
   private readonly notifier: IEventNotifier;
-  private readonly rangePartitionProcessor: RangePartitionProcessor;
+  private readonly bitmapProcessor: BitMapProcessor;
   
   constructor(notifier: IEventNotifier) {
     this.notifier = notifier;
-    this.rangePartitionProcessor = new RangePartitionProcessor();
+    this.bitmapProcessor = new BitMapProcessor();
   }
   
   /**
@@ -33,14 +33,14 @@ export class StatsUpdateProcessor implements CampaignStatsProcessor, CreatorStat
     
     if (relevantEvents.length === 0) return;
 
-    // 🚀 NOVO: Atualizar partições em paralelo com outras estatísticas
+    // 🔄 ATUALIZADO: Atualizar bitmap em paralelo com outras estatísticas
     const statsUpdatePromise = this.updateAllStats(relevantEvents, session);
-    const partitionUpdatePromise = this.rangePartitionProcessor.processPaymentEvents(relevantEvents);
+    const bitmapUpdatePromise = this.bitmapProcessor.processPaymentEvents(relevantEvents);
     
     // Executar ambos em paralelo
     await Promise.all([
       statsUpdatePromise,
-      partitionUpdatePromise
+      bitmapUpdatePromise
     ]);
   }
   
