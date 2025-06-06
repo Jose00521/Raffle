@@ -6,6 +6,8 @@ import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt, FaPowerOff } from 'react-icons/fa';
 import Link from 'next/link';
 import ToggleSwitch from '@/components/common/ToggleSwitch';
+import campaignAPIClient from '@/API/campaignAPIClient';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -240,7 +242,7 @@ const RifaBadge = styled.div<{ $status: string }>`
   text-transform: uppercase;
   
   ${({ $status }) => {
-    if ($status === 'ativa') {
+    if ($status === 'ACTIVE') {
       return `
         background-color: rgba(16, 185, 129, 0.9);
         color: white;
@@ -252,12 +254,12 @@ const RifaBadge = styled.div<{ $status: string }>`
           100% { opacity: 0.4; }
         }
       `;
-    } else if ($status === 'finalizada') {
+    } else if ($status === 'COMPLETED') {
       return `
         background-color: rgba(106, 17, 203, 0.9);
         color: white;
       `;
-    } else if ($status === 'futura') {
+    } else if ($status === 'PENDING' || $status === 'SCHEDULED') {
       return `
         background-color: rgba(59, 130, 246, 0.9);
         color: white;
@@ -619,33 +621,34 @@ export default function MinhasRifasPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState(mockCampaigns);
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   
   useEffect(() => {
     // Simulate data loading
-    const timer = setTimeout(() => {
+    const fetchCampaigns = async () => {
+      const response = await campaignAPIClient.getCampanhasAtivas();
+      setCampaigns(response.data);
       setIsLoading(false);
-    }, 300);
-    
-    return () => clearTimeout(timer);
+    };
+    fetchCampaigns();
   }, []);
   
   // Filter campaigns based on active tab and search term
   const filteredCampaigns = campaigns
-    .filter(campaign => {
-      if (activeTab === 'all') return true;
-      if (activeTab === 'cancelada') return campaign.canceled;
-      return campaign.status === activeTab && !campaign.canceled;
-    })
-    .filter(campaign => {
-      if (!searchTerm.trim()) return true;
-      return campaign.title.toLowerCase().includes(searchTerm.toLowerCase());
-    });
+  .filter(campaign => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'cancelada') return campaign.canceled;
+    return campaign.status === activeTab && !campaign.canceled;
+  })
+  .filter(campaign => {
+    if (!searchTerm.trim()) return true;
+    return campaign.title.toLowerCase().includes(searchTerm.toLowerCase());
+  });
   
   // Função para alternar o status cancelado/ativo da campanha
   const toggleCampaignStatus = (id: string) => {
-    setCampaigns(prev => prev.map(campaign => {
-      if (campaign.id === id) {
+    setCampaigns(prev => prev.map((campaign: ICampaign) => {
+      if (campaign.campaignCode === id) {
         // Se a campanha estiver cancelada, restaura para o status anterior
         // Caso contrário, marca como cancelada
         return {
@@ -693,20 +696,26 @@ export default function MinhasRifasPage() {
             Todas
           </Tab>
           <Tab 
-            $active={activeTab === 'ativa'} 
-            onClick={() => setActiveTab('ativa')}
+            $active={activeTab === 'ACTIVE'} 
+            onClick={() => setActiveTab('ACTIVE')}
           >
             Ativas
           </Tab>
           <Tab 
-            $active={activeTab === 'futura'} 
-            onClick={() => setActiveTab('futura')}
+            $active={activeTab === 'SCHEDULED'} 
+            onClick={() => setActiveTab('SCHEDULED')}
           >
-            Futuras
+            Agendadas
           </Tab>
           <Tab 
-            $active={activeTab === 'finalizada'} 
-            onClick={() => setActiveTab('finalizada')}
+            $active={activeTab === 'PENDING'} 
+            onClick={() => setActiveTab('PENDING')}
+          >
+            Pendentes
+          </Tab>
+          <Tab 
+            $active={activeTab === 'COMPLETED'} 
+            onClick={() => setActiveTab('COMPLETED')}
           >
             Finalizadas
           </Tab>
@@ -725,14 +734,15 @@ export default function MinhasRifasPage() {
         ) : (
           <RifaCardsGrid>
             {filteredCampaigns.map((campaign) => (
-              <RifaCard key={campaign.id}>
+              <RifaCard key={campaign.campaignCode}>
                 <RifaImageContainer>
-                  <RifaImage $imageUrl={campaign.image} />
+                  <RifaImage $imageUrl={campaign.coverImage as string} />
                   <RifaBadge $status={campaign.canceled ? 'cancelada' : campaign.status}>
                     {campaign.canceled && 'Cancelada'}
-                    {!campaign.canceled && campaign.status === 'ativa' && 'Ativa'}
-                    {!campaign.canceled && campaign.status === 'finalizada' && 'Finalizada'}
-                    {!campaign.canceled && campaign.status === 'futura' && 'Agendada'}
+                    {!campaign.canceled && campaign.status === CampaignStatusEnum.ACTIVE && 'Ativa'}
+                    {!campaign.canceled && campaign.status === CampaignStatusEnum.COMPLETED && 'Finalizada'}
+                    {!campaign.canceled && campaign.status === CampaignStatusEnum.SCHEDULED && 'Agendada'}
+                    {!campaign.canceled && campaign.status === CampaignStatusEnum.PENDING && 'Pendente'}
                   </RifaBadge>
                 </RifaImageContainer>
                 
@@ -744,14 +754,16 @@ export default function MinhasRifasPage() {
                           ? `${campaign.title.substring(0, 24)}...` 
                           : campaign.title}
                       </RifaTitle>
-                      {campaign.status !== 'finalizada' && (
+                      {campaign.status !== CampaignStatusEnum.COMPLETED && (
                         <StatusContainer>
                           {/* <StatusLabel>Ativa</StatusLabel> */}
                           <StyledToggleSwitch 
                             checked={!campaign.canceled}
-                            onChange={() => toggleCampaignStatus(campaign.id)}
+                            onChange={() => toggleCampaignStatus(campaign.campaignCode as string)}
                             size="medium"
-                            colorOn={campaign.status === 'futura' ? '#3b82f6' : '#10b981'}
+                            colorOn={(campaign.status === CampaignStatusEnum.SCHEDULED)
+                              || (campaign.status === CampaignStatusEnum.PENDING)
+                              ? '#3b82f6' : '#10b981'}
                             colorOff="#ef4444"
                           />
                         </StatusContainer>
@@ -759,14 +771,14 @@ export default function MinhasRifasPage() {
                     </RifaTitleRow>
                     
                     <RifaMeta>
-                      <div>Criada em {campaign.createdAt.toLocaleDateString('pt-BR')}</div>
-                      <div>R$ {campaign.price.toFixed(2)}</div>
+                      <div>Criada em {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}</div>
+                      <div>R$ {campaign.individualNumberPrice.toFixed(2)}</div>
                     </RifaMeta>
                     
                     <RifaStats>
                       <StatRow>
                         <StatLabel>Data do Sorteio:</StatLabel>
-                        <StatValue>{campaign.drawDate.toLocaleDateString('pt-BR')}</StatValue>
+                        <StatValue>{new Date(campaign.drawDate).toLocaleDateString('pt-BR')}</StatValue>
                       </StatRow>
                       <StatRow>
                         <StatLabel>Números Totais:</StatLabel>
@@ -774,9 +786,9 @@ export default function MinhasRifasPage() {
                       </StatRow>
                       <StatRow>
                         <StatLabel>Vendas Totais:</StatLabel>
-                        <StatValue>R$ {campaign.totalSales.toFixed(2)}</StatValue>
+                        <StatValue>R$ {campaign.stats?.totalRevenue.toFixed(2)}</StatValue>
                       </StatRow>
-                      {campaign.status === 'finalizada' && campaign.winnerNumber && (
+                      {campaign.status === CampaignStatusEnum.COMPLETED && campaign.winnerNumber && (
                         <StatRow>
                           <StatLabel>Número Vencedor:</StatLabel>
                           <StatValue>{campaign.winnerNumber}</StatValue>
@@ -785,26 +797,26 @@ export default function MinhasRifasPage() {
                     </RifaStats>
                     
                     <ProgressBar>
-                      <ProgressFill $percent={campaign.stats.percentSold} />
+                      <ProgressFill $percent={campaign.stats?.percentComplete || 0} />
                     </ProgressBar>
                     <ProgressText>
-                      <span>{campaign.stats.percentSold}% vendido</span>
-                      <span>{campaign.stats.sold}/{campaign.totalNumbers} números</span>
+                      <span>{campaign.stats?.percentComplete}% vendido</span>
+                      <span>{campaign.stats?.sold}/{campaign.totalNumbers} números</span>
                     </ProgressText>
                   </RifaUpperContent>
                   
                   <RifaActions>
                     {/* Botão Ver */}
                     <RifaActionButton>
-                      <Link href={`/dashboard/criador/campanha/${campaign.id}`}>
+                      <Link href={`/dashboard/criador/campanha/${campaign.campaignCode}`}>
                         <FaEye size={14} /> Ver
                       </Link>
                     </RifaActionButton>
                     
                     {/* Botão Sortear (apenas se não estiver finalizada e não estiver cancelada) */}
-                    {campaign.status !== 'finalizada' && !campaign.canceled && (
+                    {campaign.status !== CampaignStatusEnum.COMPLETED && !campaign.canceled && (
                       <RifaActionButton $variant="outline">
-                        <Link href={`/dashboard/criador/campanha/${campaign.id}/sortear`}>
+                        <Link href={`/dashboard/criador/campanha/${campaign.campaignCode}/sortear`}>
                           <FaTicketAlt size={14} /> Sortear
                         </Link>
                       </RifaActionButton>
@@ -812,7 +824,7 @@ export default function MinhasRifasPage() {
                     
                     {/* Botão Editar */}
                     <RifaActionButton $variant="edit">
-                      <Link href={`/dashboard/criador/campanha/${campaign.id}/editar`}>
+                      <Link href={`/dashboard/criador/campanha/${campaign.campaignCode}/editar`}>
                         <FaEdit size={14} />
                       </Link>
                     </RifaActionButton>

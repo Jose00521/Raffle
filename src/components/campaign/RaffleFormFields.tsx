@@ -49,7 +49,7 @@ import prizeAPIClient from '@/API/prizeAPIClient';
 import { Currency } from 'lucide-react';
 import CurrencyInput from '../common/CurrencyInput';
 import PrizeIntelligentSummaryComponent from './PrizeIntelligentSummary';
-import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { useSession } from 'next-auth/react';
 
 // Prize category interface
@@ -232,6 +232,17 @@ const raffleFormSchema = z.object({
         });
       }
     }
+  }
+  
+  // Verificar se há pelo menos um prêmio principal configurado
+  const principalPrizePosition = data.prizeDistribution.find(p => p.position === 1);
+  if (!principalPrizePosition || !principalPrizePosition.prizes || principalPrizePosition.prizes.length === 0 || 
+      !principalPrizePosition.prizes.some(prize => prize.name && prize.name.trim() !== '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'É necessário configurar pelo menos um prêmio principal',
+      path: ['prizeDistribution']
+    });
   }
 }) as z.ZodType<RaffleFormData>;
 
@@ -2840,6 +2851,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   } = useForm<RaffleFormData>({
     defaultValues,
     mode: 'all',
+    shouldFocusError: true,
     resolver: zodResolver(raffleFormSchema)
   });
   
@@ -3325,7 +3337,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       totalNumbers: data.totalNumbers,
       drawDate: new Date(data.drawDate),
       // Set status to "PENDING" if scheduled for future date, otherwise "ACTIVE"
-      status: data.isScheduled ? 'PENDING' : (data.status || 'ACTIVE'),
+      status: data.isScheduled ? CampaignStatusEnum.SCHEDULED : (data.status || CampaignStatusEnum.ACTIVE),
       canceled: data.canceled || false,
       
       // Configuração de agendamento
@@ -3369,17 +3381,23 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       }),
       
       // Pacotes de números (numberPackages)
-      numberPackages: data.enablePackages ? data.numberPackages.map(pkg => ({
-        name: pkg.name,
-        description: pkg.description || '',
-        quantity: pkg.quantity,
-        price: pkg.price,
-        discount: pkg.discount,
-        isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-        highlight: pkg.highlight || false,
-        order: pkg.order || 1,
-        maxPerUser: pkg.maxPerUser
-      })) : [],
+      numberPackages: data.enablePackages ? data.numberPackages.map(pkg => {
+        // Calculate the correct price based on individualNumberPrice and discount
+        const originalPrice = data.individualNumberPrice * pkg.quantity;
+        const discountedPrice = originalPrice * (1 - pkg.discount / 100);
+        
+        return {
+          name: pkg.name, // Preserve custom package name
+          description: pkg.description || `Pacote com ${pkg.quantity} números`,
+          quantity: pkg.quantity,
+          price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
+          discount: pkg.discount,
+          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+          highlight: pkg.highlight || false,
+          order: pkg.order || 1,
+          maxPerUser: pkg.maxPerUser
+        };
+      }) : [],
       
       // Detalhes adicionais
       regulation: data.regulation || '',
@@ -3401,7 +3419,19 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           name?: string;      // Para item
           image?: string;     // Para item
       }>
-      }
+      },
+
+      stats: {
+        totalNumbers: data.totalNumbers,
+        available: data.totalNumbers,
+        reserved: 0,
+        sold: 0,
+        percentComplete: 0,
+        totalRevenue: 0,
+        totalParticipants: 0,
+        totalWins: 0,
+        totalPrizes: data.prizeDistribution.length + (data.instantPrizes.length || 0)
+      },
     };
       
     console.log('🎯 Processando prêmios instantâneos - FORMATO SIMPLIFICADO:');
@@ -3459,9 +3489,9 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                     categoryId: categoryKey,
                     prizeId: individualPrize.prizeId,
                     value: individualPrize.value
-                  });
-                }
-              }
+          });
+        }
+      }
             });
           }
         }
@@ -3648,6 +3678,21 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
               <FaTrophy /> {prizes.flatMap(p => p.prizes).filter(p => p.name).length} prêmios configurados
             </PrizeCountBadge>
           </TotalPrizeDisplay>
+
+          {errors.prizeDistribution && !prizes.some(p => 
+            p.position === 1 && 
+            p.prizes && 
+            p.prizes.length > 0 && 
+            p.prizes.some(prize => prize.name && prize.name.trim() !== '')
+          ) && (
+            <RequirementAlert $type="error" style={{ marginBottom: "20px" }}>
+              <FaExclamationTriangle />
+              <div>
+                <h5>Prêmio Principal Obrigatório</h5>
+                <p>{errors.prizeDistribution.message}</p>
+              </div>
+            </RequirementAlert>
+          )}
 
           <PrizeListContainer>
             {prizes.map((prizePosition, index) => (

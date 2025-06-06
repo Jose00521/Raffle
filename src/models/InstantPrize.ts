@@ -43,8 +43,8 @@ const BaseInstantPrizeSchema = new mongoose.Schema(
       type: Date,
       index: true
     }
-  },
-  {
+  }, 
+  { 
     timestamps: true,
     collection: 'instant_prizes',
     discriminatorKey: 'type' // 🔑 Chave do discriminator

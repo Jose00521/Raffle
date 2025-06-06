@@ -289,6 +289,7 @@ const ComboDiscount = styled.div`
   flex-direction: column;
   gap: 8px;
   margin-bottom: 15px;
+  position: relative;
 `;
 
 const DiscountLabel = styled.div`
@@ -309,6 +310,9 @@ const DiscountSlider = styled.input`
   outline: none;
   transition: all 0.3s ease;
   margin: 8px 0;
+  will-change: transform;
+  touch-action: none;
+  cursor: grab;
   
   &::-webkit-slider-runnable-track {
     width: 100%;
@@ -328,6 +332,7 @@ const DiscountSlider = styled.input`
     -webkit-appearance: none;
     margin-top: -6px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    will-change: transform;
   }
   
   &::-moz-range-track {
@@ -346,6 +351,7 @@ const DiscountSlider = styled.input`
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    will-change: transform;
   }
 `;
 
@@ -606,6 +612,42 @@ const AddComboButton = styled.button`
   }
 `;
 
+const ComboName = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #6a11cb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const EditableName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const NameInput = styled.input`
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border: 1px solid rgba(106, 17, 203, 0.3);
+  border-radius: 6px;
+  width: 100%;
+  
+  &:focus {
+    outline: none;
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+  }
+`;
+
 const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
   control,
   watch,
@@ -617,13 +659,30 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
   const [tempQuantity, setTempQuantity] = useState<string>("");
   const quantityInputRef = useRef<HTMLInputElement>(null);
   
-  // Obter o preço individual dos números
-  const individualNumberPrice = watch('individualNumberPrice');
+  // Estado para acompanhar qual nome está sendo editado
+  const [editingNameIndex, setEditingNameIndex] = useState<number | null>(null);
+  const [tempName, setTempName] = useState<string>("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   
-  // Função para calcular o preço final de um pacote
-  const calculatePackagePrice = (quantity: number, discount: number): number => {
-    console.log('individualNumberPrice', individualNumberPrice);
-    return individualNumberPrice * quantity * (1 - discount/100);
+  // Refs para o slider
+  const slidersRef = useRef<{[key: number]: HTMLInputElement}>({});
+  const sliderValuesRef = useRef<{[key: number]: number}>({});
+  const isDraggingRef = useRef<boolean>(false);
+  
+  // Estado para armazenar valores temporários do slider para feedback visual
+  const [tempSliderValues, setTempSliderValues] = useState<Record<number, number>>({});
+  
+  // Preço individual usado em vários cálculos
+  const individualNumberPrice = watch('individualNumberPrice') || 0;
+  
+  // Calcula o preço com desconto
+  const calculateDiscountedPrice = (quantity: number, discount: number): number => {
+    return individualNumberPrice * quantity * (1 - discount / 100);
+  };
+  
+  // Calcula a economia
+  const calculateSavings = (quantity: number, discount: number): number => {
+    return individualNumberPrice * quantity * (discount / 100);
   };
 
   // Função para iniciar a edição da quantidade
@@ -638,6 +697,18 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
     }, 10);
   };
 
+  // Função para iniciar a edição do nome
+  const startEditingName = (index: number, currentValue: string) => {
+    setEditingNameIndex(index);
+    setTempName(currentValue);
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+        nameInputRef.current.select();
+      }
+    }, 10);
+  };
+
   // Função para salvar a quantidade editada
   const saveQuantityEdit = (field: any, index: number) => {
     const quantity = parseInt(tempQuantity);
@@ -648,10 +719,25 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
     }
     setEditingQuantityIndex(null);
   };
+  
+  // Função para salvar o nome editado
+  const saveNameEdit = (field: any, index: number) => {
+    if (tempName.trim()) {
+      const newCombos = [...field.value];
+      newCombos[index].name = tempName.trim();
+      field.onChange(newCombos);
+    }
+    setEditingNameIndex(null);
+  };
 
-  // Função para cancelar a edição
+  // Função para cancelar a edição da quantidade
   const cancelQuantityEdit = () => {
     setEditingQuantityIndex(null);
+  };
+  
+  // Função para cancelar a edição do nome
+  const cancelNameEdit = () => {
+    setEditingNameIndex(null);
   };
 
   return (
@@ -713,6 +799,35 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                   <>
                     {field.value.map((combo: Package, index: number) => (
                       <ComboCard key={index}>
+                        {editingNameIndex === index ? (
+                          <EditableName>
+                            <NameInput
+                              ref={nameInputRef}
+                              type="text"
+                              value={tempName}
+                              onChange={(e) => setTempName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  saveNameEdit(field, index);
+                                } else if (e.key === 'Escape') {
+                                  cancelNameEdit();
+                                }
+                              }}
+                              onBlur={() => saveNameEdit(field, index)}
+                            />
+                            <ComboActionButton 
+                              $variant="primary"
+                              onClick={() => saveNameEdit(field, index)}
+                            >
+                              <FaCheck />
+                            </ComboActionButton>
+                          </EditableName>
+                        ) : (
+                          <ComboName onClick={() => startEditingName(index, combo.name)}>
+                            {combo.name} <FaEdit size={14} style={{ marginLeft: 5, opacity: 0.6 }} />
+                          </ComboName>
+                        )}
+
                         <ComboCardHeader>
                           {editingQuantityIndex === index ? (
                             <EditableQuantity>
@@ -743,7 +858,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                               {combo.quantity} números <FaEdit size={14} style={{ marginLeft: 5, opacity: 0.6 }} />
                             </ComboQuantity>
                           )}
-                          <DiscountBadge $percentage={combo.discount}>
+                          <DiscountBadge $percentage={combo.discount} id={`discount-badge-${index}`}>
                             {combo.discount}% OFF
                           </DiscountBadge>
                         </ComboCardHeader>
@@ -751,17 +866,41 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                         <ComboDiscount>
                           <DiscountLabel>
                             <span>Desconto:</span>
-                            <span>{combo.discount}%</span>
+                            <span>{tempSliderValues[index] !== undefined ? `${tempSliderValues[index]}%` : `${combo.discount}%`}</span>
                           </DiscountLabel>
                           <DiscountSlider
                             type="range"
                             min={1}
                             max={100}
-                            value={combo.discount}
-                            onChange={(e) => {
-                              const newCombos = [...field.value];
-                              newCombos[index].discount = parseInt(e.target.value);
-                              field.onChange(newCombos);
+                            value={tempSliderValues[index] !== undefined ? tempSliderValues[index] : combo.discount}
+                            onPointerDown={(e: React.PointerEvent<HTMLInputElement>) => {
+                              // Inicializar valor temporário
+                              setTempSliderValues(prev => ({...prev, [index]: combo.discount}));
+                              // Garantir que o ponteiro fique "preso" ao elemento durante o arrasto
+                              e.currentTarget.setPointerCapture(e.pointerId);
+                            }}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                              // Atualizar apenas o estado temporário para feedback visual
+                              const newValue = parseInt(e.target.value);
+                              setTempSliderValues(prev => ({...prev, [index]: newValue}));
+                            }}
+                            onPointerUp={() => {
+                              // Atualizar o estado real apenas quando o usuário terminar
+                              const finalValue = tempSliderValues[index];
+                              if (finalValue !== undefined && finalValue !== combo.discount) {
+                                const newCombos = [...field.value];
+                                newCombos[index].discount = finalValue;
+                                field.onChange(newCombos);
+                              }
+                              
+                              // Limpar valor temporário
+                              setTimeout(() => {
+                                setTempSliderValues(prev => {
+                                  const newValues = {...prev};
+                                  delete newValues[index];
+                                  return newValues;
+                                });
+                              }, 100);
                             }}
                           />
                         </ComboDiscount>
@@ -770,19 +909,25 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                           <PriceRow>
                             <PriceLabel>Preço original:</PriceLabel>
                             <PriceValue>
-                              <s>R$ {((watch('individualNumberPrice') || 0) * combo.quantity).toFixed(2).replace('.', ',')}</s>
+                              <s>R$ {(individualNumberPrice * combo.quantity).toFixed(2).replace('.', ',')}</s>
                             </PriceValue>
                           </PriceRow>
                           <PriceRow>
                             <PriceLabel>Com desconto:</PriceLabel>
                             <DiscountedValue>
-                              R$ {calculatePackagePrice(combo.quantity, combo.discount).toFixed(2).replace('.', ',')}
+                              R$ {calculateDiscountedPrice(
+                                combo.quantity, 
+                                tempSliderValues[index] !== undefined ? tempSliderValues[index] : combo.discount
+                              ).toFixed(2).replace('.', ',')}
                             </DiscountedValue>
                           </PriceRow>
                           <PriceRow>
                             <PriceLabel>Economia:</PriceLabel>
                             <SavingsValue>
-                              R$ {((watch('individualNumberPrice') || 0) * combo.quantity * (combo.discount/100)).toFixed(2).replace('.', ',')}
+                              R$ {calculateSavings(
+                                combo.quantity,
+                                tempSliderValues[index] !== undefined ? tempSliderValues[index] : combo.discount
+                              ).toFixed(2).replace('.', ',')}
                             </SavingsValue>
                           </PriceRow>
                         </ComboPriceCalculation>
@@ -830,7 +975,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                           const lastCombo = field.value[field.value.length - 1];
                           const newQuantity = lastCombo ? lastCombo.quantity * 2 : 5;
                           const newDiscount = lastCombo ? Math.min(lastCombo.discount + 5, 100) : 5;
-                          const newPrice = calculatePackagePrice(newQuantity, newDiscount);
+                          const newPrice = calculateDiscountedPrice(newQuantity, newDiscount);
                           
                           field.onChange([
                             ...field.value,
@@ -874,7 +1019,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                       R$ {((watch('individualNumberPrice') || 0) * combo.quantity).toFixed(2).replace('.', ',')}
                     </ComboPreviewOriginalPrice>
                     <ComboPreviewDiscountedPrice>
-                      R$ {calculatePackagePrice(combo.quantity, combo.discount).toFixed(2).replace('.', ',')}
+                      R$ {calculateDiscountedPrice(combo.quantity, combo.discount).toFixed(2).replace('.', ',')}
                     </ComboPreviewDiscountedPrice>
                   </ComboPreviewPrice>
                 </ComboPreviewItem>

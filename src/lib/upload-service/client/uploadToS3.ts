@@ -25,11 +25,12 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
  */
 export async function uploadToS3(
     buffer: Buffer, 
-    userId: string, 
+    userId: string,
+    path: string,
     originalName: string
   ): Promise<string> {
     const fileName = `${uuidv4()}-${Date.now()}.webp`;
-    const key = `rifas/prizes/${userId}/${fileName}`;
+    const key = `${path}/${userId}/${fileName}`;
 
     // Definir o nome do bucket com um valor padrão caso a variável de ambiente não esteja definida
     const bucketName = process.env.AWS_S3_BUCKET_NAME || 'raffle-bucket-100';

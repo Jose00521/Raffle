@@ -35,22 +35,14 @@ const rifaAPI = {
     /**
    * Obtém todas as campanhas ativas
    */
-    getCampanhasAtivas: async (): Promise<ICampaign[]> => {
+    getCampanhasAtivas: async () => {
       try {
         const response = await fetch('/api/campanhas');
         const result = await response.json();
         
         console.log("API response:", result);
         
-        // Handle both formats: direct array or {success:true, data:[...]}
-        if (result && result.data && Array.isArray(result.data)) {
-          return result.data;
-        } else if (Array.isArray(result)) {
-          return result;
-        } else {
-          console.error("Unexpected API response format:", result);
-          return [];
-        }
+        return result;
       } catch (error) {
         console.error('Erro ao buscar campanhas ativas:', error);
         return [];
@@ -60,13 +52,10 @@ const rifaAPI = {
     /** 
      * Cria uma nova campanha com prêmios instantâneos
      */
-    criarNovaCampanha: async (campaign: ICampaign, instantPrizes: InstantPrizesPayload): Promise<ICampaign> => {
+    criarNovaCampanha: async (formData: FormData): Promise<ICampaign> => {
       const response = await fetch('/api/campanhas', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ campaign, instantPrizes }),
+        body: formData,
       });
       return await response.json();
     },

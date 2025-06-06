@@ -48,6 +48,9 @@ const CampaignSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Please provide a draw date'],
     },
+    returnExpected: {
+      type: String,
+    },
     status: {
       type: String,
       enum: Object.values(CampaignStatusEnum),
@@ -127,12 +130,33 @@ const CampaignSchema = new mongoose.Schema(
       }],
       default: [],
     },
+    stats: {
+      type: {
+        totalNumbers: Number,
+        available: Number,
+        reserved: Number,
+        sold: Number,
+        percentComplete: Number,
+        totalRevenue: Number,
+        totalParticipants: Number,
+        totalWins: Number,
+        totalPrizes: Number,
+      },
+      default: {
+        totalNumbers: 0,
+        available: 0,
+        reserved: 0,
+        sold: 0,
+        percentComplete: 0,
+        totalRevenue: 0,
+        totalParticipants: 0,
+        totalWins: 0,
+        totalPrizes: 0
+      }
+    },
 
     // Campos adicionais para detalhes da campanha
     regulation: {
-      type: String,
-    },
-    returnExpected: {
       type: String,
     },
 
@@ -143,15 +167,6 @@ const CampaignSchema = new mongoose.Schema(
   }
 );
 
-// Adiciona um hook pre-save para gerar automaticamente o código da campanha
-CampaignSchema.pre('save', async function(this: mongoose.Document & { campaignCode?: string; _id: mongoose.Types.ObjectId }, next) {
-  // Só gera o código se ele ainda não existir
-  if (!this.campaignCode) {
-    // Usa a mesma abordagem dos outros modelos
-    this.campaignCode = generateEntityCode(this._id, 'RA');
-  }
-  next();
-});
 
 // Métodos estáticos do modelo
 CampaignSchema.statics.findByCampaignCode = function(campaignCode: string) {

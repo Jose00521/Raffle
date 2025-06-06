@@ -40,37 +40,43 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { campaign, instantPrizes } = body;
+    const body = await request.formData();
 
     console.log("Body recebido:", body);
 
     // Validações básicas
-    if (!campaign) {
+    if (!body.get('campaign')) {
       return NextResponse.json({
         success: false,
         message: 'Dados da campanha são obrigatórios'
       }, { status: 400 });
     }
 
-    console.log(`🎯 API: Recebida solicitação de criação de campanha: ${campaign.title}`);
+    console.log(`🎯 API: Recebida solicitação de criação de campanha: ${body.get('campaign')}`);
     
-    if (instantPrizes) {
-      console.log(`📦 API: Recebidos prêmios instantâneos:`, instantPrizes);
+    if (body.get('instantPrizes')) {
+      console.log(`📦 API: Recebidos prêmios instantâneos:`, body.get('instantPrizes'));
     }
+
+    const campaign = JSON.parse(body.get('campaign') as string);
+    const instantPrizes = JSON.parse(body.get('instantPrizes') as string);
+    const coverImage = body.get('coverImage') as File;
+    const images = body.getAll('images') as File[];
 
     // Resolver o controller
     const campaignController = container.resolve(CampaignController);
     
     // Criar a campanha usando nossa implementação atualizada
     const result = await campaignController.criarNovaCampanha(
-      campaign,
+      {
+        ...campaign,coverImage,images
+      },
       instantPrizes as InstantPrizesPayload
     );
 
     if (!result.success) {
       return NextResponse.json({
-        success: false,
+        success: false, 
         message: result.message || 'Erro ao criar campanha',
         errors: result.errors
       }, { status: result.statusCode || 500 });

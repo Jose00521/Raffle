@@ -5,7 +5,8 @@ import { IWinner } from './IWinnerInterfaces';
 export enum CampaignStatusEnum {
     ACTIVE = 'ACTIVE',
     COMPLETED = 'COMPLETED',
-    PENDING = 'PENDING'
+    PENDING = 'PENDING',
+    SCHEDULED = 'SCHEDULED'
   }
   
   export interface INumberPackage {
@@ -28,7 +29,9 @@ export enum CampaignStatusEnum {
     createdBy: mongoose.Types.ObjectId | null;
     title: string;
     description: string;
-    price: number;
+    coverImage: File | string;
+    images: File[] | string[];
+    individualNumberPrice: number;
     prizes: Array<IPrize>;
     //affiliates: Array<IUser>;
     returnExpected?: string;
@@ -56,6 +59,10 @@ export enum CampaignStatusEnum {
       reserved: number | null;
       sold: number;
       percentComplete: number;
+      totalRevenue: number;
+      totalParticipants: number;
+      totalWins: number;
+      totalPrizes: number;
     };
     // Propriedades adicionais para a página de detalhes
     

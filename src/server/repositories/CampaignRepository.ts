@@ -1,5 +1,5 @@
 import type { IDBConnection } from '@/server/lib/dbConnect';
-import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
 import mongoose from 'mongoose';
 import Campaign from '@/models/Campaign';
@@ -7,6 +7,12 @@ import NumberStatus from '@/models/NumberStatus';
 import { CampaignDataProcessorService } from '@/server/services/CampaignDataProcessorService';
 import { injectable, inject } from 'tsyringe';
 import type { Logger } from 'pino';
+
+import { getServerSession } from 'next-auth';
+import { nextAuthOptions } from '@/lib/auth/nextAuthOptions';
+import { ApiResponse, createErrorResponse } from '../utils/errorHandler/api';
+import { User } from '@/models/User';
+import { generateEntityCode } from '@/models/utils/idGenerator';
 
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
@@ -29,7 +35,7 @@ interface InstantPrizesPayload {
 // Interface legada para compatibilidade (será removida gradualmente)
 
 export interface ICampaignRepository {
-  buscarCampanhasAtivas(): Promise<ICampaign[]>;
+  buscarCampanhasAtivas(userCode: string): Promise<ICampaign[] | ApiResponse<null>>;
   buscarCampanhaPorId(id: string): Promise<ICampaign | null>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ICampaign>;
   contarNumeroPorStatus(rifaId: string): Promise<any[]>;
@@ -49,16 +55,19 @@ export class CampaignRepository implements ICampaignRepository {
   /**
    * Busca todas as campanhas ativas
    */
-   async buscarCampanhasAtivas(): Promise<ICampaign[]> {
+   async buscarCampanhasAtivas(userCode: string): Promise<ICampaign[] | ApiResponse<null>> {
     try {
       await this.db.connect();
-      const campaigns = await Campaign.find({ status: 'ACTIVE' }).exec();
 
-      const campaingStats = campaigns.map(campaign=>{
-        return {
-          ...campaign.toObject(),
-        }
-      })
+      const user = await User.findOne({ userCode: userCode });
+
+      console.log("user for list prizes",user);
+
+      if(!user){
+          return createErrorResponse('Usuário não encontrado', 404);
+      }
+
+      const campaigns = await Campaign.find({createdBy: user?._id},'-_id').exec();
 
       return campaigns;
     } catch (error) {
@@ -102,6 +111,11 @@ export class CampaignRepository implements ICampaignRepository {
       
       // 2. CRIAR CAMPANHA COM OS IDS REAIS
       const campaign = await Campaign.create([campaignDataWithRealIds], { session });
+
+      campaign[0].campaignCode = generateEntityCode(campaign[0]._id, 'CA');
+
+      await campaign[0].save();
+
       const campaignId = campaign[0]._id;
       
       this.logger.info(`✅ [CampaignRepository] Campanha criada: ${campaignId}`);

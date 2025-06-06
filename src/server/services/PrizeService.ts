@@ -126,9 +126,6 @@ export class PrizeService implements IPrizeService {
                 })
             );
 
-            console.log("processedImages",processedImages);
-            console.log("processedImages.length", processedImages.length);
-
             logger.info("Imagens processadas", processedImages);
 
             const validImages = processedImages.filter(Boolean) as { buffer: Buffer, originalName: string }[];
@@ -161,7 +158,7 @@ export class PrizeService implements IPrizeService {
                             bufferSize: img.buffer.length
                         });
                         
-                        const url = await uploadToS3(img.buffer, session.user.id, img.originalName);
+                        const url = await uploadToS3(img.buffer, session.user.id, "rifas/prizes", img.originalName);
                         imageUrls.push(url);
                         
                         logger.info(`Upload da imagem ${i} concluído: ${url}`);
@@ -272,6 +269,7 @@ export class PrizeService implements IPrizeService {
                         const imageUrl = await uploadToS3(
                             processedImage.buffer, 
                             userCode, 
+                            "rifas/prizes",
                             processedImage.originalName
                         );
                         processedUpdates.image = imageUrl;
@@ -312,7 +310,7 @@ export class PrizeService implements IPrizeService {
                         
                         const uploadedImageUrls = await Promise.all(
                             validImages.map(async (img) => {
-                                return await uploadToS3(img.buffer, userCode, img.originalName);
+                                return await uploadToS3(img.buffer, userCode, "rifas/prizes", img.originalName);
                             })
                         );
                         

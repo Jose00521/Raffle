@@ -4,6 +4,12 @@ import { injectable, inject } from 'tsyringe';
 import type { ICampaignRepository } from '@/server/repositories/CampaignRepository';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from '../utils/errorHandler/api';
 import { ApiError } from '../utils/errorHandler/ApiError';
+import { getServerSession } from 'next-auth';
+import { nextAuthOptions } from '@/lib/auth/nextAuthOptions';
+import logger from '@/lib/logger/logger';
+import { rateLimit } from '@/lib/rateLimit';
+import { processImage } from '@/lib/upload-service/processImage';
+import { uploadToS3 } from '@/lib/upload-service/client/uploadToS3';
 
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
@@ -23,9 +29,9 @@ interface InstantPrizesPayload {
 }
 
 export interface ICampaignService {
-  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>>;
+  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   obterDetalhesCampanha(id: string): Promise<ApiResponse<ICampaign | null>>;
-  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>>;
+  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -40,12 +46,20 @@ export class CampaignService implements ICampaignService {
   /**
    * Obtém todas as campanhas ativas com suas estatísticas
    */
-  async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>> {
+  async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
     try {
-      const campanhas: ICampaign[] = await this.campaignRepository.buscarCampanhasAtivas();
+      const session = await getServerSession(nextAuthOptions);
+
+      if(!session){
+        return createErrorResponse('Não autorizado', 401);
+      }
+
+      const userCode = session.user.id;
+
+      const campanhas: ICampaign[] | ApiResponse<null> = await this.campaignRepository.buscarCampanhasAtivas(userCode);
     
       
-      return createSuccessResponse(campanhas, 'Campanhas ativas carregadas com sucesso', 200);
+      return createSuccessResponse(campanhas as ICampaign[], 'Campanhas ativas carregadas com sucesso', 200);
     } catch (error) {
       console.error('Erro ao listar campanhas ativas:', error);
       throw new ApiError({
@@ -141,27 +155,143 @@ export class CampaignService implements ICampaignService {
   /**
    * 🚀 ATUALIZADO: Criar nova campanha com novo formato de prêmios instantâneos
    */
-  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>> {
+  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
     try {
-      console.log(`🎯 Service: Criando nova campanha ${campaignData.title}`);
-      
-      if (instantPrizesData) {
-        console.log(`📦 Service: Recebidos ${instantPrizesData.prizes?.length || 0} prêmios instantâneos`);
-      }
-      
+      const limiter = rateLimit({
+        interval: 60 * 1000,
+        uniqueTokenPerInterval: 500,
+        tokensPerInterval: 10
+      });
+
+    const session = await getServerSession(nextAuthOptions);
+    logger.info("Verificando sessão", session);
+
+    console.log("Session",session);
+
+    if (!session?.user?.id) {
+        return createErrorResponse('Não autorizado', 401);
+    }
+
+    console.log("campaignData", campaignData);
+
+    // Aplicar rate limiting
+    try {
+        await limiter.check(10, `${session.user.id}:premio-create`);
+    } catch {
+        return createErrorResponse('Muitas requisições, tente novamente mais tarde', 429);
+
+    }
+
+    logger.info("Sessão válida", session);
+            
+    // Log para debugging - verificar entradas
+    logger.info("Objeto Campaign recebido:", {
+      campaignData,
+      instantPrizesData
+    });
+
+    if (!campaignData.coverImage) {
+      return createErrorResponse('A imagem de capa é obrigatória', 400);
+    }
+
+    logger.info("Processando imagens");
+    const processedImages = await Promise.all(
+        [campaignData.coverImage, ...campaignData.images].map(async (image: File | string, index: number) => {
+            logger.info(`Processando imagem ${index}`, {
+                type: image instanceof File ? image.type : 'string',
+                size: image instanceof File ? image.size : 0
+            });
+            return processImage(image as File);
+        })
+    );
+
+    const validImages = processedImages.filter(Boolean) as { buffer: Buffer, originalName: string }[];
+    logger.info("Número de imagens válidas:", validImages.length);
+
+    if (!validImages.length) {
+      return createErrorResponse('Nenhuma imagem válida para upload', 400);
+  }
+
+  logger.info("Imagens válidas", validImages);
+
+  logger.info("Realizando upload das imagens");
+
+
+  try {
+    // Usando um array para coletar erros durante o upload
+    const uploadErrors: Error[] = [];
+    const imageUrls: string[] = [];
+
+    // Upload de cada imagem individualmente para capturar erros específicos
+    for (let i = 0; i < validImages.length; i++) {
+        const img = validImages[i];
+        try {
+            logger.info(`Iniciando upload da imagem ${i}`, {
+                originalName: img.originalName,
+                bufferSize: img.buffer.length
+            });
+            
+            const url = await uploadToS3(img.buffer, session.user.id, "rifas/campaigns", img.originalName);
+            imageUrls.push(url);
+            
+            logger.info(`Upload da imagem ${i} concluído: ${url}`);
+        } catch (error) {
+            logger.error(`Erro ao fazer upload da imagem ${i}:`, error);
+            uploadErrors.push(error as Error);
+        }
+    }
+
+    // Se houver qualquer erro de upload, não prosseguir com a criação do prêmio
+    if (uploadErrors.length > 0) {
+        logger.error(`${uploadErrors.length} erros ocorreram durante o upload das imagens`);
+        return createErrorResponse(`Falha no upload de ${uploadErrors.length} imagens. O prêmio não foi criado.`, 500);
+    }
+
+    // Verificar se temos pelo menos a imagem principal
+    if (imageUrls.length === 0) {
+        return createErrorResponse('Nenhuma imagem foi enviada com sucesso', 500);
+    }
+
+    console.log("imageUrls", imageUrls);
+    console.log("imageUrls.length", imageUrls.length);
+
+    logger.info("Upload das imagens realizado com sucesso", {
+        urlsCount: imageUrls.length,
+        urls: imageUrls
+    });
+
+    const mainImageUrl = imageUrls[0];
+    const otherImagesUrls = imageUrls.slice(1);
+    
+    logger.info("URLs separadas", {
+        mainImageUrl,
+        otherImagesCount: otherImagesUrls.length
+    });
+
+    console.log("campaignData", campaignData);
       // Usar o método atualizado do repository
       const novaCampanha = await this.campaignRepository.criarNovaCampanha(
-        campaignData, 
+        {
+          ...campaignData,
+          coverImage: mainImageUrl,
+          images: otherImagesUrls
+        }, 
         instantPrizesData
       );
       
       console.log(`✅ Service: Campanha criada com sucesso - ID: ${novaCampanha._id}`);
-      
+
       return createSuccessResponse(
         novaCampanha, 
         'Campanha criada com sucesso. Números, ranges, partições e estatísticas inicializados.', 
         201
       );
+} catch (error) {
+    logger.error("Erro durante o processo de upload:", error);
+    return createErrorResponse('Falha no processo de upload das imagens. O prêmio não foi criado.', 500);
+}
+
+
       
     } catch (error) {
       console.error('Erro no service ao criar nova campanha:', error);

@@ -22,9 +22,9 @@ interface InstantPrizesPayload {
 }
 
 export interface ICampaignController {
-  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>>;
+  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   obterDetalhesCampanha(campaignCode: string): Promise<ApiResponse<ICampaign | null>>;
-  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>>;
+  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -40,7 +40,7 @@ export class CampaignController implements ICampaignController {
   /**
    * Controller para listar todas as campanhas ativas
    */
-   async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]>> {
+   async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
     return await this.campaignService.listarCampanhasAtivas();
   }
 
@@ -54,7 +54,7 @@ export class CampaignController implements ICampaignController {
   /**
    * 🚀 ATUALIZADO: Controller para criar nova campanha com novo formato de prêmios instantâneos
    */
-  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign>> {
+  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
     console.log(`🎯 Controller: Recebida solicitação para criar campanha ${campaignData.title}`);
     
     if (instantPrizesData) {

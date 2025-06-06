@@ -436,9 +436,30 @@ export default function NovaRifaPage() {
     try {
       // TODO: Implement the API call to create a new raffle
       console.log("Form data submitted para criar nova rifa:", {campaign, instantPrizes});
+
+      const formData = new FormData();
+
+      formData.append('campaign', JSON.stringify(campaign));
+      formData.append('instantPrizes', JSON.stringify(instantPrizes));
+
+      // Adicionar a imagem de capa
+      if (campaign.coverImage instanceof File) {
+        formData.append('coverImage', campaign.coverImage);
+      }
+      
+      // Adicionar cada imagem separadamente
+      if (campaign.images && Array.isArray(campaign.images)) {
+        campaign.images.forEach((image, index) => {
+          if (image instanceof File) {
+            formData.append('images', image);
+          }
+        });
+      }
+
+      console.log("FormData:", formData);
       
       // Simulate API call
-      const response = await campaignAPIClient.criarNovaCampanha(campaign, instantPrizes);
+      const response = await campaignAPIClient.criarNovaCampanha(formData);
       console.log("Resposta da API:", response);
       
       // Show success overlay
