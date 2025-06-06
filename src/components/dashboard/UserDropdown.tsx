@@ -106,6 +106,9 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Skip if the event was already handled by stopPropagation
+      if (event.defaultPrevented) return;
+      
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         onClose();
       }

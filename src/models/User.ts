@@ -10,6 +10,9 @@ const UserSchema = new Schema<IUser>({
   userCode: {
     type: String,
   },
+  profilePicture: {
+    type: String,
+  },
   email: {
     type: String,
     required: [true, 'Email é obrigatório'],

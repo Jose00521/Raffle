@@ -44,6 +44,14 @@ const CampaignSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Please provide the total number of tickets'],
     },
+    minNumbersPerUser: {
+      type: Number,
+      required: [true, 'Pelo menos um número é obrigatório'],
+      min: [1, 'O mínimo de números por usuário é 1'],
+    },
+    maxNumbersPerUser: {
+      type: Number,
+    },
     drawDate: {
       type: Date,
       required: [true, 'Please provide a draw date'],

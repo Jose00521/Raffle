@@ -1,5 +1,6 @@
 // API client para operações com rifas e números
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { ApiResponse, createErrorResponse } from '@/server/utils/errorHandler/api';
 
 /**
  * Interface para estatísticas de números
@@ -43,21 +44,56 @@ const rifaAPI = {
         console.log("API response:", result);
         
         return result;
+
       } catch (error) {
-        console.error('Erro ao buscar campanhas ativas:', error);
-        return [];
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
+    },
+
+    getCampaignById: async (campaignId: string) => {
+      try {
+        const response = await fetch(`/api/campanha/${campaignId}`);
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
+    },
+
+    /**
+     * Exclui uma campanha pelo ID
+     * @param campaignId ID da campanha a ser excluída
+     * @returns ApiResponse com o resultado da operação
+     */
+    deleteCampaign: async (campaignId: string): Promise<ApiResponse<null>> => {
+      try {
+        const response = await fetch(`/api/campanha/${campaignId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao excluir campanha:', error);
+        return createErrorResponse('Erro ao conectar com o servidor', 500);
       }
     },
 
     /** 
      * Cria uma nova campanha com prêmios instantâneos
      */
-    criarNovaCampanha: async (formData: FormData): Promise<ICampaign> => {
-      const response = await fetch('/api/campanhas', {
-        method: 'POST',
-        body: formData,
-      });
-      return await response.json();
+    criarNovaCampanha: async (formData: FormData): Promise<ApiResponse<ICampaign> | ApiResponse<null>> => {
+      try {
+        const response = await fetch('/api/campanhas', {
+          method: 'POST',
+          body: formData,
+        });
+        return await response.json();
+      } catch (error) {
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
     },
 
 

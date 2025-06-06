@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
-import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { FaTrophy } from 'react-icons/fa';
+import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown, FaUser, FaCog, FaSignOutAlt, FaPlusCircle, FaTrophy } from 'react-icons/fa';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
 // Types
@@ -39,13 +38,44 @@ const DashboardContainer = styled.div`
   }
 `;
 
+// Adicionar um componente Tooltip
+const Tooltip = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  left: 75px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #2c2c2c;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: ${props => props.$visible ? 1 : 0};
+  visibility: ${props => props.$visible ? 'visible' : 'hidden'};
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) as string;
+  font-weight: 500;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%) as string;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid #2c2c2c;
+  }
+`;
+
 const Sidebar = styled.aside<{ $isCollapsed: boolean }>`
   width: ${props => props.$isCollapsed ? '80px' : '260px'};
-  background: ${({ theme }) => theme.colors.primary || '#6a11cb'};
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   color: white;
-  transition: width 0.3s ease;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.15) as string;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -55,19 +85,24 @@ const Sidebar = styled.aside<{ $isCollapsed: boolean }>`
   z-index: 100;
   overflow-x: hidden;
   overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) as string;
 
   &::-webkit-scrollbar {
-    width: 5px;
+    width: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.1) as string;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
   }
 
   @media (max-width: 768px) {
     transform: ${props => props.$isCollapsed ? 'translateX(-100%)' : 'translateX(0)'};
-    width: 240px;
+    width: 230px;
     position: fixed;
     z-index: 1000;
   }
@@ -78,26 +113,69 @@ const Sidebar = styled.aside<{ $isCollapsed: boolean }>`
 `;
 
 const SidebarHeader = styled.div`
-  height: 80px;
+  height: 70px;
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   
   @media (max-width: 768px) {
-    height: 70px;
+    height: 65px;
     padding: 0 16px;
   }
   
   @media (max-width: 480px) {
     height: 60px;
-    padding: 0 12px;
+    padding: 0 14px;
+  }
+`;
+
+const SidebarToggle = styled.button`
+  background: rgba(255, 255, 255, 0.05) as string;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin-right: ${props => props.children === 'FaTimes' ? '0' : '12px'};
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1) as string;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    position: ${props => props.children === 'FaTimes' ? 'absolute' : 'static'};
+    right: ${props => props.children === 'FaTimes' ? '10px' : '0'};
+    top: ${props => props.children === 'FaTimes' ? '10px' : '0'};
+    width: 30px;
+    height: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
   }
 `;
 
 const SidebarTitle = styled.h2<{ $isCollapsed: boolean }>`
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -105,6 +183,7 @@ const SidebarTitle = styled.h2<{ $isCollapsed: boolean }>`
   opacity: ${props => props.$isCollapsed ? 0 : 1};
   transition: opacity 0.2s ease;
   display: ${props => props.$isCollapsed ? 'none' : 'block'};
+  letter-spacing: 0.5px;
   
   @media (max-width: 768px) {
     font-size: 0.9rem;
@@ -115,132 +194,105 @@ const SidebarTitle = styled.h2<{ $isCollapsed: boolean }>`
   }
 `;
 
-const SidebarToggle = styled.button`
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  margin-right: ${props => props.children === 'FaTimes' ? '0' : '15px'};
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  @media (max-width: 768px) {
-    position: ${props => props.children === 'FaTimes' ? 'absolute' : 'static'};
-    right: ${props => props.children === 'FaTimes' ? '10px' : '0'};
-    top: ${props => props.children === 'FaTimes' ? '10px' : '0'};
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
-  }
-  
-  @media (max-width: 480px) {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-`;
-
 const NavMenu = styled.ul`
   list-style: none;
-  padding: 20px 0;
+  padding: 12px 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   
   @media (max-width: 768px) {
-    padding: 15px 0;
+    padding: 10px 0;
   }
   
   @media (max-width: 480px) {
-    padding: 12px 0;
+    padding: 8px 0;
   }
 `;
 
 const NavItem = styled.li<{ $active?: boolean }>`
-  margin-bottom: 5px;
+  margin: 0;
+  position: relative;
   
-  ${props => props.$active && css`
-    background-color: rgba(255, 255, 255, 0.15);
-  `}
-  
-  @media (max-width: 480px) {
-    margin-bottom: 3px;
+  &:hover ${Tooltip} {
+    opacity: 1;
+    visibility: visible;
   }
+`;
+
+const activeNavItemStyles = css`
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: #60a5fa;
+    border-radius: 0 2px 2px 0;
+  }
+  
+  background-color: rgba(96, 165, 250, 0.08);
 `;
 
 const NavLink = styled(Link)<{ $isCollapsed: boolean; $active?: boolean }>`
   display: flex;
   align-items: center;
-  padding: ${props => props.$isCollapsed ? '15px 0' : '15px 20px'};
+  padding: ${props => props.$isCollapsed ? '14px 0' : '14px 16px'};
   text-decoration: none;
-  color: white;
+  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.8)' as string};
+  font-weight: ${props => props.$active ? '500' : '400'};
   transition: all 0.2s ease;
-  border-radius: ${props => props.$isCollapsed ? '0' : '8px'};
   position: relative;
   justify-content: ${props => props.$isCollapsed ? 'center' : 'flex-start'};
+  letter-spacing: 0.3px;
+  border-radius: 6px;
+  margin: 0 ${props => props.$isCollapsed ? '8px' : '10px'};
+
+  ${props => props.$active && activeNavItemStyles}
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.1) as string;
+    color: white;
   }
   
-  ${props => props.$active && css`
-    color: white;
-    font-weight: 600;
-    
-    &:before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      width: 4px;
-      background-color: white;
-      border-radius: 0 2px 2px 0;
-    }
-  `}
+  &:active {
+    transform: translateY(1px);
+  }
   
   @media (max-width: 768px) {
     padding: ${props => props.$isCollapsed ? '12px 0' : '12px 16px'};
   }
   
   @media (max-width: 480px) {
-    padding: ${props => props.$isCollapsed ? '10px 0' : '10px 12px'};
+    padding: ${props => props.$isCollapsed ? '10px 0' : '10px 14px'};
     font-size: 0.9rem;
   }
 `;
 
 const NavIcon = styled.span`
-  margin-right: ${props => props.children ? '20px' : '0'};
-  font-size: 1.25rem;
+  margin-right: ${props => props.children ? '14px' : '0'};
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
+  min-width: 24px;
+  transition: all 0.2s ease;
+  color: inherit;
   
   svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+    transition: all 0.2s ease;
+    opacity: 0.9;
   }
   
   @media (max-width: 768px) {
-    margin-right: ${props => props.children ? '16px' : '0'};
-    
-    svg {
-      width: 18px;
-      height: 18px;
-    }
+    margin-right: ${props => props.children ? '12px' : '0'};
   }
   
   @media (max-width: 480px) {
-    margin-right: ${props => props.children ? '14px' : '0'};
+    margin-right: ${props => props.children ? '10px' : '0'};
     
     svg {
       width: 16px;
@@ -254,17 +306,18 @@ const NavLabel = styled.span<{ $isCollapsed: boolean }>`
   transition: opacity 0.2s ease;
   white-space: nowrap;
   display: ${props => props.$isCollapsed ? 'none' : 'block'};
+  font-size: 0.9rem;
   
   @media (max-width: 480px) {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 `;
 
 const MainContent = styled.main<{ $isCollapsed: boolean }>`
   flex: 1;
   padding: 20px;
-  margin-left: ${props => props.$isCollapsed ? '80px' : '260px'};
-  transition: margin-left 0.3s ease;
+  margin-left: ${props => props.$isCollapsed ? '68px' : '250px'};
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   @media (max-width: 768px) {
     margin-left: 0;
@@ -281,17 +334,147 @@ const TopBar = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   
   @media (max-width: 768px) {
     margin-bottom: 15px;
-    padding-bottom: 12px;
   }
   
   @media (max-width: 480px) {
     margin-bottom: 12px;
-    padding-bottom: 10px;
+  }
+`;
+
+const WelcomeHeader = styled.div`
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.02) 0%, rgba(37, 117, 252, 0.05) 100%);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(106, 17, 203, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(106, 17, 203, 0.08);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+`;
+
+const GreetingSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Greeting = styled.h2`
+  margin: 0 0 3px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text?.primary || '#333'};
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+`;
+
+const UserName = styled.span`
+  font-weight: 700;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const UserRole = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const SubGreeting = styled.p`
+  margin: 0;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.text?.secondary || '#777'};
+  opacity: 0.85;
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  border-radius: 8px;
+  color: #6a11cb;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  svg {
+    opacity: 0.8;
+    transition: all 0.2s ease;
+  }
+  
+  &:hover {
+    background: rgba(106, 17, 203, 0.02);
+    border-color: rgba(106, 17, 203, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(106, 17, 203, 0.08);
+    
+    svg {
+      opacity: 1;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 7px 10px;
+    font-size: 0.8rem;
   }
 `;
 
@@ -383,75 +566,86 @@ const UserToggle = styled.button`
 const SubMenuContainer = styled.ul<{ $isOpen: boolean; $isCollapsed: boolean }>`
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 10px;
   max-height: ${props => props.$isOpen ? '500px' : '0'};
   overflow: hidden;
-  transition: max-height 0.3s ease;
-  background-color: rgba(0, 0, 0, 0.1);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: rgba(0, 0, 0, 0.08) as string;
+  border-radius: 6px;
   
   ${props => props.$isCollapsed && `
     position: absolute;
     left: 100%;
     top: 0;
     width: 200px;
-    background-color: #2575fc;
-    border-radius: 0 8px 8px 0;
-    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #5a01bc 0%, #1565ec 100%);
+    border-radius: 6px;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2) as string;
     opacity: 0;
     visibility: hidden;
-    transform: translateX(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    transform: translateX(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     z-index: 200;
+    margin: 0;
+    padding: 5px 0;
   `}
 `;
 
 const SubMenuItem = styled.li<{ $active?: boolean }>`
+  position: relative;
+  
   ${props => props.$active && css`
-    background-color: rgba(255, 255, 255, 0.1);
+    ${activeNavItemStyles}
   `}
 `;
 
 const SubMenuLink = styled(Link)<{ $active?: boolean }>`
-  padding: 10px 20px 10px 46px;
+  padding: 10px 10px 10px 44px;
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.9);
+  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.6)' as string};
   font-size: 0.85rem;
   transition: all 0.2s ease;
   position: relative;
+  font-weight: ${props => props.$active ? '500' : '400'};
+  margin: 2px 0;
+  border-radius: 4px;
   
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.05) as string;
     color: white;
   }
   
-  ${props => props.$active && css`
-    color: white;
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.05);
-    
-    &:before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      width: 4px;
-      background-color: white;
-      border-radius: 0 2px 2px 0;
-    }
-  `}
+  &::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%) as string;
+    width: 5px;
+    height: 5px;
+    background-color: ${props => props.$active ? '#60a5fa' : 'rgba(255, 255, 255, 0.3)' as string};
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+  }
+  
+  &:hover::before {
+    background-color: ${props => props.$active ? '#60a5fa' : 'rgba(255, 255, 255, 0.5)' as string};
+  }
 `;
 
 const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
-  padding: 10px 15px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.9);
+  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'};
   font-size: 0.85rem;
   transition: all 0.2s ease;
+  font-weight: ${props => props.$active ? '500' : '400'};
+  border-radius: 4px;
+  margin: 2px 6px;
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
@@ -459,13 +653,12 @@ const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
   }
   
   ${props => props.$active && css`
+    background-color: rgba(96, 165, 250, 0.08);
     color: white;
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.1);
   `}
 `;
 
-const NavItemWithSubmenu = styled.div<{ $isCollapsed: boolean; $hasOpenSubmenu: boolean }>`
+const NavItemWithSubmenu = styled.div<{ $isCollapsed: boolean; $hasOpenSubmenu: boolean; $active?: boolean }>`
   position: relative;
   
   ${props => props.$isCollapsed && props.$hasOpenSubmenu && `
@@ -474,6 +667,10 @@ const NavItemWithSubmenu = styled.div<{ $isCollapsed: boolean; $hasOpenSubmenu: 
       visibility: visible;
       transform: translateX(0);
     }
+  `}
+  
+  ${props => !props.$isCollapsed && props.$active && css`
+    ${activeNavItemStyles}
   `}
 `;
 
@@ -484,7 +681,7 @@ const MenuToggle = styled.button<{ $isOpen: boolean }>`
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: white;
+  color: rgba(255, 255, 255, 0.6) as string;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -492,16 +689,19 @@ const MenuToggle = styled.button<{ $isOpen: boolean }>`
   height: 20px;
   cursor: pointer;
   z-index: 10;
-  opacity: 0.8;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: all 0.2s ease;
+  border-radius: 4px;
   
   &:hover {
-    opacity: 1;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.05) as string;
   }
   
   svg {
     transform: ${props => props.$isOpen ? 'rotate(-180deg)' : 'rotate(0)'};
     transition: transform 0.3s ease;
+    width: 12px;
+    height: 12px;
   }
 `;
 
@@ -587,15 +787,6 @@ const UserDetails = styled.div`
   overflow: hidden;
 `;
 
-const UserName = styled.div`
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
 const UserEmail = styled.div`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
@@ -658,20 +849,39 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   menuItems,
   dashboardTitle
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Use localStorage to persist sidebar state
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // Try to get the saved state from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCollapsed');
+      return saved === 'false' ? false : true;
+    }
+    return true;
+  });
+  
   const [isMobileView, setIsMobileView] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [openSubmenuIds, setOpenSubmenuIds] = useState<string[]>([]);
+  const [hoverItem, setHoverItem] = useState<string | null>(null);
   const pathname = usePathname();
   const { data: session } = useSession();
+  const router = useRouter();
+  
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
+    }
+  }, [isCollapsed]);
+  
   // Check if it's mobile view
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      } else if (window.innerWidth < 1024) {
-        // Em telas médias, manter o sidebar colapsado por padrão
+      const isMobile = window.innerWidth < 768;
+      setIsMobileView(isMobile);
+      
+      // Don't automatically collapse on larger screens
+      if (isMobile) {
         setIsCollapsed(true);
       }
     };
@@ -702,12 +912,68 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       if (prev.includes(id)) {
         return prev.filter(menuId => menuId !== id);
       } else {
-        return [...prev, id];
+        // Close other open submenus when opening a new one
+        return [id];
       }
     });
   };
   
   const isSubmenuOpen = (id: string) => openSubmenuIds.includes(id);
+  
+  const handleNavLinkClick = (item: MenuItem, event: React.MouseEvent) => {
+    // If the item has submenu
+    if (item.subMenuItems && item.subMenuItems.length > 0) {
+      if (isCollapsed) {
+        // If collapsed, navigate to the first submenu item
+        if (item.subMenuItems.length > 0) {
+          router.push(item.subMenuItems[0].path);
+        }
+      } else {
+        // If expanded, toggle the submenu
+        toggleSubmenu(item.id, event);
+      }
+      return;
+    }
+    
+    // If the sidebar is collapsed and on mobile, close it after click
+    if (!isCollapsed && isMobileView) {
+      setIsCollapsed(true);
+    }
+    
+    // Navigate to the path
+    router.push(item.path);
+  };
+  
+  const handleSubMenuMouseEnter = (id: string) => {
+    if (isCollapsed) {
+      setOpenSubmenuIds(prev => [...prev, id]);
+    }
+  };
+  
+  const handleSubMenuMouseLeave = (id: string) => {
+    if (isCollapsed) {
+      // Delay hiding the submenu to make it easier to move mouse into it
+      setTimeout(() => {
+        setOpenSubmenuIds(prev => prev.filter(menuId => menuId !== id));
+      }, 300);
+    }
+  };
+  
+  const handleNavItemMouseEnter = (id: string) => {
+    setHoverItem(id);
+  };
+  
+  const handleNavItemMouseLeave = () => {
+    setHoverItem(null);
+  };
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bom dia";
+    if (hour < 18) return "Boa tarde";
+    return "Boa noite";
+  };
 
   return (
     <DashboardContainer>
@@ -736,13 +1002,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               const isOpen = isSubmenuOpen(item.id);
               
               return (
-                <NavItem key={item.id} $active={Boolean(isActive)}>
-                  <NavItemWithSubmenu $isCollapsed={isCollapsed} $hasOpenSubmenu={isOpen}>
+                <NavItem 
+                  key={item.id} 
+                  $active={Boolean(isActive)}
+                  onMouseEnter={() => handleSubMenuMouseEnter(item.id)}
+                  onMouseLeave={() => handleSubMenuMouseLeave(item.id)}
+                >
+                  <NavItemWithSubmenu 
+                    $isCollapsed={isCollapsed} 
+                    $hasOpenSubmenu={isOpen}
+                    $active={Boolean(isActive)}
+                  >
                     <NavLink 
-                      href={!isCollapsed ? '#' : item.path}
+                      href="#"
                       $isCollapsed={isCollapsed}
                       $active={Boolean(isActive)}
-                      onClick={(e) => !isCollapsed && toggleSubmenu(item.id, e)}
+                      onClick={(e) => handleNavLinkClick(item, e)}
+                      onMouseEnter={() => handleNavItemMouseEnter(item.id)}
+                      onMouseLeave={handleNavItemMouseLeave}
                     >
                       <NavIcon>{item.icon}</NavIcon>
                       <NavLabel $isCollapsed={isCollapsed}>{item.label}</NavLabel>
@@ -754,33 +1031,49 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                           <FaChevronDown size={12} />
                         </MenuToggle>
                       )}
+                      
+                      {isCollapsed && hoverItem === item.id && (
+                        <Tooltip $visible={true}>
+                          {item.label}
+                        </Tooltip>
+                      )}
                     </NavLink>
                     
                     <SubMenuContainer $isOpen={isOpen} $isCollapsed={isCollapsed}>
-                      {item.subMenuItems.map(subItem => (
-                        <SubMenuItem 
-                          key={subItem.id} 
-                          $active={pathname === subItem.path}
-                        >
-                          {isCollapsed ? (
-                            <SubMenuLinkCollapsed
-                              href={subItem.path}
-                              $active={pathname === subItem.path}
-                            >
-                              {subItem.icon && <NavIcon>{subItem.icon}</NavIcon>}
-                              {subItem.label}
-                            </SubMenuLinkCollapsed>
-                          ) : (
-                            <SubMenuLink
-                              href={subItem.path}
-                              $active={pathname === subItem.path}
-                            >
-                              {subItem.icon && <NavIcon>{subItem.icon}</NavIcon>}
-                              {subItem.label}
-                            </SubMenuLink>
-                          )}
-                        </SubMenuItem>
-                      ))}
+                      {item.subMenuItems.map(subItem => {
+                        const subItemActive = pathname === subItem.path;
+                        return (
+                          <SubMenuItem 
+                            key={subItem.id} 
+                            $active={subItemActive}
+                          >
+                            {isCollapsed ? (
+                              <SubMenuLinkCollapsed
+                                href={subItem.path}
+                                $active={subItemActive}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  router.push(subItem.path);
+                                }}
+                              >
+                                {subItem.icon && <NavIcon>{subItem.icon}</NavIcon>}
+                                {subItem.label}
+                              </SubMenuLinkCollapsed>
+                            ) : (
+                              <SubMenuLink
+                                href={subItem.path}
+                                $active={subItemActive}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  router.push(subItem.path);
+                                }}
+                              >
+                                {subItem.label}
+                              </SubMenuLink>
+                            )}
+                          </SubMenuItem>
+                        );
+                      })}
                     </SubMenuContainer>
                   </NavItemWithSubmenu>
                 </NavItem>
@@ -789,14 +1082,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             
             // Regular item without submenu
             return (
-              <NavItem key={item.id} $active={Boolean(pathname === item.path)}>
+              <NavItem 
+                key={item.id} 
+                $active={Boolean(pathname === item.path)}
+                onMouseEnter={() => handleNavItemMouseEnter(item.id)}
+                onMouseLeave={handleNavItemMouseLeave}
+              >
                 <NavLink 
                   href={item.path}
                   $isCollapsed={isCollapsed}
                   $active={Boolean(pathname === item.path)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push(item.path);
+                    if (isMobileView && !isCollapsed) {
+                      setIsCollapsed(true);
+                    }
+                  }}
                 >
                   <NavIcon>{item.icon}</NavIcon>
                   <NavLabel $isCollapsed={isCollapsed}>{item.label}</NavLabel>
+                  {isCollapsed && hoverItem === item.id && (
+                    <Tooltip $visible={true}>
+                      {item.label}
+                    </Tooltip>
+                  )}
                 </NavLink>
               </NavItem>
             );
@@ -812,11 +1122,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <FaBars />
               </MobileMenuToggle>
             )}
-            <PageTitle>{getPageTitleFromPath(pathname)} {session?.user?.name}</PageTitle>
+            <PageTitle>{getPageTitleFromPath(pathname)}</PageTitle>
           </div>
           
           <UserSection>
-            <UserToggle onClick={toggleUserDropdown}>
+            <UserToggle onClick={(e) => {
+              e.stopPropagation();
+              toggleUserDropdown();
+            }}>
               <FaUserCircle size={24} />
             </UserToggle>
             
@@ -826,6 +1139,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             />
           </UserSection>
         </TopBar>
+        
+        <WelcomeHeader>
+          <GreetingSection>
+            <Greeting>{getGreeting()}, <UserName>{session?.user?.name?.split(' ')[0] || 'Usuário'}</UserName>!</Greeting>
+            <SubGreeting>Bem-vindo de volta ao seu painel de controle de rifas</SubGreeting>
+          </GreetingSection>
+          <ActionButtons>
+            <ActionButton onClick={() => router.push("/dashboard/criador/nova-rifa")}>
+              <FaPlusCircle size={12} /> Nova Rifa
+            </ActionButton>
+            <ActionButton onClick={() => router.push("/dashboard/criador/premios")}>
+              <FaTrophy size={12} /> Prêmios
+            </ActionButton>
+          </ActionButtons>
+        </WelcomeHeader>
         
         {children}
       </MainContent>
@@ -881,6 +1209,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
         <UserAvatar>JD</UserAvatar>
         <UserDetails>
           <UserName>{session?.user?.name}</UserName>
+          <UserRole>{session?.user?.role === 'creator' ? 'Criador' : session?.user?.role === 'participant' ? 'Participante' : 'Administrador'}</UserRole>
           <UserEmail>{session?.user?.email}</UserEmail>
         </UserDetails>
       </UserInfo>
@@ -921,4 +1250,4 @@ function getPageTitleFromPath(path: string): string {
   return 'Dashboard';
 }
 
-export default DashboardLayout; 
+export default React.memo(DashboardLayout); 

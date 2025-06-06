@@ -30,8 +30,9 @@ interface InstantPrizesPayload {
 
 export interface ICampaignService {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
-  obterDetalhesCampanha(id: string): Promise<ApiResponse<ICampaign | null>>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
 @injectable()
@@ -71,51 +72,64 @@ export class CampaignService implements ICampaignService {
     }
   }
 
-  /**
-   * Obtém detalhes completos de uma campanha por ID
-   */
-  async obterDetalhesCampanha(campaignCode: string): Promise<{statusCode: number, success: boolean, data: ICampaign | null , error: string | null}> {
+  async getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>> {
     try {
-      const campanha: ICampaign | null = await this.campaignRepository.buscarCampanhaPorId(campaignCode);
-      
-      if (!campanha) {
-        return {
-          statusCode: 404,
-          success: false,
-          data: null,
-          error: 'Campanha não encontrada',
-        };
-      }
-      
-      // Obter estatísticas
-      // const stats = await this.obterEstatisticasCampanha(id);
-      
-      // // Obter últimos números vendidos
-      // const recentSales = await CampaignRepository.buscarUltimosNumerosVendidos(id);
-      
-      // // Construir resposta completa
-      // const campanhaCompleta = {
-      //   ...campanha,
-      //   stats,
-      //   recentSales
-      // };
-      
-      return {
-        statusCode: 200,
-        success: true,
-        error: null,
-        data: campanha
-      };
+      const session = await getServerSession(nextAuthOptions);
+
+      if(!session){
+        return createErrorResponse('Não autorizado', 401);
+      } 
+
+      const userCode = session.user.id;
+
+      return await this.campaignRepository.getCampaignById(id, userCode);
     } catch (error) {
-      console.error('Erro ao obter detalhes da campanha:', error);
-      return {
-        statusCode: 500,
-        success: false,
-        data: null,
-        error: 'Falha ao carregar os detalhes da campanha'
-      };
+      return createErrorResponse('Erro ao buscar campanha por ID:', 500);
     }
   }
+
+  async deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>> {
+    try {
+      const limiter = rateLimit({
+        interval: 60 * 1000,
+        uniqueTokenPerInterval: 500,
+        tokensPerInterval: 10
+      });
+
+    const session = await getServerSession(nextAuthOptions);
+    logger.info("Verificando sessão", session);
+
+    console.log("Session",session);
+
+    if (!session?.user?.id) {
+        return createErrorResponse('Não autorizado', 401);
+    }
+
+    const userCode = session.user.id;
+
+    console.log("campaignId delete", id);
+
+    // Aplicar rate limiting
+    try {
+        await limiter.check(10, `${session.user.id}:campaign-delete`);
+    } catch {
+        return createErrorResponse('Muitas requisições, tente novamente mais tarde', 429);
+
+    }
+
+    logger.info("Sessão válida", session);
+
+    return await this.campaignRepository.deleteCampaign(id, userCode);
+  } catch (error) {
+    console.error('Erro ao excluir campanha:', error);
+    throw new ApiError({
+      success: false,
+      message: 'Erro ao excluir campanha',
+      statusCode: 500,
+      cause: error as Error
+    });
+  }
+}
 
   /**
    * Método privado para calcular estatísticas de uma campanha
@@ -283,11 +297,15 @@ export class CampaignService implements ICampaignService {
 
       return createSuccessResponse(
         novaCampanha, 
-        'Campanha criada com sucesso. Números, ranges, partições e estatísticas inicializados.', 
+        'Campanha criada com sucesso', 
         201
       );
 } catch (error) {
-    logger.error("Erro durante o processo de upload:", error);
+    logger.error({
+      error: error as Error,
+      message: 'Falha no processo de upload das imagens. O prêmio não foi criado.',
+      statusCode: 500
+    });
     return createErrorResponse('Falha no processo de upload das imagens. O prêmio não foi criado.', 500);
 }
 

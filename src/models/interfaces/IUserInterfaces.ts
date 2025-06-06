@@ -24,6 +24,7 @@ export interface IAddress {
   export interface IBaseUser {
     _id?: string;
     userCode?: string; // Código único no formato Snowflake ID
+    profilePicture?: string;
     email: string;
     password: string;
     name: string;

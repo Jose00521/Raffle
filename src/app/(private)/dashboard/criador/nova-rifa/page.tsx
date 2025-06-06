@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import campaignAPIClient from '@/API/campaignAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { ApiResponse } from '@/server/utils/errorHandler/api';
+import { toast, ToastContainer } from 'react-toastify';
 // Styled Components
 const Container = styled.div`
   max-width: 1200px;
@@ -459,17 +461,24 @@ export default function NovaRifaPage() {
       console.log("FormData:", formData);
       
       // Simulate API call
-      const response = await campaignAPIClient.criarNovaCampanha(formData);
+      const response: ApiResponse<ICampaign> = await campaignAPIClient.criarNovaCampanha(formData) as unknown as ApiResponse<ICampaign>;
       console.log("Resposta da API:", response);
+
+      if (response.success) {
+        toast.success("Rifa criada com sucesso!");
+        goToMyRaffles();
+        setShowSuccess(true);
+        setIsSubmitting(false);
+      } else {
+        toast.error(response.message);
+        setIsSubmitting(false);
+      }
       
       // Show success overlay
       // setShowSuccess(true);
       
     } catch (error) {
-      console.error("Error creating raffle:", error);
-      alert("Ocorreu um erro ao criar a rifa. Por favor, tente novamente.");
-    } finally {
-      setIsSubmitting(false);
+      toast.error("Ocorreu um erro ao criar a rifa. Por favor, tente novamente.");
     }
   };
   
@@ -480,6 +489,7 @@ export default function NovaRifaPage() {
   return (
     <CreatorDashboard>
       <Container>
+        <ToastContainer />
         <MainContent>
           <PageHeader>
             <HeaderTitle>

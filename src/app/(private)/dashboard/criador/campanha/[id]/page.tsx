@@ -1,20 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { 
   FaArrowLeft, FaChartLine, FaTrophy, FaTicketAlt,
   FaCalendarAlt, FaUsers, FaMoneyBillWave, FaPercentage,
   FaSpinner, FaEye, FaExternalLinkAlt, FaInfoCircle, FaGift,
   FaWhatsapp, FaEnvelope, FaPhone, FaCheck, FaShippingFast, 
-  FaTimes, FaLongArrowAltRight
+  FaTimes, FaLongArrowAltRight, FaTrash
 } from 'react-icons/fa';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
+import campaignAPIClient from '@/API/campaignAPIClient';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 // Componentes estilizados
 const PageWrapper = styled.div`
@@ -110,21 +113,24 @@ const PublicLinkButton = styled.a`
 
 const CampaignInfoCard = styled.div`
   display: flex;
-  gap: 24px;
+  gap: 28px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 28px;
+  margin-bottom: 32px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
   
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 16px;
-    padding: 20px;
+    gap: 20px;
+    padding: 24px;
   }
   
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    gap: 16px;
   }
 `;
 
@@ -291,62 +297,91 @@ const Tab = styled.button<{ $active: boolean }>`
 
 const MainStats = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
   
-  @media (max-width: 600px) {
-    gap: 12px;
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  @media (max-width: 400px) {
+  @media (max-width: 480px) {
     grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
   }
 `;
 
 const StatCard = styled.div<{ $color?: string }>`
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(226, 232, 240, 0.8);
   
-  @media (max-width: 600px) {
-    padding: 16px;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  @media (max-width: 900px) {
+    padding: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 20px;
   }
   
   h3 {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 500;
-    margin: 0 0 8px;
+    margin: 0 0 12px;
     color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    
+    svg {
+      color: ${props => props.$color || '#6a11cb'};
+      font-size: 1.1rem;
+    }
     
     @media (max-width: 480px) {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
+      margin: 0 0 10px;
     }
   }
   
   h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.75rem;
+    font-weight: 700;
     margin: 0;
     color: ${props => props.$color || props.theme?.colors?.text?.primary || '#333'};
     
-    @media (max-width: 600px) {
-      font-size: 1.3rem;
+    @media (max-width: 900px) {
+      font-size: 1.6rem;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
     }
   }
   
   p {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-    margin: 4px 0 0;
+    margin: 8px 0 0;
     
     @media (max-width: 480px) {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      margin: 6px 0 0;
     }
   }
 `;
@@ -374,50 +409,69 @@ const ChartsGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 20px;
+    margin-bottom: 28px;
   }
 `;
 
 const ChartCard = styled.div`
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   height: 320px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  @media (max-width: 900px) {
+    height: 300px;
+    padding: 20px;
+  }
   
   @media (max-width: 768px) {
     height: 280px;
   }
   
   @media (max-width: 480px) {
-    height: 250px;
-    padding: 16px;
+    height: 260px;
+    padding: 20px;
   }
   
   h3 {
-    margin: 0 0 16px;
-    font-size: 1rem;
+    margin: 0 0 20px;
+    font-size: 1.05rem;
     font-weight: 600;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
     
     @media (max-width: 480px) {
-      font-size: 0.9rem;
-      margin: 0 0 12px;
+      font-size: 0.95rem;
+      margin: 0 0 16px;
     }
   }
 `;
 
 const TableContainer = styled.div`
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   overflow-x: auto;
   margin-bottom: 32px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  
+  @media (max-width: 768px) {
+    padding: 24px;
+  }
   
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: 20px;
     margin-bottom: 24px;
-    border-radius: 8px;
+    border-radius: 16px;
   }
 `;
 
@@ -1114,20 +1168,28 @@ export default function CampanhaDetalhesPage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
-  const [campaign, setCampaign] = useState<any>(null);
+  const [campaign, setCampaign] = useState<ICampaign>({} as ICampaign);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentBuyer, setCurrentBuyer] = useState<any>(null);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [currentPrize, setCurrentPrize] = useState<any>(null);
-  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
   useEffect(() => {
     // Simular carregamento dos dados
-    const timer = setTimeout(() => {
-      setCampaign(mockCampaign);
-      setIsLoading(false);
-    }, 800);
+    const fetchCampaign = async () => {
+      const response = await campaignAPIClient.getCampaignById(id as string);
+      console.log('response',response);
+      if (response.success) {
+        setCampaign(response.data);
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+      }
+    }
     
-    return () => clearTimeout(timer);
+    fetchCampaign();
   }, [id]);
   
   const handleOpenModal = (buyer: any) => {
@@ -1174,6 +1236,35 @@ export default function CampanhaDetalhesPage() {
   const formatPhoneForWhatsApp = (phone: string) => {
     // Remove caracteres não numéricos
     return phone.replace(/\D/g, '');
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (!id) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      const response = await campaignAPIClient.deleteCampaign(id as string);
+      
+      if (response.success) {
+        setShowDeleteModal(false);
+        router.push('/dashboard/criador/minhas-rifas');
+      } else {
+        console.error('Erro ao excluir a campanha:', response.message);
+      }
+    } catch (err) {
+      console.error('Erro ao excluir a campanha:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   // Definição das colunas da tabela de vendas
@@ -1289,14 +1380,29 @@ export default function CampanhaDetalhesPage() {
           <PageTitle>Detalhes da Campanha</PageTitle>
           <HeaderActions>
             <PublicLinkButton href={`/campanhas/${id}`} target="_blank">
-              <FaExternalLinkAlt size={14} /> Visualizar Página Pública
+              <FaExternalLinkAlt size={12} />
+              Ver Página Pública
+            </PublicLinkButton>
+            <PublicLinkButton 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteClick();
+              }}
+              style={{ 
+                background: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
+                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+              }}
+            >
+              <FaTrash size={12} />
+              Excluir
             </PublicLinkButton>
           </HeaderActions>
         </PageHeader>
         
         <CampaignInfoCard>
           <CampaignImageContainer>
-            <CampaignImage $imageUrl={campaign.image} />
+            <CampaignImage $imageUrl={campaign.coverImage as string} />
           </CampaignImageContainer>
           <CampaignDetails>
             <CampaignTitle>{campaign.title}</CampaignTitle>
@@ -1304,19 +1410,23 @@ export default function CampanhaDetalhesPage() {
             <CampaignMetaGrid>
               <CampaignMeta>
                 <FaCalendarAlt color="#6a11cb" />
-                <span>Início: <strong>{campaign.initialDate.toLocaleDateString('pt-BR')}</strong></span>
+                <span>Início: <strong>{new Date(campaign.scheduledActivationDate ? campaign.scheduledActivationDate : campaign.createdAt).toLocaleDateString('pt-BR')}</strong></span>
               </CampaignMeta>
               <CampaignMeta>
                 <FaCalendarAlt color="#f59e0b" />
-                <span>Sorteio: <strong>{campaign.drawDate.toLocaleDateString('pt-BR')}</strong></span>
+                <span>Sorteio: <strong>{new Date(campaign.drawDate).toLocaleDateString('pt-BR')}</strong></span>
               </CampaignMeta>
               <CampaignMeta>
                 <FaTicketAlt color="#10b981" />
-                <span>Valor: <strong>R$ {campaign.price.toFixed(2)}</strong></span>
+                <span>Valor: <strong>R$ {campaign.individualNumberPrice.toFixed(2)}</strong></span>
               </CampaignMeta>
               <CampaignMeta>
                 <FaUsers color="#6366f1" />
-                <span>Status: <strong>{campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}</strong></span>
+                <span>Status: <strong>{
+                campaign.status === CampaignStatusEnum.ACTIVE ? 'Ativa' : 
+                campaign.status === CampaignStatusEnum.COMPLETED ? 'Concluída' : 
+                campaign.status === CampaignStatusEnum.SCHEDULED ? 'Agendada' : 
+                campaign.status === CampaignStatusEnum.PENDING ? 'Pendente' : 'Cancelada'}</strong></span>
               </CampaignMeta>
             </CampaignMetaGrid>
           </CampaignDetails>
@@ -1349,25 +1459,25 @@ export default function CampanhaDetalhesPage() {
               <StatCard>
                 <h3><FaTicketAlt color="#6a11cb" /> Total de Números</h3>
                 <h2>{campaign.totalNumbers.toLocaleString()}</h2>
-                <p>R$ {campaign.price.toFixed(2)} / número</p>
+                <p>R$ {campaign.individualNumberPrice.toFixed(2)} / número</p>
               </StatCard>
               
               <StatCard $color="#10b981">
                 <h3><FaTicketAlt color="#10b981" /> Vendidos</h3>
-                <h2>{campaign.stats.sold.toLocaleString()}</h2>
-                <p>{campaign.stats.percentSold.toFixed(1)}% do total</p>
+                <h2>{campaign?.stats?.sold?.toLocaleString()}</h2>
+                <p>{campaign?.stats?.percentComplete?.toFixed(1)}% do total</p>
               </StatCard>
               
-              <StatCard $color="#f59e0b">
+              {/* <StatCard $color="#f59e0b">
                 <h3><FaTicketAlt color="#f59e0b" /> Reservados</h3>
-                <h2>{campaign.stats.reserved.toLocaleString()}</h2>
-                <p>{((campaign.stats.reserved / campaign.totalNumbers) * 100).toFixed(1)}% do total</p>
-              </StatCard>
+                <h2>{campaign?.stats?.reserved?.toLocaleString()}</h2>
+                <p>{((campaign?.stats?.reserved / campaign?.totalNumbers) * 100).toFixed(1)}% do total</p>
+              </StatCard> */}
               
               <StatCard $color="#6366f1">
                 <h3><FaMoneyBillWave color="#6366f1" /> Valor Arrecadado</h3>
-                <h2>R$ {campaign.stats.totalValue.toLocaleString()}</h2>
-                <p>Meta: R$ {(campaign.totalNumbers * campaign.price).toLocaleString()}</p>
+                <h2>R$ {campaign?.stats?.totalRevenue?.toLocaleString()}</h2>
+                <p>Meta: R$ {campaign?.returnExpected?.toLocaleString()}</p>
               </StatCard>
             </MainStats>
             
@@ -1610,6 +1720,18 @@ export default function CampanhaDetalhesPage() {
             </DeliveryModalContent>
           </DeliveryModal>
         )}
+        
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="Excluir Campanha"
+          message={`Tem certeza que deseja excluir a campanha "${campaign?.title}"? Esta ação não pode ser desfeita.`}
+          confirmText={isDeleting ? "Excluindo..." : "Sim, Excluir"}
+          cancelText="Cancelar"
+          type="danger"
+          icon={<FaTrash />}
+        />
       </PageWrapper>
     </CreatorDashboard>
   );

@@ -11,11 +11,11 @@ export enum PaymentStatusEnum {
   }
   
   export enum PaymentMethodEnum {
-    CREDIT_CARD = 'credit_card',
-    DEBIT_CARD = 'debit_card',
-    PIX = 'pix',
-    BANK_SLIP = 'bank_slip',
-    BANK_TRANSFER = 'bank_transfer'
+    CREDIT_CARD = 'CREDIT_CARD',
+    DEBIT_CARD = 'DEBIT_CARD',
+    PIX = 'PIX',
+    BANK_SLIP = 'BANK_SLIP',
+    BANK_TRANSFER = 'BANK_TRANSFER'
   }
   
   // Interface principal de pagamento

@@ -13,6 +13,7 @@ import { Creator, User } from "@/models/User";
 import { nextAuthOptions } from "@/lib/auth/nextAuthOptions";
 import logger from "@/lib/logger/logger";
 import PrizeCategory from "@/models/PrizeCategory";
+import { deleteMultipleFromS3 } from "@/lib/upload-service/client/deleteFromS3";
 
 export interface IPrizeRepository {
     getAllPrizes(userCode: string): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
@@ -205,10 +206,62 @@ export class PrizeRepository implements IPrizeRepository {
                 return createErrorResponse('Prêmio não encontrado', 404);       
             }
 
+            // Excluir imagens do S3 antes de remover o prêmio
+            const imagesToDelete: string[] = [];
+            
+            // Adicionar imagem principal (se existir)
+            if (prize.image && typeof prize.image === 'string') {
+                imagesToDelete.push(prize.image);
+            }
+            
+            // Adicionar imagens adicionais (se existirem)
+            if (prize.images && Array.isArray(prize.images)) {
+                prize.images.forEach((img: string) => {
+                    if (typeof img === 'string') {
+                        imagesToDelete.push(img);
+                    }
+                });
+            }
+            
+            // Excluir imagens do S3 se houver alguma para excluir
+            if (imagesToDelete.length > 0) {
+                try {
+                    logger.info(`Iniciando exclusão de ${imagesToDelete.length} imagens do S3 para o prêmio ${id}`, {
+                        prizeCode: id,
+                        imageCount: imagesToDelete.length
+                    });
+                    
+                    const deleteResult = await deleteMultipleFromS3(imagesToDelete);
+                    
+                    logger.info(`Resultado da exclusão de imagens do S3 para o prêmio ${id}`, {
+                        prizeCode: id,
+                        deletedCount: deleteResult.deletedCount,
+                        errors: deleteResult.errors,
+                        success: deleteResult.success
+                    });
+                } catch (error) {
+                    logger.error(`Erro ao excluir imagens do S3 para o prêmio ${id}`, {
+                        prizeCode: id,
+                        error: error instanceof Error ? error.message : String(error),
+                        stack: error instanceof Error ? error.stack : undefined
+                    });
+                    // Continuar com a exclusão do prêmio mesmo se a exclusão das imagens falhar
+                }
+            } else {
+                logger.info(`Prêmio ${id} não possui imagens para excluir do S3`);
+            }
+
             await Prize.deleteOne({ prizeCode: id });
+            logger.info(`Prêmio ${id} excluído com sucesso do banco de dados`);
 
             return createSuccessResponse(null, 'Prêmio deletado com sucesso', 200);
         } catch (error) {
+            logger.error(`Erro ao excluir prêmio ${id}`, {
+                prizeCode: id,
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            
             throw new ApiError({
                 message: 'Repository: Erro ao deletar prêmio',
                 success: false,

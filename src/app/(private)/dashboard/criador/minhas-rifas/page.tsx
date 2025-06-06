@@ -478,7 +478,7 @@ const Popover = styled.div<{ $visible: boolean }>`
   min-width: 180px;
   opacity: ${props => props.$visible ? 1 : 0};
   visibility: ${props => props.$visible ? 'visible' : 'hidden'};
-  transform: ${props => props.$visible ? 'translateY(0)' : 'translateY(-10px)'};
+  transform: ${props => props.$visible ? 'translateY(0)' as string : 'translateY(-10px)' as string};
   transition: all 0.2s ease;
   pointer-events: ${props => props.$visible ? 'auto' : 'none'};
 `;
@@ -497,7 +497,7 @@ const PopoverItem = styled.button<{ $danger?: boolean }>`
   cursor: pointer;
   
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: ${'rgba(0, 0, 0, 0.04)' as string};
   }
   
   svg {
@@ -506,30 +506,240 @@ const PopoverItem = styled.button<{ $danger?: boolean }>`
 `;
 
 const EmptyState = styled.div`
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border-radius: 16px;
+  padding: 64px 32px;
   text-align: center;
-  padding: 60px 20px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(8px);
+  margin-top: 20px;
 `;
 
 const EmptyStateIcon = styled.div`
-  font-size: 3rem;
-  color: ${({ theme }) => theme.colors?.gray?.medium || '#9ca3af'};
-  margin-bottom: 20px;
+  font-size: 3.5rem;
+  color: rgba(106, 17, 203, 0.2);
+  margin-bottom: 24px;
+
 `;
 
 const EmptyStateTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
-  margin: 0 0 10px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #1e293b;
 `;
 
 const EmptyStateText = styled.p`
   font-size: 1rem;
-  margin: 0 0 20px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  color: #64748b;
+  margin: 0 auto 32px;
+  max-width: 500px;
+  line-height: 1.6;
+`;
+
+// Skeleton Loader Components
+const LoadingSkeletonGrid = styled.div`
+  display: grid;
+  grid-template-columns: ${'repeat(auto-fill, minmax(300px, 1fr))' as string};
+  gap: 20px;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+`;
+
+const LoadingSkeletonCard = styled.div`
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  
+  @media (max-width: 768px) {
+    border-radius: 10px;
+  }
+`;
+
+const SkeletonImage = styled.div`
+  height: 180px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 50%;
+    }
+    50% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    height: 160px;
+  }
+  
+  @media (max-width: 480px) {
+    height: 140px;
+  }
+`;
+
+const SkeletonBadge = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 60px;
+  height: 24px;
+  border-radius: 20px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.1s;
+`;
+
+const SkeletonContent = styled.div`
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+`;
+
+const SkeletonUpperContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-bottom: 15px;
+`;
+
+const SkeletonTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const SkeletonTitle = styled.div`
+  height: 24px;
+  flex: 1;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.1s;
+  border-radius: 4px;
+`;
+
+const SkeletonToggle = styled.div`
+  width: 40px;
+  height: 20px;
+  margin-left: 10px;
+  border-radius: 10px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.2s;
+`;
+
+const SkeletonMeta = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+const SkeletonMetaText = styled.div`
+  height: 16px;
+  width: 100px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.3s;
+  border-radius: 4px;
+`;
+
+const SkeletonStats = styled.div`
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+`;
+
+const SkeletonStatRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+`;
+
+const SkeletonStatLabel = styled.div`
+  height: 16px;
+  width: 100px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 4px;
+`;
+
+const SkeletonStatValue = styled.div`
+  height: 16px;
+  width: 80px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 4px;
+`;
+
+const SkeletonProgressBar = styled.div`
+  height: 8px;
+  border-radius: 4px;
+  margin-top: 15px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+`;
+
+const SkeletonProgressText = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+`;
+
+const SkeletonProgressTextItem = styled.div`
+  height: 14px;
+  width: 80px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.5s;
+  border-radius: 4px;
+`;
+
+const SkeletonActions = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  height: 38px;
+`;
+
+const SkeletonButton = styled.div<{ $width?: string }>`
+  flex: ${props => props.$width ? '0' : '1'};
+  width: ${props => props.$width || 'auto'};
+  border-radius: 6px;
+  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.6s;
 `;
 
 const StyledToggleSwitch = styled(ToggleSwitch)`
@@ -728,10 +938,55 @@ export default function MinhasRifasPage() {
         </TabsContainer>
         
         {isLoading ? (
-          <EmptyState>
-            <EmptyStateText>Carregando suas rifas...</EmptyStateText>
-          </EmptyState>
-        ) : (
+          <LoadingSkeletonGrid>
+            {Array.from({ length: 6 }, (_, index) => (
+              <LoadingSkeletonCard key={index}>
+                <SkeletonImage />
+                <SkeletonBadge />
+                <SkeletonContent>
+                  <SkeletonUpperContent>
+                    <SkeletonTitleRow>
+                      <SkeletonTitle />
+                      <SkeletonToggle />
+                    </SkeletonTitleRow>
+                    
+                    <SkeletonMeta>
+                      <SkeletonMetaText />
+                      <SkeletonMetaText />
+                    </SkeletonMeta>
+                    
+                    <SkeletonStats>
+                      <SkeletonStatRow>
+                        <SkeletonStatLabel />
+                        <SkeletonStatValue />
+                      </SkeletonStatRow>
+                      <SkeletonStatRow>
+                        <SkeletonStatLabel />
+                        <SkeletonStatValue />
+                      </SkeletonStatRow>
+                      <SkeletonStatRow>
+                        <SkeletonStatLabel />
+                        <SkeletonStatValue />
+                      </SkeletonStatRow>
+                    </SkeletonStats>
+                    
+                    <SkeletonProgressBar />
+                    <SkeletonProgressText>
+                      <SkeletonProgressTextItem />
+                      <SkeletonProgressTextItem />
+                    </SkeletonProgressText>
+                  </SkeletonUpperContent>
+                  
+                  <SkeletonActions>
+                    <SkeletonButton />
+                    <SkeletonButton />
+                    <SkeletonButton $width="38px" />
+                  </SkeletonActions>
+                </SkeletonContent>
+              </LoadingSkeletonCard>
+            ))}
+          </LoadingSkeletonGrid>
+        ) : filteredCampaigns.length > 0 ? (
           <RifaCardsGrid>
             {filteredCampaigns.map((campaign) => (
               <RifaCard key={campaign.campaignCode}>
@@ -833,6 +1088,22 @@ export default function MinhasRifasPage() {
               </RifaCard>
             ))}
           </RifaCardsGrid>
+        ) : (
+          <EmptyState>
+            <EmptyStateIcon>
+              <FaTicketAlt />
+            </EmptyStateIcon>
+            <EmptyStateTitle>Nenhuma rifa encontrada</EmptyStateTitle>
+            <EmptyStateText>
+              Crie sua primeira campanha para começar a vender números e organizar sorteios. Suas campanhas aparecerão aqui para fácil gerenciamento.
+            </EmptyStateText>
+            <ActionButton>
+              <Link href="/dashboard/criador/nova-campanha">
+                <FaPlus size={14} />
+                Criar Campanha
+              </Link>
+            </ActionButton>
+          </EmptyState>
         )}
       </div>
     </CreatorDashboard>

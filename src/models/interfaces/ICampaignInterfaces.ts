@@ -32,6 +32,8 @@ export enum CampaignStatusEnum {
     coverImage: File | string;
     images: File[] | string[];
     individualNumberPrice: number;
+    minNumbersPerUser: number;
+    maxNumbersPerUser: number;
     prizes: Array<IPrize>;
     //affiliates: Array<IUser>;
     returnExpected?: string;

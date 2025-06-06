@@ -102,6 +102,7 @@ export type RaffleFormData = {
   individualNumberPrice: number; // Renomeado de price para individualNumberPrice
   totalNumbers: number;
   drawDate: string;
+  minNumbersPerUser: number;
   status: string; // Enum status (ACTIVE, COMPLETED, PENDING)
   canceled: boolean;
   
@@ -172,8 +173,7 @@ const raffleFormSchema = z.object({
   regulation: z.string().min(1, 'A regra é obrigatória'),
   status: z.string().optional().default('ACTIVE'),
   canceled: z.boolean().optional().default(false),
-  mainPrize: z.string().optional(),
-  valuePrize: z.string().optional(),
+  minNumbersPerUser: z.number().min(1, 'Pelo menos um número é obrigatório'),
   returnExpected: z.string().optional(),
   isScheduled: z.boolean(),
   scheduledActivationDate: z.string().optional(),
@@ -3335,6 +3335,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       createdBy: session.data?.user?.id,
       individualNumberPrice: data.individualNumberPrice,
       totalNumbers: data.totalNumbers,
+      minNumbersPerUser: data.minNumbersPerUser,
       drawDate: new Date(data.drawDate),
       // Set status to "PENDING" if scheduled for future date, otherwise "ACTIVE"
       status: data.isScheduled ? CampaignStatusEnum.SCHEDULED : (data.status || CampaignStatusEnum.ACTIVE),
@@ -3738,7 +3739,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
               )}
             />
 
-            <Controller
+          <Controller
               name="returnExpected"
               control={control}
               render={({ field }) => (
@@ -3769,19 +3770,19 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           
           <FormRow>
           <Controller
-            name="totalNumbers"
+            name="minNumbersPerUser"
             control={control}
             render={({ field }) => (
               <FormInput
-                id="totalNumbers"
-                label="Total de Números"
+                id="minNumbersPerUser"
+                label="Mínimo de Números por Usuário"
                 icon={<FaHashtag />}
-                placeholder="Ex: 100"
+                placeholder="Ex: 1"
                 type="number"
                 value={field.value || ''}
                 onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                 onBlur={field.onBlur}
-                error={errors.totalNumbers?.message}
+                error={errors.minNumbersPerUser?.message}
                 disabled={isSubmitting}
                 required
                 min={1}

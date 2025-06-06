@@ -23,8 +23,9 @@ interface InstantPrizesPayload {
 
 export interface ICampaignController {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
-  obterDetalhesCampanha(campaignCode: string): Promise<ApiResponse<ICampaign | null>>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
 @injectable()
@@ -44,12 +45,14 @@ export class CampaignController implements ICampaignController {
     return await this.campaignService.listarCampanhasAtivas();
   }
 
-  /**
-   * Controller para obter detalhes de uma campanha por ID
-   */
-   async obterDetalhesCampanha(campaignCode: string): Promise<ApiResponse<ICampaign | null>> {
-    return await this.campaignService.obterDetalhesCampanha(campaignCode);
+  async getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignService.getCampaignById(id);
   }
+
+  async deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignService.deleteCampaign(id);
+  }
+
 
   /**
    * 🚀 ATUALIZADO: Controller para criar nova campanha com novo formato de prêmios instantâneos
@@ -64,10 +67,6 @@ export class CampaignController implements ICampaignController {
     // Validações básicas podem ser adicionadas aqui
     if (!campaignData.title || !campaignData.totalNumbers || !campaignData.createdBy) {
       throw new Error('Dados obrigatórios da campanha estão faltando');
-    }
-    
-    if (campaignData.totalNumbers < 1 || campaignData.totalNumbers > 50000000) {
-      throw new Error('Número total de números deve estar entre 1 e 50.000.000');
     }
     
     // Delegar para o service

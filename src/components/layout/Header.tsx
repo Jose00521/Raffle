@@ -5,6 +5,8 @@ import styled from 'styled-components';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import LoginModal from '../auth/LoginModal';
+import UserDropdown from '../dashboard/UserDropdown';
+import { useSession } from 'next-auth/react';
 
 const HeaderContainer = styled.header`
   background: ${({ theme }) => theme.colors.gradients.purple};
@@ -249,12 +251,37 @@ const MobileLoginButton = styled.button`
   }
 `;
 
+const UserAvatarButton = styled.button`
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(106, 17, 203, 0.2);
+  position: relative;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+  }
+`;
+
 const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const pathname = usePathname();
-  
+  const { data: session } = useSession();
+
+
   // Detecta scroll para adicionar sombra mais forte
   useEffect(() => {
     const handleScroll = () => {
@@ -290,6 +317,10 @@ const Header: React.FC = () => {
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const toggleUserDropdown = () => {
+    setUserDropdownOpen(!userDropdownOpen);
   };
 
   const openLoginModal = (e: React.MouseEvent) => {
@@ -330,9 +361,16 @@ const Header: React.FC = () => {
         </Nav>
         
         <AuthButtons>
+        {session?.user ? (
+          <UserDropdown 
+            isOpen={userDropdownOpen} 
+            onClose={() => setUserDropdownOpen(false)} 
+          />
+        ) : (
           <StyledLoginLink href="#" onClick={openLoginModal}>
             Entrar
           </StyledLoginLink>
+        )}
         </AuthButtons>
         
         <MobileMenuButton onClick={toggleMobileMenu} aria-label="Menu">
