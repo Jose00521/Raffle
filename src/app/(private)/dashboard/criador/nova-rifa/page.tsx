@@ -489,7 +489,6 @@ export default function NovaRifaPage() {
   return (
     <CreatorDashboard>
       <Container>
-        <ToastContainer />
         <MainContent>
           <PageHeader>
             <HeaderTitle>

@@ -106,6 +106,29 @@ export class CampaignRepository implements ICampaignRepository {
     }
    }
 
+   async toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>> {
+    try {
+      await this.db.connect();
+
+      const campaign = await Campaign.findOne({campaignCode: id});
+
+      if(!campaign){
+        return createErrorResponse('Campanha não encontrada', 404);
+      }
+
+      await Campaign.updateOne({campaignCode: id}, {canceled: !campaign.canceled});
+
+      return createSuccessResponse(null, 'Campanha ativada/desativada com sucesso', 200);
+    } catch (error) {
+      throw new ApiError({
+        success: false,
+        message: 'Erro ao ativar/desativar campanha:',
+        statusCode: 500,
+        cause: error as Error
+      });
+    }
+   }
+
    async deleteCampaign(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
 
     await this.db.connect();
@@ -214,7 +237,7 @@ export class CampaignRepository implements ICampaignRepository {
     campaignData: ICampaign, 
     instantPrizesData?: InstantPrizesPayload
   ): Promise<ICampaign> {
-    
+
     await this.db.connect();
     const session = await mongoose.startSession();
     

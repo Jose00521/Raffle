@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import { FaTicketAlt, FaCalendarAlt, FaTrophy, FaChartLine } from 'react-icons/fa';
+import { useSocket } from '@/context/SocketContext';
 
 // Mobile-first grid layout
 const PageContent = styled.div`
@@ -182,6 +183,8 @@ const EmptyState = styled.div`
 export default function DashboardHome() {
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+
+  const { notifications } = useSocket();
   
   // Check if this is the first visit in the session
   useEffect(() => {

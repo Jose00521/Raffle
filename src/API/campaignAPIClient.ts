@@ -97,6 +97,18 @@ const rifaAPI = {
     },
 
 
+    toggleCampaignStatus: async (campaignId: string): Promise<ApiResponse<ICampaign> | ApiResponse<null>> => {
+      try {
+        const response = await fetch(`/api/campanha/${campaignId}/toggle-status`, {
+          method: 'POST',
+        });
+        return await response.json();
+      } catch (error) {
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
+    },
+
+
   /**
    * Obtém estatísticas dos números de uma rifa
    */

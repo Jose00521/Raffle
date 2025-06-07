@@ -33,7 +33,7 @@ import { InstantPrizeService } from '../services/InstantPrizeService';
 import { CampaignDataProcessorService } from '../services/CampaignDataProcessorService';
 import pino, { Logger } from 'pino';
 import logger from '@/lib/logger/logger';
-
+import { SocketService } from '../lib/socket/SocketService';
 
 
 // Register dependencies
@@ -57,6 +57,7 @@ container.register<IPrizeCategoryService>('prizeCategoryService', { useClass: Pr
 container.register<IPrizeCategoryController>('prizeCategoryController', { useClass: PrizeCategoryController });
 container.register<InstantPrizeService>('instantPrizeService', { useClass: InstantPrizeService });
 container.register<CampaignDataProcessorService>(CampaignDataProcessorService, { useClass: CampaignDataProcessorService });
+container.register<SocketService>('socketService', { useClass: SocketService });
 
 
 // Export configured container

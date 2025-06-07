@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ThemeProvider } from 'styled-components';
 import StyledComponentsRegistry from '../../lib/registry';
 import { theme } from '../../styles/theme';
 import { useSession, signOut } from 'next-auth/react';
 import AuthLoading from '@/components/common/AuthLoading';
 import { jwtDecode } from 'jwt-decode';
+import { SocketProvider, useSocket } from '@/context/SocketContext';
+import { toast, ToastContainer } from 'react-toastify';
 
 // Tipos para o token e sessão
 interface JwtPayload {
@@ -42,6 +44,7 @@ export default function PrivateLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status, update } = useSession({
     required: true,
     onUnauthenticated() {
@@ -49,6 +52,7 @@ export default function PrivateLayout({
     },
   });
   const [isLoading, setIsLoading] = useState(false);
+
 
   // Monitora atividade do usuário
   useEffect(() => {
@@ -224,10 +228,15 @@ export default function PrivateLayout({
 
   // Mostrar conteúdo protegido
   return (
+    <>
     <StyledComponentsRegistry>
       <ThemeProvider theme={theme}>
-        {children}
+        <SocketProvider>
+          {children}
+        </SocketProvider>
       </ThemeProvider>
     </StyledComponentsRegistry>
+    <ToastContainer />
+    </>
   );
 } 

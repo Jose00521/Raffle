@@ -8,6 +8,8 @@ import Link from 'next/link';
 import ToggleSwitch from '@/components/common/ToggleSwitch';
 import campaignAPIClient from '@/API/campaignAPIClient';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { useSocket } from '@/context/SocketContext';
+import { toast, ToastContainer } from 'react-toastify';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -832,6 +834,8 @@ export default function MinhasRifasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
+
+  const { notifications } = useSocket();
   
   useEffect(() => {
     // Simulate data loading
@@ -842,6 +846,22 @@ export default function MinhasRifasPage() {
     };
     fetchCampaigns();
   }, []);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      // Pegar a notificação mais recente
+      const notification = notifications[0];
+      
+      // Atualizar a campanha na lista
+      setCampaigns(prevCampaigns => 
+        prevCampaigns.map(campaign => 
+          campaign.campaignCode === notification.data.campaignCode
+            ? { ...campaign, status: notification.status as CampaignStatusEnum }
+            : campaign
+        )
+      );
+    }
+  }, [notifications]);
   
   // Filter campaigns based on active tab and search term
   const filteredCampaigns = campaigns
@@ -856,7 +876,8 @@ export default function MinhasRifasPage() {
   });
   
   // Função para alternar o status cancelado/ativo da campanha
-  const toggleCampaignStatus = (id: string) => {
+  const toggleCampaignStatus = async (id: string) => {
+
     setCampaigns(prev => prev.map((campaign: ICampaign) => {
       if (campaign.campaignCode === id) {
         // Se a campanha estiver cancelada, restaura para o status anterior
@@ -868,6 +889,27 @@ export default function MinhasRifasPage() {
       }
       return campaign;
     }));
+
+    const response = await campaignAPIClient.toggleCampaignStatus(id);
+
+
+    if(response.success){
+
+      toast.success('Status da campanha atualizado com sucesso');
+    }else{
+      setCampaigns(prev => prev.map((campaign: ICampaign) => {
+        if (campaign.campaignCode === id) {
+          // Se a campanha estiver cancelada, restaura para o status anterior
+          // Caso contrário, marca como cancelada
+          return {
+            ...campaign,
+            canceled: !campaign.canceled
+          };
+        }
+        return campaign;
+      }));
+      toast.error('Erro ao atualizar status da campanha');
+    }
   };
   
   return (
@@ -875,7 +917,7 @@ export default function MinhasRifasPage() {
       <div>
         <PageHeader>
           <Title>Minhas Rifas</Title>
-          <ActionButtons>
+          <ActionButtons> 
             <ActionButton>
               <Link href="/dashboard/criador/nova-rifa">
                 <FaPlus size={14} />
@@ -1098,7 +1140,7 @@ export default function MinhasRifasPage() {
               Crie sua primeira campanha para começar a vender números e organizar sorteios. Suas campanhas aparecerão aqui para fácil gerenciamento.
             </EmptyStateText>
             <ActionButton>
-              <Link href="/dashboard/criador/nova-campanha">
+              <Link href="/dashboard/criador/nova-rifa">
                 <FaPlus size={14} />
                 Criar Campanha
               </Link>

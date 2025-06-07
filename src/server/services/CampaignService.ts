@@ -33,6 +33,7 @@ export interface ICampaignService {
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
   getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
   deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
+  toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
 @injectable()
@@ -85,6 +86,14 @@ export class CampaignService implements ICampaignService {
       return await this.campaignRepository.getCampaignById(id, userCode);
     } catch (error) {
       return createErrorResponse('Erro ao buscar campanha por ID:', 500);
+    }
+  }
+
+  async toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>> {
+    try {
+      return await this.campaignRepository.toggleCampaignStatus(id);
+    } catch (error) {
+      return createErrorResponse('Erro ao ativar/desativar campanha:', 500);
     }
   }
 
