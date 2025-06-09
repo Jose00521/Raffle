@@ -25,6 +25,7 @@ export interface ICampaignController {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
   getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
   deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
@@ -48,6 +49,10 @@ export class CampaignController implements ICampaignController {
 
   async getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>> {
     return await this.campaignService.getCampaignById(id);
+  }
+
+  async getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignService.getCampaignByIdPublic(id);
   }
 
   async deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>> {

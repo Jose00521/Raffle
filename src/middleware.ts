@@ -12,7 +12,7 @@ const publicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] =
   { path: '/cadastro-sucesso', whenAuthenticated: 'redirect' },
   { path: '/cadastro-tipo', whenAuthenticated: 'redirect' },
   { path: '/campanhas', whenAuthenticated: 'next' },
-  { path: '/campanha', whenAuthenticated: 'next' },
+  { path: '/campanhas/:id', whenAuthenticated: 'next' },
 ] as const;
 
 const REDIRECT_WHEN_NOT_AUTHENTICATED = '/login';

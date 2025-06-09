@@ -43,7 +43,9 @@ export interface ICampaignRepository {
   contarNumeroPorStatus(rifaId: string): Promise<any[]>;
   buscarUltimosNumerosVendidos(rifaId: string, limite: number): Promise<any[]>;
   getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null> | ApiResponse<null>>;
+  getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null> | ApiResponse<null>>;
   deleteCampaign(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
+  toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
 @injectable()
@@ -93,9 +95,27 @@ export class CampaignRepository implements ICampaignRepository {
         return createErrorResponse('Usuário não encontrado', 404);
       }
 
-      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id}).populate('createdBy', 'name email userCode').lean() as ICampaign | null;
+      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id},'-_id').populate('createdBy', 'name email userCode').lean() as ICampaign | null;
 
       return createSuccessResponse(campaign as ICampaign, 'Campanha encontrada com sucesso', 200);
+    } catch (error) {
+      throw new ApiError({
+        success: false,
+        message: 'Erro ao buscar campanha por ID:',
+        statusCode: 500,
+        cause: error as Error
+      });
+    }
+   }
+
+   async getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null> | ApiResponse<null>> {
+    try {
+      await this.db.connect();
+
+      const campaign = await Campaign.findOne({campaignCode: id},'-_id -__v').populate('createdBy', 'name email userCode').lean() as ICampaign | null;
+
+      return createSuccessResponse(campaign as ICampaign, 'Campanha encontrada com sucesso', 200);
+
     } catch (error) {
       throw new ApiError({
         success: false,

@@ -60,6 +60,16 @@ const rifaAPI = {
       }
     },
 
+    getCampaignByIdPublic: async (campaignId: string) => {
+      try {
+        const response = await fetch(`/api/campanhas/${campaignId}`);
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
+    },
+
     /**
      * Exclui uma campanha pelo ID
      * @param campaignId ID da campanha a ser excluída

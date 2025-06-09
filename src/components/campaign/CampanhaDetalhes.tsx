@@ -6,36 +6,31 @@ import Link from 'next/link';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
-import rifaAPI from '@/API/campaignAPIClient';
 import PremioCategory from './PremioCategory';
+import { useRouter } from 'next/navigation';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { INumberPackageCampaign, useCampaignSelection } from '@/hooks/useCampaignSelection';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
-  campanha: ICampaign & {
-    instantPrizes?: Array<{
-      number: string;
-      value: number;
-      winner: string | null;
-    }>;
-    regulamento?: string;
-    codigoSorteio?: string;
-    premiacaoPrincipal?: string;
-    valorPremio?: string;
-    // Adicionando suporte para múltiplas imagens
-    images?: string[];
-  };
+  campanhaDetalhes: ICampaign
 }
 
+
 // Componente principal
-const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
+const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) => {
   // Valor mínimo R$12,00, então se cada número custa R$1,00, são 12 números mínimo
-  const numeroMinimo = Math.max(12, Math.ceil(12 / campanha.price));
+  const initialized = useRef(false);
+
+  const router = useRouter();
+  const numeroMinimo = Math.max(12, Math.ceil(12 / (campanhaDetalhes?.individualNumberPrice || 0)));
   const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(numeroMinimo);
   const [activeTab, setActiveTab] = useState('titulos');
   const [animateValue, setAnimateValue] = useState(false);
   // Estado para o carrossel de imagens
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(true);
+
   // Estados para controle de swipe/deslize
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
@@ -44,17 +39,12 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   
   // Estado para controle de paginação dos títulos premiados
   const [visiblePrizes, setVisiblePrizes] = useState(20);
-  
   // Estado para guardar o pacote promocional ativo
   const [activePacote, setActivePacote] = useState<number | null>(null);
   
   // Pacotes promocionais disponíveis
-  const pacotesPromocionais = [
-    { quantidade: 100, preco: 17.90, valorUnitario: 0.18, economia: 82.10 },
-    { quantidade: 300, preco: 49.90, valorUnitario: 0.17, economia: 250.10 },
-    { quantidade: 500, preco: 79.90, valorUnitario: 0.16, economia: 420.10 },
-    { quantidade: 1000, preco: 149.90, valorUnitario: 0.15, economia: 850.10, melhorOferta: true }
-  ];
+  const { selection, selectPackage, clearSelection, updateQuantity } = useCampaignSelection(campanhaDetalhes as ICampaign);
+  
   
   // First, enhance the fixedPrizes array with additional information for a more luxurious display
   const fixedPrizes = [
@@ -83,9 +73,27 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
       emoji: '🎖️'
     }))
   ];
+
+  useEffect(() => {
+    if (!initialized.current && 
+      campanhaDetalhes?.minNumbersPerUser && 
+      campanhaDetalhes?.individualNumberPrice) {
+    
+    initialized.current = true;
+      
+      selectPackage({
+        isActive: true,
+        quantity: campanhaDetalhes.minNumbersPerUser,
+        price: campanhaDetalhes.individualNumberPrice,
+        name: 'Pacote Mínimo',
+        totalPrice: campanhaDetalhes.individualNumberPrice * campanhaDetalhes.minNumbersPerUser
+      });
+    }
+ 
+  }, [campanhaDetalhes, selectPackage]);
   
   // Imagens do carrossel (usando a imagem principal como primeira e adicionando imagens extras se disponíveis)
-  const carouselImages = campanha.images || [];
+  const carouselImages = campanhaDetalhes?.images || [];
   
   // Função para trocar para a próxima imagem
   const nextImage = () => {
@@ -120,90 +128,68 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   const opcoes = [50, 100, 250, 500, 700, 1000];
   
   // Formatar data de sorteio
-  const dataSorteio = new Date(campanha.drawDate).toLocaleDateString('pt-BR', {
+  const dataSorteio = new Date(campanhaDetalhes?.drawDate || '').toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
   
   // Função para incrementar quantidade
-  const incrementar = () => {
-    setAnimateValue(true);
-    setQuantidadeSelecionada(prev => {
-      const newValue = prev + 1;
-      // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
-      if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
-        setActivePacote(null);
-      }
-      return newValue;
-    });
-    setTimeout(() => setAnimateValue(false), 300);
-  };
+  // const incrementar = () => {
+  //   setAnimateValue(true);
+  //   setQuantidadeSelecionada(prev => {
+  //     const newValue = prev + 1;
+  //     // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
+  //     if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
+  //       setActivePacote(null);
+  //     }
+  //     return newValue;
+  //   });
+  //   setTimeout(() => setAnimateValue(false), 300);
+  // };
   
   // Função para decrementar quantidade
-  const decrementar = () => {
-    if (quantidadeSelecionada > numeroMinimo) {
-      setAnimateValue(true);
-      setQuantidadeSelecionada(prev => {
-        const newValue = prev - 1;
-        // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
-        if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
-          setActivePacote(null);
-        }
-        return newValue;
-      });
-      setTimeout(() => setAnimateValue(false), 300);
-    }
-  };
+  // const decrementar = () => {
+  //   if (quantidadeSelecionada > numeroMinimo) {
+  //     setAnimateValue(true);
+  //     setQuantidadeSelecionada(prev => {
+  //       const newValue = prev - 1;
+  //       // Verificar se a nova quantidade não corresponde mais ao pacote selecionado
+  //       if (activePacote !== null && newValue !== pacotesPromocionais.find(p => p.quantidade === activePacote)?.quantidade) {
+  //         setActivePacote(null);
+  //       }
+  //       return newValue;
+  //     });
+  //     setTimeout(() => setAnimateValue(false), 300);
+  //   }
+  // };
 
   // Função para adicionar quantidade em lote
-  const adicionarLote = (quantidade: number) => {
-    setAnimateValue(true);
-    setQuantidadeSelecionada(prev => {
-      const newValue = prev + quantidade;
-      // Verificar se a nova quantidade corresponde a algum pacote promocional
-      const matchingPacote = pacotesPromocionais.find(p => p.quantidade === newValue);
-      if (matchingPacote) {
-        setActivePacote(matchingPacote.quantidade);
-      } else {
-        setActivePacote(null);
-      }
-      return newValue;
-    });
-    setTimeout(() => setAnimateValue(false), 300);
-  };
+  // const adicionarLote = (quantidade: number) => {
+  //   setAnimateValue(true);
+  //   setQuantidadeSelecionada(prev => {
+  //     const newValue = prev + quantidade;
+  //     // Verificar se a nova quantidade corresponde a algum pacote promocional
+  //     const matchingPacote = pacotesPromocionais.find(p => p.quantidade === newValue);
+  //     if (matchingPacote) {
+  //       setActivePacote(matchingPacote.quantidade);
+  //     } else {
+  //       setActivePacote(null);
+  //     }
+  //     return newValue;
+  //   });
+  //   setTimeout(() => setAnimateValue(false), 300);
+  // };
   
-  // Função para selecionar pacote promocional
-  const selecionarPacote = (quantidade: number) => {
-    setAnimateValue(true);
-    setQuantidadeSelecionada(quantidade);
-    setActivePacote(quantidade);
-    
-    // Rolar para o botão de compra
-    setTimeout(() => {
-      const botaoComprar = document.getElementById('botao-comprar');
-      if (botaoComprar) {
-        botaoComprar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      setAnimateValue(false);
-    }, 300);
-  };
-  
-  // Função para resetar a quantidade para o mínimo
-  const resetarQuantidade = () => {
-    setAnimateValue(true);
-    setQuantidadeSelecionada(numeroMinimo);
-    setActivePacote(null);
-    setTimeout(() => setAnimateValue(false), 300);
-  };
+
   
   // Calcular valor total
-  const valorTotal = (campanha.price * quantidadeSelecionada).toFixed(2);
+  const valorTotal = ((campanhaDetalhes?.individualNumberPrice || 0) * quantidadeSelecionada).toFixed(2);
 
   // Estado para armazenar as estatísticas dos números
   const [rifaStats, setRifaStats] = useState({
-    totalNumbers: campanha.totalNumbers,
-    available: campanha.totalNumbers,
+    totalNumbers: campanhaDetalhes?.totalNumbers,
+    available: campanhaDetalhes?.stats?.available,
     reserved: 0,
     sold: 0,
     percentComplete: 0
@@ -213,7 +199,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
   useEffect(() => {
     async function loadStats() {
       try {
-        if (campanha._id) {
+        if (campanhaDetalhes?.campaignCode) {
           //const stats = await rifaAPI.getRifaStats(campanha._id.toString());
           //setRifaStats(stats);
         }
@@ -223,7 +209,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
     }
     
     loadStats();
-  }, [campanha._id]);
+  }, [campanhaDetalhes?.campaignCode]);
   
   // Calculando o progresso da rifa usando rifaStats
   const progresso = rifaStats.percentComplete;
@@ -392,55 +378,11 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
     // Implementar a lógica para mostrar os números do usuário
     console.log("Meus Números clicado");
   };
-
-  const MobileContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    
-    @media (min-width: 992px) {
-      display: none; // Hide on desktop
-    }
-  `;
-
-  // Add a desktop container with the new layout
-  const DesktopContainer = styled.div`
-    display: none; // Hidden on mobile
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    
-    @media (min-width: 992px) {
-      display: flex;
-    }
-  `;
-
-  // Create a row container for the promotional packages and quantity selector
-  const SelectionRowContainer = styled.div`
-    display: flex;
-    gap: 1.5rem;
-    
-    > * {
-      flex: 1; // Make both children take equal space
-    }
-  `;
-
-  // Add styled component for desktop purchase container
-  const CompraDesktop = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    background-color: ${({ theme }) => theme.colors.white};
-    padding: 1.5rem;
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    box-shadow: ${({ theme }) => theme.shadows.md};
-  `;
   
   return (
     <Container>
       {/* Banner da campanha */}
-      <Banner style={{ backgroundImage: `url(${campanha.images?.[0] || ''})` }}>
+      <Banner style={{ backgroundImage: `url(${campanhaDetalhes?.coverImage || ''})` }}>
         {/* Botão Meus Números */}
         <MeusTitulosButton onClick={handleMeusNumerosClick}>
           <i className="fas fa-ticket-alt"></i> Meus Números
@@ -449,14 +391,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
         {/* Código do sorteio */}
         <BannerOverlay>
           <CodigoSorteio>
-            {campanha.codigoSorteio || `RA${campanha._id}/01`}
+            {campanhaDetalhes?.campaignCode}
           </CodigoSorteio>
           
           {/* Título da campanha */}
-          <Titulo>{campanha.title}</Titulo>
+          <Titulo>{campanhaDetalhes?.title}</Titulo>
           
           {/* Subtítulo/prêmio principal */}
-          <SubTitulo>{campanha.premiacaoPrincipal || campanha.title}</SubTitulo>
+          <SubTitulo>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name || campanhaDetalhes?.title}</SubTitulo>
           
           {/* Botões de ação */}
           <BotoesAcao>
@@ -507,11 +449,11 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                   transition: isDragging ? 'none' : 'transform 0.5s ease'
                 }}
               >
-                {carouselImages.map((img: string, index: number) => (
+                {campanhaDetalhes?.images?.map((img: string | File, index: number) => (
                   <CarrosselSlide key={index}>
                     <CarrosselImagem 
                       src={img} 
-                      alt={`${campanha.title} - imagem ${index+1}`}
+                      alt={`${campanhaDetalhes?.title} - imagem ${index+1}`}
                       draggable={false}
                     />
                     {!isMobile && <ZoomIndicator><i className="fas fa-search-plus"></i></ZoomIndicator>}
@@ -547,7 +489,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               </CarrosselSetas>
               
               <IndicadoresPontos>
-                {carouselImages.map((_:string, index:number) => (
+                {campanhaDetalhes?.images?.map((_:string | File, index:number) => (
                   <PontoIndicador 
                     key={index} 
                     className="navegacao-seta"
@@ -564,7 +506,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             
             {/* Miniaturas das imagens */}
             <MiniaturasContainer>
-              {carouselImages.map((img: string, index: number) => (
+              {campanhaDetalhes?.images?.map((img: string | File, index: number) => (
                 <MiniaturaBotao
                   key={index}
                   $ativo={index === currentImageIndex}
@@ -593,18 +535,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               </PacotesPromocionaisTitulo>
               
               <PacotesPromocionaisGrid>
-                {pacotesPromocionais.map((pacote) => (
+                {campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
                   <PacotePromocional 
-                    key={pacote.quantidade} 
-                    $melhorOferta={pacote.melhorOferta}
-                    $ativo={activePacote === pacote.quantidade}
-                    onClick={() => selecionarPacote(pacote.quantidade)}
+                    key={pacote.quantity} 
+                    $melhorOferta={pacote.highlight}
+                    $ativo={selection?.quantity === pacote.quantity}
+                    onClick={() => selectPackage(pacote)}
                   >
-                    {pacote.melhorOferta && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
-                    <PacoteQuantidade>{pacote.quantidade} cotas</PacoteQuantidade>
-                    <PacotePreco>R$ {pacote.preco.toFixed(2)}</PacotePreco>
-                    <PacoteDescricaoValor>Valor unitário: R$ {pacote.valorUnitario.toFixed(2)}</PacoteDescricaoValor>
-                    <PacoteEconomia>Economia de R$ {pacote.economia.toFixed(2)}</PacoteEconomia>
+                    {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
+                    <PacotePreco>R$ {pacote.price.toFixed(2)}</PacotePreco>
+                    <PacoteDescricaoValor>Valor unitário: R$ {pacote.price / pacote.quantity}</PacoteDescricaoValor>
+                    <PacoteEconomia>Economia de R$ {((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price).toFixed(2)}</PacoteEconomia>
                   </PacotePromocional>
                 ))}
               </PacotesPromocionaisGrid>
@@ -615,17 +557,17 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
               <QuantidadeControle>
                 <BotoesEsquerda>
-                  <BotaoReset onClick={resetarQuantidade} disabled={quantidadeSelecionada <= numeroMinimo}>
+                  <BotaoReset onClick={() => clearSelection()} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
                     <i className="fas fa-undo-alt"></i>
                   </BotaoReset>
-                  <BotaoMenos onClick={decrementar} disabled={quantidadeSelecionada <= numeroMinimo}>
+                  <BotaoMenos onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
                     <span>−</span>
                   </BotaoMenos>
                 </BotoesEsquerda>
                 <QuantidadeNumero>
-                  <span>{quantidadeSelecionada}</span>
+                  <span>{selection?.quantity}</span>
                 </QuantidadeNumero>
-                <BotaoMais onClick={incrementar}>
+                <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)}>
                   <span>+</span>
                 </BotaoMais>
               </QuantidadeControle>
@@ -635,7 +577,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                 {opcoes.map((opcao) => (
                   <OpcaoLote 
                     key={opcao} 
-                    onClick={() => adicionarLote(opcao)}
+                    onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
                     $popular={opcao === 100}
                   >
                     +{opcao}
@@ -649,7 +591,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               <ValorTotalContainer>
                 <ValorTotalLabel>Total:</ValorTotalLabel>
                 <ValorTotal>
-                  R$ {valorTotal}
+                  R$ {selection?.totalPrice?.toFixed(2)}
                 </ValorTotal>
               </ValorTotalContainer>
             </QuantidadeSelector>
@@ -688,11 +630,11 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                   transition: isDragging ? 'none' : 'transform 0.5s ease'
                 }}
               >
-                {carouselImages.map((img: string, index: number) => (
+                {campanhaDetalhes?.images?.map((img: string | File, index: number) => (
                   <CarrosselSlide key={index}>
                     <CarrosselImagem 
                       src={img} 
-                      alt={`${campanha.title} - imagem ${index+1}`}
+                      alt={`${campanhaDetalhes?.title} - imagem ${index+1}`}
                       draggable={false}
                     />
                     {!isMobile && <ZoomIndicator><i className="fas fa-search-plus"></i></ZoomIndicator>}
@@ -722,7 +664,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               </CarrosselSetas>
               
               <IndicadoresPontos>
-                {carouselImages.map((_:string, index:number) => (
+                {campanhaDetalhes?.images?.map((_:string | File, index:number) => (
                   <PontoIndicador 
                     key={index} 
                     className="navegacao-seta"
@@ -739,7 +681,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
             
             {/* Miniaturas das imagens */}
             <MiniaturasContainer>
-              {carouselImages.map((img: string, index: number) => (
+              {campanhaDetalhes?.images?.map((img: string | File, index: number) => (
                 <MiniaturaBotao
                   key={index}
                   $ativo={index === currentImageIndex}
@@ -763,20 +705,25 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
               </PacotesPromocionaisTitulo>
               
               <PacotesPromocionaisGrid>
-                {pacotesPromocionais.map((pacote) => (
-                  <PacotePromocional 
-                    key={pacote.quantidade} 
-                    $melhorOferta={pacote.melhorOferta}
-                    $ativo={activePacote === pacote.quantidade}
-                    onClick={() => selecionarPacote(pacote.quantidade)}
-                  >
-                    {pacote.melhorOferta && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
-                    <PacoteQuantidade>{pacote.quantidade} cotas</PacoteQuantidade>
-                    <PacotePreco>R$ {pacote.preco.toFixed(2)}</PacotePreco>
-                    <PacoteDescricaoValor>Valor unitário: R$ {pacote.valorUnitario.toFixed(2)}</PacoteDescricaoValor>
-                    <PacoteEconomia>Economia de R$ {pacote.economia.toFixed(2)}</PacoteEconomia>
+                {campanhaDetalhes?.numberPackages ?(
+                  campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
+                    <PacotePromocional 
+                      key={pacote.quantity} 
+                      $melhorOferta={pacote.highlight}
+                      $ativo={selection?.quantity === pacote.quantity}
+                      onClick={() => selectPackage(pacote)}
+                    >
+                      {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                      <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
+                      <PacotePreco>R$ {pacote.price.toFixed(2)}</PacotePreco>
+                      <PacoteEconomia>Economia de R$ {((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price).toFixed(2)}</PacoteEconomia>
+                    </PacotePromocional>
+                  ))
+                ):(
+                  <PacotePromocional>
+                    <PacoteQuantidade>Nenhum pacote promocional disponível</PacoteQuantidade>
                   </PacotePromocional>
-                ))}
+                )}
               </PacotesPromocionaisGrid>
             </PacotesPromocionaisContainer>
             
@@ -790,17 +737,17 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                 <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
                 <QuantidadeControle>
                   <BotoesEsquerda>
-                    <BotaoReset onClick={resetarQuantidade} disabled={quantidadeSelecionada <= numeroMinimo}>
+                    <BotaoReset onClick={() => clearSelection()} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
                       <i className="fas fa-undo-alt"></i>
                     </BotaoReset>
-                    <BotaoMenos onClick={decrementar} disabled={quantidadeSelecionada <= numeroMinimo}>
+                    <BotaoMenos onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
                       <span>−</span>
                     </BotaoMenos>
                   </BotoesEsquerda>
                   <QuantidadeNumero>
-                    <span>{quantidadeSelecionada}</span>
+                    <span>{selection?.quantity}</span>
                   </QuantidadeNumero>
-                  <BotaoMais onClick={incrementar}>
+                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)}>
                     <span>+</span>
                   </BotaoMais>
                 </QuantidadeControle>
@@ -810,7 +757,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                   {opcoes.map((opcao) => (
                     <OpcaoLote 
                       key={opcao} 
-                      onClick={() => adicionarLote(opcao)}
+                      onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
                       $popular={opcao === 100}
                     >
                       +{opcao}
@@ -824,7 +771,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                 <ValorTotalContainer>
                   <ValorTotalLabel>Total:</ValorTotalLabel>
                   <ValorTotal>
-                    R$ {valorTotal}
+                    R$ {selection?.totalPrice?.toFixed(2)}
                   </ValorTotal>
                 </ValorTotalContainer>
               </QuantidadeSelector>
@@ -853,7 +800,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
         <ImageModal 
           isOpen={showImageModal}
           onClose={() => setShowImageModal(false)}
-          images={carouselImages}
+          images={campanhaDetalhes?.images as string[] || []}
           currentIndex={1}
         />
         
@@ -878,10 +825,10 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
           <TabContent $visivel={activeTab === 'regulamento'}>
             <Regulamento>
               <h3>Descrição/Regulamento</h3>
-              <p>{campanha.regulamento || campanha.description}</p>
+              <p>{campanhaDetalhes?.regulation || campanhaDetalhes?.description}</p>
               
               <h4>PREMIAÇÃO:</h4>
-              <p>{campanha.premiacaoPrincipal} (SUGESTÃO DE USO DO PRÊMIO LÍQUIDO {campanha.valorPremio})</p>
+              <p>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name} (SUGESTÃO DE USO DO PRÊMIO LÍQUIDO {(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.value})</p>
               
               <h4>COMO FUNCIONA:</h4>
               <p>
@@ -890,7 +837,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                 Quanto mais números adquirir, maiores são suas chances de ganhar!
               </p>
               
-              {campanha.instantPrizes && campanha.instantPrizes.length > 0 && (
+              {/* {campanha.instantPrizes && campanha.instantPrizes.length > 0 && (
                 <>
                   <h4>INSTANTÂNEAS:</h4>
                   <p>
@@ -901,7 +848,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanha }) => {
                     {fixedPrizes.length > 10 ? '...' : ''}
                   </PremiosList>
                 </>
-              )}
+              )} */}
             </Regulamento>
           </TabContent>
           
@@ -997,6 +944,50 @@ const Container = styled.div`
   @media (min-width: 1024px) {
     max-width: 1280px;
   }
+`;
+
+const MobileContainer = styled.div`
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+margin-bottom: 1.5rem;
+
+@media (min-width: 992px) {
+  display: none; // Hide on desktop
+}
+`;
+
+// Add a desktop container with the new layout
+const DesktopContainer = styled.div`
+display: none; // Hidden on mobile
+flex-direction: column;
+gap: 1.5rem;
+margin-bottom: 1.5rem;
+
+@media (min-width: 992px) {
+  display: flex;
+}
+`;
+
+// Create a row container for the promotional packages and quantity selector
+const SelectionRowContainer = styled.div`
+display: flex;
+gap: 1.5rem;
+
+> * {
+  flex: 1; // Make both children take equal space
+}
+`;
+
+// Add styled component for desktop purchase container
+const CompraDesktop = styled.div`
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+background-color: ${({ theme }) => theme.colors.white};
+padding: 1.5rem;
+border-radius: ${({ theme }) => theme.borderRadius.lg};
+box-shadow: ${({ theme }) => theme.shadows.md};
 `;
 
 const Banner = styled.div`

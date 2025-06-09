@@ -49,7 +49,7 @@ export enum CampaignStatusEnum {
     // Prêmios distribuídos por posição
     prizeDistribution?: Array<{
       position: number;
-      prizes: Array<mongoose.Types.ObjectId | string>;
+      prizes: Array<mongoose.Types.ObjectId | string | IPrize>;
       description?: string;
     }>;
     createdAt: Date;

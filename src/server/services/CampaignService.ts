@@ -32,6 +32,7 @@ export interface ICampaignService {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
   getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
   deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
@@ -87,6 +88,10 @@ export class CampaignService implements ICampaignService {
     } catch (error) {
       return createErrorResponse('Erro ao buscar campanha por ID:', 500);
     }
+  }
+
+  async getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignRepository.getCampaignByIdPublic(id);
   }
 
   async toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>> {
