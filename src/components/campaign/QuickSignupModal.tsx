@@ -16,15 +16,18 @@ import { useAddressField } from '@/hooks/useAddressField';
 import { useHookFormMask } from 'use-mask-input';
 import { signupSchema, SignupFormData } from '@/zod/quicksignup.validation';
 import { FaEnvelope, FaIdCard, FaPhone, FaUser } from 'react-icons/fa';
+import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
+import { PurchaseSummary } from '@/components/order/PurchaseSummary';
 
 
 interface QuickSignupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  campaignSelection: INumberPackageCampaign;
 }
 
-const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, onSuccess, campaignSelection }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const router = useRouter();
@@ -187,8 +190,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     <Modal isOpen={isOpen} onClose={handleModalClose} maxWidth="700px">
       <ModalContent>
         <ModalHeader>
-          <WelcomeMessage>Checkout</WelcomeMessage>
-          <SubTitle>Informe seus dados para participar</SubTitle>
         </ModalHeader>
         
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -209,6 +210,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 />
                 
               </FormRow>
+
+              <PurchaseSummary selection={campaignSelection} />
               
               <ButtonGroup>
                 <SecondaryButton type="button" onClick={handleModalClose} disabled={isLoading}>

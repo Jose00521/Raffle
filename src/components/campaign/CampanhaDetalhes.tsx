@@ -941,6 +941,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       <QuickSignupModal 
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
+        campaignSelection={selection as INumberPackageCampaign}
         onSuccess={proceedWithPurchase}
       />
     </Container>

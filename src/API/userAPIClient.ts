@@ -50,8 +50,29 @@ const userAPIClient = {
                 error: error instanceof Error ? error.message : 'Erro desconhecido'
             };
         }
+    },
+
+    verifyIfUserExists: async (phone: string) => {
+        try {
+            const response = await fetch(`/api/user/verify/${phone}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                console.error(`Erro do servidor: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        } catch (error) {
+            return {
+                success: false, 
+                statusCode: 500,
+                message: 'Erro ao comunicar com o servidor',
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
+            };
+        }
     }
-    
 
 }
 export default userAPIClient;

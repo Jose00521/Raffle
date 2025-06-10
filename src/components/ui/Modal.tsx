@@ -83,6 +83,7 @@ const Overlay = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  backdrop-filter: blur(10px);
   animation: fadeIn 0.2s ease-out;
   
   @keyframes fadeIn {

@@ -5,10 +5,12 @@ export interface INumberPackageCampaign {
     _id?: string;
     name: string;     
     campaignCode?: string;      // Nome do pacote (ex: "Pacote Bronze", "Pacote Prata", "Pacote Ouro")
-    description?: string;   // Descrição opcional do pacote
+    description?: string;
+    isCombo?: boolean;
     quantity: number;       // Quantidade de números no pacote
     price: number;          // Preço total do pacote
-    discount?: number;      // Desconto percentual em relação à compra individual
+    discount?: number;    
+    individualNumberPrice?: number;  // Desconto percentual em relação à compra individual
     isActive: boolean;      // Se o pacote está disponível para compra
     highlight?: boolean;    // Se o pacote deve ser destacado (pacote recomendado)
     order?: number;         // Ordem de exibição
@@ -19,11 +21,14 @@ export interface INumberPackageCampaign {
 
 export const useCampaignSelection = (campaign: ICampaign) => {
     const [selection, setSelection] = useState<INumberPackageCampaign | null>(null);
+    const [isCombo, setIsCombo] = useState(false);
 
     const selectPackage = useCallback((packageData: INumberPackageCampaign) => {
-        console.log('selectPackage', packageData);
+        setIsCombo(true);
         setSelection({
             campaignCode: campaign.campaignCode,
+            isCombo,
+            individualNumberPrice: campaign.individualNumberPrice,
             ...packageData,
             totalPrice: packageData.price
         });
@@ -33,6 +38,8 @@ export const useCampaignSelection = (campaign: ICampaign) => {
         console.log('selectPackage', packageData);
         setSelection({
             campaignCode: campaign.campaignCode,
+            isCombo,
+            individualNumberPrice: campaign.individualNumberPrice,
             ...packageData,
         });
     }, []);
@@ -40,6 +47,7 @@ export const useCampaignSelection = (campaign: ICampaign) => {
 
     const clearSelection = useCallback(() => {
         setSelection(null);
+        setIsCombo(false);
         selectPackageFunction({
             campaignCode: campaign.campaignCode,
             isActive: true,
@@ -54,11 +62,13 @@ export const useCampaignSelection = (campaign: ICampaign) => {
         console.log('updateQuantity', newQuantity);
         const matchingPackage = campaign.numberPackages.find(pkg => pkg.quantity === newQuantity);
         if(matchingPackage){
+            setIsCombo(true);
             selectPackageFunction({
                 ...matchingPackage,
                 totalPrice: matchingPackage.price
             });
         }else{
+            setIsCombo(false);
             selectPackageFunction({
                 ...selection!,
                 quantity: newQuantity,
