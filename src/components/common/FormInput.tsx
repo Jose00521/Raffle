@@ -117,6 +117,7 @@ const InputIcon = styled.div`
 
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
+  height: 55px;
   border: ${props => props.$hasError ? '2px solid #ef4444' : '2px solid rgba(0, 0, 0, 0)'};
   padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
   padding-right: 40px; /* Ensure space for password toggle button */

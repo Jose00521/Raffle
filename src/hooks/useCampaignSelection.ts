@@ -23,6 +23,7 @@ export const useCampaignSelection = (campaign: ICampaign) => {
     const selectPackage = useCallback((packageData: INumberPackageCampaign) => {
         console.log('selectPackage', packageData);
         setSelection({
+            campaignCode: campaign.campaignCode,
             ...packageData,
             totalPrice: packageData.price
         });
@@ -30,7 +31,10 @@ export const useCampaignSelection = (campaign: ICampaign) => {
 
     const selectPackageFunction = useCallback((packageData: INumberPackageCampaign) => {
         console.log('selectPackage', packageData);
-        setSelection(packageData);
+        setSelection({
+            campaignCode: campaign.campaignCode,
+            ...packageData,
+        });
     }, []);
 
 
@@ -51,13 +55,11 @@ export const useCampaignSelection = (campaign: ICampaign) => {
         const matchingPackage = campaign.numberPackages.find(pkg => pkg.quantity === newQuantity);
         if(matchingPackage){
             selectPackageFunction({
-                campaignCode: campaign.campaignCode,
                 ...matchingPackage,
                 totalPrice: matchingPackage.price
             });
         }else{
             selectPackageFunction({
-                campaignCode: campaign.campaignCode,
                 ...selection!,
                 quantity: newQuantity,
                 totalPrice: (campaign.individualNumberPrice * newQuantity)
@@ -66,5 +68,5 @@ export const useCampaignSelection = (campaign: ICampaign) => {
 
     },[campaign, selectPackage])
 
-    return { selection, selectPackage, clearSelection, updateQuantity };
+    return { selection, selectPackage, selectPackageFunction, clearSelection, updateQuantity };
 }

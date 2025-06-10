@@ -34,7 +34,13 @@ export default function CampanhaPage() {
   return (
     <Layout hideHeader={true}>
       <ToastContainer />
-      <CampanhaDetalhes campanhaDetalhes={campanha as ICampaign} />
+      {
+        campanha?(
+          <CampanhaDetalhes campanhaDetalhes={campanha as ICampaign} />
+        ):(
+          <div>Carregando...</div>
+        )
+      }
     </Layout>
   );
 } 
