@@ -184,6 +184,11 @@ const CreatorSchema = new Schema<ICreator>({
     type: String,
     required: function(this: any) { return this.personType === 'company'; }
   },
+  //gateway
+  defaultGateway: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'UserPaymentGateway'
+  },
   // Conta bancária
   bankAccount: [{
     bank: { type: String, required: true },

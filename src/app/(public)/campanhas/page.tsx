@@ -5,7 +5,7 @@ import Layout from '../../../components/layout/Layout';
 import styled from 'styled-components';
 import CampaignGrid from '../../../components/campaign/CampaignGrid';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
-import rifaAPI from '../../../API/campaignAPIClient';
+import participantCampaignAPI from '../../../API/participant/participantCampaignAPIClient';
 
 // Dados de exemplo para as campanhas
 
@@ -41,7 +41,7 @@ export default function CampanhasPage() {
   useEffect(() => {
     const fetchCampanhas = async () => {
       try {
-        const data = await rifaAPI.getCampanhasAtivas();
+        const data = await participantCampaignAPI.getCampanhasAtivas();
         setCampanhas(Array.isArray(data) ? data : []);
       } catch (error) {
         setCampanhas([]);

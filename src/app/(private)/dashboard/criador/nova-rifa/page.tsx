@@ -7,10 +7,11 @@ import RaffleFormFields, { RaffleFormData } from '@/components/campaign/RaffleFo
 import { FaSave, FaArrowLeft, FaLightbulb, FaTrophy, FaImage, FaPen } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import campaignAPIClient from '@/API/campaignAPIClient';
+import campaignAPIClient from '@/API/participant/participantCampaignAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { ApiResponse } from '@/server/utils/errorHandler/api';
 import { toast, ToastContainer } from 'react-toastify';
+import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 // Styled Components
 const Container = styled.div`
   max-width: 1200px;
@@ -461,7 +462,7 @@ export default function NovaRifaPage() {
       console.log("FormData:", formData);
       
       // Simulate API call
-      const response: ApiResponse<ICampaign> = await campaignAPIClient.criarNovaCampanha(formData) as unknown as ApiResponse<ICampaign>;
+      const response: ApiResponse<ICampaign> = await creatorCampaignAPI.createCampaign(formData) as unknown as ApiResponse<ICampaign>;
       console.log("Resposta da API:", response);
 
       if (response.success) {

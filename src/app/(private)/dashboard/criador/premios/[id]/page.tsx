@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { FaArrowLeft, FaSpinner } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
-import prizeAPIClient from '@/API/prizeAPIClient';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import PrizeUpdateForm from '@/components/dashboard/PrizeUpdateForm';
 
@@ -123,7 +123,9 @@ const LoadingSpinner = styled.div`
 
 export default function EditPrizePage() {
   const router = useRouter();
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
+
   
   const [prize, setPrize] = useState<IPrize | null>(null);
   const [originalPrize, setOriginalPrize] = useState<IPrize | null>(null);
@@ -134,7 +136,7 @@ export default function EditPrizePage() {
   useEffect(() => {
     const fetchPrize = async () => {
       try {
-        const response = await prizeAPIClient.getPrizeById(id as string);
+        const response = await creatorPrizeAPIClient.getPrizeById(id as string);
 
         console.log("response",response);
         if (response.success) {
@@ -207,7 +209,7 @@ export default function EditPrizePage() {
       }
       
       // Only send the modified fields
-      const response = await prizeAPIClient.updatePrize(
+      const response = await creatorPrizeAPIClient.updatePrize(
         id as string, 
         updatedData, 
         modifiedFields

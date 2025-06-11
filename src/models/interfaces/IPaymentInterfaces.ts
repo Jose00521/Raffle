@@ -14,6 +14,7 @@ export enum PaymentStatusEnum {
     CREDIT_CARD = 'CREDIT_CARD',
     DEBIT_CARD = 'DEBIT_CARD',
     PIX = 'PIX',
+    BILLET = 'BILLET',
     BANK_SLIP = 'BANK_SLIP',
     BANK_TRANSFER = 'BANK_TRANSFER'
   }

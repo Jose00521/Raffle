@@ -42,7 +42,7 @@ export const createToken = (payload: Omit<JWTPayload, 'iat' | 'exp'>): string =>
     throw new Error('JWT_SECRET não está definido no ambiente');
   }
 
-  return jwt.sign(payload, secret, { expiresIn: '7d' });
+  return jwt.sign(payload, secret, { expiresIn: '30m' }); // Sincronizado com NextAuth
 };
 
 /**

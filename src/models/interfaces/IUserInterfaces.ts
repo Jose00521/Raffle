@@ -85,6 +85,8 @@ export interface IAddress {
     companyName?: string;
     birthDate?: Date;
     legalName?: string;
+    defaultGateway: mongoose.Types.ObjectId | string;
+    gateways: Array<mongoose.Types.ObjectId | string>;
     legalRepresentative?: string;
     companyCategory?: string;
     bankAccount: Array<IBankAccount>;

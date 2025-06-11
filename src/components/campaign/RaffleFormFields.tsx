@@ -45,7 +45,7 @@ import PrizeCreatorModal from '../prize/PrizeCreatorModal';
 import CustomDropdown from '../common/CustomDropdown';
 import ComboDiscountSectionComponent from './ComboDiscountSection';
 import MultiPrizePosition, { PrizeItemProps } from './MultiPrizePosition';
-import prizeAPIClient from '@/API/prizeAPIClient';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import { Currency } from 'lucide-react';
 import CurrencyInput from '../common/CurrencyInput';
 import PrizeIntelligentSummaryComponent from './PrizeIntelligentSummary';
@@ -2941,7 +2941,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Carregar prêmios mock quando o componente montar
   useEffect(() => {
     const fetchPrizes = async () => {
-      const prizes = await prizeAPIClient.getAllPrizes();
+      const prizes = await creatorPrizeAPIClient.getAllPrizes();
       setAvailablePrizes(prizes.data);
     };
     fetchPrizes();

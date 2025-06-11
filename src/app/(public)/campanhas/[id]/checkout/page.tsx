@@ -5,9 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 import Layout from '../../../../../components/layout/Layout';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
-import campaignAPIClient from '@/API/campaignAPIClient';
+import campaignAPIClient from '@/API/participant/participantCampaignAPIClient';
 import { toast, ToastContainer } from 'react-toastify';
 import SecurityModal from '@/components/auth/SecurityModal';
+import Timer from '@/components/ui/Timer';
+import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
+import { IUser } from '@/models/interfaces/IUserInterfaces';
 
 
 // Interfaces
@@ -363,13 +366,13 @@ const StepIcon = styled.div<{ $active?: boolean; $completed?: boolean }>`
 
 const MainContent = styled.div`
   display: grid;
-  grid-template-columns: 1fr 420px;
+  grid-template-columns: 1fr 450px;
   gap: 3rem;
   animation: ${slideInUp} 0.8s ease-out 0.4s both;
   align-items: start;
   
   @media (max-width: 1200px) {
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 500px;
     gap: 2.5rem;
   }
   
@@ -542,76 +545,77 @@ const SecurityButtonContainer = styled.div`
   margin: 1rem 0 1.5rem;
 `;
 
+const SecurityButtonContainerMobile = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 1.5rem;
+  
+  @media (min-width: 1025px) {
+    display: none;
+  }
+`;
+
+const SecurityButtonContainerDesktop = styled.div`
+  display: none;
+  justify-content: center;
+  margin: 1.5rem 0 0;
+  
+  @media (min-width: 1025px) {
+    display: flex;
+  }
+`;
+
 const SecurityButton = styled.button`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.8rem;
-  border-radius: 30px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  background: white;
+  color: #22c55e;
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  box-shadow: 
-    0 6px 20px rgba(40, 167, 69, 0.25),
-    0 2px 8px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
-  overflow: hidden;
-  letter-spacing: 0.5px;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.6s;
-  }
   
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 
-      0 8px 25px rgba(40, 167, 69, 0.4),
-      0 3px 12px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    background: linear-gradient(135deg, #218838 0%, #1dd1a1 100%);
-    
-    &::before {
-      left: 100%;
-    }
+    background: #f9fafb;
+    border-color: #22c55e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
   
   &:active {
-    transform: translateY(-2px);
+    transform: translateY(0);
   }
   
-  i {
-    font-size: 1rem;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  img {
+    width: 16px;
+    height: 16px;
+    filter: none;
   }
   
   @media (max-width: 768px) {
-    padding: 0.65rem 1.5rem;
-    font-size: 0.85rem;
-    border-radius: 25px;
+    padding: 0.65rem 1.125rem;
+    font-size: 0.8rem;
     
-    i {
-      font-size: 0.9rem;
+    img {
+      width: 14px;
+      height: 14px;
     }
   }
   
   @media (max-width: 480px) {
-    padding: 0.6rem 1.25rem;
-    font-size: 0.8rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.75rem;
     
-    i {
-      font-size: 0.85rem;
+    img {
+      width: 12px;
+      height: 12px;
     }
   }
 `;
@@ -977,52 +981,7 @@ const CopyButton = styled.button<{ $copied?: boolean }>`
   }
 `;
 
-const PaymentTimer = styled.div`
-  background: #fefbf3;
-  color: #d97706;
-  padding: 1.5rem;
-  border-radius: 12px;
-  text-align: center;
-  margin-bottom: 2rem;
-  border: 2px solid #fed7aa;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    border-color: #fdba74;
-    background: #fff7ed;
-  }
-  
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-`;
 
-const TimerTitle = styled.div`
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  opacity: 0.8;
-  
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const TimerValue = styled.div`
-  font-size: 1.75rem;
-  font-weight: 700;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  letter-spacing: 1px;
-  
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 1.25rem;
-  }
-`;
 
 const HowToPaySection = styled.div`
   background: #f8fafc;
@@ -1265,6 +1224,270 @@ const PurchaseDetails = styled.div`
   margin-bottom: 2rem;
 `;
 
+const ComboCard = styled.div`
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #22c55e, transparent);
+    opacity: 0.6;
+  }
+`;
+
+const ComboHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+`;
+
+const ComboTitle = styled.h4`
+  color: #166534;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ComboBadges = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ComboBadge = styled.span`
+  background: #22c55e;
+  color: white;
+  padding: 0.375rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+`;
+
+const DiscountBadge = styled.span`
+  background: #f59e0b;
+  color: white;
+  padding: 0.375rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+`;
+
+const ComboMainInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+`;
+
+const ComboInfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+  }
+`;
+
+const ComboDetailItem = styled.div`
+  text-align: center;
+`;
+
+const ComboDetailLabel = styled.div`
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const ComboDetailValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
+`;
+
+const ComboSavings = styled.div`
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #22c55e;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+  
+  &::before {
+    content: '💰';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    border: 2px solid #22c55e;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+  }
+`;
+
+const ComboSavingsText = styled.div`
+  font-size: 0.875rem;
+  color: #166534;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  margin-top: 0.5rem;
+`;
+
+const ComboSavingsValue = styled.div`
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #15803d;
+`;
+
+const RegularDetails = styled.div`
+  /* Estilos para compra regular (não combo) */
+`;
+
+const ComboBenefits = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+`;
+
+const BenefitsTitle = styled.h5`
+  color: #166534;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const BenefitsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const BenefitItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #166534;
+  font-weight: 500;
+  
+  &::before {
+    content: '✨';
+    font-size: 1rem;
+  }
+`;
+
+const ComboComparison = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+`;
+
+const ComparisonItem = styled.div<{ $strikethrough?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const ComparisonLabel = styled.div`
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const ComparisonValue = styled.div<{ $strikethrough?: boolean }>`
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${({ $strikethrough }) => $strikethrough ? '#ef4444' : '#059669'};
+  text-decoration: ${({ $strikethrough }) => $strikethrough ? 'line-through' : 'none'};
+  opacity: ${({ $strikethrough }) => $strikethrough ? '0.7' : '1'};
+`;
+
+const ComparisonArrow = styled.div`
+  color: #059669;
+  font-size: 1.5rem;
+  font-weight: 700;
+  
+  @media (max-width: 480px) {
+    transform: rotate(90deg);
+  }
+`;
+
 const DetailRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -1317,7 +1540,8 @@ const SupportSection = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 16px;
   padding: 2rem;
-  text-align: center;
+  text-align: center !important;
+  justify-content: center !important;
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1500,14 +1724,21 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+
+interface CheckoutData {
+  campanha: ICampaign;
+  campaignSelection: INumberPackageCampaign
+  userFound: Partial<IUser>
+}
+
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
-  const campanhaId = params.id as string;
+  const campanhaId = params?.id as string;
   
   const [campanha, setCampanha] = useState<ICampaign | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [pixCode, setPixCode] = useState('00020126580014BR.GOV.BCB.PIX0136123e4567-e12b-12d1-a456-426614174000520400005303986540510.005802BR5913EXEMPLO PIX6009SAO PAULO61080540900062070503***6304A7B2');
@@ -1517,17 +1748,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Buscar dados da campanha
-        const response = await campaignAPIClient.getCampaignById(campanhaId);
-        if (response.success) {
-          setCampanha(response.data as ICampaign);
-        }
-
-        // Buscar dados do localStorage
         const storedData = localStorage.getItem('checkoutData');
         if (storedData) {
-          setCheckoutData(JSON.parse(storedData));
-        } else {
+          const parsedData = JSON.parse(storedData) as CheckoutData;
+          setCampanha(parsedData.campanha as ICampaign);
+          setCheckoutData(parsedData);
+          setIsLoading(false);
+          return;
+        }else{
           toast.error('Dados de checkout não encontrados');
           router.push(`/campanhas/${campanhaId}`);
           return;
@@ -1553,11 +1781,7 @@ export default function CheckoutPage() {
     }
   }, [timeLeft, campanhaId, router]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   const handleCopyPixCode = async () => {
     try {
@@ -1641,17 +1865,22 @@ export default function CheckoutPage() {
                 </SecurityBadge>
               </SecurityBadges>
 
-              <SecurityButtonContainer>
+              <SecurityButtonContainerMobile>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
-                  <i className="fas fa-shield-check" />
+                  <img src="/icons/safe.svg" alt="Seguro" />
                   Ambiente seguro
                 </SecurityButton>
-              </SecurityButtonContainer>
+              </SecurityButtonContainerMobile>
 
-              <PaymentTimer>
-                <TimerTitle>⏰ Tempo restante para pagamento</TimerTitle>
-                <TimerValue>{formatTime(timeLeft)}</TimerValue>
-              </PaymentTimer>
+              <Timer 
+                seconds={timeLeft}
+                title="Tempo restante para pagamento"
+                variant="payment"
+                onTimeUp={() => {
+                  toast.error('Tempo para pagamento expirado');
+                  router.push(`/campanhas/${campanhaId}`);
+                }}
+              />
 
               <QRToggleButton 
                 onClick={() => setShowQRCode(!showQRCode)}
@@ -1744,7 +1973,7 @@ export default function CheckoutPage() {
                       <StepDescription>
                         <strong>Opção 1:</strong> Use a câmera do seu celular para escanear o QR Code acima.<br/>
                         <strong>Opção 2:</strong> Copie o código PIX e cole no campo "PIX Copia e Cola" do seu app bancário.<br/>
-                        O valor será preenchido automaticamente (R$ {checkoutData?.paymentAmount?.toFixed(2) || '0,00'}).
+                        O valor será preenchido automaticamente (R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}).
                       </StepDescription>
                     </StepContent>
                   </StepItem>
@@ -1761,7 +1990,7 @@ export default function CheckoutPage() {
                         <StepTitle>Confirme os dados e finalize o pagamento</StepTitle>
                       </StepHeader>
                       <StepDescription>
-                        Verifique se o valor está correto (R$ {checkoutData?.paymentAmount?.toFixed(2) || '0,00'}), 
+                        Verifique se o valor está correto (R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}), 
                         confirme sua senha/biometria e finalize o pagamento. Você receberá uma confirmação instantânea. 
                         <strong>O pagamento é processado imediatamente!</strong>
                       </StepDescription>
@@ -1806,28 +2035,113 @@ export default function CheckoutPage() {
               )}
 
               <PurchaseDetails>
-                <DetailRow>
-                  <DetailLabel>📦 Quantidade de Números</DetailLabel>
-                  <DetailValue>{checkoutData?.selectedPackage?.quantity || 0}</DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>💰 Valor Unitário</DetailLabel>
-                  <DetailValue>
-                    R$ {checkoutData?.selectedPackage?.unitPrice?.toFixed(2) || '0,00'}
-                  </DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>📊 Subtotal</DetailLabel>
-                  <DetailValue>
-                    R$ {checkoutData?.selectedPackage?.totalPrice?.toFixed(2) || '0,00'}
-                  </DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
-                  <TotalValue>
-                    R$ {checkoutData?.paymentAmount?.toFixed(2) || '0,00'}
-                  </TotalValue>
-                </DetailRow>
+                {checkoutData?.campaignSelection.isCombo ? (
+                  <>
+                    <ComboCard>
+                      <ComboHeader>
+                        <ComboTitle>
+                          🎁 {checkoutData.campaignSelection.name}
+                        </ComboTitle>
+                        <ComboBadges>
+                          <ComboBadge>Combo</ComboBadge>
+                        </ComboBadges>
+                      </ComboHeader>
+                      
+                                             <ComboMainInfo>
+                         <ComboInfoGrid>
+                           <ComboDetailItem>
+                             <ComboDetailLabel>Números</ComboDetailLabel>
+                             <ComboDetailValue>{checkoutData.campaignSelection.quantity}</ComboDetailValue>
+                           </ComboDetailItem>
+                           <ComboDetailItem>
+                             <ComboDetailLabel>Valor por Número</ComboDetailLabel>
+                             <ComboDetailValue>
+                               R$ {(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity).toFixed(2)}
+                             </ComboDetailValue>
+                           </ComboDetailItem>
+                         </ComboInfoGrid>
+                       </ComboMainInfo>
+                      
+                                             {(() => {
+                         const regularPrice = (checkoutData.campaignSelection.individualNumberPrice || 0) * checkoutData.campaignSelection.quantity;
+                         const comboPrice = checkoutData.campaignSelection.totalPrice || 0;
+                         const savings = regularPrice - comboPrice;
+                         const savingsPercentage = regularPrice > 0 ? Math.round((savings / regularPrice) * 100) : 0;
+                         
+                         return savings > 0 && (
+                           <>
+                             <ComboComparison>
+                               <ComparisonItem>
+                                 <ComparisonLabel>Preço Normal</ComparisonLabel>
+                                 <ComparisonValue $strikethrough>
+                                   R$ {regularPrice.toFixed(2)}
+                                 </ComparisonValue>
+                               </ComparisonItem>
+                               <ComparisonArrow>→</ComparisonArrow>
+                               <ComparisonItem>
+                                 <ComparisonLabel>Preço do Combo</ComparisonLabel>
+                                 <ComparisonValue>
+                                   R$ {comboPrice.toFixed(2)}
+                                 </ComparisonValue>
+                               </ComparisonItem>
+                             </ComboComparison>
+                             
+                             <ComboSavings>
+                               <ComboSavingsText>Você está economizando</ComboSavingsText>
+                               <ComboSavingsValue>
+                                 R$ {savings.toFixed(2)} ({savingsPercentage}% OFF)
+                               </ComboSavingsValue>
+                             </ComboSavings>
+                           </>
+                         );
+                       })()}
+                       
+                       <ComboBenefits>
+                         <BenefitsTitle>🎁 Vantagens do Combo</BenefitsTitle>
+                         <BenefitsList>
+                           <BenefitItem>Preço especial por número</BenefitItem>
+                           <BenefitItem>Mais chances de ganhar</BenefitItem>
+                           <BenefitItem>Melhor custo-benefício</BenefitItem>
+                           {checkoutData.campaignSelection.quantity >= 10 && (
+                             <BenefitItem>Desconto exclusivo para combos grandes</BenefitItem>
+                           )}
+                         </BenefitsList>
+                       </ComboBenefits>
+                     </ComboCard>
+                    
+                    <DetailRow>
+                      <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
+                      <TotalValue>
+                        R$ {checkoutData.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                      </TotalValue>
+                    </DetailRow>
+                  </>
+                ) : (
+                  <RegularDetails>
+                    <DetailRow>
+                      <DetailLabel>📦 Quantidade de Números</DetailLabel>
+                      <DetailValue>{checkoutData?.campaignSelection.quantity || 0}</DetailValue>
+                    </DetailRow>
+                    <DetailRow>
+                      <DetailLabel>💰 Valor Unitário</DetailLabel>
+                      <DetailValue>
+                        R$ {checkoutData?.campaignSelection.individualNumberPrice?.toFixed(2) || '0,00'}
+                      </DetailValue>
+                    </DetailRow>
+                    <DetailRow>
+                      <DetailLabel>📊 Subtotal</DetailLabel>
+                      <DetailValue>
+                        R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                      </DetailValue>
+                    </DetailRow>
+                    <DetailRow>
+                      <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
+                      <TotalValue>
+                        R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                      </TotalValue>
+                    </DetailRow>
+                  </RegularDetails>
+                )}
               </PurchaseDetails>
 
               <SupportSection>
@@ -1840,7 +2154,14 @@ export default function CheckoutPage() {
                   Falar com Suporte
                 </SupportButton>
               </SupportSection>
+              <SecurityButtonContainerDesktop>
+                <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
+                  <img src="/icons/safe.svg" alt="Seguro" />
+                  Ambiente seguro
+                </SecurityButton>
+              </SecurityButtonContainerDesktop>
             </OrderSummary>
+            
           </MainContent>
         </ContentWrapper>
       </CheckoutContainer>

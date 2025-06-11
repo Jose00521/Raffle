@@ -7,18 +7,19 @@ import { ApiError } from "../utils/errorHandler/ApiError";
 import { ApiResponse } from "../utils/errorHandler/api";
 import { IPrize } from "@/models/interfaces/IPrizeInterfaces";
 import type { IPrizeService } from "../services/PrizeService";
+import { Session } from 'next-auth';
 
 export interface IPrizeController {
-    getAllPrizes(): Promise<ApiResponse<IPrize[] | ApiResponse<null>>>;
+    getAllPrizes(session: Session): Promise<ApiResponse<IPrize[] | ApiResponse<null>>>;
     createPrize(prize: {
         name: string;
         description: string;
         value: string;
         image: File;
         images: File[];
-    }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
-    getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
-    deletePrize(id: string): Promise<ApiResponse<null>>;
+    }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
+    getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>>;
+    deletePrize(id: string, session: Session): Promise<ApiResponse<null>>;
     updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
@@ -32,16 +33,16 @@ export class PrizeController implements IPrizeController {
         this.prizeService = prizeService;
     }
 
-    async getAllPrizes(): Promise<ApiResponse<IPrize[] | ApiResponse<null>>> {
-        return await this.prizeService.getAllPrizes() as ApiResponse<IPrize[] | ApiResponse<null>>;
+    async getAllPrizes(session: Session): Promise<ApiResponse<IPrize[] | ApiResponse<null>>> {
+        return await this.prizeService.getAllPrizes(session) as ApiResponse<IPrize[] | ApiResponse<null>>;
     }
 
-    async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
-        return await this.prizeService.getPrizeById(id);
+    async getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>> {
+        return await this.prizeService.getPrizeById(id, session);
     }
 
-    async deletePrize(id: string): Promise<ApiResponse<null>> {
-        return await this.prizeService.deletePrize(id);
+    async deletePrize(id: string, session: Session): Promise<ApiResponse<null>> {
+        return await this.prizeService.deletePrize(id, session);
     }
 
     async updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
@@ -64,9 +65,9 @@ export class PrizeController implements IPrizeController {
         image: File;
         images: File[];
         categoryId: string;
-    }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
+    }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
-            return await this.prizeService.createPrize(prize);
+            return await this.prizeService.createPrize(prize, session);
         } catch (error) {
             throw new ApiError({
                 success: false,

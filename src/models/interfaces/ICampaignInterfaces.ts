@@ -42,9 +42,7 @@ export enum CampaignStatusEnum {
     canceled: Boolean; 
     status: CampaignStatusEnum; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED"
     scheduledActivationDate: Date | null;
-    winnerNumber: number | null;
-    winnerUser?: mongoose.Types.ObjectId | null;
-    winner: Array<IWinner>;
+    winners: Array<IWinner>;
     numberPackages: Array<INumberPackage>;
     // Prêmios distribuídos por posição
     prizeDistribution?: Array<{

@@ -2,7 +2,7 @@ import { ICategory } from "@/models/interfaces/IPrizeInterfaces";
 
 const prizeCategoryAPIClient = {
     createCategory: async (category: ICategory) => {
-        const response = await fetch('/api/prizes/categories', {
+        const response = await fetch('/api/creator/prizes/categories', {
             method: 'POST',
             body: JSON.stringify(category),
         });
@@ -10,7 +10,7 @@ const prizeCategoryAPIClient = {
     },
     getAllCategories: async () => {
         try {
-            const response = await fetch('/api/prizes/categories');
+            const response = await fetch('/api/creator/prizes/categories');
             return response.json();
         } catch (error) {
             return {

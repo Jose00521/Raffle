@@ -3,6 +3,7 @@ import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import type { ICampaignService } from '@/server/services/CampaignService';
 import { injectable, inject } from 'tsyringe';
 import { ApiResponse } from '../utils/errorHandler/api';
+import { Session } from 'next-auth';
 
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
@@ -23,10 +24,10 @@ interface InstantPrizesPayload {
 
 export interface ICampaignController {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
-  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
-  getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  criarNovaCampanha(campaignData: ICampaign, session: Session, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
   getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
-  deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
+  deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
@@ -47,16 +48,16 @@ export class CampaignController implements ICampaignController {
     return await this.campaignService.listarCampanhasAtivas();
   }
 
-  async getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>> {
-    return await this.campaignService.getCampaignById(id);
+  async getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignService.getCampaignById(id, userCode);
   }
 
   async getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>> {
     return await this.campaignService.getCampaignByIdPublic(id);
   }
 
-  async deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>> {
-    return await this.campaignService.deleteCampaign(id);
+  async deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>> {
+    return await this.campaignService.deleteCampaign(id, session);
   }
 
   async toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>> {
@@ -67,7 +68,7 @@ export class CampaignController implements ICampaignController {
   /**
    * 🚀 ATUALIZADO: Controller para criar nova campanha com novo formato de prêmios instantâneos
    */
-  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
+  async criarNovaCampanha(campaignData: ICampaign, session: Session,instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
     console.log(`🎯 Controller: Recebida solicitação para criar campanha ${campaignData.title}`);
     
     if (instantPrizesData) {
@@ -80,7 +81,7 @@ export class CampaignController implements ICampaignController {
     }
     
     // Delegar para o service
-    const result = await this.campaignService.criarNovaCampanha(campaignData, instantPrizesData);
+    const result = await this.campaignService.criarNovaCampanha(campaignData, session ,instantPrizesData);
     
     console.log(`✅ Controller: Campanha criada com sucesso`);
     return result;

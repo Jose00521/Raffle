@@ -4,13 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { FaArrowLeft, FaTrophy } from 'react-icons/fa';
-import ParticipantDashboard from '@/components/dashboard/ParticipantDashboard';
 import PrizeForm from '@/components/dashboard/PrizeForm';
-import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
-import prizeAPIClient from '@/API/prizeAPIClient';
 import mongoose from 'mongoose';
 import { toast, ToastContainer } from 'react-toastify';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 
 const PageHeader = styled.div`
   display: flex;
@@ -106,7 +104,7 @@ export default function AddPrizePage() {
         console.log(pair[0], pair[1]);
       }
 
-      const result = await prizeAPIClient.createPrize(formData);
+      const result = await creatorPrizeAPIClient.createPrize(formData);
       console.log('result', result);
       
       if (result.success) {

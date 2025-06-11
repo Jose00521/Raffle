@@ -20,6 +20,7 @@ import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
 import userAPIClient from '@/API/userAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { CheckoutButton } from '@/components/ui';
 
 
 interface QuickSignupModalProps {
@@ -420,10 +421,11 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                     <SecondaryButton type="button" onClick={() => setCurrentStep(0)} disabled={isLoading}>
                       Voltar
                     </SecondaryButton>
-                    <ConfirmButton type="button" onClick={submitUserFound} disabled={isLoading}>
-                      <span>Prosseguir para Pagamento</span>
-                      <ConfirmButtonIcon>→</ConfirmButtonIcon>
-                    </ConfirmButton>
+                    <div className="checkout-button-wrapper">
+                      <CheckoutButton onClick={submitUserFound} disabled={isLoading} isLoading={isLoading}>
+                        Prosseguir para Pagamento
+                      </CheckoutButton>
+                    </div>
                   </ButtonGroup>
                 </>
               )}
@@ -567,6 +569,7 @@ const ModalContent = styled.div`
   padding: 2.5rem 3rem;
   max-height: 85vh;
   overflow-y: auto;
+  overflow-x: visible;
   
   @media (max-width: 768px) {
     padding: 2rem;
@@ -675,9 +678,28 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 1.5rem;
   margin-top: 2rem;
+  align-items: stretch;
+  
+  .checkout-button-wrapper {
+    flex: 2;
+    display: flex;
+    justify-content: flex-end;
+  }
   
   @media (max-width: 576px) {
     flex-direction: column;
+    gap: 1rem;
+    
+    .checkout-button-wrapper {
+      justify-content: stretch;
+      width: 100%;
+      flex: 1;
+    }
+    
+    /* Garantir que ambos os botões tenham a mesma largura */
+    button {
+      width: 100%;
+    }
   }
 `;
 
@@ -907,127 +929,6 @@ const SectionDivider = styled.div`
   }
 `;
 
-// Confirm Button Components
-const ConfirmButton = styled(PrimaryButton)`
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #2ecc71, #27ae60, #16a085);
-  background-size: 200% 200%;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 0.9rem 1.5rem;
-  box-shadow: 
-    0 4px 15px rgba(46, 204, 113, 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  animation: gradientShift 3s ease infinite;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  white-space: nowrap;
-  
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.6s ease;
-  }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s ease;
-  }
-  
-  &:hover:not(:disabled) {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 
-      0 8px 25px rgba(46, 204, 113, 0.4),
-      0 4px 15px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    background: linear-gradient(135deg, #2ecc71, #1abc9c, #16a085);
-    animation-duration: 1.5s;
-  }
-  
-  &:hover::before {
-    left: 100%;
-  }
-  
-  &:hover::after {
-    width: 300px;
-    height: 300px;
-  }
-  
-  &:active {
-    transform: translateY(-1px) scale(0.98);
-    transition: all 0.1s ease;
-  }
-  
-  span {
-    position: relative;
-    z-index: 2;
-    white-space: nowrap;
-  }
-  
-  @media (max-width: 576px) {
-    font-size: 0.8rem;
-    padding: 0.8rem 1rem;
-    gap: 0.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.75rem;
-    padding: 0.75rem 0.85rem;
-    gap: 0.4rem;
-    
-    span {
-      font-size: 0.75rem;
-    }
-  }
-`;
 
-const ConfirmButtonIcon = styled.span`
-  position: relative;
-  z-index: 2;
-  font-size: 1.1rem;
-  font-weight: bold;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  display: flex;
-  align-items: center;
-  
-  ${ConfirmButton}:hover & {
-    transform: translateX(8px) rotate(5deg);
-  }
-  
-  @media (max-width: 576px) {
-    font-size: 1rem;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.9rem;
-  }
-`;
 
 export default QuickSignupModal;

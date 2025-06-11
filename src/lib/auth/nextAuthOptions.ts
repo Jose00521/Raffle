@@ -93,5 +93,70 @@ export const nextAuthOptions: NextAuthOptions = {
     pages: {
       signIn: '/login',
     },
+    cookies: {
+      sessionToken: {
+        name: process.env.NODE_ENV === 'production' 
+          ? '__Secure-next-auth.session-token' 
+          : 'next-auth.session-token',
+                  options: {
+            httpOnly: true,
+            sameSite: 'strict', // Máxima proteção CSRF
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 30 * 60, // 30 minutos (igual ao JWT)
+          ...(process.env.NODE_ENV === 'production' && {
+            domain: process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).hostname : undefined
+          })
+        }
+      },
+      callbackUrl: {
+        name: process.env.NODE_ENV === 'production' 
+          ? '__Secure-next-auth.callback-url' 
+          : 'next-auth.callback-url',
+        options: {
+          httpOnly: true, // Adicionar para proteção extra
+          sameSite: 'strict',
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 60, // 1 hora
+        }
+      },
+      csrfToken: {
+        name: process.env.NODE_ENV === 'production' 
+          ? '__Host-next-auth.csrf-token' 
+          : 'next-auth.csrf-token',
+        options: {
+          httpOnly: true,
+          sameSite: 'strict',
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 60, // 1 hora
+        }
+      },
+      pkceCodeVerifier: {
+        name: process.env.NODE_ENV === 'production' 
+          ? '__Secure-next-auth.pkce.code_verifier' 
+          : 'next-auth.pkce.code_verifier',
+        options: {
+          httpOnly: true,
+          sameSite: 'strict',
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 15, // 15 minutos
+        }
+      },
+      state: {
+        name: process.env.NODE_ENV === 'production' 
+          ? '__Secure-next-auth.state' 
+          : 'next-auth.state',
+        options: {
+          httpOnly: true,
+          sameSite: 'strict',
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 15, // 15 minutos
+        }
+      }
+    },
     secret: process.env.NEXTAUTH_SECRET || 'secret',
   }

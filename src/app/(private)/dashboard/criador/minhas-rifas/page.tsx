@@ -6,10 +6,11 @@ import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt, FaPowerOff } from 'react-icons/fa';
 import Link from 'next/link';
 import ToggleSwitch from '@/components/common/ToggleSwitch';
-import campaignAPIClient from '@/API/campaignAPIClient';
+import campaignAPIClient from '@/API/participant/participantCampaignAPIClient';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { useSocket } from '@/context/SocketContext';
 import { toast, ToastContainer } from 'react-toastify';
+import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -890,7 +891,7 @@ export default function MinhasRifasPage() {
       return campaign;
     }));
 
-    const response = await campaignAPIClient.toggleCampaignStatus(id);
+    const response = await creatorCampaignAPI.toggleCampaignStatus(id);
 
 
     if(response.success){
@@ -1085,12 +1086,12 @@ export default function MinhasRifasPage() {
                         <StatLabel>Vendas Totais:</StatLabel>
                         <StatValue>R$ {campaign.stats?.totalRevenue.toFixed(2)}</StatValue>
                       </StatRow>
-                      {campaign.status === CampaignStatusEnum.COMPLETED && campaign.winnerNumber && (
+                      {/* {campaign.status === CampaignStatusEnum.COMPLETED && campaign.winnerNumbers && (
                         <StatRow>
                           <StatLabel>Número Vencedor:</StatLabel>
-                          <StatValue>{campaign.winnerNumber}</StatValue>
+                          <StatValue>{campaign.winnerNumbers}</StatValue>
                         </StatRow>
-                      )}
+                      )} */}
                     </RifaStats>
                     
                     <ProgressBar>

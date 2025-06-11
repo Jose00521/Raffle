@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { FaGem, FaTrophy, FaAward, FaPlus, FaTimes, FaEdit, FaMoneyBillWave, FaGift } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
-import prizeAPIClient from '@/API/prizeAPIClient';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import PrizeSelectorModal from '../prize/PrizeSelectorModal';
 
 // Interface para prêmio individual (físico ou dinheiro)
@@ -177,7 +177,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
   useEffect(() => {
     const fetchPrizes = async () => {
       try {
-        const response = await prizeAPIClient.getAllPrizes();
+        const response = await creatorPrizeAPIClient.getAllPrizes();
         setAvailablePrizes(response.data);
       } catch (error) {
         console.error('Erro ao carregar prêmios:', error);

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast, ToastContainer, Bounce } from 'react-toastify';
 import { creatorFormSchema, CreatorFormData } from '@/zod/creator.schema';
 import { useRouter } from 'next/navigation';
-import creatorAPIClient from '@/API/creatorAPIClient';
+import creatorAPIClient from '@/API/creator/creatorAPIClient';
 import { ICreator } from '@/models/interfaces/IUserInterfaces';
 import mongoose from 'mongoose';
 // Helper function to create default values with correct type

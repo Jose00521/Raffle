@@ -4,13 +4,13 @@ import { ApiResponse, createErrorResponse } from "../utils/errorHandler/api";
 import { IPrize } from "@/models/interfaces/IPrizeInterfaces";
 import { processImage } from "@/lib/upload-service/processImage";
 import { uploadToS3 } from "@/lib/upload-service/client/uploadToS3";
-import { getServerSession } from "next-auth";
+import { getServerSession, Session } from "next-auth";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import { nextAuthOptions } from "@/lib/auth/nextAuthOptions";
 import logger from "@/lib/logger/logger";
 import { rateLimit } from "@/lib/rateLimit";
 export interface IPrizeService {
-    getAllPrizes(): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
+    getAllPrizes(session: Session): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -18,10 +18,10 @@ export interface IPrizeService {
         image: File;
         images: File[];
         categoryId: string;
-    }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
-    getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
-    deletePrize(id: string): Promise<ApiResponse<null>>;
-    updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
+    }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
+    getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>>;
+    deletePrize(id: string, session: Session): Promise<ApiResponse<null>>;
+    updatePrize(id: string, updatedData: Record<string, any>, session: Session): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -34,16 +34,8 @@ export class PrizeService implements IPrizeService {
         this.prizeRepository = prizeRepository;
     }
 
-    async getAllPrizes(): Promise<ApiResponse<IPrize[]> | ApiResponse<null>> {
+    async getAllPrizes(session: Session): Promise<ApiResponse<IPrize[]> | ApiResponse<null>> {
         try {
-            const session = await getServerSession(nextAuthOptions);
-            logger.info("Verificando sessão", session);
-
-            console.log("Session",session);
-
-            if (!session?.user?.id) {
-                return createErrorResponse('Não autorizado', 401);
-            }
 
             const userCode = session?.user?.id;
 
@@ -59,12 +51,16 @@ export class PrizeService implements IPrizeService {
         }
     }
 
-    async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
-        return await this.prizeRepository.getPrizeById(id);
+    async getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>> {
+
+        const userCode = session?.user?.id;
+
+        return await this.prizeRepository.getPrizeById(id, userCode);
     }
 
-    async deletePrize(id: string): Promise<ApiResponse<null>> {
-        return await this.prizeRepository.deletePrize(id);
+    async deletePrize(id: string, session: Session): Promise<ApiResponse<null>> {
+        const userCode = session?.user?.id;
+        return await this.prizeRepository.deletePrize(id, userCode);
     }
 
     async createPrize(prize: {
@@ -74,7 +70,7 @@ export class PrizeService implements IPrizeService {
         image: File;
         images: File[];
         categoryId: string;
-    }): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
+    }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
             const limiter = rateLimit({
                 interval: 60 * 1000,
@@ -82,18 +78,11 @@ export class PrizeService implements IPrizeService {
                 tokensPerInterval: 10
               });
 
-            const session = await getServerSession(nextAuthOptions);
-            logger.info("Verificando sessão", session);
-
-            console.log("Session",session);
-
-            if (!session?.user?.id) {
-                return createErrorResponse('Não autorizado', 401);
-            }
+            const userCode = session?.user?.id;
 
             // Aplicar rate limiting
             try {
-                await limiter.check(10, `${session.user.id}:premio-create`);
+                await limiter.check(10, `${userCode}:premio-create`);
             } catch {
                 return createErrorResponse('Muitas requisições, tente novamente mais tarde', 429);
  
@@ -221,16 +210,9 @@ export class PrizeService implements IPrizeService {
         }
     }       
 
-    async updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
+    async updatePrize(id: string, updatedData: Record<string, any>, session: Session): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
         try {
-            const session = await getServerSession(nextAuthOptions);
-            logger.info("Verificando sessão para atualização de prêmio", session);
-
-            if (!session?.user?.id) {
-                return createErrorResponse('Não autorizado', 401);
-            }
-
-            const userCode = session.user.id;
+            const userCode = session?.user?.id;
 
             // Aplicar rate limiting
             const limiter = rateLimit({
@@ -246,7 +228,7 @@ export class PrizeService implements IPrizeService {
             }
 
             // Verificar se o prêmio existe e pertence ao usuário
-            const existingPrizeResponse = await this.prizeRepository.getPrizeById(id);
+            const existingPrizeResponse = await this.prizeRepository.getPrizeById(id, userCode);
             
             if (!existingPrizeResponse.success) {
                 return createErrorResponse('Prêmio não encontrado', 404);

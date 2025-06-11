@@ -5,19 +5,19 @@ import { useParams } from 'next/navigation';
 import Layout from '../../../../components/layout/Layout';
 import CampanhaDetalhes from '@/components/campaign/CampanhaDetalhes';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
-import campaignAPIClient from '@/API/campaignAPIClient';
 import { toast, ToastContainer } from 'react-toastify';
+import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 
 // Dados de exemplo para a campanha
 
 export default function CampanhaPage() {
   const params = useParams();
-  const campanhaId = params.id as string;
+  const campanhaId = params?.id as string;
   const [campanha, setCampanha] = useState<ICampaign | null>(null);
 
   useEffect(() => {
     const fetchCampanha = async () => {
-      const response = await campaignAPIClient.getCampaignById(campanhaId);
+      const response = await creatorCampaignAPI.getCampaignById(campanhaId);
       console.log("response campanha detalhes",response);
       if(response.success){
         setCampanha(response.data as ICampaign);

@@ -4,7 +4,7 @@ import { injectable, inject } from 'tsyringe';
 import type { ICampaignRepository } from '@/server/repositories/CampaignRepository';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from '../utils/errorHandler/api';
 import { ApiError } from '../utils/errorHandler/ApiError';
-import { getServerSession } from 'next-auth';
+import { getServerSession, Session } from 'next-auth';
 import { nextAuthOptions } from '@/lib/auth/nextAuthOptions';
 import logger from '@/lib/logger/logger';
 import { rateLimit } from '@/lib/rateLimit';
@@ -30,10 +30,10 @@ interface InstantPrizesPayload {
 
 export interface ICampaignService {
   listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
-  criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
-  getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>>;
+  criarNovaCampanha(campaignData: ICampaign, session: Session, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
   getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
-  deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>>;
+  deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
 }
 
@@ -74,17 +74,9 @@ export class CampaignService implements ICampaignService {
     }
   }
 
-  async getCampaignById(id: string): Promise<ApiResponse<ICampaign | null>> {
+  async getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
     try {
-      const session = await getServerSession(nextAuthOptions);
-
-      if(!session){
-        return createErrorResponse('Não autorizado', 401);
-      } 
-
-      const userCode = session.user.id;
-
-      return await this.campaignRepository.getCampaignById(id, userCode);
+      return await this.campaignRepository.getCampaignById(id, userCode as string);
     } catch (error) {
       return createErrorResponse('Erro ao buscar campanha por ID:', 500);
     }
@@ -102,7 +94,7 @@ export class CampaignService implements ICampaignService {
     }
   }
 
-  async deleteCampaign(id: string): Promise<ApiResponse<ICampaign | null>> {
+  async deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>> {
     try {
       const limiter = rateLimit({
         interval: 60 * 1000,
@@ -110,16 +102,6 @@ export class CampaignService implements ICampaignService {
         tokensPerInterval: 10
       });
 
-    const session = await getServerSession(nextAuthOptions);
-    logger.info("Verificando sessão", session);
-
-    console.log("Session",session);
-
-    if (!session?.user?.id) {
-        return createErrorResponse('Não autorizado', 401);
-    }
-
-    const userCode = session.user.id;
 
     console.log("campaignId delete", id);
 
@@ -133,7 +115,7 @@ export class CampaignService implements ICampaignService {
 
     logger.info("Sessão válida", session);
 
-    return await this.campaignRepository.deleteCampaign(id, userCode);
+    return await this.campaignRepository.deleteCampaign(id, session.user.id);
   } catch (error) {
     console.error('Erro ao excluir campanha:', error);
     throw new ApiError({
@@ -183,22 +165,13 @@ export class CampaignService implements ICampaignService {
   /**
    * 🚀 ATUALIZADO: Criar nova campanha com novo formato de prêmios instantâneos
    */
-  async criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
+  async criarNovaCampanha(campaignData: ICampaign, session: Session, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
     try {
       const limiter = rateLimit({
         interval: 60 * 1000,
         uniqueTokenPerInterval: 500,
         tokensPerInterval: 10
       });
-
-    const session = await getServerSession(nextAuthOptions);
-    logger.info("Verificando sessão", session);
-
-    console.log("Session",session);
-
-    if (!session?.user?.id) {
-        return createErrorResponse('Não autorizado', 401);
-    }
 
     console.log("campaignData", campaignData);
 

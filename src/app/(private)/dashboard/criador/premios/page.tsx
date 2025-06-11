@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import InputWithIcon from '@/components/common/InputWithIcon';
 import Link from 'next/link';
-import prizeAPIClient from '@/API/prizeAPIClient';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import { ApiResponse } from '@/server/utils/errorHandler/api';
 import { useRouter } from 'next/navigation';
 
@@ -686,7 +686,7 @@ export default function PrizesDashboard() {
     // Simulando carregamento de dados da API
     setLoading(true);
     const fetchPrizes = async () => {
-      const response = await prizeAPIClient.getAllPrizes();
+      const response = await creatorPrizeAPIClient.getAllPrizes();
       if (response.success) {
         console.log("Prêmios recebidos da API:", response.data);
         setPrizes(response.data);

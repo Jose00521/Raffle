@@ -3,15 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
 import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash, FaCalendarAlt, FaBarcode, FaClock, FaInfoCircle, FaDollarSign, FaCheck } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
-import prizeAPIClient from '@/API/prizeAPIClient';
 import ImageCarousel from '@/components/ui/ImageCarousel';
 import ImageModal from '@/components/ui/ImageModal';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { toast, ToastContainer } from 'react-toastify';
+import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 
 // ======== ENHANCED PROFESSIONAL UI COMPONENTS ========
 
@@ -586,7 +585,8 @@ const CustomCarouselStyles = styled.div`
 // Main component
 export default function PrizeDetailPage() {
   const router = useRouter();
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   
   const [prize, setPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -642,7 +642,7 @@ export default function PrizeDetailPage() {
     const fetchPrize = async () => {
       try {
         console.log('prize id',id);
-        const response = await prizeAPIClient.getPrizeById(id as string);
+        const response = await creatorPrizeAPIClient.getPrizeById(id as string);
         console.log('response',response);
         if (!response || response.error) {
           throw new Error(response?.message || 'Erro ao carregar o prêmio');
@@ -677,7 +677,7 @@ export default function PrizeDetailPage() {
     try {
       setIsDeleting(true);
       
-      const response = await prizeAPIClient.deletePrize(id as string);
+      const response = await creatorPrizeAPIClient.deletePrize(id as string);
       console.log('response',response);
       
       // Fechar o modal e redirecionar para a lista de prêmios

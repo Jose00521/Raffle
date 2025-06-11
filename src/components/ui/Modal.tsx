@@ -104,6 +104,7 @@ const ModalContainer = styled.div`
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: visible;
   animation: slideIn 0.3s ease-out;
   
   @keyframes slideIn {

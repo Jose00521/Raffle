@@ -16,8 +16,9 @@ import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
-import campaignAPIClient from '@/API/campaignAPIClient';
+import campaignAPIClient from '@/API/participant/participantCampaignAPIClient';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 
 // Componentes estilizados
 const PageWrapper = styled.div`
@@ -1165,7 +1166,8 @@ const salesByDayData = [
 ];
 
 export default function CampanhaDetalhesPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [campaign, setCampaign] = useState<ICampaign>({} as ICampaign);
@@ -1179,7 +1181,7 @@ export default function CampanhaDetalhesPage() {
   useEffect(() => {
     // Simular carregamento dos dados
     const fetchCampaign = async () => {
-      const response = await campaignAPIClient.getCampaignById(id as string);
+      const response = await creatorCampaignAPI.getCampaignById(id as string);
       console.log('response',response);
       if (response.success) {
         setCampaign(response.data);
@@ -1248,7 +1250,7 @@ export default function CampanhaDetalhesPage() {
     try {
       setIsDeleting(true);
       
-      const response = await campaignAPIClient.deleteCampaign(id as string);
+      const response = await creatorCampaignAPI.deleteCampaign(id as string);
       
       if (response.success) {
         setShowDeleteModal(false);

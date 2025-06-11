@@ -17,7 +17,7 @@ import { deleteMultipleFromS3 } from "@/lib/upload-service/client/deleteFromS3";
 
 export interface IPrizeRepository {
     getAllPrizes(userCode: string): Promise<ApiResponse<IPrize[]> | ApiResponse<null>>;
-    getPrizeById(id: string): Promise<ApiResponse<IPrize>>;
+    getPrizeById(id: string, userCode: string): Promise<ApiResponse<IPrize | null>>;
     createPrize(prize: {
         name: string;
         description: string;
@@ -27,7 +27,7 @@ export interface IPrizeRepository {
         images: string[];
         userCode: string;
     }): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
-    deletePrize(id: string): Promise<ApiResponse<null>>;
+    deletePrize(id: string, userCode: string): Promise<ApiResponse<null>>;
     updatePrize(id: string, updatedData: Record<string, any>, userCode?: string): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
@@ -48,8 +48,6 @@ export class PrizeRepository implements IPrizeRepository {
             await this.db.connect();
 
             const user = await User.findOne({ userCode: userCode });
-
-            console.log("user for list prizes",user);
 
             if(!user){
                 return createErrorResponse('Usuário não encontrado', 404);
@@ -80,12 +78,18 @@ export class PrizeRepository implements IPrizeRepository {
     }
 
 
-    async getPrizeById(id: string): Promise<ApiResponse<IPrize>> {
+    async getPrizeById(id: string, userCode: string): Promise<ApiResponse<IPrize | null>> {
         try {
             await this.db.connect();
+
+            const user = await User.findOne({ userCode: userCode });
+
+            if(!user){
+                return createErrorResponse('Usuário não encontrado', 404);
+            }
             
             // Usar populate para incluir os dados do usuário e da categoria
-            const prize = await Prize.findOne({ prizeCode: id }, '-_id')
+            const prize = await Prize.findOne({ prizeCode: id, createdBy: user?._id }, '-_id')
                 .populate({
                     path: 'createdBy',
                     model: 'User',
@@ -168,8 +172,6 @@ export class PrizeRepository implements IPrizeRepository {
             const user = await User.findOne({ userCode: prize.userCode });
             const category = await PrizeCategory.findOne({ categoryCode: prize.categoryCode });
 
-            console.log("category from repository",category);
-
             if(!user){
                 return createErrorResponse('Usuário não encontrado', 404);
             }
@@ -198,10 +200,17 @@ export class PrizeRepository implements IPrizeRepository {
     }
 
 
-    async deletePrize(id: string): Promise<ApiResponse<null>> {
+    async deletePrize(id: string, userCode: string): Promise<ApiResponse<null>> {
         try {
             await this.db.connect();
-            const prize = await Prize.findOne({ prizeCode: id });
+            
+            const user = await User.findOne({ userCode: userCode });
+
+            if(!user){
+                return createErrorResponse('Usuário não encontrado', 404);
+            }
+
+            const prize = await Prize.findOne({ prizeCode: id, createdBy: user?._id });
             if (!prize) {
                 return createErrorResponse('Prêmio não encontrado', 404);       
             }
@@ -251,7 +260,7 @@ export class PrizeRepository implements IPrizeRepository {
                 logger.info(`Prêmio ${id} não possui imagens para excluir do S3`);
             }
 
-            await Prize.deleteOne({ prizeCode: id });
+            await Prize.deleteOne({ prizeCode: id, createdBy: user?._id });
             logger.info(`Prêmio ${id} excluído com sucesso do banco de dados`);
 
             return createSuccessResponse(null, 'Prêmio deletado com sucesso', 200);
