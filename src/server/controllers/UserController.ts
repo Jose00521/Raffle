@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { inject, injectable } from "tsyringe";
 import type {IUserService} from "../services/UserService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
@@ -7,6 +8,7 @@ import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface IUserController {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
@@ -24,6 +26,19 @@ export class UserController implements IUserController {
             const securePassword = await bcrypt.hash(user.password, 10);
             
             return await this.userService.createUser({...user,password: securePassword});
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro interno do servidor',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        try {
+            return await this.userService.quickCheckUser(phone);
         } catch (error) {
             throw new ApiError({
                 success: false,

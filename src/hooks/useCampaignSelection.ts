@@ -27,7 +27,7 @@ export const useCampaignSelection = (campaign: ICampaign) => {
         setIsCombo(true);
         setSelection({
             campaignCode: campaign.campaignCode,
-            isCombo,
+            isCombo: true, // Force true here since we're selecting a package
             individualNumberPrice: campaign.individualNumberPrice,
             ...packageData,
             totalPrice: packageData.price
@@ -38,7 +38,7 @@ export const useCampaignSelection = (campaign: ICampaign) => {
         console.log('selectPackage', packageData);
         setSelection({
             campaignCode: campaign.campaignCode,
-            isCombo,
+            isCombo: packageData.isCombo || false,
             individualNumberPrice: campaign.individualNumberPrice,
             ...packageData,
         });
@@ -48,28 +48,36 @@ export const useCampaignSelection = (campaign: ICampaign) => {
     const clearSelection = useCallback(() => {
         setSelection(null);
         setIsCombo(false);
-        selectPackageFunction({
+        setSelection({
             campaignCode: campaign.campaignCode,
             isActive: true,
+            isCombo: false,
             quantity: campaign.minNumbersPerUser,
             price: campaign.individualNumberPrice,
             name: 'Pacote Mínimo',
+            individualNumberPrice: campaign.individualNumberPrice,
             totalPrice: campaign.individualNumberPrice * campaign.minNumbersPerUser
           });
-    }, [selection]);
+    }, [campaign]);
     
     const updateQuantity = useCallback((newQuantity: number ) => {
         console.log('updateQuantity', newQuantity);
         const matchingPackage = campaign.numberPackages.find(pkg => pkg.quantity === newQuantity);
         if(matchingPackage){
             setIsCombo(true);
-            selectPackageFunction({
+            setSelection({
+                campaignCode: campaign.campaignCode,
+                isCombo: true,
+                individualNumberPrice: campaign.individualNumberPrice,
                 ...matchingPackage,
                 totalPrice: matchingPackage.price
             });
         }else{
             setIsCombo(false);
-            selectPackageFunction({
+            setSelection({
+                campaignCode: campaign.campaignCode,
+                isCombo: false,
+                individualNumberPrice: campaign.individualNumberPrice,
                 ...selection!,
                 quantity: newQuantity,
                 totalPrice: (campaign.individualNumberPrice * newQuantity)

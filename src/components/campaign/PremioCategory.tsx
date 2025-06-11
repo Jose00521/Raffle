@@ -40,7 +40,7 @@ const ListaPremiosGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
+    gap: 0.3rem;
   }
 `;
 
@@ -124,6 +124,11 @@ const CardContent = styled.div`
   align-items: center;
   gap: 0.25rem;
   position: relative;
+  
+  @media (max-width: 768px) {
+    padding: 0.3rem;
+    gap: 0.15rem;
+  }
 `;
 
 const CardSparkle = styled.div`
@@ -422,6 +427,12 @@ const FoundOverlay = styled.div<{ $category: string }>`
       }
     }};
     border-radius: 4px;
+    
+    @media (max-width: 768px) {
+      font-size: 0.65rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 3px;
+    }
   }
 `;
 
@@ -451,10 +462,26 @@ const FoundBadge = styled.div<{ $category: string }>`
     }
   }};
   
+  @media (max-width: 768px) {
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    top: 6px;
+    padding: 0.35rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    border-left-width: 2px;
+  }
+  
   strong {
     display: block;
     margin-bottom: 0.2rem;
     color: ${({ theme }) => theme.colors.text.primary};
+    
+    @media (max-width: 768px) {
+      margin-bottom: 0.15rem;
+      font-size: 0.8rem;
+    }
   }
   
   span {
@@ -463,9 +490,18 @@ const FoundBadge = styled.div<{ $category: string }>`
     align-items: center;
     gap: 0.3rem;
     
+    @media (max-width: 768px) {
+      gap: 0.2rem;
+      font-size: 0.9rem;
+    }
+    
     i {
       font-size: 0.7rem;
       opacity: 0.7;
+      
+      @media (max-width: 768px) {
+        font-size: 0.6rem;
+      }
     }
   }
 `;
@@ -477,6 +513,11 @@ const FoundBadgeHeader = styled.div`
   margin-bottom: 0.4rem;
   padding-bottom: 0.4rem;
   border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    margin-bottom: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
 `;
 
 const FoundLabel = styled.div`
@@ -487,12 +528,22 @@ const FoundLabel = styled.div`
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   letter-spacing: 0.05em;
+  
+  @media (max-width: 768px) {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+  }
 `;
 
 const FoundValue = styled.div`
   font-size: 0.8rem;
   font-weight: 700;
   color: #2ecc71;
+  
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const FoundDetails = styled.div`
@@ -500,6 +551,10 @@ const FoundDetails = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-top: 0.4rem;
+  
+  @media (max-width: 768px) {
+    margin-top: 0.3rem;
+  }
 `;
 
 const FoundNumber = styled.span<{ $category: string }>`
@@ -531,8 +586,19 @@ const FoundNumber = styled.span<{ $category: string }>`
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    gap: 0.2rem;
+    border-radius: 3px;
+  }
+  
   i {
     font-size: 0.7rem;
+    
+    @media (max-width: 768px) {
+      font-size: 0.6rem;
+    }
   }
 `;
 

@@ -15,34 +15,30 @@ import { validateCPF } from '@/utils/validators';
 import { useAddressField } from '@/hooks/useAddressField';
 import { useHookFormMask } from 'use-mask-input';
 import { signupSchema, SignupFormData } from '@/zod/quicksignup.validation';
-import { FaEnvelope, FaIdCard, FaPhone, FaUser } from 'react-icons/fa';
+import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity } from 'react-icons/fa';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
+import userAPIClient from '@/API/userAPIClient';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 
 interface QuickSignupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  campanha: ICampaign;
   campaignSelection: INumberPackageCampaign;
 }
 
-const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, onSuccess, campaignSelection }) => {
+const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, onSuccess, campaignSelection, campanha }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isStepValid, setIsStepValid] = useState(false);
+  const [foundUser, setFoundUser] = useState<any>(null);
+  const [isUserFound, setIsUserFound] = useState(false);
   const router = useRouter();
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setError,
-    clearErrors,
-    trigger,
-    setValue,
-    watch,
-  } = useForm<SignupFormData>({
+
+  const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     mode:'all',
     reValidateMode: 'onChange',
@@ -65,11 +61,24 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       confirmarSenha: '',
     },
   });
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setError,
+    clearErrors,
+    trigger,
+    setValue,
+    watch,
+  } = form;
 
   const registerWithMask = useHookFormMask(register);
   
   // Função para buscar endereço pelo CEP
   const { isLoadingCep, handleCepChange } = useAddressField(setValue, setError, clearErrors,trigger);
+  const [isLoadingVerify, setIsLoadingVerify] = useState(false);
 
 
   const handleCepOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,11 +189,47 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     setCurrentStep(currentStep - 1);
   };
   
-  const handleLogin = (e: React.MouseEvent) => {
+  const handleVerify = async (e: React.MouseEvent) => {
     e.preventDefault();
-    handleModalClose();
-    router.push('/login');
+    const phone = form.getValues('telefone').replace(/\D/g, '');
+
+    const isPhoneValid = await validateStep(0);
+
+    if(!isPhoneValid) {
+      setError('telefone', { message: 'Telefone inválido' });
+      return;
+    }
+
+    console.log('phone',phone);
+
+    setIsLoadingVerify(true);
+
+    const response  = await userAPIClient.verifyIfUserExists(phone);
+
+    if(response.statusCode === 200) {
+      // Usuário encontrado - mostrar dados para confirmação
+      setFoundUser(response.data);
+      setIsUserFound(true);
+      setCurrentStep(10); // Step especial para usuário encontrado
+    }else{
+      // Usuário não encontrado - continuar com cadastro
+      setIsUserFound(false);
+      nextStep();
+    }
+
+    setIsLoadingVerify(false);
+  
   };
+
+  const submitUserFound = async () => {
+    localStorage.setItem('checkoutData', JSON.stringify({
+      campaignSelection,
+      foundUser,
+      campanha,
+    }));
+
+    router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={handleModalClose} maxWidth="700px">
@@ -217,8 +262,14 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <SecondaryButton type="button" onClick={handleModalClose} disabled={isLoading}>
                   Cancelar
                 </SecondaryButton>
-                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading}>
-                  Continuar
+                <PrimaryButton type="button" onClick={handleVerify} disabled={isLoading || isLoadingVerify}>
+                  {isLoadingVerify ? (	
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Verificando...	
+                    </>
+                  ) : (
+                    'Continuar'
+                  )}
                 </PrimaryButton>
               </ButtonGroup>
             </>
@@ -300,6 +351,82 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   Continuar
                 </PrimaryButton>
               </ButtonGroup>
+            </>
+          ) : currentStep === 10 ? (
+            <>
+              {foundUser && (
+                <>
+                  <UserDataSection>
+
+                    <SectionTitle>Dados do usuário</SectionTitle>
+                    
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaUser /> Nome:
+                      </UserDataLabel>
+                      <UserDataValue>{foundUser.name}</UserDataValue>
+                    </UserDataRow>
+                    
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaEnvelope /> Email:
+                      </UserDataLabel>
+                      <UserDataValue>{foundUser.email}</UserDataValue>
+                    </UserDataRow>
+                    
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaPhone /> Telefone:
+                      </UserDataLabel>
+                      <UserDataValue>{foundUser.phone}</UserDataValue>
+                    </UserDataRow>
+                    
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaIdCard /> CPF:
+                      </UserDataLabel>
+                      <UserDataValue>{foundUser.cpf}</UserDataValue>
+                    </UserDataRow>
+                    
+                    {foundUser.address && (
+                      <>
+                        <UserDataRow>
+                          <UserDataLabel>
+                            <FaMapMarkerAlt /> Endereço:
+                          </UserDataLabel>
+                          <UserDataValue>
+                            {foundUser.address.street}, {foundUser.address.number}
+                            {foundUser.address.complement && `, ${foundUser.address.complement}`}
+                          </UserDataValue>
+                        </UserDataRow>
+                        
+                        <UserDataRow>
+                          <UserDataLabel>
+                            <FaCity /> Cidade:
+                          </UserDataLabel>
+                          <UserDataValue>
+                            {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode}
+                          </UserDataValue>
+                        </UserDataRow>
+                      </>
+                    )}
+                  </UserDataSection>
+                  
+                  <SectionDivider />
+                  
+                  <PurchaseSummary selection={campaignSelection} />
+                  
+                  <ButtonGroup>
+                    <SecondaryButton type="button" onClick={() => setCurrentStep(0)} disabled={isLoading}>
+                      Voltar
+                    </SecondaryButton>
+                    <ConfirmButton type="button" onClick={submitUserFound} disabled={isLoading}>
+                      <span>Prosseguir para Pagamento</span>
+                      <ConfirmButtonIcon>→</ConfirmButtonIcon>
+                    </ConfirmButton>
+                  </ButtonGroup>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -621,6 +748,285 @@ const LoginLink = styled.a`
   
   &:hover {
     text-decoration: underline;
+  }
+`;
+
+// User Data Section Styled Components
+const UserDataSection = styled.div`
+  background: linear-gradient(135deg, #fdfdfd 0%, #f8fffe 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+  animation: slideIn 0.4s ease-out;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.primary}30, transparent);
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-width: 576px) {
+    padding: 0.85rem;
+    border-radius: 10px;
+  }
+`;
+
+
+
+const UserDataRow = styled.div`
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem;
+  margin-bottom: 0.4rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.gray.light}40;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: ${({ theme }) => theme.colors.primary};
+    border-radius: 0 2px 2px 0;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+  }
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: ${({ theme }) => theme.colors.primary}30;
+    
+    &::before {
+      opacity: 1;
+      width: 4px;
+    }
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    padding: 0.55rem;
+    margin-bottom: 0.35rem;
+  }
+  
+  @media (max-width: 576px) {
+    padding: 0.5rem;
+    border-radius: 6px;
+  }
+`;
+
+const UserDataLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 80px;
+  
+  svg {
+    font-size: 0.85rem;
+    color: ${({ theme }) => theme.colors.primary};
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+    min-width: auto;
+    margin-bottom: 0.2rem;
+    
+    svg {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
+const UserDataValue = styled.div`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 600;
+  font-size: 0.85rem;
+  word-break: break-word;
+  line-height: 1.3;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.75rem;
+  }
+`;
+
+// Section Divider
+const SectionDivider = styled.div`
+  height: 1px;
+  background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.gray.medium}20, transparent);
+  margin: 1.25rem 0;
+  
+  @media (max-width: 768px) {
+    margin: 1rem 0;
+  }
+`;
+
+// Confirm Button Components
+const ConfirmButton = styled(PrimaryButton)`
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2ecc71, #27ae60, #16a085);
+  background-size: 200% 200%;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.9rem 1.5rem;
+  box-shadow: 
+    0 4px 15px rgba(46, 204, 113, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: gradientShift 3s ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.6s ease;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s ease;
+  }
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+      0 8px 25px rgba(46, 204, 113, 0.4),
+      0 4px 15px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #2ecc71, #1abc9c, #16a085);
+    animation-duration: 1.5s;
+  }
+  
+  &:hover::before {
+    left: 100%;
+  }
+  
+  &:hover::after {
+    width: 300px;
+    height: 300px;
+  }
+  
+  &:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
+  }
+  
+  span {
+    position: relative;
+    z-index: 2;
+    white-space: nowrap;
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.8rem;
+    padding: 0.8rem 1rem;
+    gap: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    gap: 0.4rem;
+    
+    span {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
+const ConfirmButtonIcon = styled.span`
+  position: relative;
+  z-index: 2;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  
+  ${ConfirmButton}:hover & {
+    transform: translateX(8px) rotate(5deg);
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
   }
 `;
 

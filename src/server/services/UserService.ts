@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface IUserService {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
@@ -19,5 +20,9 @@ export class UserService implements IUserService {
 
     async createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>> {
         return await this.userRepository.createUser(user);
+    }
+
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        return await this.userRepository.quickCheckUser(phone);
     }
 }   

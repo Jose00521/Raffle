@@ -941,6 +941,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       <QuickSignupModal 
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
+        campanha={campanhaDetalhes}
         campaignSelection={selection as INumberPackageCampaign}
         onSuccess={proceedWithPurchase}
       />
@@ -1449,6 +1450,11 @@ const CompraContainer = styled.div`
   box-shadow: ${({ theme }) => theme.shadows.md};
   width: 100%;
   
+  @media (max-width: 576px) {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
   @media (min-width: 992px) {
     flex: 1;
   }
@@ -1463,8 +1469,18 @@ const MensagemIncentivo = styled.div`
   align-items: center;
   gap: 0.5rem;
   
+  @media (max-width: 576px) {
+    font-size: 0.6rem;
+    margin-bottom: 0.75rem;
+    gap: 0.2rem;
+  }
+  
   i {
     color: ${({ theme }) => theme.colors.primary};
+    
+    @media (max-width: 576px) {
+      font-size: 0.75rem;
+    }
   }
 `;
 
@@ -1494,8 +1510,9 @@ const PacotesPromocionaisContainer = styled.div`
   }
 
   @media (max-width: 576px) {
-    padding: 1.5rem;
-    gap: 1rem;
+    padding: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
   
   @media (min-width: 992px) {
@@ -1524,7 +1541,13 @@ const PacotesPromocionaisTitulo = styled.div`
   }
 
   @media (max-width: 576px) {
-    font-size: 1.05rem;
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    
+    i {
+      font-size: 0.9rem;
+    }
   }
 `;
 
@@ -1537,8 +1560,8 @@ const PacotesPromocionaisGrid = styled.div`
   padding-top: 10px;
 
   @media (max-width: 576px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
@@ -1574,6 +1597,11 @@ const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: bool
       ? '0 8px 20px rgba(255, 184, 0, 0.12), 0 2px 6px rgba(255, 184, 0, 0.06)' 
       : '0 4px 12px rgba(0, 0, 0, 0.03)';
   }};
+
+  @media (max-width: 576px) {
+    padding: 0.6rem 0.5rem;
+    border-radius: 8px;
+  }
 
   &::after {
     content: '';
@@ -1626,7 +1654,8 @@ const PacoteQuantidade = styled.div`
   letter-spacing: -0.01em;
 
   @media (max-width: 576px) {
-    font-size: 1.4rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
@@ -1661,7 +1690,14 @@ const PacotePreco = styled.div`
   }
 
   @media (max-width: 576px) {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.35rem;
+    
+    &::after {
+      width: 30px;
+      height: 1.5px;
+    }
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
@@ -1682,7 +1718,9 @@ const PacoteEconomia = styled.div`
   letter-spacing: 0.02em;
 
   @media (max-width: 576px) {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    margin-top: 0.5rem;
   }
 `;
 
@@ -1711,8 +1749,13 @@ const PacoteMelhorOferta = styled.div`
   }
 
   @media (max-width: 576px) {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.6rem;
+    font-size: 0.55rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0 8px 0 8px;
+    
+    i {
+      font-size: 0.55rem;
+    }
   }
 `;
 
@@ -1725,6 +1768,12 @@ const PacoteDescricaoValor = styled.div`
   font-weight: 500;
   opacity: 0.9;
   padding-top: 0.25rem;
+
+  @media (max-width: 576px) {
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+    padding-top: 0.15rem;
+  }
 `;
 
 // Enhanced quantity selector container
@@ -1752,8 +1801,9 @@ const QuantidadeSelector = styled.div`
   }
 
   @media (max-width: 576px) {
-    padding: 1.5rem;
-    gap: 1.5rem;
+    padding: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
   }
   
   @media (min-width: 992px) {
@@ -1772,7 +1822,8 @@ const QuantidadeLabel = styled.div`
   letter-spacing: -0.01em;
 
   @media (max-width: 576px) {
-    font-size: 1.05rem;
+    font-size: 0.7rem;
+    padding-bottom: 0.3rem;
   }
 `;
 
@@ -1793,7 +1844,8 @@ const QuantidadeControle = styled.div`
   }
 
   @media (max-width: 576px) {
-    padding: 1rem 1.25rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
   }
 `;
 
@@ -1832,8 +1884,14 @@ const QuantidadeNumero = styled.div`
   }
 
   @media (max-width: 576px) {
-    font-size: 2.2rem;
-    min-width: 80px;
+    font-size: 1.2rem;
+    min-width: 45px;
+    padding: 0 0.3rem;
+    
+    span::before {
+      bottom: -3px;
+      height: 1.5px;
+    }
   }
 `;
 
@@ -1901,9 +1959,9 @@ const BotaoMais = styled(ControlButton)`
   }
 
   @media (max-width: 576px) {
-    width: 42px;
-    height: 42px;
-    font-size: 1.6rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
   }
 `;
 
@@ -1914,7 +1972,7 @@ const BotoesEsquerda = styled.div`
   gap: 0.85rem;
 
   @media (max-width: 576px) {
-    gap: 0.7rem;
+    gap: 0.5rem;
   }
 `;
 
@@ -1941,9 +1999,9 @@ const BotaoMenos = styled(ControlButton)<{ disabled: boolean }>`
 
 
   @media (max-width: 576px) {
-    width: 38px;
-    height: 38px;
-    font-size: 1.6rem;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
   }
 `;
 
@@ -1969,9 +2027,9 @@ const BotaoReset = styled(ControlButton)<{ disabled: boolean }>`
 
 
   @media (max-width: 576px) {
-    width: 32px;
-    height: 32px;
-    font-size: 0.85rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
   }
 `;
 
@@ -1983,8 +2041,8 @@ const SeletorLotes = styled.div`
   margin-top: 0.5rem;
   
   @media (max-width: 576px) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.85rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
@@ -2034,8 +2092,9 @@ const OpcaoLote = styled.div<{ $popular?: boolean }>`
   }
 
   @media (max-width: 576px) {
-    padding: 0.85rem 0.5rem;
-    font-size: 1.3rem;
+    padding: 0.6rem 0.3rem;
+    font-size: 1rem;
+    border-radius: 8px;
   }
 `;
 
@@ -2049,7 +2108,9 @@ const TextoSelecionar = styled.span`
   border-radius: 15px;
 
   @media (max-width: 576px) {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    margin-top: 0.25rem;
   }
 `;
 
@@ -2066,7 +2127,10 @@ const ValorTotalContainer = styled.div`
   margin-top: 0.75rem;
 
   @media (max-width: 576px) {
-    padding: 1.25rem 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-left-width: 3px;
+    margin-top: 0.5rem;
   }
 `;
 
@@ -2076,7 +2140,7 @@ const ValorTotalLabel = styled.div`
   font-size: 1.15rem;
 
   @media (max-width: 576px) {
-    font-size: 1.05rem;
+    font-size: 0.85rem;
   }
 `;
 
@@ -2088,7 +2152,7 @@ const ValorTotal = styled.div`
   text-shadow: 0 1px 1px rgba(106, 17, 203, 0.15);
   
   @media (max-width: 576px) {
-    font-size: 1.6rem;
+    font-size: 1.2rem;
   }
 
   @media (min-width: 577px) and (max-width: 1200px) {
@@ -2117,6 +2181,14 @@ const BotaoParticipar = styled.button`
   position: relative;
   overflow: hidden;
   
+  @media (max-width: 576px) {
+    padding: 1rem;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    gap: 0.35rem;
+  }
+  
   @media (min-width: 577px) and (max-width: 1200px) {
     padding: 1.15rem;
     font-size: 1.2rem;
@@ -2142,6 +2214,10 @@ const BotaoParticipar = styled.button`
   i {
     font-size: 1.1rem;
     transition: transform 0.3s ease;
+    
+    @media (max-width: 576px) {
+      font-size: 0.9rem;
+    }
   }
   
   &:hover {
@@ -2180,6 +2256,14 @@ const SegurancaInfo = styled.button`
   transition: all 0.2s ease;
   font-weight: 600;
   
+  @media (max-width: 576px) {
+    font-size: 0.75rem;
+    padding: 0.65rem;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    border-radius: 8px;
+  }
+  
   &:hover {
     background-color: rgba(40, 167, 69, 0.12);
     transform: translateY(-2px);
@@ -2193,6 +2277,10 @@ const SegurancaInfo = styled.button`
   i {
     color: #1a5928;
     font-size: 1.1rem;
+    
+    @media (max-width: 576px) {
+      font-size: 0.9rem;
+    }
   }
 `;
 
@@ -2348,7 +2436,8 @@ const ListaPremiosGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
   }
   
   @media (min-width: 769px) and (max-width: 1200px) {
@@ -2426,6 +2515,10 @@ const CardTopBar = styled.div<{ $category: string }>`
         return 'linear-gradient(90deg, #11998e, #38ef7d)';
     }
   }};
+  
+  @media (max-width: 768px) {
+    height: 1.5px;
+  }
 `;
 
 // More compact content layout
@@ -2440,6 +2533,11 @@ const CardContent = styled.div`
   align-items: center;
   gap: 0.25rem;
   position: relative;
+  
+  @media (max-width: 768px) {
+    padding: 0.25rem;
+    gap: 0.1rem;
+  }
 `;
 
 // Remove the sparkle for a cleaner layout
@@ -2480,6 +2578,12 @@ const CardNumber = styled.div`
   background: #f7f7ff;
   border-radius: 6px;
   border: 1px dashed rgba(106, 17, 203, 0.2);
+  
+  @media (max-width: 768px) {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.2rem;
+    border-radius: 3px;
+  }
 `;
 
 // Smaller emoji
@@ -2487,6 +2591,11 @@ const CardEmoji = styled.span`
   font-size: 0.9rem;
   margin-right: 0.3rem;
   flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 0.6rem;
+    margin-right: 0.15rem;
+  }
 `;
 
 // Smaller prize amount text
@@ -2497,6 +2606,11 @@ const CardPrize = styled.div<{ $category: string }>`
   transition: transform 0.3s ease;
   letter-spacing: -0.02em;
   margin: 0.1rem 0;
+  
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+    margin: 0.02rem 0;
+  }
   
   @media (min-width: 769px) and (max-width: 1200px) {
     font-size: 1.1rem;
@@ -2528,9 +2642,18 @@ const CardStatus = styled.div`
   font-weight: 600;
   color: #2ecc71;
   
+  @media (max-width: 768px) {
+    font-size: 0.45rem;
+  }
+  
   i {
     font-size: 0.8rem;
     margin-right: 0.2rem;
+    
+    @media (max-width: 768px) {
+      font-size: 0.5rem;
+      margin-right: 0.1rem;
+    }
   }
   
   span {
@@ -2539,6 +2662,12 @@ const CardStatus = styled.div`
     padding: 0.15rem 0.4rem;
     border-radius: 10px;
     font-size: 0.65rem;
+    
+    @media (max-width: 768px) {
+      font-size: 0.4rem;
+      padding: 0.05rem 0.15rem;
+      border-radius: 4px;
+    }
   }
 `;
 
@@ -2553,6 +2682,12 @@ const CardTag = styled.div<{ $category: string }>`
   z-index: 2;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 0.05rem 0.15rem;
+    font-size: 0.35rem;
+    border-radius: 2px;
+  }
   
   background: ${({ $category }) => {
     switch($category) {
@@ -2594,6 +2729,13 @@ const CategoryHeader = styled.div<{ $category: string }>`
   padding: 0.75rem 1rem;
   margin-bottom: 0.75rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+    border-radius: 8px;
+  }
 `;
 
 const CategoryIconWrapper = styled.div<{ $category: string }>`
@@ -2605,6 +2747,12 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
   justify-content: center;
   position: relative;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+  }
   
   // Glass effect
   background: rgba(255, 255, 255, 0.7);
@@ -2633,6 +2781,11 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: destination-out;
     mask-composite: exclude;
+    
+    @media (max-width: 768px) {
+      border-radius: 14px;
+      padding: 1px;
+    }
   }
   
   i {
@@ -2651,6 +2804,10 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    
+    @media (max-width: 768px) {
+      font-size: 0.85rem;
+    }
   }
 `;
 
@@ -2676,6 +2833,10 @@ const CategoryName = styled.div<{ $category: string }>`
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.01em;
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const CategoryMeta = styled.div`
@@ -2683,6 +2844,11 @@ const CategoryMeta = styled.div`
   align-items: center;
   gap: 0.75rem;
   margin-top: 0.25rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
 `;
 
 const CategoryMetaItem = styled.div`
@@ -2693,9 +2859,18 @@ const CategoryMetaItem = styled.div`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text.secondary};
   
+  @media (max-width: 768px) {
+    font-size: 0.6rem;
+    gap: 0.2rem;
+  }
+  
   i {
     font-size: 0.75rem;
     opacity: 0.7;
+    
+    @media (max-width: 768px) {
+      font-size: 0.6rem;
+    }
   }
 `;
 
@@ -2707,8 +2882,18 @@ const PremiosCategoryTitle = styled.div`
   padding-bottom: 0.75rem;
   position: relative;
   
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin: 1rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+  
   &:first-of-type {
     margin-top: 0.5rem;
+    
+    @media (max-width: 768px) {
+      margin-top: 0.35rem;
+    }
   }
   
   // Elegant underline with gradient
@@ -2722,10 +2907,19 @@ const PremiosCategoryTitle = styled.div`
     border-radius: 1.5px;
     background: ${({ theme }) => theme.colors.primary};
     transition: width 0.3s ease;
+    
+    @media (max-width: 768px) {
+      width: 40px;
+      height: 2px;
+    }
   }
   
   &:hover::after {
     width: 100px;
+    
+    @media (max-width: 768px) {
+      width: 60px;
+    }
   }
 `;
 
@@ -2802,8 +2996,9 @@ const PopularTag = styled.span`
   white-space: nowrap;
 
   @media (max-width: 576px) {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
+    font-size: 0.55rem;
+    padding: 0.15rem 0.4rem;
+    top: -8px;
   }
 `;
 
@@ -2903,6 +3098,13 @@ const FoundTitleCard = styled.div<{ $category: string }>`
         return '#11998e';
     }
   }};
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    gap: 0.35rem;
+    border-radius: 8px;
+    border-left-width: 2px;
+  }
 `;
 
 const FoundTitleNumber = styled.div<{ $category: string }>`
@@ -2950,11 +3152,24 @@ const FoundTitleNumber = styled.div<{ $category: string }>`
     }
   }};
   
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    font-size: 0.85rem;
+    min-width: 55px;
+    border-radius: 6px;
+  }
+  
   span {
     font-size: 0.7rem;
     font-weight: 600;
     color: #7f8c8d;
     margin-top: 0.25rem;
+    
+    @media (max-width: 768px) {
+      font-size: 0.6rem;
+      margin-top: 0.15rem;
+    }
   }
 `;
 
@@ -2964,6 +3179,10 @@ const FoundTitleName = styled.div`
   font-weight: 700;
   font-size: 0.95rem;
   color: ${({ theme }) => theme.colors.text.primary};
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const FoundTitleDetails = styled.div`
@@ -2975,14 +3194,27 @@ const FoundTitleDetails = styled.div`
   align-items: center;
   gap: 0.75rem;
   
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    gap: 0.5rem;
+  }
+  
   span {
     display: flex;
     align-items: center;
     gap: 0.3rem;
     
+    @media (max-width: 768px) {
+      gap: 0.2rem;
+    }
+    
     i {
       font-size: 0.75rem;
       opacity: 0.7;
+      
+      @media (max-width: 768px) {
+        font-size: 0.65rem;
+      }
     }
   }
 `;

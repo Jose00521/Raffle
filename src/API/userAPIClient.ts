@@ -37,6 +37,7 @@ const userAPIClient = {
                 },
                 body: JSON.stringify(credentials)
             });
+            console.log('response',response);
             // Verificar primeiro o status
             if (!response.ok) {
               console.error(`Erro do servidor: ${response.status} ${response.statusText}`);
@@ -54,12 +55,7 @@ const userAPIClient = {
 
     verifyIfUserExists: async (phone: string) => {
         try {
-            const response = await fetch(`/api/user/verify/${phone}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await fetch(`/api/user/check/${phone}`);
             if (!response.ok) {
                 console.error(`Erro do servidor: ${response.status} ${response.statusText}`);
             }

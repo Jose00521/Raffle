@@ -7,6 +7,7 @@ import { ApiError } from "@/server/utils/errorHandler/ApiError";
 import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
 export interface IUserRepository {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
@@ -71,6 +72,37 @@ export class UserRepository implements IUserRepository {
                 return true;
             }
             return false;
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao checar se o usuário já existe',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        try {
+            
+            await this.db.connect();
+
+            const user = await User.findOne({ phone: phone }, {
+                _id: 0,
+                userCode: 1,
+                name: 1,
+                email: 1,
+                cpf: 1,
+                phone: 1,
+            });
+
+            if(!user){
+                return createSuccessResponse(null, 'Usuário não encontrado', 404);
+            }
+
+            return createSuccessResponse(user, 'Usuário encontrado', 200);
+
+
         } catch (error) {
             throw new ApiError({
                 success: false,

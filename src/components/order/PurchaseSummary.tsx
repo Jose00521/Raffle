@@ -24,47 +24,60 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   const unitPrice = totalPrice! / quantity;
   const originalTotal = individualNumberPrice! * quantity;
   const discount = isCombo ? originalTotal - totalPrice! : 0;
-  const discountPercentage = isCombo ? Math.round((discount / originalTotal) * 100) : 0;
+  const discountPercentage = isCombo && originalTotal > 0 ? Math.round((discount / originalTotal) * 100) : 0;
 
   return (
-    <PremiumContainer className={className}>
-      <HeaderSection>
-        <TitleWrapper>
-          <PremiumTitle>Resumo da Compra</PremiumTitle>
+    <Container className={className} $isCombo={!!isCombo}>
+      <Header>
+        <TitleSection>
+          <Title>Resumo da Compra</Title>
           {isCombo && (
-            <ComboTag>
-              <ComboIcon>🎯</ComboIcon>
-              <ComboName>{name}</ComboName>
-            </ComboTag>
+            <ComboInfo>
+              <ComboTag>
+                <ComboIcon>🎯</ComboIcon>
+                <ComboLabel>{name || 'Combo'}</ComboLabel>
+              </ComboTag>
+              {discount >= 0.01 && (
+                <SavingsBadge>
+                  <SavingsIcon>💰</SavingsIcon>
+                  <SavingsText>Economize {discountPercentage}%</SavingsText>
+                </SavingsBadge>
+              )}
+            </ComboInfo>
           )}
-        </TitleWrapper>
+        </TitleSection>
         {onClose && (
           <CloseButton onClick={onClose}>
             <CloseIcon>×</CloseIcon>
           </CloseButton>
         )}
-      </HeaderSection>
+      </Header>
 
-      {isCombo && discount > 0 && (
-        <DiscountSection>
-          <DiscountBadge>
-            <DiscountIcon>💰</DiscountIcon>
-            <DiscountInfo>
-              <DiscountLabel>Economia no combo</DiscountLabel>
-              <DiscountAmount>R$ {discount.toFixed(2)} ({discountPercentage}% OFF)</DiscountAmount>
-            </DiscountInfo>
-          </DiscountBadge>
-        </DiscountSection>
+      {isCombo && (
+        <ComboAdvantages>
+          <AdvantageItem>
+            <AdvantageIcon>✨</AdvantageIcon>
+            <AdvantageText>
+              <AdvantageLabel>Combo {name || 'Selecionado'}</AdvantageLabel>
+              <AdvantageValue>{discount >= 0.01 ? `Economia de R$ ${discount.toFixed(2)}` : 'Preço especial'}</AdvantageValue>
+            </AdvantageText>
+          </AdvantageItem>
+          <AdvantageItem>
+            <AdvantageIcon>🎁</AdvantageIcon>
+            <AdvantageText>
+              <AdvantageLabel>Desconto especial</AdvantageLabel>
+              <AdvantageValue>{discountPercentage > 0 ? `${discountPercentage}% OFF no total` : 'Melhor preço'}</AdvantageValue>
+            </AdvantageText>
+          </AdvantageItem>
+        </ComboAdvantages>
       )}
-      
-      <ContentSection>
-        <StatsRow>
+
+      <MainContent>
+        <StatsSection>
           <StatItem>
-            <TicketIconWrapper>
-              <TicketIcon>🎫</TicketIcon>
-            </TicketIconWrapper>
+            <StatIcon>🎫</StatIcon>
             <StatContent>
-              <StatNumber>{quantity}</StatNumber>
+              <StatValue>{quantity}</StatValue>
               <StatLabel>números</StatLabel>
             </StatContent>
           </StatItem>
@@ -73,55 +86,61 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
           
           <StatItem>
             <StatContent>
-              <StatPrice>R$ {unitPrice.toFixed(2)}</StatPrice>
+              <StatValue>R$ {unitPrice.toFixed(2)}</StatValue>
               <StatLabel>/número</StatLabel>
             </StatContent>
           </StatItem>
           
+          {isCombo && discount >= 0.01 && (
+            <>
+              <Divider />
+              <DiscountItem>
+                <DiscountIcon>💰</DiscountIcon>
+                <StatContent>
+                  <DiscountValue>-R$ {discount.toFixed(2)}</DiscountValue>
+                  <StatLabel>desconto</StatLabel>
+                </StatContent>
+              </DiscountItem>
+            </>
+          )}
+          
           <Divider />
           
-          <StatItem>
+          <TotalItem $isCombo={!!isCombo}>
             <StatContent>
               <TotalLabel>Total:</TotalLabel>
-              <TotalAmount>R$ {totalPrice!.toFixed(2)}</TotalAmount>
+              <PriceWrapper>
+                {isCombo && discount >= 0.01 && (
+                  <OriginalPrice>R$ {originalTotal.toFixed(2)}</OriginalPrice>
+                )}
+                <FinalPrice>R$ {totalPrice!.toFixed(2)}</FinalPrice>
+              </PriceWrapper>
             </StatContent>
-          </StatItem>
-        </StatsRow>
-      </ContentSection>
+          </TotalItem>
+        </StatsSection>
+      </MainContent>
       
-      <FooterSection>
-        <PaymentGroup>
-          <PixBadge>
-            <PixIconWrapper>
-              <PixSymbol>
-                <svg width="20" height="20" viewBox="0 0 512 512" fill="none">
-                  <path d="M242.4 391.5h27.2c26.7 0 49.5-7.8 68.4-23.4c18.9-15.6 28.4-36.7 28.4-63.3c0-26.6-9.5-47.7-28.4-63.3c-18.9-15.6-41.7-23.4-68.4-23.4h-27.2v173.4zM269.6 242.1c38.4 0 67.8 9.5 88.2 28.4c20.4 18.9 30.6 45.5 30.6 79.8c0 34.3-10.2 60.9-30.6 79.8c-20.4 18.9-49.8 28.4-88.2 28.4h-60.1V242.1h60.1z" fill="currentColor"/>
-                  <path d="M153.6 391.5h102.8v-33.9H196.8V242.1h-43.2v149.4z" fill="currentColor"/>
-                  <path d="M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256s114.6 256 256 256z" fill="currentColor"/>
-                </svg>
-              </PixSymbol>
-            </PixIconWrapper>
-            <PaymentLabel>Pagamento via <PaymentHighlight>PIX</PaymentHighlight></PaymentLabel>
-          </PixBadge>
-        </PaymentGroup>
+      <Footer>
+        <PaymentInfo>
+          <PixIcon>
+          <svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 48 48" width="48px" height="48px" baseProfile="basic"><path fill="#4db6ac" d="M11.9,12h-0.68l8.04-8.04c2.62-2.61,6.86-2.61,9.48,0L36.78,12H36.1c-1.6,0-3.11,0.62-4.24,1.76	l-6.8,6.77c-0.59,0.59-1.53,0.59-2.12,0l-6.8-6.77C15.01,12.62,13.5,12,11.9,12z"/><path fill="#4db6ac" d="M36.1,36h0.68l-8.04,8.04c-2.62,2.61-6.86,2.61-9.48,0L11.22,36h0.68c1.6,0,3.11-0.62,4.24-1.76	l6.8-6.77c0.59-0.59,1.53-0.59,2.12,0l6.8,6.77C32.99,35.38,34.5,36,36.1,36z"/><path fill="#4db6ac" d="M44.04,28.74L38.78,34H36.1c-1.07,0-2.07-0.42-2.83-1.17l-6.8-6.78c-1.36-1.36-3.58-1.36-4.94,0	l-6.8,6.78C13.97,33.58,12.97,34,11.9,34H9.22l-5.26-5.26c-2.61-2.62-2.61-6.86,0-9.48L9.22,14h2.68c1.07,0,2.07,0.42,2.83,1.17	l6.8,6.78c0.68,0.68,1.58,1.02,2.47,1.02s1.79-0.34,2.47-1.02l6.8-6.78C34.03,14.42,35.03,14,36.1,14h2.68l5.26,5.26	C46.65,21.88,46.65,26.12,44.04,28.74z"/></svg>
+          </PixIcon>
+          <PaymentText>Pagamento via <strong>PIX</strong></PaymentText>
+        </PaymentInfo>
         
-        <SecurityGroup>
+        <SecurityBadges>
           <SecurityBadge>
-            <SecurityIconWrapper secure>
-              <SecurityIcon>🛡️</SecurityIcon>
-            </SecurityIconWrapper>
-            <SecurityLabel>Seguro</SecurityLabel>
+            <SecurityIcon>🔒</SecurityIcon>
+            <SecurityText>Seguro</SecurityText>
           </SecurityBadge>
           
           <SecurityBadge>
-            <SecurityIconWrapper instant>
-              <SecurityIcon>⚡</SecurityIcon>
-            </SecurityIconWrapper>
-            <SecurityLabel>Instantâneo</SecurityLabel>
+            <SecurityIcon>⚡</SecurityIcon>
+            <SecurityText>Instantâneo</SecurityText>
           </SecurityBadge>
-        </SecurityGroup>
-      </FooterSection>
-    </PremiumContainer>
+        </SecurityBadges>
+      </Footer>
+    </Container>
   );
 };
 
@@ -131,374 +150,505 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-const shimmer = keyframes`
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
 `;
 
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+const glow = keyframes`
+  0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
 `;
 
-const slideDown = keyframes`
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+const bounce = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 `;
 
 // Styled Components
-const PremiumContainer = styled.div`
+const Container = styled.div<{ $isCombo: boolean }>`
   width: 100%;
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-  border-radius: 20px;
-  padding: 24px 28px;
+  max-width: 650px;
+  background: ${props => props.$isCombo 
+    ? 'linear-gradient(145deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%)'
+    : 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)'
+  };
+  border-radius: 12px;
+  border: 1px solid ${props => props.$isCombo 
+    ? 'rgba(16, 185, 129, 0.2)'
+    : 'rgba(226, 232, 240, 0.6)'
+  };
+  box-shadow: ${props => props.$isCombo 
+    ? '0 4px 12px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(16, 185, 129, 0.1)'
+    : '0 3px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08)'
+  };
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
-  border: 1px solid rgba(148, 163, 184, 0.08);
-  box-shadow: 
-    0 8px 25px -5px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  animation: ${fadeIn} 0.3s ease-out;
   position: relative;
   overflow: hidden;
-  animation: ${fadeIn} 0.4s ease-out;
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -200px;
-    width: 200px;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.15),
-      transparent
-    );
-    animation: ${shimmer} 4s infinite;
+  ${props => props.$isCombo && `
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #10b981, #059669, #047857, #059669, #10b981);
+      background-size: 200% 100%;
+
+    }
+  `}
+  
+  @media (max-width: 680px) {
+    max-width: 100%;
+    border-radius: 10px;
   }
 `;
 
-const HeaderSection = styled.div`
+const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+  
+  @media (max-width: 480px) {
+    padding: 10px 14px;
+  }
 `;
 
-const TitleWrapper = styled.div`
-  position: relative;
+const TitleSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
 `;
 
-const PremiumTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+const Title = styled.h3`
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
   margin: 0;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  letter-spacing: -0.01em;
+  
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
-const ComboTag = styled.div`
+const ComboInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  border-radius: 12px;
-  padding: 4px 10px;
-  animation: ${slideDown} 0.3s ease-out;
+  flex-wrap: wrap;
+`;
+
+const ComboTag = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 3px 8px;
+  animation: ${slideIn} 0.3s ease-out 0.1s both;
+  box-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
 `;
 
 const ComboIcon = styled.span`
-  font-size: 12px;
+  font-size: 10px;
 `;
 
-const ComboName = styled.span`
-  font-size: 11px;
-  font-weight: 600;
+const ComboLabel = styled.span`
+  font-size: 10px;
+  font-weight: 700;
   color: #92400e;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 `;
 
-const DiscountSection = styled.div`
-  margin-bottom: 16px;
-  animation: ${slideDown} 0.4s ease-out 0.1s both;
+const SavingsBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 6px;
+  padding: 2px 6px;
+  animation: ${bounce} 2s ease-in-out infinite;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 `;
 
-const DiscountBadge = styled.div`
+const SavingsIcon = styled.span`
+  font-size: 8px;
+`;
+
+const SavingsText = styled.span`
+  font-size: 9px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+`;
+
+const ComboAdvantages = styled.div`
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+  animation: ${slideIn} 0.4s ease-out 0.2s both;
+  
+  @media (max-width: 580px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 14px;
+  }
+`;
+
+const AdvantageItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  border: 1px solid rgba(16, 185, 129, 0.15);
-  border-radius: 16px;
-  padding: 12px 16px;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
+  gap: 6px;
+  flex: 1;
 `;
 
-const DiscountIcon = styled.span`
-  font-size: 18px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+const AdvantageIcon = styled.span`
+  font-size: 14px;
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
-const DiscountInfo = styled.div`
+const AdvantageText = styled.div`
   display: flex;
   flex-direction: column;
 `;
 
-const DiscountLabel = styled.span`
-  font-size: 12px;
+const AdvantageLabel = styled.span`
+  font-size: 10px;
   color: #065f46;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   line-height: 1;
+  
+  @media (max-width: 480px) {
+    font-size: 9px;
+  }
 `;
 
-const DiscountAmount = styled.span`
-  font-size: 14px;
+const AdvantageValue = styled.span`
+  font-size: 12px;
   font-weight: 700;
   color: #047857;
-  margin-top: 2px;
+  margin-top: 1px;
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const CloseButton = styled.button`
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 10px;
-  width: 32px;
-  height: 32px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 1;
+  transition: all 0.2s ease;
   
   &:hover {
-    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-    border-color: rgba(148, 163, 184, 0.25);
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    background: rgba(226, 232, 240, 0.8);
+    border-color: rgba(148, 163, 184, 0.3);
+    transform: scale(1.05);
   }
   
   &:active {
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.95);
   }
 `;
 
 const CloseIcon = styled.span`
-  font-size: 16px;
+  font-size: 12px;
   color: #64748b;
   line-height: 1;
-  font-weight: 500;
 `;
 
-const ContentSection = styled.div`
-  margin-bottom: 18px;
-  position: relative;
-  z-index: 1;
+const MainContent = styled.div`
+  padding: 14px 16px;
+  
+  @media (max-width: 480px) {
+    padding: 12px 14px;
+  }
 `;
 
-const StatsRow = styled.div`
+const StatsSection = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
+  
+  @media (max-width: 580px) {
+    justify-content: center;
+    gap: 8px;
+  }
 `;
 
 const StatItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
 `;
 
-const TicketIconWrapper = styled.div`
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  border-radius: 10px;
+const DiscountItem = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 3px 6px rgba(251, 191, 36, 0.25);
-  animation: ${pulse} 2s infinite;
+  gap: 6px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  animation: ${slideIn} 0.3s ease-out 0.2s both;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+  
+  @media (max-width: 480px) {
+    gap: 4px;
+    padding: 4px 6px;
+  }
 `;
 
-const TicketIcon = styled.span`
-  font-size: 18px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+const TotalItem = styled.div<{ $isCombo: boolean }>`
+  background: ${props => props.$isCombo 
+    ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
+    : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)'
+  };
+  border: 1px solid ${props => props.$isCombo 
+    ? 'rgba(245, 158, 11, 0.2)'
+    : 'rgba(14, 165, 233, 0.1)'
+  };
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: ${props => props.$isCombo 
+    ? '0 2px 4px rgba(245, 158, 11, 0.1)'
+    : '0 2px 4px rgba(14, 165, 233, 0.05)'
+  };
+  
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+  }
+`;
+
+const StatIcon = styled.span`
+  font-size: 16px;
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
+`;
+
+const DiscountIcon = styled.span`
+  font-size: 14px;
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const StatContent = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
 `;
 
-const StatNumber = styled.span`
-  font-size: 20px;
-  font-weight: 900;
+const StatValue = styled.span`
+  font-size: 14px;
+  font-weight: 800;
   color: #0f172a;
   line-height: 1;
-  letter-spacing: -0.03em;
+  
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
-const StatPrice = styled.span`
-  font-size: 17px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+const DiscountValue = styled.span`
+  font-size: 12px;
+  font-weight: 700;
+  color: #047857;
   line-height: 1;
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const StatLabel = styled.span`
-  font-size: 12px;
+  font-size: 10px;
   color: #64748b;
-  font-weight: 600;
-  margin-top: 2px;
+  font-weight: 500;
+  margin-top: 1px;
+  
+  @media (max-width: 480px) {
+    font-size: 9px;
+  }
 `;
 
 const TotalLabel = styled.span`
-  font-size: 14px;
+  font-size: 12px;
   color: #475569;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
-const TotalAmount = styled.span`
-  font-size: 22px;
+const PriceWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  margin-top: 2px;
+`;
+
+const OriginalPrice = styled.span`
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 500;
+  text-decoration: line-through;
+  
+  @media (max-width: 480px) {
+    font-size: 8px;
+  }
+`;
+
+const FinalPrice = styled.span`
+  font-size: 16px;
   font-weight: 900;
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1.1;
-  text-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
-`;
-
-const Divider = styled.div`
-  width: 5px;
-  height: 5px;
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-  border-radius: 50%;
-  opacity: 0.5;
-`;
-
-const FooterSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid rgba(148, 163, 184, 0.08);
-  position: relative;
-  z-index: 1;
-`;
-
-const PaymentGroup = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const PixBadge = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  border: 1px solid rgba(16, 185, 129, 0.15);
-  border-radius: 24px;
-  padding: 8px 14px;
-  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.08);
-`;
-
-const PixIconWrapper = styled.div`
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-`;
-
-const PixSymbol = styled.div`
-  color: #ffffff;
-  width: 14px;
-  height: 14px;
+  line-height: 1;
   
-  svg {
-    width: 100%;
-    height: 100%;
+  @media (max-width: 480px) {
+    font-size: 14px;
   }
 `;
 
-const PaymentLabel = styled.span`
-  font-size: 13px;
-  color: #065f46;
-  font-weight: 600;
+const Divider = styled.div`
+  width: 3px;
+  height: 3px;
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  border-radius: 50%;
+  opacity: 0.6;
+  
+  @media (max-width: 580px) {
+    display: none;
+  }
 `;
 
-const PaymentHighlight = styled.strong`
-  color: #047857;
-  font-weight: 800;
-`;
-
-const SecurityGroup = styled.div`
+const Footer = styled.div`
   display: flex;
-  gap: 14px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.4);
+  
+  @media (max-width: 480px) {
+    padding: 8px 14px 10px;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 `;
 
-const SecurityBadge = styled.div`
+const PaymentInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 5px;
 `;
 
-const SecurityIconWrapper = styled.div<{ secure?: boolean; instant?: boolean }>`
-  width: 18px;
-  height: 18px;
-  background: ${props => 
-    props.secure 
-      ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-      : props.instant
-      ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)'
-      : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-  };
-  border-radius: 50%;
+const PixIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: ${props => 
-    props.secure 
-      ? '0 2px 4px rgba(251, 191, 36, 0.25)'
-      : props.instant
-      ? '0 2px 4px rgba(168, 85, 247, 0.25)'
-      : '0 2px 4px rgba(16, 185, 129, 0.25)'
-  };
+  width: 14px;
+  height: 14px;
+  color: #10b981;
+  
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    width: 12px;
+    height: 12px;
+  }
+`;
+
+const PaymentText = styled.span`
+  font-size: 11px;
+  color: #065f46;
+  font-weight: 500;
+  
+  strong {
+    font-weight: 700;
+    color: #047857;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 10px;
+  }
+`;
+
+const SecurityBadges = styled.div`
+  display: flex;
+  gap: 10px;
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
+`;
+
+const SecurityBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 3px;
 `;
 
 const SecurityIcon = styled.span`
   font-size: 9px;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+  
+  @media (max-width: 480px) {
+    font-size: 8px;
+  }
 `;
 
-const SecurityLabel = styled.span`
-  font-size: 11px;
+const SecurityText = styled.span`
+  font-size: 9px;
   color: #64748b;
-  font-weight: 600;
+  font-weight: 500;
+  
+  @media (max-width: 480px) {
+    font-size: 8px;
+  }
 `;
 
 export default PurchaseSummary;
