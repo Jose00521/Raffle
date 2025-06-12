@@ -56,7 +56,7 @@ function extractBucketFromS3Url(imageUrl: string): string | null {
 export async function deleteFromS3ByUrl(imageUrl: string): Promise<boolean> {
   try {
     const key = extractKeyFromS3Url(imageUrl);
-    const bucketName = extractBucketFromS3Url(imageUrl) || process.env.AWS_S3_BUCKET_NAME || 'raffle-bucket-100';
+    const bucketName = extractBucketFromS3Url(imageUrl) || process.env.AWS_S3_BUCKET_NAME as string;
     
     if (!key) {
       console.error('Não foi possível extrair a chave da URL:', imageUrl);

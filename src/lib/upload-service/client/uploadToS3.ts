@@ -33,7 +33,7 @@ export async function uploadToS3(
     const key = `${path}/${userId}/${fileName}`;
 
     // Definir o nome do bucket com um valor padrão caso a variável de ambiente não esteja definida
-    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'raffle-bucket-100';
+    const bucketName = process.env.AWS_S3_BUCKET_NAME as string;
     
     try {
       // Usar PutObjectCommand em vez de Upload para maior controle

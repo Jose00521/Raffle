@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
 import PremioCategory from './PremioCategory';
@@ -12,6 +12,8 @@ import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { INumberPackageCampaign, useCampaignSelection } from '@/hooks/useCampaignSelection';
 import { toast } from 'react-toastify';
 import QuickSignupModal from '@/components/campaign/QuickSignupModal';
+import { formatCurrency } from '@/utils/formatNumber';
+
 
 
 // Atualizando a interface IRifa para incluir as propriedades extras
@@ -522,7 +524,11 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           </PainelImagem>
           
           {/* Mobile purchase container */}
-          <CompraContainer>
+          {
+            campanhaDetalhes?.status === CampaignStatusEnum.SCHEDULED ? (
+              <></>
+            ):(
+              <CompraContainer>
             {/* Mensagem incentivo */}
             <MensagemIncentivo>
               <i className="fas fa-trophy"></i> Quanto mais títulos, mais chances de ganhar!
@@ -544,9 +550,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   >
                     {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
                     <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
-                    <PacoteDescricaoValor>R$ {(campanhaDetalhes?.individualNumberPrice * pacote.quantity).toFixed(2)}</PacoteDescricaoValor>
-                    <PacotePreco>R$ {pacote.price.toFixed(2)}</PacotePreco>
-                    <PacoteEconomia>Economia de R$ {((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price).toFixed(2)}</PacoteEconomia>
+                    <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
+                    <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
+                    <PacoteEconomia>Economia de {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
                   </PacotePromocional>
                 ))}
               </PacotesPromocionaisGrid>
@@ -591,7 +597,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <ValorTotalContainer>
                 <ValorTotalLabel>Total:</ValorTotalLabel>
                 <ValorTotal>
-                  R$ {selection?.totalPrice?.toFixed(2)}
+                  {formatCurrency(selection?.totalPrice || 0)}
                 </ValorTotal>
               </ValorTotalContainer>
             </QuantidadeSelector>
@@ -610,6 +616,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <i className="fas fa-shield-alt"></i> Compra 100% segura e criptografada
             </SegurancaInfo>
           </CompraContainer>
+            )
+          }
         </MobileContainer>
         
         {/* Desktop layout - with the structure requested */}
@@ -700,16 +708,23 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           </PainelImagem>
           
           {/* Row layout below the images */}
-          <SelectionRowContainer>
+
             {/* Left side - Promotional packages */}
-            <PacotesPromocionaisContainer>
-              <PacotesPromocionaisTitulo>
-                <i className="fas fa-tags"></i> Pacotes promocionais
-              </PacotesPromocionaisTitulo>
+            {
+              campanhaDetalhes?.status === CampaignStatusEnum.SCHEDULED ? (
+                <></>
+              ):(
+                <SelectionRowContainer>
+            {/* Left side - Promotional packages */}
               
-              <PacotesPromocionaisGrid>
+            <PacotesPromocionaisContainer >
+                  <PacotesPromocionaisTitulo>
+                    <i className="fas fa-tags"></i> Pacotes promocionais
+                  </PacotesPromocionaisTitulo>
+                  <PacotesPromocionaisGrid>
                 {campanhaDetalhes?.numberPackages ?(
                   campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
+                    
                     <PacotePromocional 
                       key={pacote.quantity} 
                       $melhorOferta={pacote.highlight}
@@ -718,9 +733,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     >
                       {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
                       <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
-                      <PacoteDescricaoValor>R$ {(campanhaDetalhes?.individualNumberPrice * pacote.quantity).toFixed(2)}</PacoteDescricaoValor>
-                      <PacotePreco>R$ {pacote.price.toFixed(2)}</PacotePreco>
-                      <PacoteEconomia>Economia de R$ {((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price).toFixed(2)}</PacoteEconomia>
+                      <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
+                      <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
+                      <PacoteEconomia>Economia de {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
                     </PacotePromocional>
                   ))
                 ):(
@@ -775,7 +790,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 <ValorTotalContainer>
                   <ValorTotalLabel>Total:</ValorTotalLabel>
                   <ValorTotal>
-                    R$ {selection?.totalPrice?.toFixed(2)}
+                    {formatCurrency(selection?.totalPrice || 0)}
                   </ValorTotal>
                 </ValorTotalContainer>
               </QuantidadeSelector>
@@ -795,6 +810,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               </SegurancaInfo>
             </CompraDesktop>
           </SelectionRowContainer>
+              )
+            }
+            
         </DesktopContainer>
         
         {/* Modal de Segurança */}

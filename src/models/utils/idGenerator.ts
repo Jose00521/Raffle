@@ -17,8 +17,16 @@ const MAX_SEQUENCE = (1 << SEQUENCE_BITS) - 1; // 4095
 const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const BASE = ALPHABET.length; // 32
 
-// Chave secreta
-const SECRET_KEY = process.env.ID_SECRET_KEY || 'e6a44fdf130584409973b20ea04d982928e513ab3356a0bf3eb3e80718ee1728';
+// Função para obter a chave secreta com verificação lazy
+function getSecretKey(): string {
+  const SECRET_KEY = process.env.ID_SECRET_KEY;
+  
+  if (!SECRET_KEY) {
+    throw new Error('ID_SECRET_KEY environment variable is required. Please ensure your .env file is properly configured.');
+  }
+  
+  return SECRET_KEY;
+}
 
 // Gera worker ID estável baseado em MAC address + hostname
 function getUniqueWorkerId(): number {
@@ -69,7 +77,7 @@ function generateEntityFragment(entityId: string): string {
     return fragmentCache.get(entityId)!;
   }
 
-  const hmac = crypto.createHmac('sha256', SECRET_KEY);
+  const hmac = crypto.createHmac('sha256', getSecretKey());
   hmac.update(entityId);
   const hash = hmac.digest('hex');
   
@@ -115,7 +123,7 @@ function waitNextMillis(lastTimestamp: number): number {
  * Gera checksum criptográfico
  */
 function generateChecksum(baseCode: string): string {
-  const hmac = crypto.createHmac('sha256', SECRET_KEY);
+  const hmac = crypto.createHmac('sha256', getSecretKey());
   hmac.update(baseCode);
   const hash = hmac.digest('hex');
   return ALPHABET[parseInt(hash.substring(0, 8), 16) % BASE];

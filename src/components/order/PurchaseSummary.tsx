@@ -1,6 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
+import { formatCurrency } from '@/utils/formatNumber';
 
 interface PurchaseSummaryProps {
   selection: INumberPackageCampaign;
@@ -59,7 +60,7 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
             <AdvantageIcon>✨</AdvantageIcon>
             <AdvantageText>
               <AdvantageLabel>Combo {name || 'Selecionado'}</AdvantageLabel>
-              <AdvantageValue>{discount >= 0.01 ? `Economia de R$ ${discount.toFixed(2)}` : 'Preço especial'}</AdvantageValue>
+              <AdvantageValue>{discount >= 0.01 ? `Economia de ${formatCurrency(discount)}` : 'Preço especial'}</AdvantageValue>
             </AdvantageText>
           </AdvantageItem>
           <AdvantageItem>
@@ -86,7 +87,7 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
           
           <StatItem>
             <StatContent>
-              <StatValue>R$ {unitPrice.toFixed(2)}</StatValue>
+              <StatValue>{formatCurrency(unitPrice)}</StatValue>
               <StatLabel>/número</StatLabel>
             </StatContent>
           </StatItem>
@@ -97,7 +98,7 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
               <DiscountItem>
                 <DiscountIcon>💰</DiscountIcon>
                 <StatContent>
-                  <DiscountValue>-R$ {discount.toFixed(2)}</DiscountValue>
+                  <DiscountValue>-{formatCurrency(discount)}</DiscountValue>
                   <StatLabel>desconto</StatLabel>
                 </StatContent>
               </DiscountItem>
@@ -111,9 +112,9 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
               <TotalLabel>Total:</TotalLabel>
               <PriceWrapper>
                 {isCombo && discount >= 0.01 && (
-                  <OriginalPrice>R$ {originalTotal.toFixed(2)}</OriginalPrice>
+                  <OriginalPrice>{formatCurrency(originalTotal)}</OriginalPrice>
                 )}
-                <FinalPrice>R$ {totalPrice!.toFixed(2)}</FinalPrice>
+                <FinalPrice>{formatCurrency(totalPrice!)}</FinalPrice>
               </PriceWrapper>
             </StatContent>
           </TotalItem>

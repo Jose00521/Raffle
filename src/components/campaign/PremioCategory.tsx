@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { formatCurrency } from '@/utils/formatNumber';
 
 // Interfaces
 interface PremioInterface {
@@ -681,7 +682,7 @@ const PremioCategory: React.FC<PremioCategoryProps> = ({
           <CategoryName $category={category}>{title}</CategoryName>
           <CategoryMeta>
             <CategoryMetaItem>
-              <i className="fas fa-money-bill-wave"></i> Prêmio: R$ {prizeValue.toFixed(2)}
+              <i className="fas fa-money-bill-wave"></i> Prêmio: {formatCurrency(prizeValue)}
             </CategoryMetaItem>
             <CategoryMetaItem>
               <i className="fas fa-tag"></i> Quantidade: {quantity}
@@ -711,7 +712,7 @@ const PremioCategory: React.FC<PremioCategoryProps> = ({
                   </CardNumber>
                   
                   <CardPrize className="card-prize" $category={category}>
-                    R$ {premio.value.toFixed(2)}
+                    {formatCurrency(premio.value)}
                   </CardPrize>
                   
                   <CardStatus>
@@ -729,7 +730,7 @@ const PremioCategory: React.FC<PremioCategoryProps> = ({
                   <FoundBadge $category={category}>
                     <FoundBadgeHeader>
                       <FoundLabel>ENCONTRADO</FoundLabel>
-                      <FoundValue>R$ {winnerInfo.value.toFixed(2)}</FoundValue>
+                      <FoundValue>{formatCurrency(winnerInfo.value)}</FoundValue>
                     </FoundBadgeHeader>
                     <strong>{winnerInfo.name}</strong>
                     <FoundDetails>

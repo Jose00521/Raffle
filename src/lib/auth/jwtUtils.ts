@@ -15,7 +15,7 @@ export interface JWTPayload {
  */
 export const verifyToken = async (token: string): Promise<JWTPayload | null> => {
   try {
-    const secret =  'secret';
+    const secret =  process.env.NEXTAUTH_SECRET;
     if (!secret) {
       console.error('JWT_SECRET não está definido no ambiente');
       return null;
@@ -37,12 +37,21 @@ export const verifyToken = async (token: string): Promise<JWTPayload | null> => 
  * Cria um novo token JWT
  */
 export const createToken = (payload: Omit<JWTPayload, 'iat' | 'exp'>): string => {
-  const secret = 'secret';
+  const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET não está definido no ambiente');
   }
 
-  return jwt.sign(payload, secret, { expiresIn: '30m' }); // Sincronizado com NextAuth
+  return jwt.sign({
+    ...payload,
+    iss: 'rifa-app-auth',
+    aud: 'rifa-app-client',
+    exp: Math.floor(Date.now() / 1000) + 30 * 60,
+  },
+  secret,
+  {
+    algorithm: 'HS256',
+  }); // Sincronizado com NextAuth
 };
 
 /**

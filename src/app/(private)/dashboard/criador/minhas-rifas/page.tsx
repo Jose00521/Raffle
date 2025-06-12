@@ -1074,6 +1074,18 @@ export default function MinhasRifasPage() {
                     </RifaMeta>
                     
                     <RifaStats>
+                      {campaign.status === CampaignStatusEnum.SCHEDULED && campaign.scheduledActivationDate && (
+                        <StatRow>
+                          <StatLabel>Ativação Agendada:</StatLabel>
+                          <StatValue>
+                            {new Date(campaign.scheduledActivationDate).toLocaleDateString('pt-BR')} às{' '}
+                            {new Date(campaign.scheduledActivationDate).toLocaleTimeString('pt-BR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </StatValue>
+                        </StatRow>
+                      )}
                       <StatRow>
                         <StatLabel>Data do Sorteio:</StatLabel>
                         <StatValue>{new Date(campaign.drawDate).toLocaleDateString('pt-BR')}</StatValue>

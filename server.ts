@@ -1,3 +1,7 @@
+// Carregar variáveis de ambiente primeiro
+import dotenv from 'dotenv';
+dotenv.config();
+
 import 'reflect-metadata';
 
 // Increase EventEmitter max listeners to prevent warnings
@@ -47,7 +51,6 @@ app.prepare().then(async () => {
     }
   });
 
-  console.log('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET);
   
   // Socket.io events
   io.on('connection', (socket: Socket) => {

@@ -5,7 +5,7 @@ const EventEmitter = require('events');
 EventEmitter.defaultMaxListeners = 50;
 
 const { parsed: myEnv } = require('dotenv').config({
-  path:'.env.local'
+  path:'.env.example'
 })
 
 /** @type {import('next').NextConfig} */

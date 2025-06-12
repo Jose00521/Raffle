@@ -12,6 +12,9 @@ import Timer from '@/components/ui/Timer';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
 import paymentAPIClient from '@/API/paymentAPIClient';
+import { formatCurrency } from '@/utils/formatNumber';
+
+
 
 
 // Interfaces
@@ -735,18 +738,6 @@ const QRPlaceholder = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   
-  &::after {
-    content: 'PIX';
-    position: absolute;
-    font-size: 0.875rem;
-    font-weight: 600;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0.9;
-    letter-spacing: 1.5px;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  }
   
   &:hover {
     transform: translateY(-1px) scale(1.02);
@@ -1826,15 +1817,7 @@ interface Pix {
   expiresAt: string;
 }
 
-// Função para formatar valores monetários no padrão brasileiro
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value);
-};
+
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -2066,7 +2049,7 @@ export default function CheckoutPage() {
                           <span>Carregando QR...</span>
                         )}
                       </QRPlaceholder>
-                      {checkoutData?.campaignSelection.isCombo && (
+                      {checkoutData?.campaignSelection.isCombo ? (
                         <div style={{
                           background: '#22c55e',
                           color: 'white',
@@ -2084,6 +2067,25 @@ export default function CheckoutPage() {
                         }}>
                           <i className="fas fa-percentage" style={{ fontSize: '10px' }}></i>
                           Ganhar desconto
+                        </div>
+                      ) : (
+                        <div style={{
+                          background: '#22c55e',
+                          color: 'white',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          borderRadius: '0 0 12px 12px',
+                          marginTop: '-2px',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <i className="fas fa-heart" style={{ fontSize: '10px' }}></i>
+                          Realize seu sonho
                         </div>
                       )}
                     </QRCodeWrapper>

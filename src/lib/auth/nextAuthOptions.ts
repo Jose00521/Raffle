@@ -7,8 +7,8 @@ import Credentials from 'next-auth/providers/credentials';
 import { container } from '@/server/container/container';
 import { IUserAuthRepository } from '@/server/repositories/auth/userAuth';
 import type { IUser } from '@/models/interfaces/IUserInterfaces';
-import jsonwebtoken from 'jsonwebtoken';
 import logger from '@/lib/logger/logger';
+import { createToken, verifyToken } from "./jwtUtils";
 
 
 export const nextAuthOptions: NextAuthOptions = {
@@ -59,25 +59,15 @@ export const nextAuthOptions: NextAuthOptions = {
       strategy: 'jwt',
     },
     jwt: {
-      secret: process.env.NEXTAUTH_SECRET || 'secret',
+      secret: process.env.NEXTAUTH_SECRET,
       encode: ({ secret, token }) => {
-        const encodedToken = jsonwebtoken.sign(
-          {
-            ...token,
-            iss: 'rifa-app-auth',
-            aud: 'rifa-app-client',
-            exp: Math.floor(Date.now() / 1000) + 30 * 60,
-          },
-          secret,{
-            algorithm: 'HS256',
-          }
-        )
+        const encodedToken = createToken(token as any);
   
         return encodedToken
       },
       decode: async ({ secret, token }) => {
-        const decodedToken = jsonwebtoken.verify(token!, secret)
-        return decodedToken as JWT
+        const decodedToken = await verifyToken(token!)
+        return decodedToken as any
       },
     },
     callbacks: {
@@ -158,5 +148,5 @@ export const nextAuthOptions: NextAuthOptions = {
         }
       }
     },
-    secret: process.env.NEXTAUTH_SECRET || 'secret',
+    secret: process.env.NEXTAUTH_SECRET,
   }
