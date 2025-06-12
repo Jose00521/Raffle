@@ -11,6 +11,7 @@ import SecurityModal from '@/components/auth/SecurityModal';
 import Timer from '@/components/ui/Timer';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
+import paymentAPIClient from '@/API/paymentAPIClient';
 
 
 // Interfaces
@@ -1121,102 +1122,190 @@ const StepHeader = styled.div`
 `;
 
 const OrderSummary = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(30px) saturate(180%);
-  border-radius: 24px;
-  padding: 2.5rem;
-  box-shadow: 
-    0 32px 64px rgba(31, 38, 135, 0.15),
-    0 16px 32px rgba(31, 38, 135, 0.1),
-    0 8px 16px rgba(31, 38, 135, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   height: fit-content;
-  animation: ${slideInRight} 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   position: sticky;
   top: 2rem;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
-    animation: floatSlow 20s ease-in-out infinite;
-    pointer-events: none;
-  }
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 40px 80px rgba(31, 38, 135, 0.2),
-      0 20px 40px rgba(31, 38, 135, 0.15),
-      0 10px 20px rgba(31, 38, 135, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  }
-  
-  @keyframes floatSlow {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(15px, -10px) rotate(1deg); }
-    66% { transform: translate(-10px, 15px) rotate(-1deg); }
-  }
   
   @media (max-width: 1024px) {
     position: static;
   }
   
   @media (max-width: 768px) {
-    padding: 2rem;
-    border-radius: 20px;
+    padding: 1.25rem;
+    border-radius: 8px;
   }
 `;
 
 const SummaryTitle = styled.h3`
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  letter-spacing: -0.025em;
   
   i {
-    color: #3b82f6;
+    color: #64748b;
+    font-size: 1rem;
   }
-  
-  @media (max-width: 768px) {
-    font-size: 1.25rem;
-  }
-`;
-
-const CampaignInfo = styled.div`
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid #f1f2f6;
-`;
-
-const CampaignTitle = styled.h4`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
   
   @media (max-width: 768px) {
     font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+// Seção de informações do usuário
+const UserInfoSection = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const UserInfoTitle = styled.h4`
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const UserInfoGrid = styled.div`
+  display: grid;
+  gap: 0.5rem;
+`;
+
+const UserInfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  
+  i {
+    color: #94a3b8;
+    width: 14px;
+    text-align: center;
+    font-size: 0.75rem;
+  }
+  
+  strong {
+    font-weight: 500;
+    color: #1e293b;
+  }
+`;
+
+// Seção de informações da campanha melhorada
+const CampaignInfo = styled.div`
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const CampaignInfoHeader = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+`;
+
+const CampaignImageContainer = styled.div`
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  
+  @media (max-width: 480px) {
+    align-self: flex-start;
+  }
+`;
+
+const CampaignImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const CampaignImagePlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 1.25rem;
+`;
+
+const CampaignDetails = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const CampaignTitle = styled.h4`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+  
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
   }
 `;
 
 const CampaignMeta = styled.div`
-  color: #7f8c8d;
-  font-size: 0.9rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+`;
+
+const CampaignStats = styled.div`
+  display: flex;
+  gap: 1rem;
   
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+`;
+
+const CampaignStat = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  
+  i {
+    color: #94a3b8;
+    font-size: 0.7rem;
+  }
+  
+  strong {
+    color: #1e293b;
+    font-weight: 500;
   }
 `;
 
@@ -1728,8 +1817,24 @@ const LoadingSpinner = styled.div`
 interface CheckoutData {
   campanha: ICampaign;
   campaignSelection: INumberPackageCampaign
-  userFound: Partial<IUser>
+  foundUser: Partial<IUser>
 }
+
+interface Pix {
+  pixCode: string;
+  pixQrCode: string;
+  expiresAt: string;
+}
+
+// Função para formatar valores monetários no padrão brasileiro
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
+};
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -1741,9 +1846,11 @@ export default function CheckoutPage() {
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [pixCode, setPixCode] = useState('00020126580014BR.GOV.BCB.PIX0136123e4567-e12b-12d1-a456-426614174000520400005303986540510.005802BR5913EXEMPLO PIX6009SAO PAULO61080540900062070503***6304A7B2');
+  const [pix, setPix] = useState<Pix | null>(null);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1753,6 +1860,48 @@ export default function CheckoutPage() {
           const parsedData = JSON.parse(storedData) as CheckoutData;
           setCampanha(parsedData.campanha as ICampaign);
           setCheckoutData(parsedData);
+
+
+          if(!pix){
+            // Calcular expiração em 10 minutos - testando diferentes formatos
+            const expiresAtISO = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+            const expiresAtUnix = Math.floor((Date.now() + 10 * 60 * 1000) / 1000);
+            const expiresInSeconds = 600; // 10 minutos em segundos
+            
+            console.log('Testando formatos de expiração:');
+            console.log('ISO:', expiresAtISO);
+            console.log('Unix:', expiresAtUnix);
+            console.log('Seconds:', expiresInSeconds);
+            
+            const response = await paymentAPIClient.createPixPayment({
+              name: parsedData.foundUser.name,
+              email: parsedData.foundUser.email,
+              cpf: parsedData.foundUser.cpf,
+              phone: parsedData.foundUser.phone,
+              paymentMethod: "PIX",
+              amount: (parsedData.campaignSelection.totalPrice || 0) * 100, // Converter para centavos
+              expiresAt: expiresAtISO, 
+              traceable: true,
+              items: [
+                  {
+                    unitPrice: (parsedData.campaignSelection.totalPrice || 0) * 100, // Converter para centavos
+                    title: parsedData.campanha.title,
+                    quantity: 1,
+                    tangible: false
+                  }
+                ]
+              }
+            );
+ 
+           if(response.success){
+             setPix(response.data);
+           }else{
+             toast.error('Erro ao criar pagamento');
+             router.push(`/campanhas/${campanhaId}`);
+             return;
+           }
+          }
+          
           setIsLoading(false);
           return;
         }else{
@@ -1785,7 +1934,7 @@ export default function CheckoutPage() {
 
   const handleCopyPixCode = async () => {
     try {
-      await navigator.clipboard.writeText(pixCode);
+      await navigator.clipboard.writeText(pix?.pixCode || '');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -1899,7 +2048,41 @@ export default function CheckoutPage() {
                 <PixContainer>
                   <QRSection>
                     <QRCodeWrapper>
-                      <QRPlaceholder>QR</QRPlaceholder>
+                      <QRPlaceholder>
+                        {pix?.pixQrCode ? (
+                          <img 
+                            src={pix.pixQrCode} 
+                            alt="QR Code PIX" 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            onError={(e) => {
+                              console.error('Erro ao carregar QR Code:', e);
+                              console.log('pixQrCode value:', pix.pixQrCode);
+                            }}
+                          />
+                        ) : (
+                          <span>Carregando QR...</span>
+                        )}
+                      </QRPlaceholder>
+                      {checkoutData?.campaignSelection.isCombo && (
+                        <div style={{
+                          background: '#22c55e',
+                          color: 'white',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          borderRadius: '0 0 12px 12px',
+                          marginTop: '-2px',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <i className="fas fa-percentage" style={{ fontSize: '10px' }}></i>
+                          Ganhar desconto
+                        </div>
+                      )}
                     </QRCodeWrapper>
                     <QRLabel>Escaneie com seu banco</QRLabel>
                   </QRSection>
@@ -1909,7 +2092,7 @@ export default function CheckoutPage() {
               <PixCodeSection>
                 <PixCodeLabel>💳 Código PIX - Copia e Cola</PixCodeLabel>
                 <PixCodeContainer>
-                  <PixCode>{pixCode}</PixCode>
+                  <PixCode>{pix?.pixCode}</PixCode>
                   <CopyButton onClick={handleCopyPixCode} $copied={copied}>
                     <i className="fas fa-copy copy-icon" />
                     <i className="fas fa-check success-icon" />
@@ -1973,7 +2156,7 @@ export default function CheckoutPage() {
                       <StepDescription>
                         <strong>Opção 1:</strong> Use a câmera do seu celular para escanear o QR Code acima.<br/>
                         <strong>Opção 2:</strong> Copie o código PIX e cole no campo "PIX Copia e Cola" do seu app bancário.<br/>
-                        O valor será preenchido automaticamente (R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}).
+                        O valor será preenchido automaticamente ({formatCurrency(checkoutData?.campaignSelection.totalPrice || 0)}).
                       </StepDescription>
                     </StepContent>
                   </StepItem>
@@ -1990,7 +2173,7 @@ export default function CheckoutPage() {
                         <StepTitle>Confirme os dados e finalize o pagamento</StepTitle>
                       </StepHeader>
                       <StepDescription>
-                        Verifique se o valor está correto (R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}), 
+                        Verifique se o valor está correto ({formatCurrency(checkoutData?.campaignSelection.totalPrice || 0)}), 
                         confirme sua senha/biometria e finalize o pagamento. Você receberá uma confirmação instantânea. 
                         <strong>O pagamento é processado imediatamente!</strong>
                       </StepDescription>
@@ -2025,12 +2208,67 @@ export default function CheckoutPage() {
                 Resumo do Pedido
               </SummaryTitle>
 
+              {checkoutData?.foundUser && (
+                <UserInfoSection>
+                  <UserInfoTitle>
+                    Participante
+                  </UserInfoTitle>
+                  <UserInfoGrid>
+                    <UserInfoItem>
+                      <i className="fas fa-user" />
+                      <strong>{checkoutData.foundUser.name}</strong>
+                    </UserInfoItem>
+                    <UserInfoItem>
+                      <i className="fas fa-envelope" />
+                      {checkoutData.foundUser.email}
+                    </UserInfoItem>
+                    <UserInfoItem>
+                      <i className="fas fa-phone" />
+                      {checkoutData.foundUser.phone}
+                    </UserInfoItem>
+                  </UserInfoGrid>
+                </UserInfoSection>
+              )}
+
               {campanha && (
                 <CampaignInfo>
-                  <CampaignTitle>{campanha.title}</CampaignTitle>
-                  <CampaignMeta>
-                    🎯 {campanha.description}
-                  </CampaignMeta>
+                  <CampaignInfoHeader>
+                    <CampaignImageContainer>
+                      {campanha.coverImage ? (
+                        <CampaignImage 
+                          src={campanha.coverImage} 
+                          alt={campanha.title}
+                        />
+                      ) : (
+                        <CampaignImagePlaceholder>
+                          <i className="fas fa-image" />
+                        </CampaignImagePlaceholder>
+                      )}
+                    </CampaignImageContainer>
+                    
+                    <CampaignDetails>
+                      <CampaignTitle>{campanha.title}</CampaignTitle>
+                      <CampaignMeta>
+                        {campanha.description}
+                      </CampaignMeta>
+                      <CampaignStats>
+                        {/* <CampaignStat>
+                          <i className="fas fa-ticket-alt" />
+                          <strong>R$ {(campanha.individualNumberPrice).toFixed(2)}</strong> /número
+                        </CampaignStat>
+                        <CampaignStat>
+                          <i className="fas fa-users" />
+                          <strong>{campanha.stats?.totalParticipants || 0}</strong> participantes
+                        </CampaignStat>
+                        {campanha.totalNumbers && (
+                          <CampaignStat>
+                            <i className="fas fa-chart-line" />
+                            <strong>{campanha.totalNumbers}</strong> disponíveis
+                          </CampaignStat>
+                        )} */}
+                      </CampaignStats>
+                    </CampaignDetails>
+                  </CampaignInfoHeader>
                 </CampaignInfo>
               )}
 
@@ -2056,7 +2294,7 @@ export default function CheckoutPage() {
                            <ComboDetailItem>
                              <ComboDetailLabel>Valor por Número</ComboDetailLabel>
                              <ComboDetailValue>
-                               R$ {(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity).toFixed(2)}
+                               {formatCurrency(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity)}
                              </ComboDetailValue>
                            </ComboDetailItem>
                          </ComboInfoGrid>
@@ -2074,14 +2312,14 @@ export default function CheckoutPage() {
                                <ComparisonItem>
                                  <ComparisonLabel>Preço Normal</ComparisonLabel>
                                  <ComparisonValue $strikethrough>
-                                   R$ {regularPrice.toFixed(2)}
+                                   {formatCurrency(regularPrice)}
                                  </ComparisonValue>
                                </ComparisonItem>
                                <ComparisonArrow>→</ComparisonArrow>
                                <ComparisonItem>
                                  <ComparisonLabel>Preço do Combo</ComparisonLabel>
                                  <ComparisonValue>
-                                   R$ {comboPrice.toFixed(2)}
+                                   {formatCurrency(comboPrice)}
                                  </ComparisonValue>
                                </ComparisonItem>
                              </ComboComparison>
@@ -2089,7 +2327,7 @@ export default function CheckoutPage() {
                              <ComboSavings>
                                <ComboSavingsText>Você está economizando</ComboSavingsText>
                                <ComboSavingsValue>
-                                 R$ {savings.toFixed(2)} ({savingsPercentage}% OFF)
+                                 {formatCurrency(savings)} ({savingsPercentage}% OFF)
                                </ComboSavingsValue>
                              </ComboSavings>
                            </>
@@ -2112,7 +2350,7 @@ export default function CheckoutPage() {
                     <DetailRow>
                       <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
                       <TotalValue>
-                        R$ {checkoutData.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                        {formatCurrency(checkoutData.campaignSelection.totalPrice || 0)}
                       </TotalValue>
                     </DetailRow>
                   </>
@@ -2125,19 +2363,19 @@ export default function CheckoutPage() {
                     <DetailRow>
                       <DetailLabel>💰 Valor Unitário</DetailLabel>
                       <DetailValue>
-                        R$ {checkoutData?.campaignSelection.individualNumberPrice?.toFixed(2) || '0,00'}
+                        {formatCurrency(checkoutData?.campaignSelection.individualNumberPrice || 0)}
                       </DetailValue>
                     </DetailRow>
                     <DetailRow>
                       <DetailLabel>📊 Subtotal</DetailLabel>
                       <DetailValue>
-                        R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                        {formatCurrency(checkoutData?.campaignSelection.totalPrice || 0)}
                       </DetailValue>
                     </DetailRow>
                     <DetailRow>
                       <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
                       <TotalValue>
-                        R$ {checkoutData?.campaignSelection.totalPrice?.toFixed(2) || '0,00'}
+                        {formatCurrency(checkoutData?.campaignSelection.totalPrice || 0)}
                       </TotalValue>
                     </DetailRow>
                   </RegularDetails>

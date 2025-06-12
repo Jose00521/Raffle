@@ -19,8 +19,8 @@ export interface IPrizeController {
         images: File[];
     }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>>;
-    deletePrize(id: string, session: Session): Promise<ApiResponse<null>>;
-    updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
+    deletePrize(id: string, session: Session): Promise<ApiResponse<null>>;  
+    updatePrize(id: string, updatedData: Record<string, any>, session: Session): Promise<ApiResponse<IPrize> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -45,9 +45,9 @@ export class PrizeController implements IPrizeController {
         return await this.prizeService.deletePrize(id, session);
     }
 
-    async updatePrize(id: string, updatedData: Record<string, any>): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
+    async updatePrize(id: string, updatedData: Record<string, any>, session: Session): Promise<ApiResponse<IPrize> | ApiResponse<null>> {
         try {
-            return await this.prizeService.updatePrize(id, updatedData);
+            return await this.prizeService.updatePrize(id, updatedData, session);
         } catch (error) {
             throw new ApiError({
                 success: false,

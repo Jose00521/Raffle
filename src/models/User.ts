@@ -189,6 +189,11 @@ const CreatorSchema = new Schema<ICreator>({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserPaymentGateway'
   },
+
+  gateways: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'UserPaymentGateway'
+  }],
   // Conta bancária
   bankAccount: [{
     bank: { type: String, required: true },
