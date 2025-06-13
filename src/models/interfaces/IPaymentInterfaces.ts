@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
+import { IAddress } from './IUserInterfaces';
+import { ICampaign, INumberPackageCampaign } from './ICampaignInterfaces';
+import { ISODateString } from 'next-auth';
 
 
 export enum PaymentStatusEnum {
     PENDING = 'PENDING',
+    INITIALIZED = 'INITIALIZED',
     APPROVED = 'APPROVED',
+    FAILED = 'FAILED',
     DECLINED = 'DECLINED',
     REFUNDED = 'REFUNDED',
     CANCELED = 'CANCELED',
@@ -27,9 +32,13 @@ export enum PaymentStatusEnum {
     userId: mongoose.Types.ObjectId | string;
     processorTransactionId: string; // ID fornecido pelo processador de pagamento
     amount: number;
+    taxSeller: number;
+    taxPlatform: number;
+    amountReceived: number;
     paymentMethod: PaymentMethodEnum;
     status: PaymentStatusEnum;
     numbers: number[]; // Números da rifa comprados neste pagamento
+    pixCode?: string;
     purchaseDate: Date;
     approvedDate?: Date;
     refundedDate?: Date;
@@ -61,3 +70,106 @@ export enum PaymentStatusEnum {
     updatedAt: Date;
     systemCreatedAt?: Date; // Timestamp de quando o registro foi criado no sistema
   }
+
+  export interface ICreditCard {
+    token: string,
+    installments: number,
+    number: string,
+    holder_name: string,
+    cvv: string,
+    expiration_month: string,
+    expiration_year: string
+  }
+
+
+
+  export interface IPaymentPattern {
+    userCode: string;
+    name: string;
+    email: string;
+    cpf: string;
+    phone: string;
+    amount: number;
+    creditCard?: ICreditCard;
+    paymentMethod: PaymentMethodEnum;
+    paymentCode?: string;
+    address: IAddress;
+    expiresAt: ISODateString;
+    campanha: ICampaign;
+    selectedPackage: INumberPackageCampaign;
+  }
+
+
+
+
+  //Ghostspay Payment Request
+  export interface IPaymentGhostRequest {
+    name: string;
+    email: string;
+    cpf: string;
+    phone: string;
+    amount: number;
+    creditCard?: ICreditCard;
+    paymentMethod: PaymentMethodEnum;
+    cep?: string;
+    street?: string;
+    externalId?: string;
+    number?: string;
+    complement?: string;
+    district?: string;
+    city?: string;
+    state?: string;
+    traceable: boolean;
+    expiresAt: ISODateString;
+    items: {
+      unitPrice: number;
+      title: string;
+      quantity: number;
+      tangible: boolean;
+    }[];
+  }
+
+
+  //Ghostspay Payment Response
+  export interface IPaymentGhostResponse {
+      id: string
+      customId: string
+      installments: number
+      expiresAt: string
+      dueAt: string
+      approvedAt: string
+      refundedAt: string
+      rejectedAt: string
+      chargebackAt: string
+      availableAt: string
+      pixQrCode: string
+      pixCode: string
+      billetUrl: string
+      billetCode: string
+      status: string
+      address: string
+      district: string
+      number: string
+      complement: string
+      city: string
+      state: string
+      zipCode: string
+      amount: number
+      taxSeller: number
+      taxPlatform: number
+      amountSeller: number
+      amountGarantee: number
+      taxGarantee: number
+      traceable: boolean
+      method: string
+      deliveryStatus: string
+      createdAt: string
+      updatedAt: string
+      utmQuery: string
+      checkoutUrl: string
+      referrerUrl: string
+      externalId: string
+      postbackUrl: string
+    }
+    
+  

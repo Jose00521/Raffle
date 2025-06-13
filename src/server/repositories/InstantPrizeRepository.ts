@@ -1,4 +1,5 @@
-import * as dbConnect from '@/server/lib/dbConnect';
+import { inject, injectable } from "tsyringe";
+import type { IDBConnection } from "../lib/dbConnect";
 import Campaign from '@/models/Campaign';
 import InstantPrize from '@/models/InstantPrize';
 import NumberStatus from '@/models/NumberStatus';
@@ -7,8 +8,19 @@ import mongoose from 'mongoose';
 
 
 export class InstantPrizeRepository {
-    static async buscarPrêmiosInstantâneos(campaignId: string, page: number = 1, limit: number = 10) {
+    private db: IDBConnection;
+
+    constructor(
+        @inject("db") db: IDBConnection
+    ) {
+        this.db = db;
+    }
+
+
+    async buscarPrêmiosInstantâneos(campaignId: string, page: number = 1, limit: number = 10) {
           // Versão otimizada para milhões de registros - limita dados antes do agrupamento principal
+          await this.db.connect();
+          
             const categoriasPremios = await InstantPrize.aggregate([
                 // 1. Filtra por campanha
                 { 
@@ -103,9 +115,9 @@ export class InstantPrizeRepository {
             };
     }
 
-    static async buscarPrêmiosInstantâneosPorCategoria(campaignId: string, categoryId: string, page: number = 1, limit: number = 10) {
+    async buscarPrêmiosInstantâneosPorCategoria(campaignId: string, categoryId: string, page: number = 1, limit: number = 10) {
         try {
-            await dbConnect();
+            await this.db.connect();
   
             if (!mongoose.Types.ObjectId.isValid(campaignId) || !mongoose.Types.ObjectId.isValid(categoryId)) {
               return { premios: [], paginacao: { total: 0, pagina: page, limite: limit, totalPaginas: 0 } };

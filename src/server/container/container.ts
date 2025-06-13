@@ -34,6 +34,9 @@ import { CampaignDataProcessorService } from '../services/CampaignDataProcessorS
 import pino, { Logger } from 'pino';
 import logger from '@/lib/logger/logger';
 import { SocketService } from '../lib/socket/SocketService';
+import { IPaymentRepository, PaymentRepository } from '../repositories/PaymentRepository';
+import { IPaymentService, PaymentService } from '../services/PaymentService';
+import { IPaymentController, PaymentController } from '../controllers/PaymentController';
 
 
 // Register dependencies
@@ -58,6 +61,9 @@ container.register<IPrizeCategoryController>('prizeCategoryController', { useCla
 container.register<InstantPrizeService>('instantPrizeService', { useClass: InstantPrizeService });
 container.register<CampaignDataProcessorService>(CampaignDataProcessorService, { useClass: CampaignDataProcessorService });
 container.register<SocketService>('socketService', { useClass: SocketService });
+container.register<IPaymentRepository>('paymentRepository', { useClass: PaymentRepository });
+container.register<IPaymentService>('paymentService', { useClass: PaymentService });
+container.register<IPaymentController>('paymentController', { useClass: PaymentController });
 
 
 // Export configured container

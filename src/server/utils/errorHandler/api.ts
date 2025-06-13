@@ -13,9 +13,9 @@ export const createSuccessResponse = <T>(data: T, message?: string, statusCode =
   message,
 });
 
-export const createErrorResponse = (message = 'Error', statusCode = 400): ApiResponse<null> => ({
+export const createErrorResponse = ( message = 'Error', statusCode = 400): ApiResponse<null> => ({
   statusCode,
   success: false,
   message,
-  data: null
+  data: null,
 }); 

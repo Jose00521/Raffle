@@ -90,6 +90,7 @@ export class UserRepository implements IUserRepository {
             const user = await User.findOne({ phone: phone }, {
                 _id: 0,
                 userCode: 1,
+                address: 1,
                 name: 1,
                 email: 1,
                 cpf: 1,

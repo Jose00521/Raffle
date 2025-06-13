@@ -39,6 +39,11 @@ const NumberStatusSchema = isServer ? new mongoose.Schema<INumberStatus>(
       ref: 'User',
       index: true
     },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Payment',
+      index: true
+    },
     reservedAt: Date,
     paidAt: Date,
     expiresAt: Date,

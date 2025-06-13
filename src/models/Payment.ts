@@ -29,13 +29,32 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
     },
     processorTransactionId: {
       type: String,
-      required: true,
       unique: true,
-      index: true
+      sparse: true,
+      index: true,
+      // Garante que strings vazias sejam salvas como nulas/ausentes,
+      // permitindo que o índice sparse funcione corretamente.
+      set: (v: string | null | undefined) => (v === '' ? undefined : v),
     },
     amount: {
       type: Number,
-      required: true
+      required: true,
+      default: 0
+    },
+    taxSeller: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    taxPlatform: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    amountReceived: {
+      type: Number,
+      required: true,
+      default: 0
     },
     paymentMethod: {
       type: String,
@@ -49,9 +68,9 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       required: true,
       index: true
     },
-    numbers: {
-      type: [Number],
-      required: true
+    pixCode: {
+      type: String,
+      default: ''
     },
     purchaseDate: {
       type: Date,
@@ -64,12 +83,13 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
     expireDate: Date,
     paymentProcessor: {
       type: String,
-      required: true
+      required: true,
+      default: ''
     },
     processorResponse: {
-      code: String,
-      message: String,
-      referenceId: String
+      code: { type: String, default: '' },
+      message: { type: String, default: '' },
+      referenceId: { type: String, default: '' }
     },
     customerInfo: {
       name: {

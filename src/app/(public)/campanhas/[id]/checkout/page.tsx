@@ -13,6 +13,7 @@ import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
 import paymentAPIClient from '@/API/paymentAPIClient';
 import { formatCurrency } from '@/utils/formatNumber';
+import { PaymentMethodEnum } from '@/models/interfaces/IPaymentInterfaces';
 
 
 
@@ -1855,26 +1856,28 @@ export default function CheckoutPage() {
             console.log('ISO:', expiresAtISO);
             console.log('Unix:', expiresAtUnix);
             console.log('Seconds:', expiresInSeconds);
-            
+
             const response = await paymentAPIClient.createPixPayment({
-              name: parsedData.foundUser.name,
-              email: parsedData.foundUser.email,
-              cpf: parsedData.foundUser.cpf,
-              phone: parsedData.foundUser.phone,
-              paymentMethod: "PIX",
+              userCode: parsedData.foundUser.userCode || '',
+              name: parsedData.foundUser.name || '',
+              email: parsedData.foundUser.email || '',
+              cpf: parsedData.foundUser.cpf || '',
+              phone: parsedData.foundUser.phone || '',
+              address: {
+                zipCode: parsedData.foundUser.address?.zipCode || '',
+                street: parsedData.foundUser.address?.street || '',
+                number: parsedData.foundUser.address?.number || '',
+                complement: parsedData.foundUser.address?.complement || '',
+                neighborhood: parsedData.foundUser.address?.neighborhood || '',
+                city: parsedData.foundUser.address?.city || '',
+                state: parsedData.foundUser.address?.state || '',
+              },
+              paymentMethod: PaymentMethodEnum.PIX,
               amount: (parsedData.campaignSelection.totalPrice || 0) * 100, // Converter para centavos
               expiresAt: expiresAtISO, 
-              traceable: true,
-              items: [
-                  {
-                    unitPrice: (parsedData.campaignSelection.totalPrice || 0) * 100, // Converter para centavos
-                    title: parsedData.campanha.title,
-                    quantity: 1,
-                    tangible: false
-                  }
-                ]
-              }
-            );
+              campanha: parsedData.campanha,
+              selectedPackage: parsedData.campaignSelection,
+            });
  
            if(response.success){
             sessionStorage.setItem('pix', JSON.stringify(response.data));
@@ -1904,6 +1907,10 @@ export default function CheckoutPage() {
     };
 
     fetchData();
+
+    return () => {
+      sessionStorage.removeItem('pix');
+    }
   }, [campanhaId, router]);
 
   useEffect(() => {

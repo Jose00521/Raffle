@@ -15,6 +15,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const campaign = await campaignController.getCampaignByIdPublic(id);
       return NextResponse.json(campaign);
   } catch (error) {
-      return createErrorResponse('Erro ao buscar campanha por ID:', 500);
+      return NextResponse.json(createErrorResponse('Erro ao buscar campanha por ID:', 500), { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CampaignController } from '@/server/controllers/CampaignController';
 import { container } from '@/server/container/container';
+import { createErrorResponse } from '@/server/utils/errorHandler/api';
 
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
@@ -28,10 +29,7 @@ export async function GET() {
     return NextResponse.json(result, { status: result.statusCode || 200 });
   } catch (error) {
     console.error('Erro na API de listagem de campanhas:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Erro interno do servidor'
-    }, { status: 500 });
+    return NextResponse.json(createErrorResponse('Erro ao buscar campanhas', 500), { status: 500 });
   }
 }
 

@@ -22,6 +22,7 @@ import { container } from './src/server/container/container.ts';
 import { validateEntityCode } from './src/models/utils/idGenerator';
 import { cronManager } from './src/server/cron';
 import { SocketService } from './src/server/lib/socket/SocketService';
+import { StatsService } from './src/server/utils/stats/StatsService';
 
 // Para executar migrations automaticamente no arranque, descomente estas linhas:
 // const path = require('path');
@@ -34,8 +35,9 @@ const handle = app.getRequestHandler();
 const PORT = process.env.PORT || 3000;
 const db = container.resolve<IDBConnection>('db');
 
-
-
+// Variável de controle global para garantir a inicialização única
+let servicesInitialized = false;
+let socketService: SocketService;
 
 app.prepare().then(async () => {
   const httpServer = createServer((req, res) => {
@@ -83,33 +85,33 @@ app.prepare().then(async () => {
     await db.connect();
     logger.info('✅ Conectado ao MongoDB com sucesso!');
     
-    // Inicializar o serviço de Socket.IO
-    const socketService = container.resolve<SocketService>('socketService');
-    socketService.initialize(io);
-    logger.info('✅ Socket.IO Service inicializado com sucesso!');
+    // Bloco de inicialização única
+    if (!servicesInitialized) {
+      // Inicializar o serviço de Socket.IO
+      socketService = container.resolve<SocketService>('socketService');
+      socketService.initialize(io);
+      logger.info('✅ Socket.IO Service inicializado com sucesso!');
+      
+      // Inicializar serviços passando a instância do Socket.io
+      const statsService = new StatsService(io);
+      await statsService.start();
+      logger.info('✅ Stats Service inicializado com sucesso!');
+      
+      // Inicializar o cron manager
+      await cronManager.init();
+      logger.info('✅ Cron Manager inicializado com sucesso!');
+      
+      servicesInitialized = true;
+    } else {
+      logger.warn('Serviços já inicializados, pulando re-inicialização (HMR).');
+    }
     
     // Verificar se o SocketService foi inicializado corretamente
-    if (socketService.isInitialized()) {
+    if (socketService && socketService.isInitialized()) {
       logger.info('✅ SocketService está corretamente inicializado!');
     } else {
       logger.error('❌ Falha ao inicializar SocketService');
       throw new Error('Falha na inicialização do SocketService');
-    }
-    
-    // Inicializar serviços passando a instância do Socket.io
-    await initializeServices(io);
-    logger.info('✅ Serviços do backend inicializados com sucesso!');
-    
-    // Inicializar o cron manager para ativação automática de campanhas
-    try {
-      await cronManager.init();
-      logger.info('✅ Cron Manager inicializado com sucesso!');
-      
-      // Mostrar os jobs registrados
-      const status = cronManager.getStatus();
-      logger.info(`Jobs registrados: ${status.jobsRegistered.join(', ')}`);
-    } catch (cronError) {
-      logger.error('❌ Erro ao inicializar Cron Manager:', cronError);
     }
     
     // Adicionar hook para o evento de desconexão do socket

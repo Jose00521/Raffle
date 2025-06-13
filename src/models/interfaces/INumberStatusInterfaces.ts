@@ -14,6 +14,7 @@ export enum NumberStatusEnum {
     number: string;
     status: NumberStatusEnum;
     userId?: mongoose.Types.ObjectId | string;
+    paymentId?: mongoose.Types.ObjectId | string;
     reservedAt?: Date;
     paidAt?: Date;
     expiresAt?: Date;
