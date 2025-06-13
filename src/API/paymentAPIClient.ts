@@ -50,14 +50,14 @@ const paymentAPIClient = {
         console.log(`[PAYMENT_CLIENT] Tentando novamente com chave existente: ${existingIdempotencyKey}`);
 
         try {
-            const response = await fetch('/api/payment/pix', {
-                method: 'POST',
-                headers: {
+        const response = await fetch('/api/payment/pix', {
+            method: 'POST',
+            headers: {
                     'Content-Type': 'application/json',
                     'Idempotency-Key': existingIdempotencyKey // 🔄 Reutiliza chave
-                },
-                body: JSON.stringify(data),
-            });
+            },
+            body: JSON.stringify(data),
+        });
 
             const result = await response.json();
             
@@ -70,8 +70,8 @@ const paymentAPIClient = {
         } catch (error) {
             console.error(`[PAYMENT_CLIENT] Erro no retry. Key: ${existingIdempotencyKey}`, error);
             throw error;
-        }
     }
+}
 };
 
 export default paymentAPIClient;

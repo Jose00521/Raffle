@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
 
       const body = await request.json();
 
+      console.log('body payment pix', body);
+
               // 🔑 Extrai chave de idempotência do header (padrão da indústria)
               const idempotencyKey = request.headers.get('Idempotency-Key') || 
               request.headers.get('idempotency-key') ||
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
 
           // 🔑 Cria resposta com header de idempotência
           const response = NextResponse.json(createSuccessResponse({
-            ...updateResult.data
+            ...updateResult.data,
           }, 'Pagamento criado com sucesso', 200));
           
           // 🎯 Adiciona header de idempotência na resposta (padrão da indústria)

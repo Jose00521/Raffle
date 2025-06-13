@@ -72,15 +72,15 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       type: String,
       default: ''
     },
-    purchaseDate: {
+    purchaseAt: {
       type: Date,
       default: Date.now,
       required: true,
     },
-    approvedDate: Date,
-    refundedDate: Date,
-    canceledDate: Date,
-    expireDate: Date,
+    approvedAt: Date,
+    refundedAt: Date,
+    canceledAt: Date,
+    expiresAt: Date,
     paymentProcessor: {
       type: String,
       required: true,
@@ -162,6 +162,7 @@ interface PaymentModel extends mongoose.Model<IPayment> {
   calculatePaymentStatistics(campaignId?: string): Promise<any>;
   findByPaymentCode(paymentCode: string): Promise<IPayment | null>;
   findByProcessorTransactionId(processorTransactionId: string): Promise<IPayment | null>;
+  processExpiredPixPayments(): Promise<any>;
 }
 
 // Adicionar índices e métodos estáticos apenas se estiver no servidor
@@ -172,6 +173,17 @@ if (isServer && PaymentSchema) {
     if (!this.paymentCode) {
       this.paymentCode = generateEntityCode(this._id, 'PG');
     }
+
+    const TIME_TO_EXPIRE = 10;
+    
+    // 🕒 Define automaticamente expireDate para PIX (10 minutos)
+    if (this.paymentMethod === PaymentMethodEnum.PIX && 
+        (this.status === PaymentStatusEnum.PENDING || this.status === PaymentStatusEnum.INITIALIZED) &&
+        !this.expiresAt) {
+      this.expiresAt = new Date(Date.now() + TIME_TO_EXPIRE * 60 * 1000); // 10 minutos
+      console.log(`[PAYMENT_MODEL] Definindo expiração automática para PIX: ${this.expiresAt.toISOString()}`);
+    }
+    
     next();
   });
 
@@ -185,7 +197,8 @@ if (isServer && PaymentSchema) {
   PaymentSchema.index({ userId: 1, purchaseDate: -1 });
 
   // Índice para expiração automática de pagamentos pendentes
-  PaymentSchema.index({ status: 1, expireDate: 1 });
+  PaymentSchema.index({ status: 1, expiresAt: 1 });
+
 
   // Índice para consultas de transações por processador
   PaymentSchema.index({ paymentProcessor: 1, processorTransactionId: 1 });
@@ -211,20 +224,20 @@ if (isServer && PaymentSchema) {
   // Métodos estáticos do modelo
   PaymentSchema.statics.findUserPayments = function(userId: string) {
     return this.find({ userId })
-      .sort({ purchaseDate: -1 })
+      .sort({ purchaseAt: -1 })
       .populate('campaignId', 'title campaignCode');
   };
 
   PaymentSchema.statics.findCampaignPayments = function(campaignId: string) {
     return this.find({ campaignId })
-      .sort({ purchaseDate: -1 })
+      .sort({ purchaseAt: -1 })
       .populate('userId', 'name email userCode');
   };
 
   PaymentSchema.statics.findPendingPayments = function() {
     return this.find({
       status: PaymentStatusEnum.PENDING,
-      expireDate: { $gt: new Date() }
+      expiresAt: { $gt: new Date() }
     });
   };
 
@@ -262,6 +275,30 @@ if (isServer && PaymentSchema) {
     return this.findOne({ processorTransactionId })
       .populate('campaignId', 'title campaignCode')
       .populate('userId', 'name email userCode');
+  };
+  
+  // 🕒 Método para processar PIX expirados (muda status, não remove)
+  PaymentSchema.statics.processExpiredPixPayments = async function() {
+    const now = new Date();
+    
+    console.log('[PAYMENT_MODEL] Processando PIX expirados...');
+    
+    const result = await this.updateMany(
+      {
+        paymentMethod: PaymentMethodEnum.PIX,
+        status: { $in: [PaymentStatusEnum.PENDING, PaymentStatusEnum.INITIALIZED] },
+        expiresAt: { $lte: now }
+      },
+      {
+        $set: {
+          status: PaymentStatusEnum.EXPIRED,
+          updatedAt: now
+        }
+      }
+    );
+    
+    console.log(`[PAYMENT_MODEL] ✅ ${result.modifiedCount} PIX marcados como expirados`);
+    return result;
   };
 }
 

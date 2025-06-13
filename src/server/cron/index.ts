@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
 import { CRON_CONFIG } from './config';
 import activateCampaigns from './jobs/activateCampaigns';
+import expirePixPayments from './jobs/expirePixPayments';
 import logger from '@/lib/logger/logger';
 import mongoose from 'mongoose';
 import type { IDBConnection } from '@/server/lib/dbConnect';
@@ -80,6 +81,29 @@ class CronManager {
       this.jobs.set('activateCampaigns', task);
       logger.info('Job de ativação de campanhas registrado', { 
         schedule: CRON_CONFIG.ACTIVATE_CAMPAIGNS.schedule 
+      });
+    }
+    
+    // Job para expirar PIX
+    if (CRON_CONFIG.EXPIRE_PIX_PAYMENTS.enabled) {
+      const pixTask = cron.schedule(
+        CRON_CONFIG.EXPIRE_PIX_PAYMENTS.schedule, 
+        async () => {
+          try {
+            logger.info('Executando job de expiração de PIX');
+            await expirePixPayments();
+          } catch (error) {
+            logger.error('Erro ao executar job de expiração de PIX', { 
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined
+            });
+          }
+        }
+      );
+      
+      this.jobs.set('expirePixPayments', pixTask);
+      logger.info('Job de expiração de PIX registrado', { 
+        schedule: CRON_CONFIG.EXPIRE_PIX_PAYMENTS.schedule 
       });
     }
     

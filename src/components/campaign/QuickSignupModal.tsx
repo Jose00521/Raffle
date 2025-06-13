@@ -223,12 +223,24 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   };
 
   const submitUserFound = async () => {
-    localStorage.setItem('checkoutData', JSON.stringify({
+    const checkoutData = {
       campaignSelection,
       foundUser,
       campanha,
-    }));
-
+    };
+    
+    console.log('[QUICK_SIGNUP] Salvando dados no localStorage:', checkoutData);
+    console.log('[QUICK_SIGNUP] campaignSelection:', campaignSelection);
+    console.log('[QUICK_SIGNUP] foundUser:', foundUser);
+    console.log('[QUICK_SIGNUP] campanha:', campanha);
+    
+    localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+    
+    // Verificar se foi salvo corretamente
+    const savedData = localStorage.getItem('checkoutData');
+    console.log('[QUICK_SIGNUP] Dados salvos verificação:', savedData?.substring(0, 200) + '...');
+    
+    console.log('[QUICK_SIGNUP] Navegando para:', `/campanhas/${campaignSelection.campaignCode}/checkout`);
     router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
   }
 

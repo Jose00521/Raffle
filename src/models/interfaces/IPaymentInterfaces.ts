@@ -41,11 +41,11 @@ export enum PaymentStatusEnum {
     status: PaymentStatusEnum;
     numbers: number[]; // Números da rifa comprados neste pagamento
     pixCode?: string;
-    purchaseDate: Date;
-    approvedDate?: Date;
-    refundedDate?: Date;
-    canceledDate?: Date;
-    expireDate?: Date;
+    purchaseAt: Date;
+    approvedAt?: Date;
+    refundedAt?: Date;
+    canceledAt?: Date;
+    expiresAt?: Date;
     paymentProcessor: string; // Ex: Stripe, Mercado Pago, PayPal
     processorResponse?: {
       code: string;
@@ -96,7 +96,7 @@ export enum PaymentStatusEnum {
     paymentMethod: PaymentMethodEnum;
     paymentCode?: string;
     address: IAddress;
-    expiresAt: ISODateString;
+    expiresAt?: ISODateString; // ✅ Opcional - será definido pelo hook pre-save
     campanha: ICampaign;
     selectedPackage: INumberPackageCampaign;
     idempotencyKey?: string;

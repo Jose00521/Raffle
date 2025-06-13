@@ -141,7 +141,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   }, [campanhaDetalhes, selectPackage]);
   
   // Imagens do carrossel (usando a imagem principal como primeira e adicionando imagens extras se disponíveis)
-  const carouselImages = campanhaDetalhes?.images || [];
+  const carouselImages = [campanhaDetalhes?.coverImage, ...(campanhaDetalhes?.images || [])];
   
   // Função para trocar para a próxima imagem
   const nextImage = () => {

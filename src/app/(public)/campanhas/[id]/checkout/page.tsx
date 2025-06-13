@@ -14,6 +14,8 @@ import SecurityModal from '@/components/auth/SecurityModal';
 import Timer from '@/components/ui/Timer';
 import { formatCurrency } from '@/utils/formatNumber';
 import { format } from 'date-fns';
+import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
+import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
 
 // Interfaces
 // Interface removida - usando a interface CheckoutData mais abaixo que é compatível com INumberPackageCampaign
@@ -1247,7 +1249,7 @@ const CampaignTitle = styled.h4`
 
 const CampaignMeta = styled.div`
   color: #64748b;
-  font-size: 0.8rem;
+    font-size: 0.8rem;
   line-height: 1.3;
   margin-bottom: 0.75rem;
   display: -webkit-box;
@@ -1663,6 +1665,7 @@ const SupportButton = styled.button`
   gap: 0.5rem;
   position: relative;
   overflow: hidden;
+  margin: 0 auto;
   box-shadow: 
     0 8px 25px rgba(16, 185, 129, 0.25),
     0 4px 12px rgba(16, 185, 129, 0.15);
@@ -1807,345 +1810,32 @@ interface Pix {
 export default function CheckoutPage() {
   const params = useParams();
   const campanhaId = params?.id as string;
-  const router = useRouter();
-  const [pix, setPix] = useState<Pix | null>(null);
-  const [timeLeft, setTimeLeft] = useState(600);
+  const router = useRouter(); // Ainda necessário para o Timer
+  
+  // 🚀 Hook principal que gerencia todo o fluxo
+  const {
+    checkoutData,
+    campanha,
+    pix,
+    timeLeft,
+    isLoading,
+    isCreatingPayment,
+    paymentAttemptRef,
+    formatTimeLeft
+  } = useCheckoutFlow(campanhaId);
+  
+  // 🎨 Estados locais da UI
   const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
-  const [campanha, setCampanha] = useState<ICampaign | null>(null);
-  
-  // 🔑 Estados para controle de idempotência
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-  const paymentIdempotencyKeyRef = useRef<string | null>(null);
-  const paymentAttemptRef = useRef<number>(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-
-        const checkoutData = localStorage.getItem('checkoutData');
-        if (!checkoutData) {
-          toast.error('Dados de checkout não encontrados');
-          router.push(`/campanhas/${campanhaId}`);
-          return;
-        }
-
-        const parsedData: CheckoutData = JSON.parse(checkoutData);
-
-        setCheckoutData(parsedData);        
-        setCampanha(parsedData.campanha);
-        
-        // 🔄 Verifica se já existe um PIX em andamento
-        const existingPixData = sessionStorage.getItem('pix');
-        const existingIdempotencyKey = sessionStorage.getItem('paymentIdempotencyKey');
-        const existingCheckoutData = sessionStorage.getItem('lastCheckoutData');
-        
-        // 🔍 Log básico para debug
-        console.log('[CHECKOUT] Estado do sessionStorage:', {
-          hasPixData: !!existingPixData,
-          hasIdempotencyKey: !!existingIdempotencyKey,
-          hasCheckoutData: !!existingCheckoutData,
-          pixDataLength: existingPixData?.length || 0,
-          idempotencyKeyLength: existingIdempotencyKey?.length || 0,
-          checkoutDataLength: existingCheckoutData?.length || 0
-        });
-        
-        // 🔍 Se temos PIX e chave, mas não temos dados de checkout (reload antigo)
-        if (existingPixData && existingIdempotencyKey && !existingCheckoutData) {
-          try {
-            const existingPix = JSON.parse(existingPixData);
-            const pixExpired = new Date(existingPix.expiresAt) < new Date();
-            
-            if (!pixExpired) {
-              console.log('[CHECKOUT] Recuperando PIX válido sem dados de checkout (reload):', {
-                idempotencyKey: existingIdempotencyKey,
-                expiresAt: existingPix.expiresAt
-              });
-              
-                             setPix(existingPix);
-               paymentIdempotencyKeyRef.current = existingIdempotencyKey;
-               
-               // 💾 Cria snapshot dos dados atuais para futuras validações
-               const checkoutSnapshot = {
-                 amount: (parsedData.campaignSelection.totalPrice || 0) * 100,
-                 campaignId: parsedData.campanha._id,
-                 userId: parsedData.foundUser._id,
-                 quantity: parsedData.campaignSelection.quantity,
-                 price: parsedData.campaignSelection.price,
-                 timestamp: Date.now()
-               };
-               sessionStorage.setItem('lastCheckoutData', JSON.stringify(checkoutSnapshot));
-               
-               console.log('[CHECKOUT] ✅ PIX recuperado com sucesso (reload sem dados)');
-               setIsLoading(false);
-               return;
-            } else {
-              console.log('[CHECKOUT] PIX expirado, limpando dados');
-              sessionStorage.removeItem('pix');
-              sessionStorage.removeItem('paymentIdempotencyKey');
-            }
-          } catch (error) {
-            console.error('[CHECKOUT] Erro ao processar PIX existente:', error);
-            sessionStorage.removeItem('pix');
-            sessionStorage.removeItem('paymentIdempotencyKey');
-          }
-        }
-
-        // 🔍 Se temos PIX e chave, mas temos dados de checkout (reload novo)
-        if (existingPixData && existingIdempotencyKey && existingCheckoutData) {
-          try {
-            const existingPix = JSON.parse(existingPixData);
-            const lastCheckout = JSON.parse(existingCheckoutData);
-            
-            // 🔍 Validações para reutilizar pagamento existente
-            const currentAmount = (parsedData.campaignSelection.totalPrice || 0) * 100;
-            const existingAmount = lastCheckout.amount || 0;
-            const pixExpired = new Date(existingPix.expiresAt) < new Date();
-            
-            // 🔍 Log detalhado para debug
-            console.log('[CHECKOUT] Validando pagamento existente:', {
-              currentAmount,
-              existingAmount,
-              amountMatch: currentAmount === existingAmount,
-              currentCampaignId: parsedData.campanha.campaignCode,
-              existingCampaignId: lastCheckout.campaignCode,
-              campaignMatch: parsedData.campanha.campaignCode === lastCheckout.campaignCode,
-              currentUserId: parsedData.foundUser.userCode,
-              existingUserId: lastCheckout.userCode,
-              userMatch: parsedData.foundUser.userCode === lastCheckout.userCode,
-              pixExpiresAt: existingPix.expiresAt,
-              currentTime: new Date().toISOString(),
-              pixExpired,
-              existingPix: existingPix,
-              lastCheckout: lastCheckout
-            });
-            
-            const canReusePayment = 
-              currentAmount === existingAmount && // ✅ Mesmo valor
-              parsedData.campanha.campaignCode === lastCheckout.campaignCode && // ✅ Mesma campanha
-              parsedData.foundUser.userCode === lastCheckout.userCode //&& // ✅ Mesmo usuário
-              // !pixExpired; // ✅ Não expirou
-            
-            if (canReusePayment) {
-              console.log('[CHECKOUT] Reutilizando pagamento válido:', {
-                idempotencyKey: existingIdempotencyKey,
-                amount: currentAmount,
-                expiresAt: existingPix.expiresAt
-              });
-              
-                             setPix(existingPix);
-               paymentIdempotencyKeyRef.current = existingIdempotencyKey;
-               console.log('[CHECKOUT] ✅ PIX reutilizado com sucesso (dados válidos)');
-               setIsLoading(false);
-               return;
-            } else {
-              // 🧹 Limpa dados incompatíveis
-              console.log('[CHECKOUT] Pagamento existente incompatível, criando novo:', {
-                amountChanged: currentAmount !== existingAmount,
-                campaignChanged: parsedData.campanha.campaignCode !== lastCheckout.campaignCode,
-                userChanged: parsedData.foundUser.userCode !== lastCheckout.userCode,
-                expired: pixExpired,
-                currentAmount,
-                existingAmount
-              });
-              
-              sessionStorage.removeItem('pix');
-              sessionStorage.removeItem('paymentIdempotencyKey');
-              sessionStorage.removeItem('lastCheckoutData');
-            }
-          } catch (error) {
-            console.error('[CHECKOUT] Erro ao validar pagamento existente:', error);
-            // 🧹 Limpa dados corrompidos
-            sessionStorage.removeItem('pix');
-            sessionStorage.removeItem('paymentIdempotencyKey');
-            sessionStorage.removeItem('lastCheckoutData');
-          }
-        }
-
-        // 🆕 Criar novo pagamento com proteção de idempotência
-        console.log('[CHECKOUT] 🚨 Nenhum PIX válido encontrado, criando novo pagamento');
-        await createNewPayment(parsedData);
-
-      } catch (error) {
-        console.error('[CHECKOUT] Erro ao carregar dados:', error);
-        toast.error('Erro ao carregar dados');
-        router.push(`/campanhas/${campanhaId}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-
-    // Cleanup ao sair da página
-    return () => {
-      // Remove dados temporários apenas se o pagamento foi concluído
-      const paymentCompleted = sessionStorage.getItem('paymentCompleted');
-      if (paymentCompleted) {
-        localStorage.removeItem('checkoutData');
-        sessionStorage.removeItem('pix');
-        sessionStorage.removeItem('paymentIdempotencyKey');
-        sessionStorage.removeItem('lastCheckoutData');
-        sessionStorage.removeItem('paymentCompleted');
-      }
-    };
-  }, [campanhaId, router]);
-
-  // 🔐 Função para criar pagamento com proteção total
-  const createNewPayment = async (parsedData: CheckoutData) => {
-    console.log('[CHECKOUT] ⚠️ createNewPayment chamada - isso deveria acontecer apenas se não há PIX válido');
-    
-    // Previne múltiplas chamadas simultâneas
-    if (isCreatingPayment) {
-      console.log('[CHECKOUT] Pagamento já em criação, ignorando tentativa');
-      return;
-    }
-
-    setIsCreatingPayment(true);
-    paymentAttemptRef.current += 1;
-
-    try {
-      // 🔑 Gera ou reutiliza chave de idempotência
-      if (!paymentIdempotencyKeyRef.current) {
-        paymentIdempotencyKeyRef.current = uuidv4();
-        sessionStorage.setItem('paymentIdempotencyKey', paymentIdempotencyKeyRef.current);
-        console.log('[CHECKOUT] Nova chave de idempotência:', paymentIdempotencyKeyRef.current);
-      } else {
-        console.log('[CHECKOUT] Reutilizando chave:', paymentIdempotencyKeyRef.current);
-      }
-
-      const expiresAtISO = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      
-      console.log(`[CHECKOUT] Tentativa ${paymentAttemptRef.current} - Criando pagamento...`);
-
-      const response = await paymentAPIClient.createPixPayment({
-        userCode: parsedData.foundUser.userCode || '',
-        name: parsedData.foundUser.name || '',
-        email: parsedData.foundUser.email || '',
-        cpf: parsedData.foundUser.cpf || '',
-        phone: parsedData.foundUser.phone || '',
-        address: {
-          zipCode: parsedData.foundUser.address?.zipCode || '',
-          street: parsedData.foundUser.address?.street || '',
-          number: parsedData.foundUser.address?.number || '',
-          complement: parsedData.foundUser.address?.complement || '',
-          neighborhood: parsedData.foundUser.address?.neighborhood || '',
-          city: parsedData.foundUser.address?.city || '',
-          state: parsedData.foundUser.address?.state || '',
-        },
-        paymentMethod: PaymentMethodEnum.PIX,
-        amount: (parsedData.campaignSelection.totalPrice || 0) * 100,
-        expiresAt: expiresAtISO,
-        campanha: parsedData.campanha,
-        selectedPackage: parsedData.campaignSelection,
-        // 🔑 Inclui chave de idempotência no body (fallback)
-        idempotencyKey: paymentIdempotencyKeyRef.current
-      });
-
-      if (response.success) {
-        console.log('[CHECKOUT] Pagamento criado com sucesso');
-        
-        // 💾 Persiste dados do pagamento
-        sessionStorage.setItem('pix', JSON.stringify(response.data));
-        setPix(response.data);
-        
-        // 💾 Salva dados do checkout atual para validação futura
-        const checkoutSnapshot = {
-          amount: (parsedData.campaignSelection.totalPrice || 0) * 100,
-          campaignCode: parsedData.campanha.campaignCode,
-          userCode: parsedData.foundUser.userCode,
-          quantity: parsedData.campaignSelection.quantity,
-          price: parsedData.campaignSelection.price,
-          timestamp: Date.now()
-        };
-        sessionStorage.setItem('lastCheckoutData', JSON.stringify(checkoutSnapshot));
-        
-        // 🎯 Marca tentativa como bem-sucedida
-        toast.success('Pagamento PIX gerado com sucesso!');
-
-      } else {
-        console.error('[CHECKOUT] Erro na resposta:', response.message);
-        toast.error(response.message || 'Erro ao criar pagamento');
-        
-        // 🔄 Para casos específicos de idempotência, tenta recuperar dados
-        if (response.message?.includes('duplicado') || 
-            response.message?.includes('idempotência') ||
-            response.message?.includes('já processado')) {
-          console.log('[CHECKOUT] Detectado pagamento duplicado/idempotente - tentando recuperar dados');
-          
-          // Se temos dados no sessionStorage, usa eles
-          const existingPixData = sessionStorage.getItem('pix');
-          if (existingPixData) {
-            console.log('[CHECKOUT] Recuperando PIX do sessionStorage');
-            setPix(JSON.parse(existingPixData));
-            toast.success('Pagamento recuperado com sucesso!');
-            return;
-          }
-          
-          // Se não tem dados, limpa e força reload
-          console.log('[CHECKOUT] Sem dados locais, limpando e redirecionando');
-          sessionStorage.removeItem('pix');
-          sessionStorage.removeItem('paymentIdempotencyKey');
-          sessionStorage.removeItem('lastCheckoutData');
-          toast.info('Recarregando dados do pagamento...');
-          window.location.reload();
-          return;
-        }
-        
-        router.push(`/campanhas/${campanhaId}`);
-      }
-
-    } catch (error: any) {
-      console.error('[CHECKOUT] Erro na criação do pagamento:', error);
-      
-      // 🔄 Retry automático para erros de rede (até 2 tentativas)
-      if (paymentAttemptRef.current < 3 && 
-          (error.name === 'NetworkError' || error.message?.includes('fetch'))) {
-        
-        console.log(`[CHECKOUT] Tentando novamente em 2s... (tentativa ${paymentAttemptRef.current + 1})`);
-        toast.info('Reconectando... Tentando novamente.');
-        
-        setTimeout(() => {
-          createNewPayment(parsedData);
-        }, 2000);
-        
-        return;
-      }
-      
-      toast.error('Erro ao criar pagamento. Tente novamente.');
-      router.push(`/campanhas/${campanhaId}`);
-      
-    } finally {
-      setIsCreatingPayment(false);
-    }
-  };
-
-  // 🔄 Timer de expiração
-  useEffect(() => {
-    if (timeLeft > 0 && pix) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0) {
-      toast.error('Tempo para pagamento expirado');
-      sessionStorage.setItem('paymentCompleted', 'expired');
-      // 🧹 Limpa dados expirados
-      sessionStorage.removeItem('pix');
-      sessionStorage.removeItem('paymentIdempotencyKey');
-      sessionStorage.removeItem('lastCheckoutData');
-      router.push(`/campanhas/${campanhaId}`);
-    }
-  }, [timeLeft, campanhaId, router, pix]);
+  // 🎯 Todo o fluxo de checkout agora é gerenciado pelo hook useCheckoutFlow
 
   // 📋 Função para copiar código PIX
   const handleCopyPixCode = async () => {
     try {
       await navigator.clipboard.writeText(pix?.pixCode || '');
       setCopied(true);
-      toast.success('Código PIX copiado!');
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Erro ao copiar código PIX:', error);
@@ -2237,58 +1927,6 @@ export default function CheckoutPage() {
                   Verificado
                 </SecurityBadge>
               </SecurityBadges>
-
-              {/* Ícones de Confiança - PIX e Loterias */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '1.5rem',
-                margin: '1.5rem 0',
-                flexWrap: 'nowrap'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  
-
-                  
-                
-                }}>
-                  <img 
-                    src="/icons/pix-banco-central.svg" 
-                    alt="PIX Banco Central" 
-                    style={{ width: '70px', height: '70px' }}
-                  />
-                  <span style={{ 
-                    fontSize: '0.8rem', 
-                    fontWeight: '600', 
-                    color: '#475569' 
-                  }}>
-                    PIX Banco Central
-                  </span>
-                </div>
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                 
-                }}>
-                  <img 
-                    src="/icons/loterias-caixa-logo.svg" 
-                    alt="Loterias Caixa" 
-                    style={{ width: '70px', height: '70px' }}
-                  />
-                  <span style={{ 
-                    fontSize: '0.8rem', 
-                    fontWeight: '600', 
-                    color: '#475569' 
-                  }}>
-                    Padrão Loterias
-                  </span>
-                </div>
-              </div>
 
               <SecurityButtonContainerMobile>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
@@ -2397,6 +2035,8 @@ export default function CheckoutPage() {
                   </CopyButton>
                 </PixCodeContainer>
               </PixCodeSection>
+
+              <CertificationSection />
               
               <HowToPaySection>
                 <HowToPayTitle>📋 Instruções Detalhadas para Pagamento PIX</HowToPayTitle>
@@ -2542,10 +2182,10 @@ export default function CheckoutPage() {
                     </CampaignImageContainer>
                     
                     <CampaignDetails>
-                      <CampaignTitle>{campanha.title}</CampaignTitle>
-                      <CampaignMeta>
+                  <CampaignTitle>{campanha.title}</CampaignTitle>
+                  <CampaignMeta>
                         {campanha.description}
-                      </CampaignMeta>
+                  </CampaignMeta>
                       <CampaignStats>
                         {/* <CampaignStat>
                           <i className="fas fa-ticket-alt" />
@@ -2680,83 +2320,14 @@ export default function CheckoutPage() {
               <SupportSection>
                 <SupportTitle>💬 Precisa de Ajuda?</SupportTitle>
                 <SupportText>
-                  Nossa equipe está pronta para ajudar você!
+                  Nossa equipe está pronta para ajudar você!  
                 </SupportText>
                 <SupportButton>
                   <i className="fas fa-headset" />
                   Falar com Suporte
                 </SupportButton>
               </SupportSection>
-              {/* Ícones de Confiança no Summary */}
-              <div style={{
-                
-                
-                
-                padding: '1rem',
-                margin: '1rem 0',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: '#64748b',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  🔒 Pagamento Seguro
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '1rem',
-                  flexWrap: 'wrap'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem'
-                  }}>
-                    <img 
-                      src="/icons/pix-banco-central.svg" 
-                      alt="PIX Banco Central" 
-                      style={{ width: '70px', height: '70px' }}
-                    />
-                  </div>
-                  
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem'
-                  }}>
-                    <img 
-                      src="/icons/loterias-caixa-logo.svg" 
-                      alt="Loterias Caixa" 
-                      style={{ width: '70px', height: '70px' }}
-                    />
-                  </div>
-                  
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem'
-                  }}>
-                    <img 
-                      src="/icons/safe.svg" 
-                      alt="Seguro" 
-                      style={{ width: '18px', height: '18px' }}
-                    />
-                    <span style={{ 
-                      fontSize: '0.7rem', 
-                      fontWeight: '500', 
-                      color: '#475569' 
-                    }}>
-                      SSL
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CertificationSectionCompact />
 
               <SecurityButtonContainerDesktop>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>

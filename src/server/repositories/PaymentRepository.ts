@@ -109,7 +109,7 @@ export class PaymentRepository implements IPaymentRepository {
             }
 
             const paymentData = {
-                amount: body.amount,
+                amount: body.amount/100,
                 campaignId: campaign._id,
                 userId: user._id,
                 paymentMethod: body.paymentMethod,
@@ -190,6 +190,7 @@ export class PaymentRepository implements IPaymentRepository {
 
             this.db.connect();
 
+            console.log('paymentCode vindo do updatePixPaymentToPending', paymentCode);
             
             const payment = await Payment!.findOne({
                 paymentCode,
@@ -214,7 +215,7 @@ export class PaymentRepository implements IPaymentRepository {
             pixCode: gatewayResponse.pixCode,
             status: PaymentStatusEnum.PENDING,
             processorTransactionId: gatewayResponse.id,
-            amountReceived: gatewayResponse.amountSeller || 0,
+            amountReceived: gatewayResponse.amountSeller/100 || 0,
             taxSeller: gatewayResponse.taxSeller || 0,
             taxPlatform: gatewayResponse.taxPlatform || 0,
             approvedDate: gatewayResponse.approvedAt ? new Date(gatewayResponse.approvedAt) : undefined,
@@ -243,7 +244,7 @@ export class PaymentRepository implements IPaymentRepository {
         return createSuccessResponse({
             pixCode: gatewayResponse.pixCode,
             pixQrCode: gatewayResponse.pixQrCode,
-            expiresAt: gatewayResponse.expiresAt,
+            expiresAt: updatedPayment.expiresAt?.toISOString() || '',
         }, 'Pagamento atualizado com sucesso', 200);
 
         } catch (error) {
