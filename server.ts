@@ -87,10 +87,10 @@ app.prepare().then(async () => {
     
     // Bloco de inicialização única
     if (!servicesInitialized) {
-      // Inicializar o serviço de Socket.IO
+    // Inicializar o serviço de Socket.IO
       socketService = container.resolve<SocketService>('socketService');
-      socketService.initialize(io);
-      logger.info('✅ Socket.IO Service inicializado com sucesso!');
+    socketService.initialize(io);
+    logger.info('✅ Socket.IO Service inicializado com sucesso!');
       
       // Inicializar serviços passando a instância do Socket.io
       const statsService = new StatsService(io);

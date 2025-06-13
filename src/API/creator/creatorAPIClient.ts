@@ -1,7 +1,4 @@
-import { ApiResponse } from "@/server/utils/errorHandler/api";
-import { useApiClient } from "@/hooks/useApiClient";
 
-const {request} = useApiClient();
 
 const creatorAPIClient = {
     createCreator: async (creator: any) => {

@@ -8,11 +8,13 @@ import Campaign from "@/models/Campaign";
 import { User } from "@/models/User";
 import { CampaignStatusEnum } from "@/models/interfaces/ICampaignInterfaces";
 import { generateEntityCode } from "@/models/utils/idGenerator";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface IPaymentRepository {
     createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
+        idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 
     updatePixPaymentToPending(data: {
@@ -28,6 +30,8 @@ export interface IPaymentRepository {
         paymentCode: string;
         gatewayResponse: Partial<IPaymentGhostResponse>;
     }): Promise<ApiResponse<null>>;
+
+
 }
 
 
@@ -44,21 +48,38 @@ export class PaymentRepository implements IPaymentRepository {
     async createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
+        idempotencyKey?: string; // 🎯 Chave de idempotência (padrão Stripe)
     }) {
-        const { gateway, body } = data;
-        const paymentCode = generateEntityCode('PG');
+        const { gateway, body, idempotencyKey } = data;
 
         try {
             this.db.connect();
 
-            const campaign = await Campaign.findOne({
-                campaignCode: body.campanha.campaignCode,
-                status: CampaignStatusEnum.ACTIVE,
-            });
+            // 🛡️ PROTEÇÃO 1: Verificação de idempotência (padrão da indústria)
+            if (idempotencyKey) {
+                const existingPayment = await Payment!.findOne({ 
+                    idempotencyKey 
+                });
 
-            const user = await User.findOne({
-                userCode: body.userCode,
-            });
+                if (existingPayment) {
+                    console.log(`[IDEMPOTENCY] Pagamento duplicado detectado. Key: ${idempotencyKey}`);
+                    return createSuccessResponse(
+                        existingPayment as IPayment, 
+                        'Pagamento já processado (idempotência)', 
+                        200
+                    );
+                }
+            }
+
+            const [campaign, user] = await Promise.all([
+                Campaign.findOne({
+                    campaignCode: body.campanha.campaignCode,
+                    status: CampaignStatusEnum.ACTIVE,
+                }),
+                User.findOne({
+                    userCode: body.userCode,
+                })
+            ]);
             
             if(!campaign){
                 return createErrorResponse('Campanha não esta disponível', 404);
@@ -68,6 +89,25 @@ export class PaymentRepository implements IPaymentRepository {
                 return createErrorResponse('Usuário não encontrado', 404);
             }
 
+            // 🛡️ PROTEÇÃO 2: Verificação de duplicação por dados críticos
+            const duplicateCheck = await Payment!.findOne({
+                campaignId: campaign._id,
+                userId: user._id,
+                amount: body.amount,
+                status: { $in: ['PENDING', 'INITIALIZED', 'APPROVED'] },
+                createdAt: { 
+                    $gte: new Date(Date.now() - 5 * 60 * 1000) // Últimos 5 minutos
+                }
+            });
+
+            if (duplicateCheck) {
+                console.log(`[DUPLICATE_PREVENTION] Pagamento duplicado detectado nos últimos 5 minutos`);
+                return createErrorResponse(
+                    'Pagamento duplicado detectado nos últimos 5 minutos', 
+                    409
+                );
+            }
+
             const paymentData = {
                 amount: body.amount,
                 campaignId: campaign._id,
@@ -75,7 +115,6 @@ export class PaymentRepository implements IPaymentRepository {
                 paymentMethod: body.paymentMethod,
                 status: PaymentStatusEnum.INITIALIZED,
                 paymentProcessor: gateway,
-                paymentCode: paymentCode,
                 customerInfo: {
                     name: body.name,
                     email: body.email,
@@ -89,21 +128,45 @@ export class PaymentRepository implements IPaymentRepository {
                     zipCode: body.address.zipCode,
                 },
                 installments: body.creditCard?.installments,
+                // 🔑 Adiciona chave de idempotência se fornecida
+                ...(idempotencyKey && { idempotencyKey })
             };
 
             const payment = await Payment!.create(paymentData);
 
+            payment.paymentCode = generateEntityCode(payment._id, 'PG');
+            await payment.save();
+
+            console.log(`[PAYMENT_CREATED] ID: ${payment._id}, Key: ${idempotencyKey || 'N/A'}`);
+
             return createSuccessResponse(payment as IPayment, 'Pagamento criado com sucesso no banco de dados', 200);
 
         } catch (error: any) {
-            if (error.code === 11000 && error.keyPattern?.paymentCode === 1) {
-                console.warn(`Condição de corrida detectada para paymentCode: ${paymentCode}. Buscando pagamento existente.`);
-                const existingPayment = await Payment!.findOne({ paymentCode: paymentCode });
+            // 🚨 Tratamento específico para constraint único da idempotência
+            if (error.code === 11000 && error.keyPattern?.idempotencyKey) {
+                console.log(`[IDEMPOTENCY_CONSTRAINT] Constraint violado: ${error.keyValue.idempotencyKey}`);
+                
+                const existingPayment = await Payment!.findOne({ 
+                    idempotencyKey: error.keyValue.idempotencyKey 
+                });
+
                 if (existingPayment) {
-                    return createSuccessResponse(existingPayment as IPayment, 'Pagamento recuperado com sucesso após condição de corrida.', 200);
+                    console.log(`[IDEMPOTENCY_SUCCESS] Retornando pagamento existente: ${existingPayment.paymentCode}`);
+                    return createSuccessResponse(
+                        existingPayment as IPayment, 
+                        'Pagamento já processado (idempotência)', 
+                        200
+                    );
+                } else {
+                    console.error(`[IDEMPOTENCY_ERROR] Constraint violado mas pagamento não encontrado: ${error.keyValue.idempotencyKey}`);
                 }
             }
 
+            if (error.code === 11000 && error.keyPattern?.paymentCode === 1) {
+                return createErrorResponse('Pagamento já existe', 400);
+            }
+
+            console.error('[PAYMENT_CREATE_ERROR]', error);
             throw new ApiError({
                 success: false,
                 message: 'Erro ao criar pagamento',
@@ -126,6 +189,25 @@ export class PaymentRepository implements IPaymentRepository {
             const { gatewayResponse, paymentCode } = data;
 
             this.db.connect();
+
+            
+            const payment = await Payment!.findOne({
+                paymentCode,
+            });
+
+            if(!payment){
+                return createErrorResponse('Pagamento não encontrado', 404);
+            }
+
+            // 🔄 Se já está PENDING, retorna os dados do PIX (idempotência funcionando)
+            if(payment.status === PaymentStatusEnum.PENDING){
+                console.log(`[IDEMPOTENCY_SUCCESS] Pagamento já processado: ${paymentCode}`);
+                return createSuccessResponse({
+                    pixCode: payment.pixCode || gatewayResponse.pixCode,
+                    pixQrCode: gatewayResponse.pixQrCode,
+                    expiresAt: gatewayResponse.expiresAt,
+                }, 'Pagamento já processado (idempotência)', 200);
+            }
 
                    // 1. Monta o objeto de atualização
         const updateData = {

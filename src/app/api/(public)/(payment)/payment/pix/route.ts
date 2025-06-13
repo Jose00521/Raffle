@@ -4,11 +4,18 @@ import { createErrorResponse , createSuccessResponse} from '@/server/utils/error
 import { container } from "@/server/container/container";
 import { PaymentController } from "@/server/controllers/PaymentController";
 import { PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
     try {
 
       const body = await request.json();
+
+              // 🔑 Extrai chave de idempotência do header (padrão da indústria)
+              const idempotencyKey = request.headers.get('Idempotency-Key') || 
+              request.headers.get('idempotency-key') ||
+              body.idempotencyKey ||
+              uuidv4();
 
       const paymentController = container.resolve(PaymentController);
 
@@ -16,6 +23,7 @@ export async function POST(request: NextRequest) {
       const initialPayment = await paymentController.createInitialPixPaymentAttempt({
         gateway: 'ghostspay',
         body,
+        idempotencyKey
       });
 
     
@@ -35,15 +43,22 @@ export async function POST(request: NextRequest) {
 
         if(updateResult.success && updateResult.data){
 
-
-          return NextResponse.json(createSuccessResponse({
+          // 🔑 Cria resposta com header de idempotência
+          const response = NextResponse.json(createSuccessResponse({
             ...updateResult.data
           }, 'Pagamento criado com sucesso', 200));
+          
+          // 🎯 Adiciona header de idempotência na resposta (padrão da indústria)
+          response.headers.set('Idempotency-Key', idempotencyKey);
+          
+          return response;
 
         } else {
           // Erro CRÍTICO: O PIX foi gerado no gateway, mas falhamos em salvar no nosso banco.
           // Isso precisa ser logado para análise manual.
-          return NextResponse.json(createErrorResponse(updateResult.message || 'Falha ao gravar os dados do pagamento.', 500));
+          const errorResponse = NextResponse.json(createErrorResponse(updateResult.message || 'Falha ao gravar os dados do pagamento.', 500));
+          errorResponse.headers.set('Idempotency-Key', idempotencyKey);
+          return errorResponse;
         }
 
       } else {
@@ -57,12 +72,21 @@ export async function POST(request: NextRequest) {
 
         // Retorna o erro do gateway para o cliente.
         const errorMessage = (data as any)?.message || 'Erro na comunicação com o gateway';
-        return NextResponse.json(createErrorResponse(errorMessage, response.status || 500));
+        const errorResponse = NextResponse.json(createErrorResponse(errorMessage, response.status || 500));
+        errorResponse.headers.set('Idempotency-Key', idempotencyKey);
+        return errorResponse;
       }
     
     } catch (error: any) {
       console.error("Erro inesperado no endpoint de pagamento:", error);
-      return NextResponse.json(createErrorResponse(error.message || 'Erro interno no servidor.', 500));
+      const errorResponse = NextResponse.json(createErrorResponse(error.message || 'Erro interno no servidor.', 500));
+      // 🔑 Tenta adicionar idempotencyKey se disponível
+      const idempotencyKey = request.headers.get('Idempotency-Key') || 
+                            request.headers.get('idempotency-key');
+      if (idempotencyKey) {
+        errorResponse.headers.set('Idempotency-Key', idempotencyKey);
+      }
+      return errorResponse;
     }
 
 }

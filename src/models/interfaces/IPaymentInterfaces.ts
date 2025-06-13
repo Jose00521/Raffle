@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { IAddress } from './IUserInterfaces';
 import { ICampaign, INumberPackageCampaign } from './ICampaignInterfaces';
 import { ISODateString } from 'next-auth';
+import { Document } from 'mongoose';
 
 
 export enum PaymentStatusEnum {
@@ -28,6 +29,7 @@ export enum PaymentStatusEnum {
   export interface IPayment {
     _id?: string;
     paymentCode?: string; // Código único no nosso sistema (Snowflake ID)
+    idempotencyKey?: string; // Chave para evitar duplicação de pagamentos
     campaignId: mongoose.Types.ObjectId | string;
     userId: mongoose.Types.ObjectId | string;
     processorTransactionId: string; // ID fornecido pelo processador de pagamento
@@ -97,6 +99,7 @@ export enum PaymentStatusEnum {
     expiresAt: ISODateString;
     campanha: ICampaign;
     selectedPackage: INumberPackageCampaign;
+    idempotencyKey?: string;
   }
 
 

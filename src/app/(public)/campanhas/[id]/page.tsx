@@ -29,7 +29,7 @@ export default function CampanhaPage() {
     const fetchCampanha = async () => {
       try {
         setIsLoading(true);
-        const response = await creatorCampaignAPI.getCampaignById(campanhaId);
+      const response = await creatorCampaignAPI.getCampaignById(campanhaId);
         console.log("response campanha detalhes", response);
         
         if (response.success) {
@@ -73,7 +73,7 @@ export default function CampanhaPage() {
             );
           }
         } else {
-          toast.error(response.message || 'Erro ao carregar a campanha');
+        toast.error(response.message || 'Erro ao carregar a campanha');
           setContent(
             <CanceledCampaignPage 
               campaignTitle="Esta Campanha"
@@ -95,10 +95,10 @@ export default function CampanhaPage() {
     
     fetchCampanha();
   }, [campanhaId]);
-
+  
   // Loading state
   if (isLoading) {
-    return (
+  return (
       <LoadingAnimation 
         text="Carregando campanha..." 
         overlay={true} 

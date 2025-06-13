@@ -140,7 +140,12 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
     systemCreatedAt: {
       type: Date,
       default: Date.now
-    }
+    },
+    // Chave de idempotência - padrão da indústria
+    idempotencyKey: {
+      type: String,
+  // Índice para busca rápida
+    },
   },
   {
     // Desabilita o timestamps automático do Mongoose
@@ -173,6 +178,9 @@ if (isServer && PaymentSchema) {
   // Índice composto para consultas rápidas por campanha e status
   PaymentSchema.index({ campaignId: 1, status: 1 });
 
+  // Índice para idempotência
+  PaymentSchema.index({ idempotencyKey: 1 }, { unique: true});
+
   // Índice para consultas por usuário e data
   PaymentSchema.index({ userId: 1, purchaseDate: -1 });
 
@@ -199,8 +207,6 @@ if (isServer && PaymentSchema) {
   // Para consultas combinadas usuário/campanha (histórico específico)
   PaymentSchema.index({ userId: 1, campaignId: 1, purchaseDate: -1 });
   
-  // Índice de texto para pesquisa em informações do cliente
-  PaymentSchema.index({ 'customerInfo.name': 'text', 'customerInfo.email': 'text', 'customerInfo.document': 'text' });
 
   // Métodos estáticos do modelo
   PaymentSchema.statics.findUserPayments = function(userId: string) {

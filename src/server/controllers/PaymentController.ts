@@ -8,6 +8,7 @@ export interface IPaymentController {
     createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
+        idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 
     updatePixPaymentToPending(data: {
@@ -39,6 +40,7 @@ export class PaymentController implements IPaymentController {
     async createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
+        idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
         return this.paymentService.createInitialPixPaymentAttempt(data);
     }
