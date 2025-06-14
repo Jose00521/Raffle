@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,7 @@ import { validateCPF } from '@/utils/validators';
 import { useAddressField } from '@/hooks/useAddressField';
 import { useHookFormMask } from 'use-mask-input';
 import { signupSchema, SignupFormData } from '@/zod/quicksignup.validation';
-import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity, FaShieldAlt, FaLock, FaCertificate } from 'react-icons/fa';
+import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity, FaShieldAlt, FaLock, FaCertificate, FaMapPin, FaRoad, FaHome, FaBuilding, FaGlobe } from 'react-icons/fa';
 import Image from 'next/image';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
@@ -23,7 +23,9 @@ import userAPIClient from '@/API/userAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { CheckoutButton } from '@/components/ui';
 import InputCheckbox from '../common/InputCheckbox';
-import { TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
+import { LoadingSpinner, TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
+import CustomDropdown from '../common/CustomDropdown';
+import { brazilianStates } from '@/utils/constants';
 
 
 interface QuickSignupModalProps {
@@ -61,8 +63,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       logradouro: '',
       numero: '',
       complemento: '',
-      senha: '',
-      confirmarSenha: '',
       hasAddress: false,
       termsAgreement: false,
     },
@@ -83,6 +83,47 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const hasAddress = watch('hasAddress',false);
   const termsAccepted = watch('termsAgreement',false);
 
+  const validateStep = async (currentStep: number) => {
+    let fieldsToValidate: (keyof SignupFormData)[] = [];
+    
+    switch(currentStep) {
+      case 0:
+        fieldsToValidate = ['telefone'];
+        break;
+      case 1:
+        // Dados pessoais/do representante
+        fieldsToValidate = ['nome', 'nomeSocial', 'email', 'cpf', 'telefone', 'confirmarTelefone','hasAddress', 'termsAgreement'];
+        break;
+      case 2:
+        // Step de endereço - só valida se hasAddress for true
+        if (hasAddress) {
+          fieldsToValidate = ['cep', 'uf', 'cidade', 'bairro', 'logradouro', 'numero', 'complemento'];
+        } else {
+          return true; // Se não tem endereço, step é válido
+        }
+        break;
+      case 3:
+        // Step de senha - sempre valida senha
+        return true;
+        break;
+      case 4:
+        // Step de resumo - não precisa validar nada, só mostrar dados
+        return true;
+        break;
+      default:
+        return false;
+    }
+    
+    try {
+      const result = await trigger(fieldsToValidate);
+      return result;
+    } catch (error) {
+      console.error('Validation error:', error);
+      return false;
+    }
+  };
+// Revalida quando step, hasAddress, termsAccepted ou errors mudam
+
   const registerWithMask = useHookFormMask(register);
   
   // Função para buscar endereço pelo CEP
@@ -93,6 +134,14 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const handleCepOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Apenas chamar o handleCepChange do hook
     handleCepChange(e);
+  };
+
+  const selectedUF = watch('uf');
+  
+
+  
+  const handleStateChange = (value: string) => {
+    setValue('uf', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
   const onSubmit = async (data: SignupFormData) => {
@@ -161,46 +210,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       toast.error('Erro ao criar conta. Por favor tente novamente.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const validateStep = async (currentStep: number) => {
-    let fieldsToValidate: (keyof SignupFormData)[] = [];
-    
-    switch(currentStep) {
-      case 0:
-        fieldsToValidate = ['telefone'];
-        break;
-      case 1:
-        // Dados pessoais/do representante
-        fieldsToValidate = ['nome', 'nomeSocial', 'email', 'cpf', 'telefone', 'confirmarTelefone','hasAddress', 'termsAgreement'];
-        break;
-      case 2:
-        // Step de endereço - só valida se hasAddress for true
-        if (hasAddress) {
-          fieldsToValidate = ['cep', 'uf', 'cidade', 'bairro', 'logradouro', 'numero', 'complemento'];
-        } else {
-          return true; // Se não tem endereço, step é válido
-        }
-        break;
-      case 3:
-        // Step de senha - sempre valida senha
-        fieldsToValidate = ['senha', 'confirmarSenha'];
-        break;
-      case 4:
-        // Step de resumo - não precisa validar nada, só mostrar dados
-        return true;
-        break;
-      default:
-        return false;
-    }
-    
-    try {
-      const result = await trigger(fieldsToValidate);
-      return result;
-    } catch (error) {
-      console.error('Validation error:', error);
-      return false;
     }
   };
 
@@ -532,6 +541,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <FormInput
                   id="cep"
                   label="CEP"
+                  icon={isLoadingCep ? <LoadingSpinner /> : <FaMapPin />}
                   placeholder="00000-000"
                   error={errors.cep?.message}
                   required
@@ -539,20 +549,36 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   onChange={handleCepOnChange}
                 />
                 
-                <FormInput
-                  id="uf"
-                  label="Estado"
-                  placeholder="UF"
-                  error={errors.uf?.message}
-                  required
-                  {...register('uf')}
-                />
+
+        
+          <StyledDropdownWrapper>
+            <label htmlFor="uf" className="dropdown-label">
+              Estado<span className="required-mark">*</span>
+            </label>
+            <CustomDropdown
+              options={brazilianStates}
+              value={selectedUF || ''}
+              {...register('uf')}
+              onChange={handleStateChange}
+              placeholder="Selecione o estado"
+              icon={<FaGlobe />}
+              disabled={isLoadingCep}
+              direction="down"
+            />
+            {errors.uf && (
+              <div className="error-message">
+                {errors.uf.message as string}
+              </div>
+            )}
+          </StyledDropdownWrapper>
+        
               </FormRow>
               
               <FormRow>
                 <FormInput
                   id="cidade"
                   label="Cidade"
+                  icon={<FaCity />}
                   placeholder="Sua cidade"
                   error={errors.cidade?.message}
                   required
@@ -562,6 +588,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <FormInput
                   id="bairro"
                   label="Bairro"
+                  icon={<FaMapMarkerAlt />}
                   placeholder="Seu bairro"
                   error={errors.bairro?.message}
                   required
@@ -573,6 +600,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <FormInput
                   id="logradouro"
                   label="Endereço"
+                  icon={<FaRoad />}
                   placeholder="Rua, Avenida, etc"
                   error={errors.logradouro?.message}
                   required
@@ -582,6 +610,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <FormInput
                   id="numero"
                   label="Número"
+                  icon={<FaHome />}
                   placeholder="Nº"
                   error={errors.numero?.message}
                   required
@@ -592,6 +621,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
               <FormInput
                 id="complemento"
                 label="Complemento"
+                icon={<FaBuilding />}
                 placeholder="Apartamento, bloco, etc (opcional)"
                 error={errors.complemento?.message}
                 {...register('complemento')}
@@ -610,7 +640,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             <>
               <SectionTitle>Senha</SectionTitle>
               
-              <FormRow>
+              {/* <FormRow>
                 <FormInput
                   id="senha"
                   label="Senha"
@@ -632,7 +662,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   required
                   {...register('confirmarSenha')}
                 />
-              </FormRow>
+              </FormRow> */}
               
               <SecurityInfo>
                 <i className="fas fa-shield-alt"></i>
@@ -643,7 +673,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
                   Voltar
                 </SecondaryButton>
-                <PrimaryButton type="submit" disabled={isLoading}>
+                <PrimaryButton type="submit" disabled={isLoading || !isStepValid}>
                   {isLoading ? (
                     <>
                       <i className="fas fa-spinner fa-spin"></i>
@@ -814,6 +844,33 @@ const TrustBadge = styled.div`
   @media (max-width: 576px) {
     padding: 0.5rem 0.75rem;
     margin-bottom: 1rem;
+  }
+`;
+
+
+const StyledDropdownWrapper = styled.div`
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  
+  .dropdown-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .required-mark {
+    color: #ef4444;
+    margin-left: 4px;
+  }
+  
+  .error-message {
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-weight: 500;
   }
 `;
 

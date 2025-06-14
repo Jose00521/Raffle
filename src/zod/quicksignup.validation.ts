@@ -47,23 +47,7 @@ export const signupSchema = z.object({
       }, {
         message: 'CPF inválido'
       }),
-    dataNascimento: z.date({
-      invalid_type_error: "Data de nascimento inválida",
-      required_error: "Data de nascimento é obrigatória",
-    })
-    .refine(
-      (date) => {
-        // Verificar se a pessoa tem pelo menos 18 anos
-        const today = new Date();
-        const eighteenYearsAgo = new Date(
-          today.getFullYear() - 18,
-          today.getMonth(),
-          today.getDate()
-        );
-        return date <= eighteenYearsAgo;
-      },
-      { message: "Você deve ter pelo menos 18 anos para se cadastrar" }
-    ),
+
     email: z
       .string()
       .min(1, 'E-mail é obrigatório')
@@ -99,26 +83,6 @@ export const signupSchema = z.object({
         
         return true;
       }),
-    senha: z
-      .string()
-      .min(8, 'A senha deve ter pelo menos 8 caracteres')
-      .refine(
-        (password) => /[A-Z]/.test(password),
-        'A senha deve conter pelo menos uma letra maiúscula'
-      )
-      .refine(
-        (password) => /[a-z]/.test(password),
-        'A senha deve conter pelo menos uma letra minúscula'
-      )
-      .refine(
-        (password) => /[0-9]/.test(password),
-        'A senha deve conter pelo menos um número'
-      )
-      .refine(
-        (password) => /[^A-Za-z0-9]/.test(password),
-        'A senha deve conter pelo menos um caractere especial'
-      ),
-    confirmarSenha: z.string().min(1, 'Por favor, confirme sua senha'),
     telefone: z
       .string()
       .min(1, 'Telefone é obrigatório')
@@ -248,9 +212,6 @@ export const signupSchema = z.object({
       ),
     cidade: z.string().min(2, 'Cidade é obrigatória'),
     pontoReferencia: z.string().optional(),
-  }).refine((data) => data.senha === data.confirmarSenha, {
-    message: "As senhas não conferem",
-    path: ["confirmarSenha"],
   }).refine((data) => {
     // Remove caracteres especiais antes de comparar
     console.log('Comparing phone numbers:', data.telefone, data.confirmarTelefone);
