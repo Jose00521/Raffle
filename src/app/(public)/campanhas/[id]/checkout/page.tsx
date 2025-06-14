@@ -2320,7 +2320,7 @@ export default function CheckoutPage() {
               <SupportSection>
                 <SupportTitle>💬 Precisa de Ajuda?</SupportTitle>
                 <SupportText>
-                  Nossa equipe está pronta para ajudar você!  
+                  Nossa equipe está pronta para ajudar você!
                 </SupportText>
                 <SupportButton>
                   <i className="fas fa-headset" />

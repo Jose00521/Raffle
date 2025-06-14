@@ -670,17 +670,17 @@ export const TermsCheckboxContainer = styled.div`
 `;
 
 export const TermsContainer = styled.div`
-  margin-top: 1.5rem;
-  padding: 0.5rem 0;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0;
 `;
 
 export const TermsText = styled.span`
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #4b5563;
-  line-height: 1.5;
+  line-height: 1.4;
   
   @media (max-width: 480px) {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 `;
 

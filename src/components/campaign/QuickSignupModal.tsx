@@ -15,12 +15,15 @@ import { validateCPF } from '@/utils/validators';
 import { useAddressField } from '@/hooks/useAddressField';
 import { useHookFormMask } from 'use-mask-input';
 import { signupSchema, SignupFormData } from '@/zod/quicksignup.validation';
-import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity } from 'react-icons/fa';
+import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity, FaShieldAlt, FaLock, FaCertificate } from 'react-icons/fa';
+import Image from 'next/image';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
 import userAPIClient from '@/API/userAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { CheckoutButton } from '@/components/ui';
+import InputCheckbox from '../common/InputCheckbox';
+import { TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
 
 
 interface QuickSignupModalProps {
@@ -52,14 +55,16 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       telefone: '',
       confirmarTelefone: '',
       cep: '',
-      estado: '',
+      uf: '',
       cidade: '',
       bairro: '',
-      endereco: '',
+      logradouro: '',
       numero: '',
       complemento: '',
       senha: '',
       confirmarSenha: '',
+      hasAddress: false,
+      termsAgreement: false,
     },
   });
   
@@ -75,6 +80,9 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     watch,
   } = form;
 
+  const hasAddress = watch('hasAddress',false);
+  const termsAccepted = watch('termsAgreement',false);
+
   const registerWithMask = useHookFormMask(register);
   
   // Função para buscar endereço pelo CEP
@@ -83,59 +91,70 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
 
   const handleCepOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Chamar o onBlur do register first
-    const cepRegistration = register('cep');
-    cepRegistration.onChange(e);
-
-    const cepValue = e.target.value.replace(/\D/g, '');
-    
+    // Apenas chamar o handleCepChange do hook
     handleCepChange(e);
-  
   };
 
   const onSubmit = async (data: SignupFormData) => {
     try {
       setIsLoading(true);
       
-      // Format data for API
+      // Se não tem endereço, criar dados para checkout direto (sem cadastro completo)
       const formattedData = {
         name: data.nome,
         socialName: data.nomeSocial,
         email: data.email,
         cpf: data.cpf.replace(/[^\d]/g, ''),
         phone: data.telefone.replace(/[^\d]/g, ''),
+        hasAddress: data.hasAddress,
+        termsAgreement: data.termsAgreement,
         address: {
           zipCode: data.cep.replace(/\D/g, ''),
-          state: data.estado,
+          state: data.uf,
           city: data.cidade,
           neighborhood: data.bairro,
-          street: data.endereco,
+          street: data.logradouro,
           number: data.numero,
           complement: data.complemento || '',
         },
-        password: data.senha,
         userType: 'participant',
+        
       };
+        
+        router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+      
       
       // Call signup API
       const result = await authService.registerParticipant(formattedData as any);
       
-      if (result) {
+      if (result.success) {
         // Auto login after signup
-        const signInResult = await signIn('credentials', {
-          redirect: false,
-          email: data.email,
-          password: data.senha,
-        });
+        // const signInResult = await signIn('credentials', {
+        //   redirect: false,
+        //   email: data.email,
+        //   password: data.senha,
+        // });
+
+        localStorage.setItem('checkoutData', JSON.stringify({
+          campaignSelection,
+          userData:{
+            name: data.nome,
+            socialName: data.nomeSocial,
+            email: data.email,
+            cpf: data.cpf.replace(/[^\d]/g, ''),
+            phone: data.telefone.replace(/[^\d]/g, ''),
+          },
+          campanha,
+        }));
         
-        if (signInResult?.error) {
-          toast.error('Erro ao fazer login automático. Por favor faça login manualmente.');
-        } else {
-          toast.success('Cadastro realizado com sucesso!');
-          reset();
-          onClose();
-          onSuccess();
-        }
+        // if (signInResult?.error) {
+        //   toast.error('Erro ao fazer login automático. Por favor faça login manualmente.');
+        // } else {
+        //   toast.success('Cadastro realizado com sucesso!');
+        //   reset();
+        //   onClose();
+        //   onSuccess();
+        // }
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -154,11 +173,23 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
         break;
       case 1:
         // Dados pessoais/do representante
-        fieldsToValidate = ['nome', 'nomeSocial', 'email', 'cpf', 'telefone', 'confirmarTelefone'];
+        fieldsToValidate = ['nome', 'nomeSocial', 'email', 'cpf', 'telefone', 'confirmarTelefone','hasAddress', 'termsAgreement'];
+        break;
+      case 2:
+        // Step de endereço - só valida se hasAddress for true
+        if (hasAddress) {
+          fieldsToValidate = ['cep', 'uf', 'cidade', 'bairro', 'logradouro', 'numero', 'complemento'];
+        } else {
+          return true; // Se não tem endereço, step é válido
+        }
         break;
       case 3:
-        // Se for empresa, valida os campos da empresa, senão valida endereço
-          fieldsToValidate = ['cep', 'estado', 'cidade', 'bairro', 'endereco', 'numero', 'complemento'];
+        // Step de senha - sempre valida senha
+        fieldsToValidate = ['senha', 'confirmarSenha'];
+        break;
+      case 4:
+        // Step de resumo - não precisa validar nada, só mostrar dados
+        return true;
         break;
       default:
         return false;
@@ -182,12 +213,26 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const nextStep = async () => {
     const isStepValid = await validateStep(currentStep);
     if (isStepValid) {
-      setCurrentStep(currentStep + 1);
+      // Se estamos no step 1 (dados pessoais) e hasAddress é false, ir direto para resumo (step 4)
+      if (currentStep === 1 && !hasAddress) {
+        setCurrentStep(4); // Pula endereço e senha, vai direto para resumo
+      } else if(currentStep === 2 && hasAddress) {
+        setCurrentStep(4);
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
   
   const prevStep = () => {
-    setCurrentStep(currentStep - 1);
+    // Se estamos no step 4 (resumo) e hasAddress é false, voltar para o step 1 (dados pessoais)
+    if (currentStep === 4 && !hasAddress) {
+      setCurrentStep(1); // Pula endereço e senha, volta direto para step 1 (dados pessoais)
+    } else if(currentStep === 4 && hasAddress) {
+      setCurrentStep(2);
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
   };
   
   const handleVerify = async (e: React.MouseEvent) => {
@@ -223,16 +268,13 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   };
 
   const submitUserFound = async () => {
+    setIsLoading(true);
     const checkoutData = {
       campaignSelection,
       foundUser,
       campanha,
     };
     
-    console.log('[QUICK_SIGNUP] Salvando dados no localStorage:', checkoutData);
-    console.log('[QUICK_SIGNUP] campaignSelection:', campaignSelection);
-    console.log('[QUICK_SIGNUP] foundUser:', foundUser);
-    console.log('[QUICK_SIGNUP] campanha:', campanha);
     
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     
@@ -242,6 +284,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     
     console.log('[QUICK_SIGNUP] Navegando para:', `/campanhas/${campaignSelection.campaignCode}/checkout`);
     router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+    setIsLoading(false);
+
   }
 
   return (
@@ -287,7 +331,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
               </ButtonGroup>
             </>
           ) : currentStep === 1 ? (
-            <>
+            <div key="personal-data-step">
               <SectionTitle>Dados pessoais</SectionTitle>
               
               <FormInput
@@ -356,6 +400,45 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 />
               </FormRow>
               
+
+              <FormRow>
+              <InputCheckbox
+                id="hasAddress"
+                label="Preecher endereco para receber o prêmio"
+                checked={hasAddress}
+                onChange={(e) => {
+                  form.setValue('hasAddress', e.target.checked, { 
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true
+                  });
+                }}
+                error={errors.hasAddress?.message as string}
+              />
+              </FormRow>
+
+ 
+              <TermsContainer>
+                <InputCheckbox
+                  id="termsAgreement"
+                  label={
+                    <TermsText>
+                      Li e concordo com os <TermsLink href="/termos-de-uso">Termos de Uso</TermsLink> e <TermsLink href="/politica-de-privacidade">Política de Privacidade</TermsLink> da plataforma.
+                    </TermsText>
+                  }
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    form.setValue('termsAgreement', e.target.checked, { 
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true
+                    });
+                  }}
+                  error={errors.termsAgreement?.message as string}
+                />
+              </TermsContainer>
+
+              
               <ButtonGroup>
                 <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
                   Voltar
@@ -364,14 +447,13 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   Continuar
                 </PrimaryButton>
               </ButtonGroup>
-            </>
+            </div>
           ) : currentStep === 10 ? (
             <>
               {foundUser && (
                 <>
+                  <SectionTitle>Dados do usuário</SectionTitle>
                   <UserDataSection>
-
-                    <SectionTitle>Dados do usuário</SectionTitle>
                     
                     <UserDataRow>
                       <UserDataLabel>
@@ -442,8 +524,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 </>
               )}
             </>
-          ) : (
-            <>
+          ) : currentStep === 2 ? (
+            <div key="address-step">
               <SectionTitle>Endereço</SectionTitle>
               
               <FormRow>
@@ -458,12 +540,12 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 />
                 
                 <FormInput
-                  id="estado"
+                  id="uf"
                   label="Estado"
                   placeholder="UF"
-                  error={errors.estado?.message}
+                  error={errors.uf?.message}
                   required
-                  {...register('estado')}
+                  {...register('uf')}
                 />
               </FormRow>
               
@@ -489,12 +571,12 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
               
               <FormRow>
                 <FormInput
-                  id="endereco"
+                  id="logradouro"
                   label="Endereço"
                   placeholder="Rua, Avenida, etc"
-                  error={errors.endereco?.message}
+                  error={errors.logradouro?.message}
                   required
-                  {...register('endereco')}
+                  {...register('logradouro')}
                 />
                 
                 <FormInput
@@ -515,6 +597,17 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 {...register('complemento')}
               />
               
+              <ButtonGroup>
+                <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
+                  Voltar
+                </SecondaryButton>
+                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading}>
+                  Continuar
+                </PrimaryButton>
+              </ButtonGroup>
+            </div>
+          ) : currentStep === 3 ? (
+            <>
               <SectionTitle>Senha</SectionTitle>
               
               <FormRow>
@@ -562,8 +655,111 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 </PrimaryButton>
               </ButtonGroup>
             </>
-          )}
+          ) : currentStep === 4 ? (
+            <div key="summary-step">
+              <SectionTitle>Resumo da Compra</SectionTitle>
+              
+              <UserDataSection>
+                <UserDataRow>
+                  <UserDataLabel>
+                    <FaUser /> Nome:
+                  </UserDataLabel>
+                  <UserDataValue>{watch('nome')}</UserDataValue>
+                </UserDataRow>
+                
+                <UserDataRow>
+                  <UserDataLabel>
+                    <FaEnvelope /> Email:
+                  </UserDataLabel>
+                  <UserDataValue>{watch('email')}</UserDataValue>
+                </UserDataRow>
+                
+                <UserDataRow>
+                  <UserDataLabel>
+                    <FaPhone /> Telefone:
+                  </UserDataLabel>
+                  <UserDataValue>{watch('telefone')}</UserDataValue>
+                </UserDataRow>
+                
+                <UserDataRow>
+                  <UserDataLabel>
+                    <FaIdCard /> CPF:
+                  </UserDataLabel>
+                  <UserDataValue>{watch('cpf')}</UserDataValue>
+                </UserDataRow>
+                
+                {hasAddress && (
+                  <>
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaMapMarkerAlt /> Endereço:
+                      </UserDataLabel>
+                      <UserDataValue>
+                        {watch('logradouro')}, {watch('numero')}
+                        {watch('complemento') && `, ${watch('complemento')}`}
+                      </UserDataValue>
+                    </UserDataRow>
+                    
+                    <UserDataRow>
+                      <UserDataLabel>
+                        <FaCity /> Cidade:
+                      </UserDataLabel>
+                      <UserDataValue>
+                        {watch('cidade')}, {watch('uf')} - CEP: {watch('cep')}
+                      </UserDataValue>
+                    </UserDataRow>
+                  </>
+                )}
+              </UserDataSection>
+              
+              <SectionDivider />
+              
+              <PurchaseSummary selection={campaignSelection} />
+              
+              <ButtonGroup>
+                <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
+                  Voltar
+                </SecondaryButton>
+                <div className="checkout-button-wrapper">
+                  <CheckoutButton onClick={handleSubmit(onSubmit)} disabled={isLoading} isLoading={isLoading}>
+                    Prosseguir para Pagamento
+                  </CheckoutButton>
+                </div>
+              </ButtonGroup>
+            </div>
+          ) : null}
         </Form>
+        
+        <SecurityFooter>
+          <SecurityText>
+            <FaShieldAlt />
+            Seus dados estão protegidos por criptografia SSL 256-bits
+          </SecurityText>
+          
+          <TrustLogos>
+            <LogoItem>
+              <Image 
+                src="/icons/loterias-caixa-logo.svg" 
+                alt="Loteria Federal" 
+                width={80} 
+                height={80}
+                className="logo-image"
+              />
+              {/* <div className="logo-text">Autorizado<br/>Loteria Federal</div> */}
+            </LogoItem>
+            
+            <LogoItem>
+              <Image 
+                src="/icons/pix-banco-central.svg" 
+                alt="PIX Banco Central" 
+                width={80} 
+                height={80}
+                className="logo-image"
+              />
+              {/* <div className="logo-text">Pagamento<br/>PIX Seguro</div> */}
+            </LogoItem>
+          </TrustLogos>
+        </SecurityFooter>
         
         {/* <LoginOption>
           Já tem uma conta?{' '}
@@ -578,7 +774,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
 // Styled components
 const ModalContent = styled.div`
-  padding: 2.5rem 3rem;
+  padding: 0.7rem 2rem;
   max-height: 85vh;
   overflow-y: auto;
   overflow-x: visible;
@@ -595,6 +791,105 @@ const ModalContent = styled.div`
 const ModalHeader = styled.div`
   text-align: center;
   margin-bottom: 2.5rem;
+`;
+
+const TrustBadge = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #f8fffe 0%, #ffffff 100%);
+  border: 1px solid rgba(46, 204, 113, 0.15);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+  }
+  
+  @media (max-width: 576px) {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const TrustItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #2c3e50;
+  font-weight: 500;
+  
+  svg {
+    font-size: 0.9rem;
+    color: #27ae60;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    
+    svg {
+      font-size: 0.8rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    
+    svg {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
+const TrustDivider = styled.div`
+  width: 1px;
+  height: 16px;
+  background: rgba(46, 204, 113, 0.2);
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const LotteryBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #2c3e50;
+  font-weight: 600;
+  
+  .lottery-logo {
+    width: 24px;
+    height: 24px;
+    filter: brightness(1.1);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    gap: 0.4rem;
+    
+    .lottery-logo {
+      width: 22px;
+      height: 22px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    gap: 0.35rem;
+    
+    .lottery-logo {
+      width: 20px;
+      height: 20px;
+    }
+  }
 `;
 
 const WelcomeMessage = styled.h2`
@@ -651,10 +946,19 @@ const FormRow = styled.div`
     margin-bottom: 0;
   }
   
+  /* Espaçamento reduzido para checkboxes */
+  &:has(input[type="checkbox"]) {
+    margin-bottom: 12px;
+  }
+  
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 8px;
     margin-bottom: 20px;
+    
+    &:has(input[type="checkbox"]) {
+      margin-bottom: 8px;
+    }
   }
 `;
 
@@ -676,13 +980,97 @@ const SecurityInfo = styled.div`
   color: ${({ theme }) => theme.colors.text.secondary};
   padding: 1rem;
   margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
   background-color: rgba(46, 204, 113, 0.08);
   border-radius: 8px;
   border: 1px solid rgba(46, 204, 113, 0.2);
   
   i {
     color: #27ae60;
+  }
+`;
+
+const SecurityFooter = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.50rem;
+  background: linear-gradient(135deg, #f8fffe 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(46, 204, 113, 0.1);
+  
+  @media (max-width: 576px) {
+    margin-top: 0.75rem;
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+`;
+
+const SecurityText = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: #6c757d;
+  text-align: center;
+  
+  svg {
+    color: #27ae60;
+    font-size: 0.8rem;
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    
+    svg {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
+const TrustLogos = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  
+  @media (max-width: 576px) {
+    gap: 1.25rem;
+  }
+`;
+
+const LogoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  
+  .logo-image {
+    filter: brightness(1.1);
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  .logo-text {
+    font-size: 0.55rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.1;
+  }
+  
+  @media (max-width: 576px) {
+    gap: 0.25rem;
+    
+    .logo-text {
+      font-size: 0.5rem;
+    }
   }
 `;
 
@@ -787,6 +1175,9 @@ const LoginLink = styled.a`
 
 // User Data Section Styled Components
 const UserDataSection = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   background: linear-gradient(135deg, #fdfdfd 0%, #f8fffe 100%);
   border-radius: 12px;
   padding: 1.25rem;

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 interface CheckoutButtonProps {
   onClick: () => void;
@@ -47,7 +47,7 @@ const fadeInFwd = keyframes`
 `;
 
 // Styled Components
-const CheckoutContainer = styled.button<{ $disabled?: boolean }>`
+const CheckoutContainer = styled.button<{ $disabled?: boolean; $isLoading?: boolean }>`
   background-color: #ffffff;
   display: flex;
   width: 100%;
@@ -57,17 +57,22 @@ const CheckoutContainer = styled.button<{ $disabled?: boolean }>`
   border-radius: 8px;
   transition: 0.3s ease-in-out;
   border: none;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
+  cursor: ${({ $disabled, $isLoading }) => ($disabled || $isLoading) ? 'not-allowed' : 'pointer'};
   overflow: hidden;
   opacity: ${({ $disabled }) => $disabled ? 0.7 : 1};
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   
+  ${({ $isLoading }) => $isLoading && css`
+    animation: ${subtleGlow} 2s ease-in-out infinite;
+    opacity: 0.95;
+  `}
+  
   &:hover:not(:disabled) {
-    transform: scale(1.03);
+    transform: ${({ $isLoading }) => $isLoading ? 'none' : 'scale(1.03)'};
   }
   
   &:hover:not(:disabled) .left-side {
-    width: 100%;
+    width: ${({ $isLoading }) => $isLoading ? '110px' : '100%'};
   }
   
   &:hover:not(:disabled) .card {
@@ -98,13 +103,17 @@ const CheckoutContainer = styled.button<{ $disabled?: boolean }>`
     transform: scale(0.98);
     
     &:hover:not(:disabled) {
-      transform: scale(1.01);
+      transform: ${({ $isLoading }) => $isLoading ? 'scale(0.98)' : 'scale(1.01)'};
     }
   }
 `;
 
-const LeftSide = styled.div`
-  background: linear-gradient(135deg, #5de2a3, #4dd08a);
+const LeftSide = styled.div<{ $isLoading?: boolean }>`
+  background: ${({ $isLoading }) => $isLoading 
+    ? 'linear-gradient(135deg, #5de2a3, #4dd08a, #5de2a3, #4dd08a)'
+    : 'linear-gradient(135deg, #5de2a3, #4dd08a)'
+  };
+  background-size: ${({ $isLoading }) => $isLoading ? '300% 300%' : '100% 100%'};
   width: 110px;
   height: 55px;
   border-radius: 6px;
@@ -116,6 +125,10 @@ const LeftSide = styled.div`
   transition: 0.3s;
   flex-shrink: 0;
   overflow: hidden;
+  
+  ${({ $isLoading }) => $isLoading && css`
+    opacity: 0.9;
+  `}
   
   @media (max-width: 768px) {
     width: 100px;
@@ -133,7 +146,7 @@ const LeftSide = styled.div`
   }
 `;
 
-const RightSide = styled.div`
+const RightSide = styled.div<{ $isLoading?: boolean }>`
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -142,9 +155,14 @@ const RightSide = styled.div`
   white-space: nowrap;
   transition: 0.3s;
   flex: 1;
+  position: relative;
+  
+  ${({ $isLoading }) => $isLoading && css`
+    background-color: rgba(248, 255, 254, 0.5);
+  `}
   
   &:hover {
-    background-color: #f9f7f9;
+    background-color: ${({ $isLoading }) => $isLoading ? 'transparent' : '#f9f7f9'};
   }
 `;
 
@@ -506,24 +524,98 @@ const Dollar = styled.div`
   }
 `;
 
+// Animações de Loading Profissionais
+const spin = keyframes`
+  0% { 
+    transform: rotate(0deg);
+  }
+  100% { 
+    transform: rotate(360deg);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+`;
+
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const subtleGlow = keyframes`
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.15);
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  animation: ${fadeIn} 0.3s ease-out;
+  
+  @media (max-width: 480px) {
+    margin-right: 10px;
+  }
+`;
+
 const LoadingSpinner = styled.div`
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(46, 204, 113, 0.3);
+  border: 2px solid rgba(46, 204, 113, 0.2);
   border-top: 2px solid #2ecc71;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: ${spin} 1s linear infinite;
   margin-right: 8px;
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
   
   @media (max-width: 480px) {
     width: 14px;
     height: 14px;
     margin-right: 6px;
+  }
+`;
+
+const LoadingText = styled.span`
+  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #2c3e50;
+  animation: ${pulse} 2s ease-in-out infinite;
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
+`;
+
+const LoadingDots = styled.span`
+  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #2ecc71;
+  margin-left: 2px;
+  animation: ${pulse} 1.5s ease-in-out infinite;
+  
+  &::after {
+    content: '...';
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
   }
 `;
 
@@ -554,6 +646,16 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
 }) => {
   // Texto responsivo para telas pequenas
   const getResponsiveText = () => {
+    if (isLoading) {
+      if (typeof window !== 'undefined' && window.innerWidth <= 480) {
+        return "Processando";
+      }
+      if (typeof window !== 'undefined' && window.innerWidth <= 576) {
+        return "Processando";
+      }
+      return "Processando";
+    }
+    
     if (typeof window !== 'undefined' && window.innerWidth <= 480) {
       return children === "Prosseguir para Pagamento" ? "Prosseguir" : children;
     }
@@ -568,8 +670,9 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       onClick={onClick} 
       disabled={disabled || isLoading}
       $disabled={disabled || isLoading}
+      $isLoading={isLoading}
     >
-      <LeftSide className="left-side">
+      <LeftSide className="left-side" $isLoading={isLoading}>
         <Card className="card">
           <CardLine />
           <Buttons />
@@ -584,10 +687,21 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
         </Post>
       </LeftSide>
       
-      <RightSide>
+      <RightSide $isLoading={isLoading}>
         <CheckoutText>
-          {isLoading && <LoadingSpinner />}
-          {getResponsiveText()}
+          {isLoading && (
+            <LoadingContainer>
+              <LoadingSpinner />
+            </LoadingContainer>
+          )}
+          {isLoading ? (
+            <>
+              <LoadingText>{getResponsiveText()}</LoadingText>
+              <LoadingDots />
+            </>
+          ) : (
+            getResponsiveText()
+          )}
         </CheckoutText>
         {!isLoading && (
           <ArrowIcon>→</ArrowIcon>

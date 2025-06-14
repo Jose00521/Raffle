@@ -193,6 +193,7 @@ export const signupSchema = z.object({
       }, {
         message: 'Celular deve começar com 9'
       }),
+    hasAddress: z.boolean().optional(),
     cep: z
       .string()
       .min(1, 'CEP é obrigatório')
@@ -223,16 +224,14 @@ export const signupSchema = z.object({
       }, {
         message: 'CEP inválido'
       }),
-    endereco: z.string().min(3, 'Logradouro é obrigatório'),
+    logradouro: z.string().min(3, 'Logradouro é obrigatório'),
     numero: z.string().min(1, 'Número é obrigatório'),
     bairro: z.string().min(2, 'Bairro é obrigatório'),
-    complemento: z.string().optional(),
-    termsAgreement: z.boolean()
-    .refine((value) => value === true, {
-      message: "Você deve concordar com os termos de uso e política de privacidade",
-      path: ["termsAgreement"],
+    complemento: z.string().optional(), 
+    termsAgreement: z.boolean().refine(val => val === true, {
+      message: 'Você precisa aceitar os termos de uso'
     }),
-    estado: z
+    uf: z
       .string()
       .min(2, 'UF é obrigatória')
       .max(2, 'UF deve ter apenas 2 caracteres')
