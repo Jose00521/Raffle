@@ -181,7 +181,7 @@ const FormContent: React.FC = () => {
         
         <ButtonContainer>
           <SecurityText>
-            <FaLock /> Seus dados estão protegidos por criptografia
+                            <FaLock /> 🛡️ Criptografia Nível Militar: Proteção AES-256-GCM para máxima segurança dos seus dados
           </SecurityText>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

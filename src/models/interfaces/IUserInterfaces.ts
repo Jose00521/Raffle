@@ -7,10 +7,42 @@ export interface IAddress {
     street: string;
     number: string;
     complement?: string;
-    neighborhood: string;
+    zipCode: string;
+    street_encrypted?: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+      aad: string;
+    };
+    number_encrypted?: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+      aad: string;
+    };
+    complement_encrypted?: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+      aad: string;
+    };
+    zipCode_encrypted?: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+      aad: string;
+    };
+    street_display?: string;
+    number_display?: string;
+    complement_display?: string;
+    zipCode_display?: string;
     city: string;
     state: string;
-    zipCode: string;
+    neighborhood: string;
   }
   
   export interface IBankAccount {
@@ -33,6 +65,7 @@ export interface IAddress {
       iv: string;
       tag: string;
       keyVersion: string;
+      aad: string;
     };
     email_hash: string;
     email_display: string;
@@ -43,6 +76,7 @@ export interface IAddress {
       iv: string;
       tag: string;
       keyVersion: string;
+      aad: string;
     };
     phone_hash: string;
     phone_display: string;
@@ -61,6 +95,7 @@ export interface IAddress {
       iv: string;
       tag: string;
       keyVersion: string;
+      aad: string;
     };
     cpf_hash: string;
     cpf_display: string;
@@ -111,6 +146,7 @@ export interface IAddress {
       iv: string;
       tag: string;
       keyVersion: string;
+      aad: string;
     };
     cpf_hash: string;
     cpf_display: string;
@@ -120,6 +156,7 @@ export interface IAddress {
       iv: string;
       tag: string;
       keyVersion: string;
+      aad: string;
     };
     cnpj_hash: string;
     cnpj_display: string;

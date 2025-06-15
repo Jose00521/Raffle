@@ -24,12 +24,12 @@ export class UserAuthRepository implements IUserAuthRepository {
             console.log('phone', phone);
             console.log('password', password);
 
-            const { EncryptionService, SecureDataUtils } = await import('@/utils/encryption');
+            const { SecureDataUtils } = await import('@/utils/encryption');
 
 
             await this.db.connect();
             
-            const user: IUser | null = await User.findOne({ phone_hash: SecureDataUtils.hashForSearch(phone) }, '+password').lean() as IUser | null;
+            const user: IUser | null = await User.findOne({ phone_hash: SecureDataUtils.hashPhone(phone) }, '+password').lean() as IUser | null;
 
         
             if (!user) {

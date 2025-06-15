@@ -164,7 +164,7 @@ if (isServer && SecureUserSchema) {
       // CRIPTOGRAFAR EMAIL
       if (this.email && !this.email_encrypted) {
         this.email_encrypted = SecureDataUtils.encryptEmail(this.email);
-        this.email_hash = SecureDataUtils.hashForSearch(this.email);
+        this.email_hash = SecureDataUtils.hashEmail(this.email);
         this.email_display = maskEmail(this.email);
         this.email = undefined;
       }

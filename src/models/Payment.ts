@@ -41,6 +41,11 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       required: true,
       default: 0
     },
+    numbersQuantity: {
+      type: Number,
+      required: true,
+      default: 0
+    },
     taxSeller: {
       type: Number,
       required: true,

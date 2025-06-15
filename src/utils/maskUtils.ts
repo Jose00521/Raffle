@@ -198,32 +198,127 @@ export function maskEmail(email: string): string {
 }
 
 /**
- * Mascara endereço mostrando apenas parte da rua e número
- * Exemplo: Rua das Flores, 123 → Rua das F***, 123
+ * Mascara rua seguindo padrão bancário
+ * Exemplo: Rua das Flores → Rua das F***
+ * Exemplo: Avenida Paulista → Av. P***
  */
-export function maskAddress(street: string, number: string): string {
+export function maskStreet(street: string): string {
   if (!street) return '';
   
-  const words = street.split(' ');
-  if (words.length <= 2) {
-    // Se tem poucas palavras, mascara a última
-    const lastWord = words[words.length - 1];
-    words[words.length - 1] = lastWord.length > 2 
-      ? `${lastWord.slice(0, 1)}***` 
-      : lastWord;
-  } else {
-    // Se tem muitas palavras, mascara as últimas
-    for (let i = Math.floor(words.length / 2); i < words.length; i++) {
-      const word = words[i];
-      words[i] = word.length > 2 ? `${word.slice(0, 1)}***` : word;
-    }
+  const words = street.trim().split(' ');
+  
+  // Abreviações comuns de bancos
+  const abbreviations: { [key: string]: string } = {
+    'Rua': 'R.',
+    'Avenida': 'Av.',
+    'Alameda': 'Al.',
+    'Travessa': 'Tv.',
+    'Praça': 'Pç.',
+    'Largo': 'Lg.',
+    'Estrada': 'Est.',
+    'Rodovia': 'Rod.'
+  };
+  
+  if (words.length === 0) return '';
+  
+  // Primeira palavra (tipo de logradouro)
+  const firstWord = words[0];
+  const abbreviated = abbreviations[firstWord] || firstWord;
+  
+  if (words.length === 1) {
+    return `${abbreviated} ***`;
   }
   
-  return `${words.join(' ')}${number ? `, ${number}` : ''}`;
+  // Palavras do meio (preposições) - manter visíveis
+  const middleWords = words.slice(1, -1).filter(word => 
+    ['da', 'das', 'do', 'dos', 'de', 'e', 'em', 'na', 'no'].includes(word.toLowerCase())
+  );
+  
+  // Última palavra - mascarar
+  const lastWord = words[words.length - 1];
+  const maskedLast = lastWord.length > 1 
+    ? `${lastWord.slice(0, 1)}***` 
+    : '***';
+  
+  // Montar resultado
+  const result = [abbreviated, ...middleWords, maskedLast].join(' ');
+  return result;
 }
 
 /**
- * Mascara CEP mostrando apenas primeiros e últimos dígitos
+ * Mascara número do endereço
+ * Exemplo: 1234 → ***4
+ * Exemplo: 123-A → ***-A
+ */
+export function maskNumber(number: string): string {
+  if (!number) return '';
+  
+  const str = number.toString();
+  
+  // Se tem letra no final (apartamento), preserva
+  const match = str.match(/^(\d+)([A-Za-z]*)$/);
+  if (match) {
+    const [, digits, letters] = match;
+    if (digits.length <= 2) {
+      return `***${letters}`;
+    }
+    return `***${digits.slice(-1)}${letters}`;
+  }
+  
+  // Número simples
+  return str.length <= 2 ? '***' : `***${str.slice(-1)}`;
+}
+
+/**
+ * Mascara complemento
+ * Exemplo: Apartamento 101 → Apto ***
+ * Exemplo: Bloco A Casa 5 → Bloco *** Casa ***
+ */
+export function maskComplement(complement: string): string {
+  if (!complement) return '';
+  
+  // Abreviações comuns
+  const abbreviations: { [key: string]: string } = {
+    'Apartamento': 'Apto',
+    'Bloco': 'Bl.',
+    'Casa': 'Casa',
+    'Sala': 'Sala',
+    'Loja': 'Loja',
+    'Andar': 'And.',
+    'Torre': 'Torre'
+  };
+  
+  const words = complement.trim().split(' ');
+  const result: string[] = [];
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const abbreviated = abbreviations[word] || word;
+    
+    // Se é um tipo conhecido, mantém + mascara próximo número
+    if (abbreviations[word]) {
+      result.push(abbreviated);
+      if (i + 1 < words.length) {
+        result.push('***');
+        i++; // Pula o próximo (que foi mascarado)
+      }
+    } else if (/^\d+$/.test(word)) {
+      // Se é só número, mascara
+      result.push('***');
+    } else if (word.length <= 2) {
+      // Palavras pequenas (preposições), mantém
+      result.push(word);
+    } else {
+      // Outras palavras, mascara
+      result.push('***');
+    }
+  }
+  
+  return result.join(' ');
+}
+
+/**
+ * Mascara CEP seguindo padrão bancário
  * Exemplo: 12345-678 → 12***-678
  */
 export function maskCEP(cep: string): string {
@@ -234,6 +329,52 @@ export function maskCEP(cep: string): string {
   if (cleanCep.length !== 8) return cep;
   
   return `${cleanCep.slice(0, 2)}***-${cleanCep.slice(-3)}`;
+}
+
+/**
+ * Mascara bairro
+ * Exemplo: Vila Madalena → Vila M***
+ */
+export function maskNeighborhood(neighborhood: string): string {
+  if (!neighborhood) return '';
+  
+  const words = neighborhood.trim().split(' ');
+  
+  if (words.length === 1) {
+    const word = words[0];
+    return word.length > 2 ? `${word.slice(0, 1)}***` : word;
+  }
+  
+  // Primeira palavra mantém, outras mascara
+  const result = [words[0]];
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    result.push(word.length > 1 ? `${word.slice(0, 1)}***` : word);
+  }
+  
+  return result.join(' ');
+}
+
+/**
+ * Mascara endereço completo seguindo padrão bancário
+ * Exemplo: Rua das Flores, 123, Apto 45 → R. das F***, ***, Apto ***
+ */
+export function maskAddress(street: string, number?: string, complement?: string): string {
+  const parts: string[] = [];
+  
+  if (street) {
+    parts.push(maskStreet(street));
+  }
+  
+  if (number) {
+    parts.push(maskNumber(number));
+  }
+  
+  if (complement) {
+    parts.push(maskComplement(complement));
+  }
+  
+  return parts.join(', ');
 }
 
 /**
@@ -262,7 +403,13 @@ export const DataMask = {
   cnpj: maskCNPJ,
   phone: maskPhone,
   email: maskEmail,
-  address: maskAddress,
-  cep: maskCEP,
   name: maskName,
+  // Endereço - funções individuais
+  street: maskStreet,
+  number: maskNumber,
+  complement: maskComplement,
+  neighborhood: maskNeighborhood,
+  cep: maskCEP,
+  // Endereço - função completa
+  address: maskAddress,
 }; 

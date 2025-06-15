@@ -65,19 +65,19 @@ export class CreatorRepository implements ICreatorRepository {
             
             // ✅ CORRETO: Buscar pelos campos HASH
             if(user.email){
-                const emailHash = SecureDataUtils.hashForSearch(user.email);
+                const emailHash = SecureDataUtils.hashEmail(user.email);
                 conditions.push({ email_hash: emailHash });
             }
             if(user.cpf){
-                const cpfHash = SecureDataUtils.hashForSearch(user.cpf);
+                const cpfHash = SecureDataUtils.hashDocument(user.cpf);
                 conditions.push({ cpf_hash: cpfHash });
             }
             if(user.phone){
-                const phoneHash = SecureDataUtils.hashForSearch(user.phone);
+                const phoneHash = SecureDataUtils.hashPhone(user.phone);
                 conditions.push({ phone_hash: phoneHash });
             }
             if(user.cnpj){
-                const cnpjHash = SecureDataUtils.hashForSearch(user.cnpj);
+                const cnpjHash = SecureDataUtils.hashDocument(user.cnpj);
                 conditions.push({ cnpj_hash: cnpjHash });
             }
             

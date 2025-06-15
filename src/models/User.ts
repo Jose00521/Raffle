@@ -3,7 +3,7 @@ import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
 import { ICreator, IRegularUser, IUser } from './interfaces/IUserInterfaces';
 import { SecureDataUtils } from '@/utils/encryption';
-import { maskCNPJ, maskCPF, maskEmail, maskPhone } from '@/utils/maskUtils';
+import { maskCEP, maskComplement, maskNumber, maskStreet, maskCNPJ, maskCPF, maskEmail, maskPhone } from '@/utils/maskUtils';
 
 /**
  * Base User Schema - Shared fields 
@@ -55,7 +55,8 @@ const UserSchema = new Schema<IUser>({
         encrypted: String,
         iv: String,
         tag: String,
-        keyVersion: String
+        keyVersion: String,
+        aad: String
       },
       default: undefined
     },
@@ -77,7 +78,8 @@ const UserSchema = new Schema<IUser>({
       encrypted: String,
       iv: String,
       tag: String,
-      keyVersion: String
+      keyVersion: String,
+      aad: String
     },
     default: undefined
   },
@@ -98,7 +100,8 @@ const UserSchema = new Schema<IUser>({
       encrypted: String,
       iv: String,
       tag: String,
-      keyVersion: String
+      keyVersion: String,
+      aad: String
     },
     default: undefined
   },
@@ -115,16 +118,70 @@ const UserSchema = new Schema<IUser>({
 
 
   address: {
-    street: String,
-    number: String,
-    complement: String,
-    neighborhood: String,
-    city: String,
-    state: String,
-    zipCode: {
+    // ===== CAMPOS TEMPORÁRIOS (para criptografia) =====
+    street: { type: String, select: false },
+    number: { type: String, select: false },
+    complement: { type: String, select: false },
+    zipCode: { type: String, select: false },
+    
+    // ===== DADOS SENSÍVEIS CRIPTOGRAFADOS =====
+    street_encrypted: {
+      type: {
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String,
+        aad: String
+      },
+      default: undefined
+    },
+    number_encrypted: {
+      type: {
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String,
+        aad: String
+      },
+      default: undefined
+    },
+    complement_encrypted: {
+      type: {
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String,
+        aad: String
+      },
+      default: undefined
+    },
+    zipCode_encrypted: {
+      type: {
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String,
+        aad: String
+      },
+      default: undefined
+    },
+    
+    // ===== HASHES PARA BUSCA =====
+    zipCode_hash: {
       type: String,
-
-    }
+      index: true // Para busca por região
+    },
+    
+    // ===== DADOS MASCARADOS (para exibição) =====
+    street_display: { type: String, default: '' },
+    number_display: { type: String, default: '' },
+    complement_display: { type: String, default: '' },
+    zipCode_display: { type: String, default: '' },
+    
+    // ===== DADOS NÃO-SENSÍVEIS (para filtros) =====
+    city: { type: String, index: true },
+    state: { type: String, index: true },
+    neighborhood: String,
   },
   
   isActive: {
@@ -183,7 +240,7 @@ UserSchema.pre('save', async function(this: any, next) {
     if (this.cpf && !this.cpf_encrypted) {
       console.log('🔒 Criptografando CPF...');
       this.cpf_encrypted = SecureDataUtils.encryptCPF(this.cpf);
-      this.cpf_hash = SecureDataUtils.hashForSearch(this.cpf);
+      this.cpf_hash = SecureDataUtils.hashDocument(this.cpf);
       this.cpf_display = maskCPF(this.cpf);
       this.cpf = undefined;
     }
@@ -192,7 +249,7 @@ UserSchema.pre('save', async function(this: any, next) {
     if (this.email && !this.email_encrypted) {
       console.log('🔒 Criptografando EMAIL...');
       this.email_encrypted = SecureDataUtils.encryptEmail(this.email);
-      this.email_hash = SecureDataUtils.hashForSearch(this.email);
+      this.email_hash = SecureDataUtils.hashEmail(this.email);
       this.email_display = maskEmail(this.email);
       this.email = undefined;
     }
@@ -201,10 +258,38 @@ UserSchema.pre('save', async function(this: any, next) {
     if (this.phone && !this.phone_encrypted) {
       console.log('🔒 Criptografando PHONE...');
       this.phone_encrypted = SecureDataUtils.encryptPhone(this.phone);
-      this.phone_hash = SecureDataUtils.hashForSearch(this.phone);
+      this.phone_hash = SecureDataUtils.hashPhone(this.phone);
       this.phone_display = maskPhone(this.phone);
       this.phone = undefined;
     }
+
+    // CRIPTOGRAFAR ENDEREÇO
+if (this.address) {
+  if (this.address.street && !this.address.street_encrypted) {
+    this.address.street_encrypted = SecureDataUtils.encryptStreet(this.address.street);
+    this.address.street_display = maskStreet(this.address.street);
+    this.address.street = undefined;
+  }
+  
+  if (this.address.number && !this.address.number_encrypted) {
+    this.address.number_encrypted = SecureDataUtils.encryptNumber(this.address.number);
+    this.address.number_display = maskNumber(this.address.number);
+    this.address.number = undefined;
+  }
+  
+  if (this.address.complement && !this.address.complement_encrypted) {
+    this.address.complement_encrypted = SecureDataUtils.encryptComplement(this.address.complement);
+    this.address.complement_display = maskComplement(this.address.complement);
+    this.address.complement = undefined;
+  }
+  
+  if (this.address.zipCode && !this.address.zipCode_encrypted) {
+    this.address.zipCode_encrypted = SecureDataUtils.encryptZipCode(this.address.zipCode);
+    this.address.zipCode_hash = SecureDataUtils.hashZipCode(this.address.zipCode);
+    this.address.zipCode_display = maskCEP(this.address.zipCode);
+    this.address.zipCode = undefined;
+  }
+}
     
     console.log('✅ PRE-SAVE CONCLUÍDO COM SUCESSO');
     next();
@@ -232,7 +317,7 @@ UserSchema.statics.findByUserCode = function(userCode: string) {
 };
 
 UserSchema.statics.findByEmail = function(email: string) {
-  return this.findOne({ email_hash: SecureDataUtils.hashForSearch(email.toLowerCase()) });
+  return this.findOne({ email_hash: SecureDataUtils.hashEmail(email) });
 };
 
 // Modelo base
@@ -294,7 +379,8 @@ const CreatorSchema = new Schema<ICreator>({
         encrypted: String,
         iv: String,
         tag: String,
-        keyVersion: String
+        keyVersion: String,
+        aad: String
       },
       default: undefined
     },
@@ -441,7 +527,7 @@ CreatorSchema.pre('save', async function(this: any, next) {
     // CRIPTOGRAFAR CNPJ (específico para Creator)
     if (this.cnpj && !this.cnpj_encrypted) {
       this.cnpj_encrypted = SecureDataUtils.encryptCNPJ(this.cnpj);
-      this.cnpj_hash = SecureDataUtils.hashForSearch(this.cnpj);
+      this.cnpj_hash = SecureDataUtils.hashDocument(this.cnpj);
       this.cnpj_display = maskCNPJ(this.cnpj);
       this.cnpj = undefined;
     }

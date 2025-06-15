@@ -65,19 +65,23 @@ export class UserRepository implements IUserRepository {
         try {
             await this.db.connect();
             let conditions = [];
+
+            console.log('user', user);
             
             if(user.email){
-                const emailHash = SecureDataUtils.hashForSearch(user.email);
+                const emailHash = SecureDataUtils.hashEmail(user.email);
                 conditions.push({ email_hash: emailHash });
             }
             if(user.cpf){
-                const cpfHash = SecureDataUtils.hashForSearch(user.cpf);
+                const cpfHash = SecureDataUtils.hashDocument(user.cpf);
                 conditions.push({ cpf_hash: cpfHash });
             }
             if(user.phone){
-                const phoneHash = SecureDataUtils.hashForSearch(user.phone);
+                const phoneHash = SecureDataUtils.hashPhone(user.phone);
                 conditions.push({ phone_hash: phoneHash });
             }
+
+            console.log('conditions', conditions);
             
             if(conditions.length === 0) return false;
             
@@ -101,9 +105,7 @@ export class UserRepository implements IUserRepository {
             
             await this.db.connect();
 
-            const { EncryptionService, SecureDataUtils } = await import('@/utils/encryption');
-
-            const user = await User.findOne({ phone_hash: SecureDataUtils.hashForSearch(phone) }, {
+            const user = await User.findOne({ phone_hash: SecureDataUtils.hashPhone(phone) }, {
                 _id: 0,
                 userCode: 1,
                 address: 1,

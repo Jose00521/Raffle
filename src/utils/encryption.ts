@@ -19,71 +19,120 @@ interface EncryptedData {
   iv: string;            // Vetor de inicialização
   tag: string;           // Tag de autenticação GCM
   keyVersion: string;    // Versão da chave usada
+  aad?: string;          // Additional Authenticated Data (opcional)
 }
 
 /**
- * Serviço simplificado de criptografia
+ * Estratégias de criptografia por versão
  */
-export class EncryptionService {
-  private static masterKey: string = process.env.ENCRYPTION_MASTER_KEY || 'default-key-change-in-production-must-be-32-characters-long';
-  
-  /**
-   * Gera chave derivada
-   */
-  private static getKey(): Buffer {
-    console.log('🔧 ENV KEY:', process.env.ENCRYPTION_MASTER_KEY);
-    console.log('🔧 THIS KEY:', this.masterKey);
-    console.log('🔧 SÃO IGUAIS?', process.env.ENCRYPTION_MASTER_KEY === this.masterKey);
+const encryptionStrategies = {
+  v1: {
+    version: 'v1',
+    encrypt(plaintext: string, dataType?: string): EncryptedData {
+      const key = getKeyForVersion(this.version);
+      const iv = crypto.randomBytes(IV_LENGTH);
+      const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+      
+      // AAD automático baseado no tipo de dado
+      if (dataType) {
+        const aad = `raffle-system:${dataType}:${this.version}`;
+        cipher.setAAD(Buffer.from(aad, 'utf8'));
+      }
+      
+      let encrypted = cipher.update(plaintext, 'utf8', 'base64');
+      encrypted += cipher.final('base64');
+      
+      const tag = cipher.getAuthTag();
+      
+      return {
+        encrypted,
+        iv: iv.toString('base64'),
+        tag: tag.toString('base64'),
+        keyVersion: this.version,
+        aad: dataType ? `raffle-system:${dataType}:${this.version}` : undefined
+      };
+    },
     
-    const salt = crypto.createHash('sha256').update('raffle-salt').digest();
-    return crypto.pbkdf2Sync(this.masterKey, salt, 100000, 32, 'sha256');
-  }
-  
-  /**
-   * Criptografa dados
-   */
-  static encrypt(plaintext: string): EncryptedData {
-    if (!plaintext) {
-      throw new Error('Texto para criptografar não pode estar vazio');
-    }
-    
-    const key = this.getKey();
-    const iv = crypto.randomBytes(IV_LENGTH);
-    
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-    
-    let encrypted = cipher.update(plaintext, 'utf8', 'base64');
-    encrypted += cipher.final('base64');
-    
-    const tag = cipher.getAuthTag();
-    
-    return {
-      encrypted,
-      iv: iv.toString('base64'),
-      tag: tag.toString('base64'),
-      keyVersion: 'v1'
-    };
-  }
-  
-  /**
-   * Descriptografa dados
-   */
-  static decrypt(encryptedData: EncryptedData): string {
-    try {
+    decrypt(encryptedData: EncryptedData): string {
       if (!encryptedData?.encrypted || !encryptedData?.iv || !encryptedData?.tag) {
         throw new Error('Dados criptografados incompletos');
       }
 
-      const key = this.getKey();
+      const key = getKeyForVersion(this.version);
       const iv = Buffer.from(encryptedData.iv, 'base64');
       
       const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      
+      // Aplicar AAD se existir
+      if (encryptedData.aad) {
+        decipher.setAAD(Buffer.from(encryptedData.aad, 'utf8'));
+      }
+      
       decipher.setAuthTag(Buffer.from(encryptedData.tag, 'base64'));
       
       let decrypted = decipher.update(encryptedData.encrypted, 'base64', 'utf8');
       decrypted += decipher.final('utf8');
       
       return decrypted;
+    }
+  }
+  // v2: será adicionado quando necessário
+};
+
+/**
+ * Gera chave derivada para versão específica
+ */
+function getKeyForVersion(version: string): Buffer {
+  const keyEnvVar = version === 'v1' 
+    ? 'ENCRYPTION_MASTER_KEY'
+    : `ENCRYPTION_MASTER_KEY_${version.toUpperCase()}`;
+    
+  const masterKey = process.env[keyEnvVar] || process.env.ENCRYPTION_MASTER_KEY || 'default-key-change-in-production-must-be-32-characters-long';
+  
+  console.log('🔧 MASTER KEY USADA:', masterKey);
+  console.log('🔧 VERSÃO:', version);
+  console.log('🔧 USANDO ENV?', !!process.env.ENCRYPTION_MASTER_KEY);
+  
+  const salt = crypto.createHash('sha256').update(`raffle-salt-${version}`).digest();
+  return crypto.pbkdf2Sync(masterKey, salt, 100000, 32, 'sha256');
+}
+
+/**
+ * Serviço de criptografia com versionamento
+ */
+export class EncryptionService {
+  
+  /**
+   * Criptografa dados usando a versão atual
+   */
+  static encrypt(plaintext: string, dataType?: string): EncryptedData {
+    if (!plaintext) {
+      throw new Error('Texto para criptografar não pode estar vazio');
+    }
+    
+    const version = process.env.ENCRYPTION_VERSION || 'v1';
+    const strategy = encryptionStrategies[version as keyof typeof encryptionStrategies];
+    
+    if (!strategy) {
+      throw new Error(`Versão de criptografia não suportada: ${version}`);
+    }
+    
+    return strategy.encrypt(plaintext, dataType);
+  }
+  
+  /**
+   * Descriptografa dados usando a versão correta automaticamente
+   */
+  static decrypt(encryptedData: EncryptedData): string {
+    try {
+      const version = encryptedData.keyVersion || 'v1';
+      const strategy = encryptionStrategies[version as keyof typeof encryptionStrategies];
+      
+      if (!strategy) {
+        throw new Error(`Versão de criptografia não suportada: ${version}`);
+      }
+      
+      return strategy.decrypt(encryptedData);
     } catch (error) {
       console.error('❌ ERRO NA DESCRIPTOGRAFIA:', error);
       console.error('📊 Dados recebidos:', JSON.stringify(encryptedData, null, 2));
@@ -97,14 +146,14 @@ export class EncryptionService {
  */
 export class SecureDataUtils {
   /**
-   * Criptografa CPF
+   * Criptografa CPF com contexto AAD
    */
   static encryptCPF(cpf: string): EncryptedData {
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf.length !== 11) {
       throw new Error('CPF inválido para criptografia');
     }
-    return EncryptionService.encrypt(cleanCpf);
+    return EncryptionService.encrypt(cleanCpf, 'cpf');
   }
   
   /**
@@ -115,14 +164,14 @@ export class SecureDataUtils {
   }
 
   /**
-   * Criptografa CNPJ
+   * Criptografa CNPJ com contexto AAD
    */
   static encryptCNPJ(cnpj: string): EncryptedData {
     const cleanCnpj = cnpj.replace(/\D/g, '');
     if (cleanCnpj.length !== 14) {
       throw new Error('CNPJ inválido para criptografia');
     }
-    return EncryptionService.encrypt(cleanCnpj);
+    return EncryptionService.encrypt(cleanCnpj, 'cnpj');
   }
   
   /**
@@ -133,29 +182,133 @@ export class SecureDataUtils {
   }
 
   /**
-   * Cria hash irreversível para busca
+   * Cria hash irreversível para CPF/CNPJ (só números)
    */
-  static hashForSearch(value: string): string {
+  static hashDocument(value: string): string {
     const cleanValue = value.replace(/\D/g, '');
     return crypto.createHash('sha256')
       .update(cleanValue + (process.env.SEARCH_HASH_SALT || 'default-salt'))
       .digest('hex');
   }
-  
+
   /**
-   * Criptografa email
+   * Cria hash específico para EMAIL
    */
-  static encryptEmail(email: string): EncryptedData {
+  static hashEmail(email: string): string {
     const normalizedEmail = email.toLowerCase().trim();
-    return EncryptionService.encrypt(normalizedEmail);
+    return crypto.createHash('sha256')
+      .update(normalizedEmail + (process.env.SEARCH_HASH_SALT || 'default-salt'))
+      .digest('hex');
+  } 
+
+  /**
+   * Cria hash específico para TELEFONE
+   */
+  static hashPhone(phone: string): string {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return crypto.createHash('sha256')
+      .update(cleanPhone + (process.env.SEARCH_HASH_SALT || 'default-salt'))
+      .digest('hex');
   }
   
   /**
-   * Criptografa telefone
+   * Criptografa email com contexto AAD
+   */
+  static encryptEmail(email: string): EncryptedData {
+    const normalizedEmail = email.toLowerCase().trim();
+    return EncryptionService.encrypt(normalizedEmail, 'email');
+  }
+  
+  /**
+   * Criptografa telefone com contexto AAD
    */
   static encryptPhone(phone: string): EncryptedData {
     const cleanPhone = phone.replace(/\D/g, '');
-    return EncryptionService.encrypt(cleanPhone);
+    return EncryptionService.encrypt(cleanPhone, 'phone');
+  }
+  
+  // ===== FUNÇÕES DE CRIPTOGRAFIA PARA ENDEREÇO =====
+  
+  /**
+   * Criptografa rua/logradouro com contexto AAD
+   */
+  static encryptStreet(street: string): EncryptedData {
+    if (!street) {
+      throw new Error('Rua não pode estar vazia para criptografia');
+    }
+    const normalizedStreet = street.trim();
+    return EncryptionService.encrypt(normalizedStreet, 'street');
+  }
+  
+  /**
+   * Descriptografa rua/logradouro
+   */
+  static decryptStreet(encryptedData: EncryptedData): string {
+    return EncryptionService.decrypt(encryptedData);
+  }
+  
+  /**
+   * Criptografa número do endereço com contexto AAD
+   */
+  static encryptNumber(number: string): EncryptedData {
+    if (!number) {
+      throw new Error('Número não pode estar vazio para criptografia');
+    }
+    const normalizedNumber = number.toString().trim();
+    return EncryptionService.encrypt(normalizedNumber, 'number');
+  }
+  
+  /**
+   * Descriptografa número do endereço
+   */
+  static decryptNumber(encryptedData: EncryptedData): string {
+    return EncryptionService.decrypt(encryptedData);
+  }
+  
+  /**
+   * Criptografa complemento com contexto AAD
+   */
+  static encryptComplement(complement: string): EncryptedData {
+    if (!complement) {
+      throw new Error('Complemento não pode estar vazio para criptografia');
+    }
+    const normalizedComplement = complement.trim();
+    return EncryptionService.encrypt(normalizedComplement, 'complement');
+  }
+  
+  /**
+   * Descriptografa complemento
+   */
+  static decryptComplement(encryptedData: EncryptedData): string {
+    return EncryptionService.decrypt(encryptedData);
+  }
+  
+  /**
+   * Criptografa CEP com contexto AAD
+   */
+  static encryptZipCode(zipCode: string): EncryptedData {
+    const cleanZipCode = zipCode.replace(/\D/g, '');
+    if (cleanZipCode.length !== 8) {
+      throw new Error('CEP inválido para criptografia');
+    }
+    return EncryptionService.encrypt(cleanZipCode, 'zipcode');
+  }
+  
+  /**
+   * Descriptografa CEP
+   */
+  static decryptZipCode(encryptedData: EncryptedData): string {
+    return EncryptionService.decrypt(encryptedData);
+  }
+  
+  /**
+   * Cria hash específico para CEP (para busca por região)
+   */
+  static hashZipCode(zipCode: string): string {
+    const cleanZipCode = zipCode.replace(/\D/g, '');
+    return crypto.createHash('sha256')
+      .update(cleanZipCode + (process.env.SEARCH_HASH_SALT || 'default-salt'))
+      .digest('hex');
   }
 }
 

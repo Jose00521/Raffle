@@ -110,6 +110,7 @@ export class PaymentRepository implements IPaymentRepository {
 
             const paymentData = {
                 amount: body.amount/100,
+                numbersQuantity: body.selectedPackage.quantity,
                 campaignId: campaign._id,
                 userId: user._id,
                 paymentMethod: body.paymentMethod,

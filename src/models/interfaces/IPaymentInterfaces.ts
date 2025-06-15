@@ -39,7 +39,7 @@ export enum PaymentStatusEnum {
     amountReceived: number;
     paymentMethod: PaymentMethodEnum;
     status: PaymentStatusEnum;
-    numbers: number[]; // Números da rifa comprados neste pagamento
+    numbersQuantity: number; // Números da rifa comprados neste pagamento
     pixCode?: string;
     purchaseAt: Date;
     approvedAt?: Date;
