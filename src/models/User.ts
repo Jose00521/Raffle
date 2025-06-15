@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
 import { ICreator, IRegularUser, IUser } from './interfaces/IUserInterfaces';
+import { SecureDataUtils } from '@/utils/encryption';
+import { maskCNPJ, maskCPF, maskEmail, maskPhone } from '@/utils/maskUtils';
 
 /**
  * Base User Schema - Shared fields 
@@ -13,15 +15,8 @@ const UserSchema = new Schema<IUser>({
   profilePicture: {
     type: String,
   },
-  email: {
-    type: String,
-    required: [true, 'Email é obrigatório'],
-    trim: true,
-    lowercase: true,
-  },
   password: {
     type: String,
-    required: [true, 'Senha é obrigatória'],
     select: false // Não retorna por padrão nas consultas
   },
   name: {
@@ -30,11 +25,95 @@ const UserSchema = new Schema<IUser>({
     trim: true,
     index: true // Índice para buscas por nome
   },
+
+  birthDate: {
+    type: Date,
+    index: true // Permite consultas por faixa etária
+  },
+
+  // CAMPOS TEMPORÁRIOS (só para receber dados)
+  cpf: {
+    type: String,
+    select: false,  // ← Nunca aparece nas consultas
+    required: false // ← Opcional (só existe durante criação)
+  },
+  email: {
+    type: String,
+    select: false,  // ← Nunca aparece nas consultas  
+    required: false
+  },
   phone: {
     type: String,
-    required: [true, 'Telefone é obrigatório'],
-    trim: true
+    select: false,  // ← Nunca aparece nas consultas
+    required: false
   },
+
+
+    // CPF - estrutura tripla
+    cpf_encrypted: {
+      type:{
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String
+      },
+      default: undefined
+    },
+    cpf_hash: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true // Para busca rápida
+    },
+    cpf_display: {
+      type: String,
+      default: ''
+    },
+
+  
+  // EMAIL - estrutura tripla
+  email_encrypted: {
+    type:{
+      encrypted: String,
+      iv: String,
+      tag: String,
+      keyVersion: String
+    },
+    default: undefined
+  },
+  email_hash: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  email_display: {
+    type: String,
+    default: ''
+  },
+  
+  // TELEFONE - estrutura tripla
+  phone_encrypted: {
+    type:{
+      encrypted: String,
+      iv: String,
+      tag: String,
+      keyVersion: String
+    },
+    default: undefined
+  },
+  phone_hash: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  phone_display: {
+    type: String,
+    default: ''
+  },
+
+
   address: {
     street: String,
     number: String,
@@ -44,7 +123,7 @@ const UserSchema = new Schema<IUser>({
     state: String,
     zipCode: {
       type: String,
-      required: [true, 'CEP é obrigatório']
+
     }
   },
   
@@ -62,32 +141,83 @@ const UserSchema = new Schema<IUser>({
   timestamps: true, // Rastreia criação e atualizações automaticamente
   strict: true, // Não permite campos não definidos no schema
 });
-// Modifique o hook pre-save em src/models/User.ts
-// UserSchema.pre('save', function(this: any, next) {
-//   if (!this.userCode && typeof window === 'undefined') {
-//     // Só tente gerar o código se o _id já estiver definido
-//     if (this._id) {
-//       this.userCode = generateEntityCode(this._id, 'US');
-//     } else {
-//       // Se o _id ainda não estiver disponível, adie a geração para o próximo save
-//       console.warn('_id não está disponível para gerar userCode. Será gerado no próximo save.');
-//     }
-//   }
-//   next();
-// });
-// // Adicione um hook post-save para garantir que o código seja gerado se não foi feito no pre-save
-// UserSchema.post('save', async function(this: any, doc, next) {
-//   if (!doc.userCode && doc._id && typeof window === 'undefined') {
-//     doc.userCode = generateEntityCode(doc._id, 'US');
-//     await doc.save(); // Salva novamente para persistir o código
-//   }
-//   next();
-// });
+
+
+// MIDDLEWARE PRE-SAVE: Auto-criptografia
+UserSchema.pre('save', async function(this: any, next) {
+
+  try {
+    console.log('🔧 PRE-SAVE MIDDLEWARE EXECUTANDO...');
+    console.log('📋 Dados recebidos:', {
+      cpf: this.cpf,
+      email: this.email, 
+      phone: this.phone,
+    });
+
+        // 🔍 DEBUG DETALHADO DAS CONDIÇÕES
+        console.log('🔍 DEBUGANDO CONDIÇÕES CPF:');
+        console.log('  - this.cpf:', this.cpf);
+        console.log('  - typeof this.cpf:', typeof this.cpf);
+        console.log('  - !!this.cpf:', !!this.cpf);
+        console.log('  - this.cpf_encrypted:', this.cpf_encrypted);
+        console.log('  - typeof this.cpf_encrypted:', typeof this.cpf_encrypted);
+        console.log('  - !!this.cpf_encrypted:', !!this.cpf_encrypted);
+        console.log('  - !this.cpf_encrypted:', !this.cpf_encrypted);
+        console.log('  - (this.cpf && !this.cpf_encrypted):', (this.cpf && !this.cpf_encrypted));
+        
+        console.log('🔍 DEBUGANDO CONDIÇÕES EMAIL:');
+        console.log('  - this.email:', this.email);
+        console.log('  - !!this.email:', !!this.email);
+        console.log('  - this.email_encrypted:', this.email_encrypted);
+        console.log('  - !this.email_encrypted:', !this.email_encrypted);
+        console.log('  - (this.email && !this.email_encrypted):', (this.email && !this.email_encrypted));
+        
+        console.log('🔍 DEBUGANDO CONDIÇÕES PHONE:');
+        console.log('  - this.phone:', this.phone);
+        console.log('  - !!this.phone:', !!this.phone);
+        console.log('  - this.phone_encrypted:', this.phone_encrypted);
+        console.log('  - !this.phone_encrypted:', !this.phone_encrypted);
+        console.log('  - (this.phone && !this.phone_encrypted):', (this.phone && !this.phone_encrypted));
+    
+    // CRIPTOGRAFAR CPF
+    if (this.cpf && !this.cpf_encrypted) {
+      console.log('🔒 Criptografando CPF...');
+      this.cpf_encrypted = SecureDataUtils.encryptCPF(this.cpf);
+      this.cpf_hash = SecureDataUtils.hashForSearch(this.cpf);
+      this.cpf_display = maskCPF(this.cpf);
+      this.cpf = undefined;
+    }
+    
+    // CRIPTOGRAFAR EMAIL
+    if (this.email && !this.email_encrypted) {
+      console.log('🔒 Criptografando EMAIL...');
+      this.email_encrypted = SecureDataUtils.encryptEmail(this.email);
+      this.email_hash = SecureDataUtils.hashForSearch(this.email);
+      this.email_display = maskEmail(this.email);
+      this.email = undefined;
+    }
+    
+    // CRIPTOGRAFAR TELEFONE
+    if (this.phone && !this.phone_encrypted) {
+      console.log('🔒 Criptografando PHONE...');
+      this.phone_encrypted = SecureDataUtils.encryptPhone(this.phone);
+      this.phone_hash = SecureDataUtils.hashForSearch(this.phone);
+      this.phone_display = maskPhone(this.phone);
+      this.phone = undefined;
+    }
+    
+    console.log('✅ PRE-SAVE CONCLUÍDO COM SUCESSO');
+    next();
+  } catch (error) {
+    console.error('❌ ERRO NO PRE-SAVE:', error);
+    next(error as Error);
+  }
+});
+
 
 // Índices compostos para consultas comuns
 UserSchema.index({ role: 1, createdAt: -1 }); // Facilita consultas por tipo e ordenadas por data
 UserSchema.index({ name: 1, role: 1 }); // Otimiza busca por nome dentro de cada tipo
-UserSchema.index({ email: 1 }, { unique: true }); // Índice para autenticação e unicidade
 UserSchema.index({ userCode: 1 }, { unique: true, sparse: true }); // Índice para busca por código
 UserSchema.index({ 'address.city': 1, 'address.state': 1 }); // Para filtrar por localização
 UserSchema.index({ isActive: 1, role: 1 }); // Para filtrar usuários ativos por tipo
@@ -95,13 +225,14 @@ UserSchema.index({ name: 'text', email: 'text' }); // Para pesquisa por texto
 UserSchema.index({ createdAt: 1 }); // Para relatórios por período
 UserSchema.index({ lastLogin: 1 }); // Para identificar usuários inativos
 
+
 // Métodos estáticos para User
 UserSchema.statics.findByUserCode = function(userCode: string) {
   return this.findOne({ userCode });
 };
 
 UserSchema.statics.findByEmail = function(email: string) {
-  return this.findOne({ email: email.toLowerCase() });
+  return this.findOne({ email_hash: SecureDataUtils.hashForSearch(email.toLowerCase()) });
 };
 
 // Modelo base
@@ -111,15 +242,9 @@ const User = mongoose.models.User || mongoose.model('User', UserSchema);
  * Schema para Usuário Regular/Participante
  */
 const RegularUserSchema = new Schema<IRegularUser>({
-  cpf: {
-    type: String,
-    required: [true, 'CPF é obrigatório'],
-    unique: true,
-    sparse: true // Índice esparso
-  },
+
   birthDate: {
     type: Date,
-    required: [true, 'Data de nascimento é obrigatória'],
     index: true // Permite consultas por faixa etária
   },
   socialName: String,
@@ -137,6 +262,9 @@ const RegularUserSchema = new Schema<IRegularUser>({
   }
 });
 
+
+
+
 /**
  * Schema Base de Criador (campos comuns)
  */
@@ -149,24 +277,37 @@ const CreatorSchema = new Schema<ICreator>({
     index: true
   },
   // Campos comuns para todos os tipos de criador
-  cpf: {
-    type: String,
-    required: true, // Obrigatório tanto para PF quanto para representante de PJ
-    unique: true,
-    sparse: true
-  },
   birthDate: {
-    type: Date,
-    required: true, // Obrigatório tanto para PF quanto para representante de PJ
+    type: Date, // Obrigatório tanto para PF quanto para representante de PJ
     index: true
   },
-  // Campos específicos para pessoa jurídica
-  cnpj: {
-    type: String,
-    required: function(this: any) { return this.personType === 'company'; },
-    unique: true,
-    sparse: true
-  },
+
+    // CAMPO TEMPORÁRIO PARA CNPJ
+    cnpj: {
+      type: String,
+      select: false,
+      required: false
+    },
+    // CNPJ - estrutura tripla
+    cnpj_encrypted: {
+      type:{
+        encrypted: String,
+        iv: String,
+        tag: String,
+        keyVersion: String
+      },
+      default: undefined
+    },
+    cnpj_hash: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true // Para busca rápida
+    },
+    cnpj_display: {
+      type: String,
+      default: ''
+    },
   // Representante legal (usado apenas para PJ)
   legalRepresentative: {
     type: String,
@@ -294,6 +435,23 @@ CreatorSchema.statics = {
   }
 };
 
+// ✅ ADICIONE no src/models/User.ts no CreatorSchema
+CreatorSchema.pre('save', async function(this: any, next) {
+  try {
+    // CRIPTOGRAFAR CNPJ (específico para Creator)
+    if (this.cnpj && !this.cnpj_encrypted) {
+      this.cnpj_encrypted = SecureDataUtils.encryptCNPJ(this.cnpj);
+      this.cnpj_hash = SecureDataUtils.hashForSearch(this.cnpj);
+      this.cnpj_display = maskCNPJ(this.cnpj);
+      this.cnpj = undefined;
+    }
+    
+    next();
+  } catch (error) {
+    next(error as Error);
+  }
+});
+
 // Criar modelos utilizando discriminators
 let RegularUser: mongoose.Model<IUser>, 
 Participant:mongoose.Model<IUser>, 
@@ -331,7 +489,7 @@ export const setupUserIndexes = async () => {
   
   // Índice único parcial para CPFs de participantes
   await db.collection('users').createIndex(
-    { cpf: 1 },
+    { cpf_hash: 1 },
     { 
       unique: true,
       partialFilterExpression: { role: "participant" },
@@ -341,7 +499,7 @@ export const setupUserIndexes = async () => {
 
   // Índice único parcial para CPFs de usuários regulares
   await db.collection('users').createIndex(
-    { cpf: 1 },
+    { cpf_hash: 1 },
     { 
       unique: true,
       partialFilterExpression: { role: "user" },
@@ -351,7 +509,7 @@ export const setupUserIndexes = async () => {
 
   // Índice único parcial para CPFs de criadores (independente do tipo)
   await db.collection('users').createIndex(
-    { cpf: 1 },
+    { cpf_hash: 1 },
     { 
       unique: true,
       partialFilterExpression: { role: "creator" },
@@ -361,7 +519,7 @@ export const setupUserIndexes = async () => {
 
   // Índice único parcial para CNPJs de criadores pessoa jurídica
   await db.collection('users').createIndex(
-    { cnpj: 1 },
+    { cnpj_hash: 1 },
     { 
       unique: true,
       partialFilterExpression: { 

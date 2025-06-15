@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import Modal from '../ui/Modal';
 import { signIn } from 'next-auth/react';
 import { toast } from 'react-toastify';
-import authService from '@/services/api/auth-service';
 import FormInput from '@/components/common/FormInput';
 import { useRouter } from 'next/navigation';
 import { validateCPF } from '@/utils/validators';
@@ -19,13 +18,14 @@ import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaC
 import Image from 'next/image';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
-import userAPIClient from '@/API/userAPIClient';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { CheckoutButton } from '@/components/ui';
 import InputCheckbox from '../common/InputCheckbox';
 import { LoadingSpinner, TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
 import CustomDropdown from '../common/CustomDropdown';
 import { brazilianStates } from '@/utils/constants';
+import { IUser } from '@/models/interfaces/IUserInterfaces';
+import userAPIClient from '@/API/userAPIClient';
 
 
 interface QuickSignupModalProps {
@@ -42,10 +42,11 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const [isStepValid, setIsStepValid] = useState(false);
   const [foundUser, setFoundUser] = useState<any>(null);
   const [isUserFound, setIsUserFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const form = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(signupSchema) as any,
     mode:'all',
     reValidateMode: 'onChange',
     delayError: 200,
@@ -127,7 +128,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const registerWithMask = useHookFormMask(register);
   
   // Função para buscar endereço pelo CEP
-  const { isLoadingCep, handleCepChange } = useAddressField(setValue, setError, clearErrors,trigger);
+  const { isLoadingCep, handleCepChange, clearAddressFields } = useAddressField(setValue, setError, clearErrors,trigger);
   const [isLoadingVerify, setIsLoadingVerify] = useState(false);
 
 
@@ -146,70 +147,81 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      setIsLoading(true);
+      console.log('onSubmit',data);
+      setIsSubmitting(true);
       
       // Se não tem endereço, criar dados para checkout direto (sem cadastro completo)
-      const formattedData = {
+      const formattedData: Partial<IUser>  = {
         name: data.nome,
         socialName: data.nomeSocial,
         email: data.email,
         cpf: data.cpf.replace(/[^\d]/g, ''),
         phone: data.telefone.replace(/[^\d]/g, ''),
-        hasAddress: data.hasAddress,
-        termsAgreement: data.termsAgreement,
         address: {
-          zipCode: data.cep.replace(/\D/g, ''),
-          state: data.uf,
-          city: data.cidade,
-          neighborhood: data.bairro,
-          street: data.logradouro,
-          number: data.numero,
+          zipCode: data.cep?.replace(/\D/g, '') || '',
+          state: data.uf || '',
+          city: data.cidade || '',
+          neighborhood: data.bairro || '',
+          street: data.logradouro || '',
+          number: data.numero || '',
           complement: data.complemento || '',
         },
-        userType: 'participant',
-        
+        role: 'participant',
+        consents: {
+          termsAndConditions: data.termsAgreement,
+          marketingEmails: data.termsAgreement,
+          dataSharing: data.termsAgreement,
+        },
+        isActive: true,
+        statistics: {
+          participationCount: 0,
+          totalSpent: 0,
+          rafflesWon: 0,
+          lastParticipation: new Date(),
+        }
       };
         
-        router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+        //router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
       
       
       // Call signup API
-      const result = await authService.registerParticipant(formattedData as any);
+      const result = await userAPIClient.quickUserCreate(formattedData as Partial<IUser>);
+
+      console.log('result',result);
       
       if (result.success) {
-        // Auto login after signup
-        // const signInResult = await signIn('credentials', {
-        //   redirect: false,
-        //   email: data.email,
-        //   password: data.senha,
-        // });
 
         localStorage.setItem('checkoutData', JSON.stringify({
           campaignSelection,
-          userData:{
+          campanha,
+          foundUser:{
+            userCode: result.data.userCode,
             name: data.nome,
             socialName: data.nomeSocial,
-            email: data.email,
-            cpf: data.cpf.replace(/[^\d]/g, ''),
-            phone: data.telefone.replace(/[^\d]/g, ''),
+            email: result.data.email,
+            cpf: result.data.cpf,
+            phone: result.data.phone,
+            address: {
+              zipCode: data.cep?.replace(/\D/g, '') || '',
+              state: data.uf || '',
+              city: data.cidade || '',
+              neighborhood: data.bairro || '',
+              street: data.logradouro || '',
+              number: data.numero || '',
+              complement: data.complemento || '',
+            },
+            role: 'participant',
+            isActive: true,
           },
-          campanha,
         }));
-        
-        // if (signInResult?.error) {
-        //   toast.error('Erro ao fazer login automático. Por favor faça login manualmente.');
-        // } else {
-        //   toast.success('Cadastro realizado com sucesso!');
-        //   reset();
-        //   onClose();
-        //   onSuccess();
-        // }
+
+        router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Signup error:', error);
       toast.error('Erro ao criar conta. Por favor tente novamente.');
-    } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -416,6 +428,9 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 label="Preecher endereco para receber o prêmio"
                 checked={hasAddress}
                 onChange={(e) => {
+                  if(!e.target.checked){
+                    clearAddressFields();
+                  }
                   form.setValue('hasAddress', e.target.checked, { 
                     shouldValidate: true,
                     shouldDirty: true,
@@ -494,24 +509,36 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                     
                     {foundUser.address && (
                       <>
-                        <UserDataRow>
-                          <UserDataLabel>
-                            <FaMapMarkerAlt /> Endereço:
-                          </UserDataLabel>
-                          <UserDataValue>
-                            {foundUser.address.street}, {foundUser.address.number}
-                            {foundUser.address.complement && `, ${foundUser.address.complement}`}
-                          </UserDataValue>
-                        </UserDataRow>
+                        {
+                          (foundUser.address.street && foundUser.address.number && foundUser.address.city && foundUser.address.state && foundUser.address.zipCode) ? (
+                            <UserDataRow>
+                            <UserDataLabel>
+                              <FaMapMarkerAlt /> Endereço:
+                            </UserDataLabel>
+                            <UserDataValue>
+                              {foundUser.address.street}, {foundUser.address.number}
+                              {foundUser.address.complement && `, ${foundUser.address.complement}`}
+                            </UserDataValue>
+                          </UserDataRow>
+                          ) : (
+                            <></>
+                          )
+                        }
                         
-                        <UserDataRow>
-                          <UserDataLabel>
-                            <FaCity /> Cidade:
-                          </UserDataLabel>
-                          <UserDataValue>
-                            {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode}
-                          </UserDataValue>
-                        </UserDataRow>
+                        {
+                          (foundUser.address.city && foundUser.address.state && foundUser.address.zipCode) ? (
+                            <UserDataRow>
+                            <UserDataLabel>
+                              <FaCity /> Cidade:
+                            </UserDataLabel>
+                            <UserDataValue>
+                              {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode}
+                            </UserDataValue>
+                          </UserDataRow>
+                          ) : (
+                            <></>
+                          )
+                        }
                       </>
                     )}
                   </UserDataSection>
@@ -525,7 +552,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                       Voltar
                     </SecondaryButton>
                     <div className="checkout-button-wrapper">
-                      <CheckoutButton onClick={submitUserFound} disabled={isLoading} isLoading={isLoading}>
+                      <CheckoutButton type="button" onClick={submitUserFound} disabled={isLoading} isLoading={isLoading}>
                         Prosseguir para Pagamento
                       </CheckoutButton>
                     </div>
@@ -751,7 +778,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   Voltar
                 </SecondaryButton>
                 <div className="checkout-button-wrapper">
-                  <CheckoutButton onClick={handleSubmit(onSubmit)} disabled={isLoading} isLoading={isLoading}>
+                  <CheckoutButton type="submit" disabled={isSubmitting} isLoading={isSubmitting}>
                     Prosseguir para Pagamento
                   </CheckoutButton>
                 </div>

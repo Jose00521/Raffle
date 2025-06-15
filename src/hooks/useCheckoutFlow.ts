@@ -14,7 +14,6 @@ export const useCheckoutFlow = (campanhaId: string) => {
   const initializeCheckoutFlow = useCallback(async (checkoutData: CheckoutData) => {
     console.log('[CHECKOUT_FLOW] Inicializando fluxo de checkout');
     console.log('[CHECKOUT_FLOW] Dados do checkout recebidos:', {
-      campanhaId: checkoutData.campanha._id,
       campaignCode: checkoutData.campanha.campaignCode,
       userCode: checkoutData.foundUser.userCode,
       amount: checkoutData.campaignSelection.totalPrice

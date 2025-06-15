@@ -1,10 +1,9 @@
 import { IUser } from "@/models/interfaces/IUserInterfaces";
-import { ApiResponse } from "@/server/utils/errorHandler/api";
 
 const userAPIClient = {
     createUser: async (user: any) => {
         try {
-            const response = await fetch('/api/user', {
+            const response = await fetch('/api/user/participant', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -68,7 +67,29 @@ const userAPIClient = {
                 error: error instanceof Error ? error.message : 'Erro desconhecido'
             };
         }
-    }
+    },
 
+    quickUserCreate: async (user: Partial<IUser>) => {
+        try {
+            const response = await fetch('/api/user/participant/quick-create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            });
+            if (!response.ok) {
+                console.error(`Erro do servidor: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        } catch (error) {
+            return {
+                success: false, 
+                statusCode: 500,
+                message: 'Erro ao comunicar com o servidor',
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
+            };
+        }
+    }
 }
 export default userAPIClient;

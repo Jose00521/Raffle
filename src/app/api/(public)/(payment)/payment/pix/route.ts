@@ -5,11 +5,19 @@ import { container } from "@/server/container/container";
 import { PaymentController } from "@/server/controllers/PaymentController";
 import { PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
 import { v4 as uuidv4 } from 'uuid';
+import { unMaskUser } from "@/services/unMaskService";
 
 export async function POST(request: NextRequest) {
     try {
 
-      const body = await request.json();
+      const bodyMasked = await request.json();
+
+      console.log('body masked', bodyMasked);
+
+      const body = await unMaskUser(bodyMasked);
+
+      console.log('body unmasked', body);
+
 
       console.log('body payment pix', body);
 

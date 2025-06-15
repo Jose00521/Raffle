@@ -182,7 +182,7 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
     
     try {
       // Remover máscaras antes de enviar
-      const cleanData: ICreator = {
+      const cleanData: Partial<ICreator> = {
         ...data,
         role: 'creator',
         personType: data.tipoPessoa,
@@ -259,20 +259,19 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if(response.success){
         toast.success('Cadastro realizado com sucesso!');
         // Redirecionar após o cadastro
-        setTimeout(() => {
-          router.push('/cadastro-sucesso');
-        }, 1000);
+        router.push('/cadastro-sucesso');
+        setIsSubmitting(false)
       }else{
         toast.error(response.message);
+        setIsSubmitting(false);
       }
     
       
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
       toast.error('Erro ao realizar cadastro. Tente novamente.');
-    } finally {
       setIsSubmitting(false);
-    }
+    } 
   };
 
   return (

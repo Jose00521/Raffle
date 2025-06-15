@@ -229,6 +229,7 @@ export default function PrivateLayout({
   // Mostrar conteúdo protegido
   return (
     <>
+    <ToastContainer limit={5} />
     <StyledComponentsRegistry>
       <ThemeProvider theme={theme}>
         <SocketProvider>
@@ -236,7 +237,6 @@ export default function PrivateLayout({
         </SocketProvider>
       </ThemeProvider>
     </StyledComponentsRegistry>
-    <ToastContainer />
     </>
   );
 } 

@@ -6,6 +6,7 @@ import { Creator, User } from "@/models/User";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
 import { generateEntityCode } from "@/models/utils/idGenerator";
+import { SecureDataUtils } from "@/utils/encryption";
 
 // type CreatorModel = mongoose.Model<ICreator>;
 
@@ -35,7 +36,10 @@ export class CreatorRepository implements ICreatorRepository {
                 return createErrorResponse('Criador já existe', 400);
             }
 
-            const creator = await Creator.create(creatorData);
+            const creator = new Creator({
+                ...creatorData,
+            });
+
 
             creator.userCode = generateEntityCode(creator._id, 'US');
 
@@ -58,20 +62,29 @@ export class CreatorRepository implements ICreatorRepository {
         try {
             await this.db.connect();
             let conditions = [];
+            
+            // ✅ CORRETO: Buscar pelos campos HASH
             if(user.email){
-                conditions.push({ email: user.email });
+                const emailHash = SecureDataUtils.hashForSearch(user.email);
+                conditions.push({ email_hash: emailHash });
             }
             if(user.cpf){
-                conditions.push({ cpf: user.cpf });
+                const cpfHash = SecureDataUtils.hashForSearch(user.cpf);
+                conditions.push({ cpf_hash: cpfHash });
             }
             if(user.phone){
-                conditions.push({ phone: user.phone });
+                const phoneHash = SecureDataUtils.hashForSearch(user.phone);
+                conditions.push({ phone_hash: phoneHash });
             }
+            if(user.cnpj){
+                const cnpjHash = SecureDataUtils.hashForSearch(user.cnpj);
+                conditions.push({ cnpj_hash: cnpjHash });
+            }
+            
+            if(conditions.length === 0) return false;
+            
             const userExists = await Creator.findOne({ $or: conditions });
-            if(userExists){
-                return true;
-            }
-            return false;
+            return !!userExists;
         } catch (error) {
             throw new ApiError({
                 success: false,

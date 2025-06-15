@@ -4,7 +4,8 @@ import React from 'react';
 import styled, { keyframes, css } from 'styled-components';
 
 interface CheckoutButtonProps {
-  onClick: () => void;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   isLoading?: boolean;
   children?: React.ReactNode;
@@ -642,7 +643,8 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   onClick, 
   disabled = false, 
   isLoading = false,
-  children = "Prosseguir para Pagamento"
+  children = "Prosseguir para Pagamento",
+  type = 'button'
 }) => {
   // Texto responsivo para telas pequenas
   const getResponsiveText = () => {
@@ -667,7 +669,8 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
 
   return (
     <CheckoutContainer 
-      onClick={onClick} 
+      onClick={type === 'submit' ? undefined : onClick}
+      type={type}
       disabled={disabled || isLoading}
       $disabled={disabled || isLoading}
       $isLoading={isLoading}

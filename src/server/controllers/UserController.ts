@@ -9,6 +9,7 @@ import { ApiResponse } from "../utils/errorHandler/api";
 export interface IUserController {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
     quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
 @injectable()
@@ -39,6 +40,19 @@ export class UserController implements IUserController {
     async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
         try {
             return await this.userService.quickCheckUser(phone);
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro interno do servidor',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        try {
+            return await this.userService.quickUserCreate(user);
         } catch (error) {
             throw new ApiError({
                 success: false,

@@ -121,4 +121,148 @@ export const getUnmaskedValue = (value: string, maskType?: string): string => {
     default:
       return value;
   }
+};
+
+/**
+ * Utilitários para mascarar dados sensíveis
+ */
+
+/**
+ * Mascara CPF mostrando apenas os primeiros 3 e últimos 2 dígitos
+ * Exemplo: 12345678901 → 123.***.***-01
+ */
+export function maskCPF(cpf: string): string {
+  if (!cpf) return '';
+  
+  // Remove formatação existente
+  const cleanCpf = cpf.replace(/\D/g, '');
+  
+  if (cleanCpf.length !== 11) return cpf; // Retorna original se não for CPF válido
+  
+  return `${cleanCpf.slice(0, 3)}.***.***-${cleanCpf.slice(-2)}`;
+}
+
+/**
+ * Mascara CNPJ mostrando apenas os primeiros 2 e últimos 2 dígitos
+ * Exemplo: 12345678000195 → 12.***.***'/'**01-95
+ */
+export function maskCNPJ(cnpj: string): string {
+  if (!cnpj) return '';
+  
+  // Remove formatação existente
+  const cleanCnpj = cnpj.replace(/\D/g, '');
+  
+  if (cleanCnpj.length !== 14) return cnpj; // Retorna original se não for CNPJ válido
+  
+  return `${cleanCnpj.slice(0, 2)}.***.***/${cleanCnpj.slice(8, 10)}**-${cleanCnpj.slice(-2)}`;
+}
+
+/**
+ * Mascara telefone mostrando apenas primeiros 2 dígitos (DDD) e últimos 4
+ * Exemplo: (11) 99999-9999 → (11) 9****-9999
+ */
+export function maskPhone(phone: string): string {
+  if (!phone) return '';
+  
+  // Remove formatação existente
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  if (cleanPhone.length === 11) {
+    // Celular: (11) 9****-9999
+    return `(${cleanPhone.slice(0, 2)}) ${cleanPhone[2]}****-${cleanPhone.slice(-4)}`;
+  } else if (cleanPhone.length === 10) {
+    // Fixo: (11) ****-9999
+    return `(${cleanPhone.slice(0, 2)}) ****-${cleanPhone.slice(-4)}`;
+  }
+  
+  return phone; // Retorna original se não for formato válido
+}
+
+/**
+ * Mascara email mostrando apenas primeira letra e domínio
+ * Exemplo: joao.silva@email.com → j***@email.com
+ */
+export function maskEmail(email: string): string {
+  if (!email) return '';
+  
+  const [localPart, domain] = email.split('@');
+  
+  if (!localPart || !domain) return email;
+  
+  // Mostra primeira letra + *** + @dominio
+  const maskedLocal = localPart.length > 1 
+    ? `${localPart[0]}***` 
+    : localPart;
+  
+  return `${maskedLocal}@${domain}`;
+}
+
+/**
+ * Mascara endereço mostrando apenas parte da rua e número
+ * Exemplo: Rua das Flores, 123 → Rua das F***, 123
+ */
+export function maskAddress(street: string, number: string): string {
+  if (!street) return '';
+  
+  const words = street.split(' ');
+  if (words.length <= 2) {
+    // Se tem poucas palavras, mascara a última
+    const lastWord = words[words.length - 1];
+    words[words.length - 1] = lastWord.length > 2 
+      ? `${lastWord.slice(0, 1)}***` 
+      : lastWord;
+  } else {
+    // Se tem muitas palavras, mascara as últimas
+    for (let i = Math.floor(words.length / 2); i < words.length; i++) {
+      const word = words[i];
+      words[i] = word.length > 2 ? `${word.slice(0, 1)}***` : word;
+    }
+  }
+  
+  return `${words.join(' ')}${number ? `, ${number}` : ''}`;
+}
+
+/**
+ * Mascara CEP mostrando apenas primeiros e últimos dígitos
+ * Exemplo: 12345-678 → 12***-678
+ */
+export function maskCEP(cep: string): string {
+  if (!cep) return '';
+  
+  const cleanCep = cep.replace(/\D/g, '');
+  
+  if (cleanCep.length !== 8) return cep;
+  
+  return `${cleanCep.slice(0, 2)}***-${cleanCep.slice(-3)}`;
+}
+
+/**
+ * Mascara nome mostrando apenas primeira e última palavra
+ * Exemplo: João Pedro Silva Santos → João *** Santos
+ */
+export function maskName(name: string): string {
+  if (!name) return '';
+  
+  const words = name.trim().split(' ');
+  
+  if (words.length <= 2) return name; // Se tem só 2 palavras, não mascara
+  
+  const firstName = words[0];
+  const lastName = words[words.length - 1];
+  const middleCount = words.length - 2;
+  
+  return `${firstName} ${'***'.repeat(Math.max(1, Math.floor(middleCount / 2)))} ${lastName}`;
+}
+
+/**
+ * Objeto com todas as funções de mascaramento para fácil importação
+ */
+export const DataMask = {
+  cpf: maskCPF,
+  cnpj: maskCNPJ,
+  phone: maskPhone,
+  email: maskEmail,
+  address: maskAddress,
+  cep: maskCEP,
+  name: maskName,
 }; 

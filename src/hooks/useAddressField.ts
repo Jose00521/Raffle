@@ -78,9 +78,21 @@ export const useAddressField = (setValues: UseFormSetValue<any>, setError: UseFo
     
   };
 
+
+
+  const clearAddressFields = () => {
+    setValues('cep', '');
+    setValues('logradouro', '');
+    setValues('numero', '');
+    setValues('bairro', '');
+    setValues('cidade', '');
+    setValues('uf', '');
+  }
+
   return {
     isLoadingCep,
     cepError,
+    clearAddressFields,
     handleCepChange
   };
 }; 

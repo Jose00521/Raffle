@@ -51,6 +51,7 @@ export class PaymentCreationService {
 
   // 🏗️ Construir payload do pagamento
   static buildPaymentPayload(parsedData: CheckoutData, idempotencyKey: string) {
+    console.log('parsedData buildPaymentPayload',parsedData);
     return {
       userCode: parsedData.foundUser.userCode || '',
       name: parsedData.foundUser.name || '',

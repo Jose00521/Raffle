@@ -25,10 +25,27 @@ export interface IAddress {
     _id?: string;
     userCode?: string; // Código único no formato Snowflake ID
     profilePicture?: string;
-    email: string;
-    password: string;
     name: string;
+    socialName?: string;
+    email: string;
+    email_encrypted: {  
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+    };
+    email_hash: string;
+    email_display: string;
+    password: string;
     phone: string;
+    phone_encrypted: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+    };
+    phone_hash: string;
+    phone_display: string;
     address: IAddress;
     isActive: boolean;
     lastLogin?: Date;
@@ -39,6 +56,14 @@ export interface IAddress {
   export interface IRegularUser extends IBaseUser {
     role: 'user' | 'participant'; 
     cpf: string;
+    cpf_encrypted: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+    };
+    cpf_hash: string;
+    cpf_display: string;
     birthDate: Date;
     socialName?: string;
     statistics: {
@@ -81,7 +106,23 @@ export interface IAddress {
     role: 'creator';
     personType: 'individual' | 'company';
     cpf?: string;
+    cpf_encrypted: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+    };
+    cpf_hash: string;
+    cpf_display: string;
     cnpj?: string;
+    cnpj_encrypted: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+    };
+    cnpj_hash: string;
+    cnpj_display: string;
     companyName?: string;
     birthDate?: Date;
     legalName?: string;

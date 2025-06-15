@@ -1,27 +1,21 @@
+import { NextRequest, NextResponse } from "next/server";
+import { container } from "@/server/container/container";
+import { UserController } from "@/server/controllers/UserController";
+import { createErrorResponse, createSuccessResponse } from "@/server/utils/errorHandler/api";
 
-import { container } from '@/server/container/container';
-import { UserController } from '@/server/controllers/UserController';
-import { createErrorResponse } from '@/server/utils/errorHandler/api';
-/**
- * Endpoint POST: Criar um usuário participante
- */
-
-
-export async function POST( request: Request,response: Response) {
+export async function POST(request: NextRequest,response: NextResponse) {
     try {
         // Envolva todo o código em try/catch
         const body = await request.json();
         
         // Seu código existente...
         const userController = container.resolve(UserController);
-        const result = await userController.createUser(body);
+        const result = await userController.quickUserCreate(body);
         
         // Garantir resposta válida
-        return new Response(
-          JSON.stringify(result || { success: false, message: "Resposta vazia" }),
+        return NextResponse.json(result,
           { 
             status: 200, 
-            headers: { 'Content-Type': 'application/json' } 
           }
         );
       } catch (error) {
@@ -42,4 +36,6 @@ export async function POST( request: Request,response: Response) {
           }
         );
       }
+
+    
 }

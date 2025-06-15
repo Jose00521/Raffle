@@ -160,58 +160,20 @@ export const signupSchema = z.object({
     hasAddress: z.boolean().optional(),
     cep: z
       .string()
-      .min(1, 'CEP é obrigatório')
+      .optional()
       .transform(val => {
         console.log('Transformando CEP:', val);
         return val ? val.replace(/\D/g, '') : '';
-      })
-      .refine(val => {
-        console.log('Verificando CEP preenchido:', val);
-        return val.length > 0;
-      }, {
-        message: 'CEP é obrigatório'
-      })
-      .refine(val => {
-        console.log('Verificando comprimento CEP:', val);
-        return val.length === 0 || val.length === 8;
-      }, {
-        message: 'CEP deve ter 8 dígitos'
-      })
-      .refine(val => {
-        console.log('Verificando formato CEP:', val);
-        // Se não estiver completo, não valida
-        if (val.length !== 8) return true;
-        
-        // Validações específicas para CEPs válidos no Brasil poderiam ser adicionadas aqui
-        // Por enquanto, apenas verificamos o formato básico (8 dígitos)
-        return /^\d{8}$/.test(val);
-      }, {
-        message: 'CEP inválido'
       }),
-    logradouro: z.string().min(3, 'Logradouro é obrigatório'),
-    numero: z.string().min(1, 'Número é obrigatório'),
-    bairro: z.string().min(2, 'Bairro é obrigatório'),
+    logradouro: z.string().optional(),
+    numero: z.string().optional(),
+    bairro: z.string().optional(),
     complemento: z.string().optional(), 
     termsAgreement: z.boolean().refine(val => val === true, {
       message: 'Você precisa aceitar os termos de uso'
     }),
-    uf: z
-      .string()
-      .min(2, 'UF é obrigatória')
-      .max(2, 'UF deve ter apenas 2 caracteres')
-      .refine(
-        (uf) => {
-          const estados = [
-            'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
-            'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
-            'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-          ];
-          return estados.includes(uf.toUpperCase());
-        },
-        { message: 'UF inválida' }
-      ),
-    cidade: z.string().min(2, 'Cidade é obrigatória'),
-    pontoReferencia: z.string().optional(),
+    uf: z.string().optional(),
+    cidade: z.string().optional(),
   }).refine((data) => {
     // Remove caracteres especiais antes de comparar
     console.log('Comparing phone numbers:', data.telefone, data.confirmarTelefone);
@@ -231,6 +193,85 @@ export const signupSchema = z.object({
   }, {
     message: "Os telefones não conferem",
     path: ["confirmarTelefone"],
+  })
+  // Validação condicional para campos de endereço
+  .refine((data) => {
+    // Se hasAddress for true, então os campos de endereço são obrigatórios
+    if (data.hasAddress) {
+      return data.cep && data.cep.length > 0;
+    }
+    return true; // Se hasAddress for false, não exige CEP
+  }, {
+    message: "CEP é obrigatório",
+    path: ["cep"],
+  })
+  .refine((data) => {
+    if (data.hasAddress && data.cep) {
+      return data.cep.length === 8;
+    }
+    return true;
+  }, {
+    message: "CEP deve ter 8 dígitos",
+    path: ["cep"],
+  })
+  .refine((data) => {
+    if (data.hasAddress) {
+      return data.logradouro && data.logradouro.length >= 3;
+    }
+    return true;
+  }, {
+    message: "Endereço é obrigatório",
+    path: ["logradouro"],
+  })
+  .refine((data) => {
+    if (data.hasAddress) {
+      return data.numero && data.numero.length >= 1;
+    }
+    return true;
+  }, {
+    message: "Número é obrigatório",
+    path: ["numero"],
+  })
+  .refine((data) => {
+    if (data.hasAddress) {
+      return data.bairro && data.bairro.length >= 2;
+    }
+    return true;
+  }, {
+    message: "Bairro é obrigatório",
+    path: ["bairro"],
+  })
+  .refine((data) => {
+    if (data.hasAddress) {
+      return data.uf && data.uf.length === 2;
+    }
+    return true;
+  }, {
+    message: "UF é obrigatória",
+    path: ["uf"],
+  })
+  .refine((data) => {
+    if (data.hasAddress && data.uf) {
+      const estados = [
+        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
+        'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
+        'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+      ];
+      return estados.includes(data.uf.toUpperCase());
+    }
+    return true;
+  }, {
+    message: "UF inválida",
+    path: ["uf"],
+  })
+  .refine((data) => {
+    if (data.hasAddress) {
+      return data.cidade && data.cidade.length >= 2;
+    }
+    return true;
+  }, {
+    message: "Cidade é obrigatória",
+    path: ["cidade"],
   });
 
 export type SignupFormData = z.infer<typeof signupSchema>;
