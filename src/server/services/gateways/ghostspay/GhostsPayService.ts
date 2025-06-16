@@ -1,7 +1,7 @@
-import { IPaymentGhostRequest, IPaymentGhostResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import { IPaymentGhostErrorResponse, IPaymentGhostRequest, IPaymentGhostResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
 
 export function GhostsPayService() {
-  const createPixPayment = async (data: IPaymentPattern): Promise<{response: Response, data: IPaymentGhostResponse}> => {
+  const createPixPayment = async (data: IPaymentPattern): Promise<{response: Response, data: IPaymentGhostResponse | IPaymentGhostErrorResponse}> => {
     const dataToSend = getPixGhostFormat(data);
     const response = await fetch(`${process.env.GH_URL}/api/v1/transaction.purchase`, {
       method: 'POST',

@@ -15,7 +15,6 @@ import QuickSignupModal from '@/components/campaign/QuickSignupModal';
 import { formatCurrency } from '@/utils/formatNumber';
 
 
-
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
   campanhaDetalhes: ICampaign
@@ -343,34 +342,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     const premiadoPrizes = fixedPrizes.filter(p => p.category === 'premiado').length;
     setVisiblePremiado(prev => Math.min(prev + 10, premiadoPrizes));
   };
-  
-  // Create styled component for a more subtle "ver mais" button
-  const VerMaisButton = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    padding: 0.5rem 1rem;
-    margin: 0.75rem auto;
-    background: transparent;
-    color: ${({ theme }) => theme.colors.primary};
-    border: 1px dashed ${({ theme }) => `${theme.colors.primary}30`};
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      background: ${({ theme }) => `${theme.colors.primary}08`};
-      border: 1px dashed ${({ theme }) => `${theme.colors.primary}60`};
-    }
-    
-    i {
-      margin-left: 0.5rem;
-      font-size: 0.8rem;
-    }
-  `;
+
 
   // Componente para renderizar uma categoria de prêmios
   // const PremioCategory = ({ ... entire component implementation ... }) => { ... }
@@ -825,8 +797,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
         <ImageModal 
           isOpen={showImageModal}
           onClose={() => setShowImageModal(false)}
-          images={campanhaDetalhes?.images as string[] || []}
-          currentIndex={1}
+          images={carouselImages as string[] || []}
+          currentIndex={currentImageIndex}
         />
         
         {/* Abas de conteúdo */}
@@ -1176,6 +1148,34 @@ const BotaoCompartilhar = styled.button`
     margin-right: 0.5rem;
   }
 `;
+
+  // Create styled component for a more subtle "ver mais" button
+  const VerMaisButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    padding: 0.5rem 1rem;
+    margin: 0.75rem auto;
+    background: transparent;
+    color: ${({ theme }) => theme.colors.primary};
+    border: 1px dashed ${({ theme }) => `${theme.colors.primary}30`};
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: ${({ theme }) => `${theme.colors.primary}08`};
+      border: 1px dashed ${({ theme }) => `${theme.colors.primary}60`};
+    }
+    
+    i {
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
+    }
+  `;
 
 const BotaoFavorito = styled.button`
   width: 40px;

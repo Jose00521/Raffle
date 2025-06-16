@@ -67,7 +67,6 @@ export default function CampanhaPage() {
             // Status ACTIVE
             setContent(
               <Layout hideHeader={true}>
-                <ToastContainer />
                 <CampanhaDetalhes campanhaDetalhes={campanhaData} />
               </Layout>
             );

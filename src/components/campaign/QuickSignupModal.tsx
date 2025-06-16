@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -21,7 +21,7 @@ import { PurchaseSummary } from '@/components/order/PurchaseSummary';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { CheckoutButton } from '@/components/ui';
 import InputCheckbox from '../common/InputCheckbox';
-import { LoadingSpinner, TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
+import { TermsContainer, TermsLink, TermsText } from '@/styles/registration.styles';
 import CustomDropdown from '../common/CustomDropdown';
 import { brazilianStates } from '@/utils/constants';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
@@ -148,7 +148,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      console.log('onSubmit',data);
       setIsSubmitting(true);
       
       // Se não tem endereço, criar dados para checkout direto (sem cadastro completo)
@@ -167,7 +166,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
           number: data.numero || '',
           complement: data.complemento || '',
         },
-        role: 'participant',
+        role: 'user',
         consents: {
           termsAndConditions: data.termsAgreement,
           marketingEmails: data.termsAgreement,
@@ -188,7 +187,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       // Call signup API
       const result = await userAPIClient.quickUserCreate(formattedData as Partial<IUser>);
 
-      console.log('result',result);
       
       if (result.success) {
 
@@ -196,28 +194,13 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
           campaignSelection,
           campanha,
           foundUser:{
-            userCode: result.data.userCode,
-            name: data.nome,
-            socialName: data.nomeSocial,
-            email: result.data.email,
-            cpf: result.data.cpf,
-            phone: result.data.phone,
-            address: {
-              zipCode: data.cep?.replace(/\D/g, '') || '',
-              state: data.uf || '',
-              city: data.cidade || '',
-              neighborhood: data.bairro || '',
-              street: data.logradouro || '',
-              number: data.numero || '',
-              complement: data.complemento || '',
-            },
-            role: 'participant',
-            isActive: true,
+            ...result.data,
           },
         }));
 
+        
         router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
-        setIsSubmitting(false);
+        // Não desligar o loading aqui pois a página vai mudar
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -291,23 +274,32 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
   const submitUserFound = async () => {
     setIsLoading(true);
-    const checkoutData = {
-      campaignSelection,
-      foundUser,
-      campanha,
-    };
     
-    
-    localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-    
-    // Verificar se foi salvo corretamente
-    const savedData = localStorage.getItem('checkoutData');
-    console.log('[QUICK_SIGNUP] Dados salvos verificação:', savedData?.substring(0, 200) + '...');
-    
-    console.log('[QUICK_SIGNUP] Navegando para:', `/campanhas/${campaignSelection.campaignCode}/checkout`);
-    router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
-    setIsLoading(false);
-
+    try {
+      const checkoutData = {
+        campaignSelection,
+        foundUser,
+        campanha,
+      };
+      
+      localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+      
+      // Verificar se foi salvo corretamente
+      const savedData = localStorage.getItem('checkoutData');
+      console.log('[QUICK_SIGNUP] Dados salvos verificação:', savedData?.substring(0, 200) + '...');
+      
+      // Adicionar um pequeno delay para mostrar a animação de loading
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      console.log('[QUICK_SIGNUP] Navegando para:', `/campanhas/${campaignSelection.campaignCode}/checkout`);
+      router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
+      
+      // Não desligar o loading aqui pois a página vai mudar
+      // setIsLoading(false) será chamado quando a página mudar
+    } catch (error) {
+      console.error('[QUICK_SIGNUP] Erro ao processar:', error);
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -343,10 +335,10 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   Cancelar
                 </SecondaryButton>
                 <PrimaryButton type="button" onClick={handleVerify} disabled={isLoading || isLoadingVerify}>
-                  {isLoadingVerify ? (	
-                    <>
-                      <i className="fas fa-spinner fa-spin"></i> Verificando...	
-                    </>
+                  {isLoadingVerify ? (
+                    <LoadingContainer>
+                      <LoadingSpinner />Verificando...
+                    </LoadingContainer>
                   ) : (
                     'Continuar'
                   )}
@@ -1137,6 +1129,54 @@ const SecurityText = styled.div`
         margin-right: 0;
       }
     }
+  }
+`;
+
+
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const spin = keyframes`
+  0% { 
+    transform: rotate(0deg);
+  }
+  100% { 
+    transform: rotate(360deg);
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  animation: ${fadeIn} 0.3s ease-out;
+  
+  @media (max-width: 480px) {
+    margin-right: 10px;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(46, 204, 113, 0.2);
+  border-top: 2px solid #2ecc71;
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+  margin-right: 8px;
+  
+  @media (max-width: 480px) {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
   }
 `;
 

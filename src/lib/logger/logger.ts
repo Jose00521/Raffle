@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 
 // Increase default max listeners to prevent warnings
 // This is a global setting that affects all EventEmitter instances
-EventEmitter.defaultMaxListeners = 20;
+EventEmitter.defaultMaxListeners = 50;
 
 // Create a singleton logger instance
 let loggerInstance: pino.Logger | null = null;

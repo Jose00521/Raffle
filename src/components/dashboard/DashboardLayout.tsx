@@ -1122,7 +1122,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <FaBars />
               </MobileMenuToggle>
             )}
-            <PageTitle>{getPageTitleFromPath(pathname)}</PageTitle>
+            <PageTitle>{getPageTitleFromPath(pathname || '')}</PageTitle>
           </div>
           
           <UserSection>
@@ -1203,13 +1203,25 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+
+  const getUserRole = (role: string) => {
+    const roleMap = {
+      creator: 'Criador',
+      participant: 'Participante',
+      user: 'Participante',
+      admin: 'Administrador'
+    }
+    return roleMap[role as keyof typeof roleMap];
+    
+  }
+
   return (
     <UserMenuDropdown ref={dropdownRef} $isOpen={isOpen}>
       <UserInfo>
         <UserAvatar>JD</UserAvatar>
         <UserDetails>
           <UserName>{session?.user?.name}</UserName>
-          <UserRole>{session?.user?.role === 'creator' ? 'Criador' : session?.user?.role === 'participant' ? 'Participante' : 'Administrador'}</UserRole>
+          <UserRole>{getUserRole(session?.user?.role || '')}</UserRole>
           <UserEmail>{session?.user?.email}</UserEmail>
         </UserDetails>
       </UserInfo>

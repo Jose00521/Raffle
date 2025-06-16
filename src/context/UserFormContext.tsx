@@ -8,6 +8,7 @@ import { registerUserSchema } from '@/zod/user.schema';
 import { IRegularUser, IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPIClient from '@/API/userAPIClient';
 import { Bounce, toast, ToastContainer } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 // Função auxiliar para validar CPF
 
 // Schema de validação do formulário
@@ -35,6 +36,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [step, setStep] = useState(1);
   const [isSliding, setIsSliding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const form = useForm<RegisterFormData>({resolver: zodResolver(registerUserSchema), 
     mode: 'all',
@@ -143,7 +145,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       // Remover máscaras antes de enviar
-      const dataToSubmit: IUser = {
+      const dataToSubmit: Partial<IRegularUser> = {
         role: 'user',
         userCode: 'sda',
         name: data.nomeCompleto,
@@ -174,17 +176,19 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rafflesWon: 0
         }
       };
-
-      console.log(JSON.stringify(dataToSubmit, null, 2));
       
       
       const safeData = JSON.parse(JSON.stringify(dataToSubmit));
       const response = await userAPIClient.createUser(safeData);
 
-      console.log('response',response);
       
       if(response.success){
         toast.success(response.message);
+
+
+        router.push('/cadastro-sucesso');
+
+        setIsSubmitting(false);
       }else{
         toast.error(response.message, {
           position: "bottom-center",

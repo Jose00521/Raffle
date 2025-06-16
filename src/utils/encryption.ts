@@ -125,6 +125,7 @@ export class EncryptionService {
    */
   static decrypt(encryptedData: EncryptedData): string {
     try {
+      console.log('encryptedData', encryptedData);
       const version = encryptedData.keyVersion || 'v1';
       const strategy = encryptionStrategies[version as keyof typeof encryptionStrategies];
       

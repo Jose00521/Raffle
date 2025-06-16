@@ -735,7 +735,7 @@ export default function PrizeDetailPage() {
   if (isLoading) {
     return <PrizeDetailSkeleton withDashboard />;
   }
-
+  
   return (
     <CreatorDashboard>
       <Container>

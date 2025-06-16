@@ -183,11 +183,11 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       // Remover máscaras antes de enviar
       const cleanData: Partial<ICreator> = {
-        ...data,
         role: 'creator',
         personType: data.tipoPessoa,
         name: data.tipoPessoa === 'individual' ? data.nomeCompleto : data.nomeFantasia,
         phone: data.telefone.replace(/\D/g, ''),
+        email: data.email,
         password: data.senha,
         cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
         birthDate: new Date(data.dataNascimento),
@@ -249,13 +249,12 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
         });
       }
       
-      console.log('Form data:', cleanData);
+      
       
       // Envio para a API
 
       const response = await creatorAPIClient.createCreator(cleanData);
-
-      console.log('response',response);
+      
       if(response.success){
         toast.success('Cadastro realizado com sucesso!');
         // Redirecionar após o cadastro

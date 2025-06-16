@@ -23,13 +23,15 @@ export const unMaskUser = async (payment: IPaymentPattern) => {
             });
         }   
 
-        const decryptedCpf = SecureDataUtils.decryptCPF(user.cpf_encrypted);
-        const decryptedEmail = EncryptionService.decrypt(user.email_encrypted);
-        const decryptedPhone = EncryptionService.decrypt(user.phone_encrypted);
-        const decryptedStreet = SecureDataUtils.decryptStreet(user.address.street_encrypted);
-        const decryptedNumber = SecureDataUtils.decryptNumber(user.address.number_encrypted);
-        const decryptedComplement = SecureDataUtils.decryptComplement(user.address.complement_encrypted);
-        const decryptedZipCode = SecureDataUtils.decryptZipCode(user.address.zipCode_encrypted);
+        const decryptedCpf = user.cpf_encrypted ? SecureDataUtils.decryptCPF(user.cpf_encrypted) : '';
+        const decryptedEmail = user.email_encrypted ? EncryptionService.decrypt(user.email_encrypted) : '';
+        const decryptedPhone = user.phone_encrypted ? EncryptionService.decrypt(user.phone_encrypted) : '';
+        
+        // Verificar se o usuário tem endereço completo antes de descriptografar
+        const decryptedStreet = user.address?.street_encrypted ? SecureDataUtils.decryptStreet(user.address.street_encrypted) : '';
+        const decryptedNumber = user.address?.number_encrypted ? SecureDataUtils.decryptNumber(user.address.number_encrypted) : '';
+        const decryptedComplement = user.address?.complement_encrypted ? SecureDataUtils.decryptComplement(user.address.complement_encrypted) : '';
+        const decryptedZipCode = user.address?.zipCode_encrypted ? SecureDataUtils.decryptZipCode(user.address.zipCode_encrypted) : '';
 
         console.log('🔍 DECRYPTED CPF:', decryptedCpf);
         console.log('🔍 DECRYPTED EMAIL:', decryptedEmail);
@@ -41,7 +43,9 @@ export const unMaskUser = async (payment: IPaymentPattern) => {
             email: decryptedEmail,
             phone: decryptedPhone,
             address: {
-                ...user.address,
+                city: user.address?.city,
+                state: user.address?.state,
+                neighborhood: user.address?.neighborhood,
                 street: decryptedStreet,
                 number: decryptedNumber,
                 complement: decryptedComplement,

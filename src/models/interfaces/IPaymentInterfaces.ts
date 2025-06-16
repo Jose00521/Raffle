@@ -123,7 +123,7 @@ export enum PaymentStatusEnum {
     city?: string;
     state?: string;
     traceable: boolean;
-    expiresAt: ISODateString;
+    expiresAt?: ISODateString;
     items: {
       unitPrice: number;
       title: string;
@@ -173,6 +173,18 @@ export enum PaymentStatusEnum {
       referrerUrl: string
       externalId: string
       postbackUrl: string
+    }
+
+    //Ghostspay Error Response
+    export interface IPaymentGhostErrorResponse {
+      message: string;
+      code: string;
+      issues: [{
+        validation: string;
+        message: string;
+        code: string;
+        path: string[];
+      }]
     }
     
   

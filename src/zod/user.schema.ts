@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { validateCPF } from '../utils/validators';
+import { COMMON_EMAIL_DOMAINS } from '@/utils/constants';
 
 
 // Schema de validação do formulário
@@ -96,6 +97,21 @@ export const registerUserSchema = z.object({
           });
           return false;
         }
+
+          // Verificação de domínios mais comuns e confiáveis
+          const emailLower = value.toLowerCase();
+          const domain = emailLower.split('@')[1];
+          
+          // Verifica se é um domínio comum ou se termina com extensões válidas
+          const isCommonDomain = COMMON_EMAIL_DOMAINS.includes(domain);
+          
+          if (!isCommonDomain) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Por favor, use um e-mail conhecido',
+            });
+            return false;
+          }
       }
       
       return true;
@@ -135,9 +151,9 @@ export const registerUserSchema = z.object({
     })
     .refine(val => {
       console.log('Verificando comprimento telefone:', val);
-      return val.length === 0 || val.length === 10 || val.length === 11;
+      return val.length === 0 || val.length === 11;
     }, {
-      message: 'Telefone deve ter 10 ou 11 dígitos'
+      message: 'Telefone deve ter 11 dígitos'
     })
     .refine(val => {
       console.log('Verificando DDD telefone:', val);
@@ -150,8 +166,6 @@ export const registerUserSchema = z.object({
     })
     .refine(val => {
       console.log('Verificando formato celular:', val);
-      // Se não for celular (11 dígitos), não valida primeiro dígito
-      if (val.length !== 11) return true;
       // O primeiro dígito após o DDD para celular deve ser 9
       return val[2] === '9';
     }, {
@@ -172,9 +186,9 @@ export const registerUserSchema = z.object({
     })
     .refine(val => {
       console.log('Verificando comprimento confirmarTelefone:', val);
-      return val.length === 0 || val.length === 10 || val.length === 11;
+      return val.length === 0 || val.length === 11;
     }, {
-      message: 'Telefone deve ter 10 ou 11 dígitos'
+      message: 'Telefone deve ter 11 dígitos'
     })
     .refine(val => {
       console.log('Verificando DDD confirmarTelefone:', val);
@@ -187,8 +201,6 @@ export const registerUserSchema = z.object({
     })
     .refine(val => {
       console.log('Verificando formato celular confirmarTelefone:', val);
-      // Se não for celular (11 dígitos), não valida primeiro dígito
-      if (val.length !== 11) return true;
       // O primeiro dígito após o DDD para celular deve ser 9
       return val[2] === '9';
     }, {
@@ -308,8 +320,6 @@ export const loginUserSchema = z.object({
   })
   .refine(val => {
     console.log('Verificando formato celular:', val);
-    // Se não for celular (11 dígitos), não valida primeiro dígito
-    if (val.length !== 11) return true;
     // O primeiro dígito após o DDD para celular deve ser 9
     return val[2] === '9';
   }, {

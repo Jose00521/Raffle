@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { container } from "@/server/container/container";
 import { UserController } from "@/server/controllers/UserController";
-import { createErrorResponse, createSuccessResponse } from "@/server/utils/errorHandler/api";
+import { createErrorResponse, createSuccessResponse, createValidationErrorObject } from "@/server/utils/errorHandler/api";
+import { signupSchema } from "@/zod/quicksignup.validation";
+import { validateWithSchema } from "@/utils/validation.schema";
+import { convertQuickSignupFormToSchema } from "@/zod/utils/convertToSchema";
+import { IRegularUser } from "@/models/interfaces/IUserInterfaces";
+
+const validator = validateWithSchema(signupSchema);
+
 
 export async function POST(request: NextRequest,response: NextResponse) {
     try {
         // Envolva todo o código em try/catch
-        const body = await request.json();
+        const body = await request.json() as IRegularUser;
+        
+        if(body.role !== 'user'){
+            return NextResponse.json(createValidationErrorObject(null, 'Role inválida', 422));
+        }
+
+        const validate = validator(convertQuickSignupFormToSchema(body));
+
+        if(!validate.success){
+            return NextResponse.json(createValidationErrorObject(validate.errors, 'Erro de validação', 422));
+        }
+
         
         // Seu código existente...
         const userController = container.resolve(UserController);

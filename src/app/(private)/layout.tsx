@@ -10,6 +10,7 @@ import AuthLoading from '@/components/common/AuthLoading';
 import { jwtDecode } from 'jwt-decode';
 import { SocketProvider, useSocket } from '@/context/SocketContext';
 import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Tipos para o token e sessão
 interface JwtPayload {
@@ -229,7 +230,20 @@ export default function PrivateLayout({
   // Mostrar conteúdo protegido
   return (
     <>
-    <ToastContainer limit={5} />
+    <ToastContainer 
+      position="top-right"
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="light"
+      limit={5}
+      style={{ zIndex: 99999 }}
+    />
     <StyledComponentsRegistry>
       <ThemeProvider theme={theme}>
         <SocketProvider>

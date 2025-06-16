@@ -2,17 +2,36 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { container } from '../../../../../server/container/container';
 import { CreatorController } from '@/server/controllers/CreatorController';
-import { createErrorResponse } from '@/server/utils/errorHandler/api';
+import { createErrorResponse, createValidationErrorObject } from '@/server/utils/errorHandler/api';
+import { validateWithSchema } from '@/utils/validation.schema';
+import { creatorFormSchema } from '@/zod/creator.schema';
+import { ICreator } from '@/models/interfaces/IUserInterfaces';
+import { convertCreatorFormToSchema } from '@/zod/utils/convertToSchema';
 /**
  * Endpoint GET: Obter detalhes de uma campanha específica por ID
  */
 
+const validator = validateWithSchema(creatorFormSchema);
 
 export async function POST( request: Request,response: Response) {
     try {
         // Envolva todo o código em try/catch
-        const body = await request.json();
-        
+        const body = await request.json() as ICreator;
+
+        if(body.role !== 'creator'){
+          return NextResponse.json(createValidationErrorObject(null,'Role inválida', 422));
+        }
+
+        console.log('body creator', body);
+
+        const validate = validator(convertCreatorFormToSchema(body));
+
+        console.log('validate creator', validate);
+
+        if (!validate.success) {
+            return NextResponse.json(createValidationErrorObject(validate.errors, 'Erro de validação', 422));
+        }
+
         // Seu código existente...
         const creatorController = container.resolve(CreatorController);
         const result = await creatorController.createCreator(body);

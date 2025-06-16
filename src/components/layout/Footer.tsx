@@ -257,7 +257,7 @@ const LinkSection = styled.div`
   
   .footer-link {
     color: rgba(255,255,255,0.7);
-    text-decoration: none;
+  text-decoration: none;
     font-size: 0.75rem;
     font-weight: 400;
     transition: all 0.3s ease;
@@ -280,8 +280,8 @@ const LinkSection = styled.div`
       text-align: center;
       font-size: 0.7rem;
       padding: 0.15rem 0;
-      
-      &:hover {
+  
+  &:hover {
         transform: translateY(-1px);
       }
     }
@@ -306,7 +306,7 @@ const ContactSection = styled.div`
     color: #FFD700;
     font-size: 0.9rem;
     font-weight: 700;
-    margin-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -576,7 +576,7 @@ const Footer: React.FC = () => {
           <BrandSection>
             <div className="brand-logo">RifaApp</div>
             <p className="brand-description">
-              Plataforma de rifas online com sorteios transparentes e prêmios incríveis. 
+            Plataforma de rifas online com sorteios transparentes e prêmios incríveis.
               Auditados pela Loteria Federal.
             </p>
             
@@ -629,7 +629,7 @@ const Footer: React.FC = () => {
                   <Link href="/regulamento" className="footer-link">Regulamento</Link>
                 </div>
               </LinkSection>
-              
+        
               {/* CONTATO */}
               <ContactSection>
                 <div className="section-title">Contato</div>
@@ -668,22 +668,22 @@ const Footer: React.FC = () => {
                 <Link href="/cookies" className="legal-link">Cookies</Link>
               </LegalLinks>
             </BottomLeft>
-            
+        
             <SocialSection>
               <span className="social-label">Siga-nos:</span>
               <div className="social-links">
-                <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                  <i className="fab fa-instagram"></i>
-                </SocialLink>
-                <SocialLink href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                  <i className="fab fa-facebook"></i>
-                </SocialLink>
-                <SocialLink href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                  <i className="fab fa-youtube"></i>
-                </SocialLink>
-                <SocialLink href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                  <i className="fab fa-whatsapp"></i>
-                </SocialLink>
+          <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <i className="fab fa-instagram"></i>
+          </SocialLink>
+          <SocialLink href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <i className="fab fa-facebook"></i>
+          </SocialLink>
+          <SocialLink href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <i className="fab fa-youtube"></i>
+          </SocialLink>
+          <SocialLink href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <i className="fab fa-whatsapp"></i>
+          </SocialLink>
               </div>
             </SocialSection>
           </BottomContainer>
@@ -693,10 +693,10 @@ const Footer: React.FC = () => {
       {/* TEXTO LEGAL MINIMALISTA */}
       <LegalText>
         <p>
-          Título de Capitalização da Modalidade Filantropia Premiável de Contribuição Única. 
-          É proibida a venda de título de capitalização a menores de dezesseis anos. 
-          Antes de contratar consulte previamente as Condições Gerais. 
-          Prêmios líquidos de imposto de renda. Imagens meramente ilustrativas.
+        Título de Capitalização da Modalidade Filantropia Premiável de Contribuição Única. 
+        É proibida a venda de título de capitalização a menores de dezesseis anos. 
+        Antes de contratar consulte previamente as Condições Gerais. 
+        Prêmios líquidos de imposto de renda. Imagens meramente ilustrativas.
         </p>
       </LegalText>
     </FooterContainer>

@@ -121,7 +121,7 @@ export const getUnmaskedValue = (value: string, maskType?: string): string => {
     default:
       return value;
   }
-};
+}; 
 
 /**
  * Utilitários para mascarar dados sensíveis

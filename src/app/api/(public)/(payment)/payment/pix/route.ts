@@ -3,7 +3,7 @@ import { GhostsPayService } from "@/server/services/gateways/ghostspay/GhostsPay
 import { createErrorResponse , createSuccessResponse} from '@/server/utils/errorHandler/api';
 import { container } from "@/server/container/container";
 import { PaymentController } from "@/server/controllers/PaymentController";
-import { PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
+import { IPaymentGhostErrorResponse, IPaymentGhostResponse, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
 import { v4 as uuidv4 } from 'uuid';
 import { unMaskUser } from "@/services/unMaskService";
 
@@ -21,11 +21,11 @@ export async function POST(request: NextRequest) {
 
       console.log('body payment pix', body);
 
-              // 🔑 Extrai chave de idempotência do header (padrão da indústria)
-              const idempotencyKey = request.headers.get('Idempotency-Key') || 
-              request.headers.get('idempotency-key') ||
-              body.idempotencyKey ||
-              uuidv4();
+      // 🔑 Extrai chave de idempotência do header (padrão da indústria)
+      const idempotencyKey = request.headers.get('Idempotency-Key') || 
+      request.headers.get('idempotency-key') ||
+      body.idempotencyKey ||
+      uuidv4();
 
       const paymentController = container.resolve(PaymentController);
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       if(response.ok){
         const updateResult = await paymentController.updatePixPaymentToPending({
           paymentCode: initialPayment.data?.paymentCode || '',
-          gatewayResponse: data,
+          gatewayResponse: data as IPaymentGhostResponse,
         });
 
         if(updateResult.success && updateResult.data){
@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
         });
 
         // Retorna o erro do gateway para o cliente.
-        const errorMessage = (data as any)?.message || 'Erro na comunicação com o gateway';
-        const errorResponse = NextResponse.json(createErrorResponse(errorMessage, response.status || 500));
+        const error = data as IPaymentGhostErrorResponse;
+        const errorResponse = NextResponse.json(createErrorResponse(error.issues[0].validation, response.status || 500));
         errorResponse.headers.set('Idempotency-Key', idempotencyKey);
         return errorResponse;
       }
