@@ -15,6 +15,28 @@ export interface IPrize {
   }
 
 
+  
+export interface IPrizeInitialData {
+  _id?: string;
+  prizeCode?: string; // Código único no formato Snowflake ID
+  name: string;
+  description?: string;
+  categoryId:{
+    categoryCode: string;
+    name: string;
+  }
+  createdBy?: mongoose.Types.ObjectId;
+  image: string | File;
+  images: Array<string | File>;
+  value: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+
+  
+
+
   export interface ICategory {
     _id?: string;
     name: string;

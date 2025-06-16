@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags, FaExclamationCircle, FaStar, FaImages, FaCamera, FaPlus, FaArrowUp, FaArrowDown, FaInfo } from 'react-icons/fa';
-import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { IPrize, IPrizeInitialData } from '@/models/interfaces/IPrizeInterfaces';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import mongoose from 'mongoose';
@@ -14,9 +14,11 @@ import type { PrizeForm } from '@/zod/prize.schema';
 import { useHookFormMask } from 'use-mask-input';
 import { fadeIn } from '@/styles/registration.styles';
 import CurrencyInput from '../common/CurrencyInput';
+import prizeCategoryAPIClient from '@/API/prizeCategoryAPIClient';
+import { ICategory } from '@/models/interfaces/IPrizeInterfaces';
 
 interface PrizeUpdateFormProps {
-  initialData: Partial<IPrize>; // Obrigatório para atualização
+  initialData: Partial<IPrizeInitialData>; // Obrigatório para atualização
   onSubmit: (data: Partial<{
     name: string;
     description: string;
@@ -355,15 +357,18 @@ const HiddenFileInput = styled.input`
   display: none;
 `;
 
-// Mock category data
-const MOCK_CATEGORIES = [
-  { value: "electronics", label: "Eletrônicos" },
-  { value: "home", label: "Casa e Decoração" },
-  { value: "vehicle", label: "Veículos" },
-  { value: "travel", label: "Viagens" },
-  { value: "services", label: "Serviços" },
-  { value: "others", label: "Outros" }
-];
+// Função para extrair categoryCode dos dados iniciais
+const getCategoryCodeFromInitialData = (initialData?: Partial<IPrize>): string => {
+  if (!initialData?.categoryId) return '';
+  
+  // Se categoryId é um objeto com categoryCode
+  if (typeof initialData.categoryId === 'object' && 'categoryCode' in initialData.categoryId) {
+    return (initialData.categoryId as any).categoryCode;
+  }
+  
+  // Se é uma string, retornar como está
+  return initialData.categoryId.toString();
+};
 
 // Função para formatar valores monetários
 const formatCurrency = (value: string | number | undefined): string => {
@@ -426,7 +431,7 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
   // Estado para rastrear se o formulário foi modificado
   const [isFormDirty, setIsFormDirty] = useState(false);
   
-  const [formData, setFormData] = useState<Partial<IPrize>>({
+  const [formData, setFormData] = useState<Partial<IPrizeInitialData>>({
     image: '',
     images: [],
     ...initialData
@@ -436,6 +441,9 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
   const [images, setImages] = useState<ImageItem[]>([]);
   const [errorsImage, setErrorsImage] = useState<string | null>(null);
   const [imagesModified, setImagesModified] = useState(false);
+  
+  // Estado para categorias
+  const [categories, setCategories] = useState<ICategory[]>([]);
   
   // Ref para o input de arquivo
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -447,6 +455,7 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isDirty }
   } = useForm<PrizeForm>({
     resolver: zodResolver(prizeSchema),
@@ -455,17 +464,33 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
       name: initialData?.name || '',
       description: initialData?.description || '',
       value: initialData?.value || '',
+      categoryId: initialData?.categoryId?.categoryCode || '',
     }
   });
 
   // Observar os valores do formulário para detectar alterações
   const watchedValues = watch();
 
-  // Keep track of the selected category as a string for the dropdown
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    getCategoryIdAsString(initialData?.categoryId)
-  );
+  const selectedCategory = watch('categoryId');
   
+  // Buscar categorias da API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await prizeCategoryAPIClient.getAllCategories();
+        setCategories(response.data);
+        
+        // Definir o valor inicial da categoria após carregar as categorias
+        const initialCategoryCode = initialData?.categoryId?.categoryCode || '';
+        if (initialCategoryCode) {
+          setValue('categoryId', initialCategoryCode);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar categorias:', error);
+      }
+    };
+    fetchCategories();
+  }, [initialData, setValue]);
   // Inicializar o estado de imagens a partir dos dados iniciais
   useEffect(() => {
     const initialImages: ImageItem[] = [];
@@ -502,7 +527,7 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
   // Verificar se o formulário foi modificado
   useEffect(() => {
     const hasFormChanges = isDirty || imagesModified || 
-      selectedCategory !== getCategoryIdAsString(initialData?.categoryId) ||
+      selectedCategory !== initialData?.categoryId?.categoryCode ||
       watchedValues.value !== initialData?.value;
     
     setIsFormDirty(hasFormChanges);
@@ -615,7 +640,8 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
   };
   
   const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value);
+    console.log("value",value);
+    setValue('categoryId', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
   
   const validateImagesBeforeSubmit = () => {
@@ -699,11 +725,6 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     } else {
       submissionData.image = '';
       submissionData.images = [];
-    }
-    
-    // Adicionar categoria
-    if (selectedCategory) {
-      submissionData.categoryId = selectedCategory as unknown as mongoose.Types.ObjectId;
     }
     
     // Enviar o formulário
@@ -856,14 +877,20 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
         </FormGroup>
         
         <FormGroup>
-          <FormLabel htmlFor="category">Categoria</FormLabel>
           <CustomDropdown
-            options={MOCK_CATEGORIES}
+            id="categoryId"
+            label="Categoria"
+            options={categories.map(category => ({
+              value: category.categoryCode,
+              label: category.name
+            }))}
+            {...register('categoryId')}
             value={selectedCategory}
             onChange={handleCategoryChange}
             placeholder="Selecione uma categoria"
             icon={<FaTags />}
             disabled={isLoading}
+            error={errors.categoryId?.message}
           />
         </FormGroup>
         

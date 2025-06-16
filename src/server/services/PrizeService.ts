@@ -214,6 +214,9 @@ export class PrizeService implements IPrizeService {
         try {
             const userCode = session?.user?.id;
 
+            console.log("updatedData",updatedData);
+            console.log("id",id);
+
             // Aplicar rate limiting
             const limiter = rateLimit({
                 interval: 60 * 1000,

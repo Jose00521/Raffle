@@ -581,10 +581,9 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 
         
           <StyledDropdownWrapper>
-            <label htmlFor="uf" className="dropdown-label">
-              Estado<span className="required-mark">*</span>
-            </label>
             <CustomDropdown
+              id="uf"
+              label="Estado"
               options={brazilianStates}
               value={selectedUF || ''}
               {...register('uf')}
@@ -593,12 +592,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
               icon={<FaGlobe />}
               disabled={isLoadingCep}
               direction="down"
+              error={errors.uf?.message}
             />
-            {errors.uf && (
-              <div className="error-message">
-                {errors.uf.message as string}
-              </div>
-            )}
           </StyledDropdownWrapper>
         
               </FormRow>

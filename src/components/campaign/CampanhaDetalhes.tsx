@@ -1056,31 +1056,50 @@ const BannerOverlay = styled.div`
 
 const MeusTitulosButton = styled.button`
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  background: ${({ theme }) => theme.colors.gradients.purple};
-  color: ${({ theme }) => theme.colors.white};
-  border: none;
-  border-radius: 50px;
-  padding: 0.75rem 1.5rem;
-  font-weight: 700;
-  font-size: 0.95rem;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #2d3748;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.8rem;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  backdrop-filter: blur(5px);
+  gap: 0.4rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
   transition: all 0.2s ease;
   z-index: 10;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: rgba(0, 0, 0, 0.15);
   }
   
   &:active {
     transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  i {
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 768px) {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    
+    i {
+      font-size: 0.7rem;
+    }
   }
 `;
 

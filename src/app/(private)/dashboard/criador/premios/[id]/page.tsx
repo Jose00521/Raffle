@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { FaArrowLeft, FaSpinner } from 'react-icons/fa';
-import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { IPrize, IPrizeInitialData } from '@/models/interfaces/IPrizeInterfaces';
 import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import PrizeUpdateForm from '@/components/dashboard/PrizeUpdateForm';
@@ -127,7 +127,7 @@ export default function EditPrizePage() {
   const id = params?.id as string;
 
   
-  const [prize, setPrize] = useState<IPrize | null>(null);
+  const [prize, setPrize] = useState<IPrizeInitialData | null>(null);
   const [originalPrize, setOriginalPrize] = useState<IPrize | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

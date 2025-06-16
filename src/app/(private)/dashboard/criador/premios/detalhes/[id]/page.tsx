@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { FaArrowLeft, FaTrophy, FaSpinner, FaEdit, FaTrash, FaCalendarAlt, FaBarcode, FaClock, FaInfoCircle, FaDollarSign, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaTrophy, FaEdit, FaTrash, FaCalendarAlt, FaBarcode, FaClock, FaInfoCircle, FaDollarSign, FaCheck } from 'react-icons/fa';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import ImageCarousel from '@/components/ui/ImageCarousel';
 import ImageModal from '@/components/ui/ImageModal';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import PrizeDetailSkeleton from '@/components/ui/PrizeDetailSkeleton';
 import { toast, ToastContainer } from 'react-toastify';
 import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 
@@ -731,6 +732,10 @@ export default function PrizeDetailPage() {
     });
   };
   
+  if (isLoading) {
+    return <PrizeDetailSkeleton withDashboard />;
+  }
+
   return (
     <CreatorDashboard>
       <Container>
@@ -763,14 +768,7 @@ export default function PrizeDetailPage() {
           )}
         </Header>
         
-        {isLoading ? (
-          <LoadingContainer>
-            <LoadingSpinner>
-              <FaSpinner size={36} />
-            </LoadingSpinner>
-            <div>Carregando detalhes do prêmio...</div>
-          </LoadingContainer>
-        ) : error ? (
+        {error ? (
           <ErrorMessage>
             <FaInfoCircle />
             {error}

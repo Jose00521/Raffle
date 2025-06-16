@@ -136,6 +136,14 @@ export class PrizeRepository implements IPrizeRepository {
                     return createErrorResponse('Você não tem permissão para atualizar este prêmio', 403);
                 }
             }
+
+            if(updatedData.categoryId){
+                const category = await PrizeCategory.findOne({ categoryCode: updatedData.categoryId });
+                if(!category){
+                    return createErrorResponse('Categoria não encontrada', 404);
+                }
+                updatedData.categoryId = category._id;
+            }
             
             // Update the prize
             Object.keys(updatedData).forEach(key => {

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
-import { FaChevronDown, FaCheck } from 'react-icons/fa';
+import styled, { keyframes } from 'styled-components';
+import { FaChevronDown, FaCheck, FaExclamationCircle } from 'react-icons/fa';
 
 interface DropdownOption {
   value: string;
@@ -10,6 +10,9 @@ interface DropdownOption {
 }
 
 interface CustomDropdownProps {
+  id: string;
+  name?: string;
+  label?: string;
   options: DropdownOption[];
   value: string;
   onChange: (value: string) => void;
@@ -19,6 +22,7 @@ interface CustomDropdownProps {
   disabled?: boolean;
   className?: string;
   direction?: 'up' | 'down';
+  error?: string;
 }
 
 const DropdownContainer = styled.div<{ $width?: string }>`
@@ -131,10 +135,57 @@ const DropdownContent = styled.div<{
   }
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+
+const ErrorText = styled.div`
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: ${fadeIn} 0.2s ease;
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  right: 0;
+  min-height: 16px;
+  
+  @media (max-height: 800px) {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    bottom: -20px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-top: 3px;
+    font-size: 0.7rem;
+    bottom: -18px;
+  }
+`;
+
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
 const OptionsList = styled.ul`
   list-style: none;
   padding: 8px 0;
   margin: 0;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
 `;
 
 const OptionItem = styled.li<{ $isSelected: boolean }>`
@@ -188,17 +239,22 @@ const SelectedText = styled.div`
 `;
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
+  id,
+  name = id,
+  label,
   options,
   value,
   onChange,
   placeholder = 'Selecione uma opção',
   icon,
+  error,
   width,
   disabled = false,
   className,
   direction,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [localError, setLocalError] = useState<string | undefined>(error);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({
@@ -265,6 +321,10 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setLocalError(error);
+  }, [error]);
   
   // Recalcular posição ao redimensionar a janela
   useEffect(() => {
@@ -302,9 +362,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   
   return (
     <DropdownContainer ref={dropdownRef} $width={width} className={className}>
+      <FormLabel htmlFor={id}>{label}</FormLabel>
       <DropdownButton 
         ref={buttonRef}
         type="button"
+        id={id}
+        name={name}
         onClick={toggleDropdown}
         $isOpen={isOpen}
         $hasValue={!!selectedOption}
@@ -318,6 +381,18 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
           <FaChevronDown size={12} />
         </ChevronIcon>
       </DropdownButton>
+
+      {localError ? (
+        <ErrorText>
+          <ErrorIcon />
+          {localError}
+        </ErrorText>
+      ) : (
+        <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
+          <ErrorIcon />
+          &nbsp;
+        </ErrorText>
+      )}
       
       {isOpen && (
         <DropdownContent $maxHeight={dropdownPosition.maxHeight} $direction={dropdownPosition.direction}>

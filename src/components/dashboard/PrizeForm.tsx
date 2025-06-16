@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FaCloudUploadAlt, FaTrash, FaSave, FaTimes, FaGift, FaMoneyBillWave, FaFileAlt, FaList, FaTags, FaExclamationCircle } from 'react-icons/fa';
-import { ICategory, IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { ICategory, IPrize, IPrizeInitialData } from '@/models/interfaces/IPrizeInterfaces';
 import MultipleImageUploader from '@/components/upload/MultipleImageUploader';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import mongoose from 'mongoose';
@@ -17,14 +17,13 @@ import CurrencyInput from '../common/CurrencyInput';
 import prizeCategoryAPIClient from '@/API/prizeCategoryAPIClient';
 
 interface PrizeFormProps {
-  initialData?: Partial<IPrize>;
   onSubmit: (data: Partial<{
     name: string;
     description: string;
     value: string;
     image: File | string;
     images: Array<File | string>;
-    categoryId: mongoose.Types.ObjectId;
+    categoryId: string;
   }>) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -53,7 +52,7 @@ const FormTitle = styled.h2`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   position: relative;
 `;
 
@@ -213,6 +212,32 @@ const PositionBadge = styled.div`
   z-index: 2;
 `;
 
+const StyledDropdownWrapper = styled.div`
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  
+  .dropdown-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .required-mark {
+    color: #ef4444;
+    margin-left: 4px;
+  }
+  
+  .error-message {
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+`;
+
 const PreviewImage = styled.img`
   width: 100%;
   height: 100%;
@@ -319,16 +344,6 @@ const PreventSubmitWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Mock category data
-const MOCK_CATEGORIES = [
-  { value: "electronics", label: "Eletrônicos" },
-  { value: "home", label: "Casa e Decoração" },
-  { value: "vehicle", label: "Veículos" },
-  { value: "travel", label: "Viagens" },
-  { value: "services", label: "Serviços" },
-  { value: "others", label: "Outros" }
-];
-
 // Função para formatar valores monetários
 const formatCurrency = (value: string | number | undefined): string => {
   if (!value) return '';
@@ -356,7 +371,6 @@ const formatCurrency = (value: string | number | undefined): string => {
 };
 
 const PrizeForm: React.FC<PrizeFormProps> = ({
-  initialData,
   onSubmit,
   onCancel,
   isLoading = false
@@ -374,52 +388,38 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   const [formData, setFormData] = useState<Partial<IPrize>>({
     image: '',
     images: [],
-    ...initialData
   });
 
   // Formatar o valor para exibição
-  const formattedValue = initialData?.value ? formatCurrency(initialData.value) : '';
-  console.log("Valor original:", initialData?.value);
-  console.log("Valor formatado:", formattedValue);
+
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isDirty }
+    formState: { errors, isDirty, isValid }
   } = useForm<PrizeForm>({
     resolver: zodResolver(prizeSchema),
     mode: 'all',
     defaultValues: {
-      name: initialData?.name || '',
-      description: initialData?.description || '',
-      value: initialData?.value || '',
+      name:  '',
+      description:  '',
+      value:  '',
+      categoryId:'',
     }
   });
 
   // Observar os valores do formulário para detectar alterações
   const watchedValues = watch();
+  const selectedCategory = watch('categoryId');
 
     // Keep track of the selected category as a string for the dropdown
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    getCategoryIdAsString(initialData?.categoryId)
-  );
 
   const [categories, setCategories] = useState<ICategory[]>([]);
   
   // Estado para rastrear alterações nas imagens
   const [imagesModified, setImagesModified] = useState(false);
-
-  // Verificar se o formulário foi modificado
-  useEffect(() => {
-    const hasFormChanges = isDirty || imagesModified || 
-                          selectedCategory !== getCategoryIdAsString(initialData?.categoryId)
-                          || watchedValues.value !== initialData?.value;
-    
-    setIsFormDirty(hasFormChanges);
-    console.log("Form dirty:", hasFormChanges);
-  }, [isDirty, imagesModified, selectedCategory, initialData]);
 
   const registerWithMask = useHookFormMask(register);
   
@@ -441,7 +441,6 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   
   // Update preview when main image file changes
   useEffect(() => {
-    console.log('initialData',initialData);
     if (!mainImageFile) return;
     
     const objectUrl = URL.createObjectURL(mainImageFile);
@@ -470,7 +469,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
 
   // Verificar se há imagens no carregamento inicial
   useEffect(() => {
-    if (additionalImageFiles.length === 0 && !initialData?.images?.length) {
+    if (additionalImageFiles.length === 0) {
       setErrorsImage({ image: 'É necessário pelo menos uma imagem' });
     }
   }, []);
@@ -539,7 +538,8 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   };
   
   const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value);
+    console.log("value",value);
+    setValue('categoryId', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
     // We'll handle the actual category creation at submission time
   };
   
@@ -567,7 +567,14 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
     });
   };
   
-  const onSubmitForm = async (data: Partial<IPrize>) => {
+  const onSubmitForm = async (data: Partial<{
+    name: string;
+    description: string;
+    value: string;
+    image: File | string;
+    images: Array<File | string>;
+    categoryId: string;
+  }>) => {
     // Prevent default form submission behavior
     
     // Validar imagens primeiro
@@ -589,15 +596,6 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
       // Todas as imagens a partir da segunda são imagens adicionais
       images: additionalImageFiles.slice(1),
     };
-    
-    // Add category if selected
-    if (selectedCategory) {
-      // In a real app with MongoDB:
-      // submissionData.category = new mongoose.Types.ObjectId(selectedCategory);
-      
-      // For mock version (type casting for TypeScript):
-      submissionData.categoryId = selectedCategory as unknown as mongoose.Types.ObjectId;
-    }
 
     console.log("submissionData",submissionData);
 
@@ -619,7 +617,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
   return (
     <FormWrapper>
       <FormTitle>
-        {initialData?._id ? 'Editar Prêmio' : 'Adicionar Novo Prêmio'}
+        {'Adicionar Novo Prêmio'}
       </FormTitle>
       
       <form onSubmit={handleSubmit(onSubmitForm)} noValidate onKeyDown={(e) => {
@@ -698,17 +696,22 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
         </FormGroup>
         
         <FormGroup>
-          <FormLabel htmlFor="category">Categoria</FormLabel>
+
           <CustomDropdown
             options={categories.map(category => ({
               value: category.categoryCode,
               label: category.name
             }))}
+            id="categoryId"
+            label="Categoria"
             value={selectedCategory}
+            {...register('categoryId')}
             onChange={handleCategoryChange}
             placeholder="Selecione uma categoria"
             icon={<FaTags />}
             disabled={isLoading}
+            direction="down"
+            error={errors.categoryId?.message}
           />
         </FormGroup>
         
@@ -731,7 +734,6 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <CurrencyInput
             id="value"  
             label="Valor"
-            value={initialData?.value || ''}
             icon={<FaMoneyBillWave />}
             {...register('value')}
             placeholder="Ex: R$ 5.000,00" 
@@ -756,7 +758,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
           <Button 
             type="submit" 
             $variant="primary"
-            disabled={isLoading || (initialData && !isFormDirty)}
+            disabled={isLoading || !isValid || additionalImageFiles.length === 0}
           >
             <FaSave />
             {isLoading ? 'Salvando...' : 'Salvar Prêmio'}

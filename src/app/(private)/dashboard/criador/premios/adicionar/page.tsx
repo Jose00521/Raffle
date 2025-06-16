@@ -60,7 +60,7 @@ export default function AddPrizePage() {
     value: string;
     image: File | string;
     images: Array<File | string>;
-    categoryId: mongoose.Types.ObjectId;
+    categoryId: string;
   }>) => {
     setIsSubmitting(true);
     

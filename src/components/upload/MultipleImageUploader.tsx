@@ -427,7 +427,7 @@ const ImageActions = styled.div`
   justify-content: center;
   gap: 12px;
   padding: 16px 12px 12px;
-  opacity: 0;
+  opacity: 1; /* Temporariamente sempre visível para debug */
   transition: opacity 0.3s ease;
   z-index: 3;
   
@@ -742,8 +742,10 @@ const ActionButtonSmall = styled.button`
   color: #6a11cb;
   font-size: 0.9rem;
   transition: all 0.3s ease;
-  z-index: 10;
+  z-index: 100; /* Aumentar z-index para garantir que fique acima */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  pointer-events: auto; /* Garantir que aceite eventos de ponteiro */
+  position: relative; /* Garantir posicionamento */
   
   &:hover {
     transform: scale(1.1);
@@ -995,10 +997,13 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
   };
 
   const handleCoverClick = (e: React.MouseEvent) => {
-    console.log("Clique no botão de capa", id);
+    console.log("=== CLIQUE NO BOTÃO DE CAPA ===");
+    console.log("ID da imagem:", id);
     e.preventDefault();
     e.stopPropagation();
+    console.log("Chamando onSetCover com ID:", id);
     onSetCover(id);
+    console.log("=== FIM DO CLIQUE ===");
     return false;
   };
 
@@ -1017,7 +1022,12 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
       {...(image.isCover ? {} : attributes)} // Não adicionar atributos de arrasto se for capa
       {...(image.isCover ? {} : listeners)} // Não adicionar listeners de arrasto se for capa
       title={image.isCover ? "Imagem de capa" : "Clique e arraste para reordenar"}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        console.log("=== CLIQUE NO THUMBNAIL ITEM ===");
+        console.log("Target:", e.target);
+        console.log("CurrentTarget:", e.currentTarget);
+        e.stopPropagation();
+      }}
     >
       {image.isCover && (
         <CoverBadge>
@@ -1033,22 +1043,42 @@ const SortableImageItem: React.FC<SortableItemProps> = ({
         </ProgressOverlay>
       </ImagePreview>
       
-      <ImageActions className="thumbnail-actions" onClick={(e) => e.stopPropagation()}>
+      <ImageActions 
+        className="thumbnail-actions" 
+        onClick={(e) => {
+          console.log("=== CLIQUE NO IMAGE ACTIONS ===");
+          console.log("Target:", e.target);
+          console.log("CurrentTarget:", e.currentTarget);
+          e.stopPropagation();
+        }}
+      >
         {!image.isCover && (
           <ActionButtonSmall
             className="cover-btn"
-            onClick={handleCoverClick}
+            onMouseDown={(e) => {
+              console.log("=== MOUSE DOWN NO BOTÃO ESTRELA - EXECUTANDO AÇÃO ===", id);
+              e.preventDefault();
+              e.stopPropagation();
+              handleCoverClick(e);
+            }}
             title="Definir como capa"
             type="button"
+            style={{ pointerEvents: 'auto' }}
           >
             <FaStar />
           </ActionButtonSmall>
         )}
         <ActionButtonSmall
           className="delete-btn"
-          onClick={handleDeleteClick}
+          onMouseDown={(e) => {
+            console.log("=== MOUSE DOWN NO BOTÃO DELETE - EXECUTANDO AÇÃO ===", id);
+            e.preventDefault();
+            e.stopPropagation();
+            handleDeleteClick(e);
+          }}
           title="Remover imagem"
           type="button"
+          style={{ pointerEvents: 'auto' }}
         >
           <FaTrashAlt />
         </ActionButtonSmall>
@@ -1083,6 +1113,14 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         distance: 5, // Diminuir a distância necessária para iniciar o arrasto
         tolerance: 5, // Permitir um pequeno desvio na linha de movimento
         delay: 0, // Remover qualquer atraso na ativação
+      },
+      // Impedir drag quando clicar nos botões de ação
+      onActivation: (event) => {
+        const target = event.event.target as Element;
+        if (target.closest('.cover-btn') || target.closest('.delete-btn') || target.closest('.thumbnail-actions')) {
+          return false;
+        }
+        return true;
       },
     }),
     useSensor(KeyboardSensor, {
@@ -1215,16 +1253,19 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   
   // Definir uma imagem como capa
   const handleSetCover = (id: string) => {
-    console.log("Definindo imagem como capa:", id);
+    console.log("=== HANDLE SET COVER CHAMADO ===");
+    console.log("ID recebido:", id);
+    console.log("Estado atual das imagens:", images.map(img => ({ id: img.id, isCover: img.isCover })));
     
     // Encontrar a imagem que será definida como capa
     const coverImageIndex = images.findIndex(img => img.id === id);
     if (coverImageIndex === -1) {
-      console.log("Imagem não encontrada:", id);
+      console.log("❌ ERRO: Imagem não encontrada:", id);
+      console.log("IDs disponíveis:", images.map(img => img.id));
       return;
     }
 
-    console.log("Índice da imagem:", coverImageIndex);
+    console.log("✅ Imagem encontrada no índice:", coverImageIndex);
 
     // Criar uma cópia do array de imagens e remover a imagem selecionada
     const newImages = [...images];

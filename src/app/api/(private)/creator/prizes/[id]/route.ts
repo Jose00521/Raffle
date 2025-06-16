@@ -111,6 +111,9 @@ export const PUT = withAuth(async (request: NextRequest, { params, session }: { 
         
         console.log('Updating prize with data:', updateData);
         console.log('Modified fields:', modifiedFields);
+
+        console.log("id",id);
+        console.log("updateData",updateData);
         
         // Call the controller to update the prize
         const prizeController = container.resolve(PrizeController);

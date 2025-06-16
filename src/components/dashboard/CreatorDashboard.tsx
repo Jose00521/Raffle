@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { FaHome, FaTicketAlt, FaChartLine ,FaTrophy, FaPlusCircle} from 'react-icons/fa';
+import { FaHome, FaTicketAlt, FaChartLine ,FaTrophy, FaPlusCircle, FaUsers} from 'react-icons/fa';
 
 // Define the menu items specific to creator dashboard
 const creatorMenuItems = [
@@ -28,7 +28,7 @@ const creatorMenuItems = [
     id: 'ganhadores',
     label: 'Ganhadores',
     path: '/dashboard/criador/ganhadores',
-    icon: <FaTrophy />
+    icon: <FaUsers />
   },
     {
     id: 'premios',
