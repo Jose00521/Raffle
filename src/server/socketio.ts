@@ -35,13 +35,13 @@ export const initSocketServer = (httpServer: HTTPServer): SocketIOServer => {
   }) as SocketIOServer;
 
   // Aplicar middleware de autenticação global
-  io.use(socketAuthMiddleware);
+  io.use(socketAuthMiddleware as any);
 
   // Configurar namespaces diferentes para diferentes tipos de dados
   
   // Namespace para estatísticas gerais (requer apenas autenticação)
   const statsNamespace = io.of('/stats');
-  statsNamespace.use(socketAuthMiddleware);
+  statsNamespace.use(socketAuthMiddleware as any);
   
   // Configurar eventos no namespace de estatísticas
   statsNamespace.on('connection', (socket: AuthenticatedSocket) => {
@@ -87,7 +87,7 @@ export const initSocketServer = (httpServer: HTTPServer): SocketIOServer => {
 
   // Namespace para administradores (requer papel de admin)
   const adminNamespace = io.of('/admin');
-  adminNamespace.use(socketAuthMiddleware);
+  adminNamespace.use(socketAuthMiddleware as any);
   
   // Middleware adicional para verificar se o usuário é admin
   adminNamespace.use((socket: AuthenticatedSocket, next) => {

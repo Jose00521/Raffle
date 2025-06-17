@@ -13,36 +13,41 @@ function createLogger(): pino.Logger {
     return loggerInstance;
   }
 
-  // Use pino-pretty only in development
-  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+  // Simple check: if we're not in production, use pino-pretty
+  const isProduction = process.env.NODE_ENV === 'production';
 
+    // Use pino-pretty only in development
+    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+  
+    console.log('Logger Configuration:', {
+      NODE_ENV: process.env.NODE_ENV,
+      isDevelopment,
+      timestamp: new Date().toISOString()
+    });
   
   let config: pino.LoggerOptions;
   
-  if (isDevelopment) {
+  if (!isProduction) {
+    // Development/other - use pino-pretty
     config = {
       level: process.env.LOG_LEVEL || 'info',
       transport: {
         target: 'pino-pretty',
         options: {
           colorize: true,
-          colorizeObjects: true,
           translateTime: 'HH:MM:ss Z',
           ignore: 'pid,hostname',
         },
       },
     };
-    console.log('Using pino-pretty for development');
   } else {
-    // Production configuration - just JSON output
+    // Production - JSON output
     config = {
       level: process.env.LOG_LEVEL || 'info',
     };
-    console.log('Using JSON output for production');
   }
 
   loggerInstance = pino(config);
-
   return loggerInstance;
 }
 
