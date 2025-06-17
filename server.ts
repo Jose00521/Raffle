@@ -48,9 +48,13 @@ app.prepare().then(async () => {
   // Socket.io setup
   const io = new Server(httpServer, {
     cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
-    }
+      origin: process.env.NODE_ENV === 'production' 
+        ? process.env.NEXTAUTH_URL || 'https://raffle-6wkb-q4k52ejrt-jose0521s-projects.vercel.app'
+        : "*",
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    path: '/api/socket/io'
   });
 
   

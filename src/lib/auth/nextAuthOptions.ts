@@ -69,7 +69,7 @@ export const nextAuthOptions: NextAuthOptions = {
         }
   
         try {
-          const userAuthRepository = container.resolve<IUserAuthRepository>('userAuthRepository');
+        const userAuthRepository = container.resolve<IUserAuthRepository>('userAuthRepository');
   
           const user = await userAuthRepository.findByCredentials(
               credentials.phone as string, 
@@ -91,7 +91,7 @@ export const nextAuthOptions: NextAuthOptions = {
               phone: `***${credentials.phone.slice(-4)}`,
               isActive: user.isActive
             });
-            return null;
+              return null;
           }
           
           logger.info({
@@ -129,7 +129,7 @@ export const nextAuthOptions: NextAuthOptions = {
       maxAge: 30 * 60, // 30 minutos (sincronizado com session)
       encode: ({ secret, token }) => {
         try {
-          const encodedToken = createToken(token as any);
+        const encodedToken = createToken(token as any);
           return encodedToken;
         } catch (error) {
           logger.error({
@@ -163,7 +163,7 @@ export const nextAuthOptions: NextAuthOptions = {
          }
          
          return token;
-       },
+      },
              async session ({ session, token }) {
          // A verificação de expiração é feita automaticamente pelo JWT
          // Não precisamos verificar manualmente aqui
@@ -176,8 +176,8 @@ export const nextAuthOptions: NextAuthOptions = {
            email: token.email!,
          };
          
-         return session;
-       },
+        return session;
+      },
       async signIn({ user, account, profile, email, credentials }) {
         // Log de login bem-sucedido
         logger.info({
@@ -212,11 +212,11 @@ export const nextAuthOptions: NextAuthOptions = {
     cookies: {
       sessionToken: {
         name: 'next-auth.session-token', // Nome fixo para ambos ambientes
-        options: {
-          httpOnly: true,
+                  options: {
+            httpOnly: true,
           sameSite: 'lax',
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
           maxAge: 30 * 60,
         }
       },
