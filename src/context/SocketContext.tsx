@@ -54,7 +54,9 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
     // Criar socket se ainda não existe
     if (!socketInstance) {
       console.log('Inicializando conexão Socket.IO...');
-      socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin);
+      socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin, {
+        path: '/api/socket/io'
+      });
       socketRef.current = socketInstance;
       
       socketInstance.on('connect', () => {
