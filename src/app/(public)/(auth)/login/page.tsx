@@ -61,35 +61,48 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
+    setCredentialsError(false);
     
-    const result = await signIn('credentials', {
-      phone: data.telefone,
-      password: data.password,
-      redirect: false,
-      
-    });
+    try {
+      const result = await signIn('credentials', {
+        phone: data.telefone,
+        password: data.password,
+        redirect: false,
+      });
 
-
-    if(result?.ok){
-
-      const session = await getSession();
-
-      if(session?.user?.role == 'creator'){
-        router.push('/dashboard/criador');
+      if (result?.ok) {
+        // Aguardar um momento para garantir que a sessão seja criada
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const session = await getSession();
+        
+        if (session?.user?.role === 'creator') {
+          toast.success('Login realizado com sucesso!');
+          router.replace('/dashboard/criador');
+        } else if (session?.user?.role === 'participant' || session?.user?.role === 'user') {
+          toast.success('Login realizado com sucesso!');
+          router.replace('/dashboard/participante');
+        } else {
+          // Fallback caso o role não seja reconhecido
+          console.warn('Role não reconhecido:', session?.user?.role);
+          toast.success('Login realizado com sucesso!');
+          router.replace('/dashboard/participante'); // Dashboard padrão
+        }
+      } else if (result?.error === 'CredentialsSignin') {
+        setCredentialsError(true);
+        toast.error('Telefone ou senha incorretos');
+        setIsSubmitting(false);
+      } else {
+        // Outros tipos de erro
+        console.error('Erro no login:', result?.error);
+        toast.error('Erro ao fazer login. Tente novamente.');
+        setIsSubmitting(false);
       }
-      if(session?.user?.role == 'participant' || session?.user?.role == 'user'){
-        router.push('/dashboard/participante');
-      }
-      
-
-      }
-    
-    if(result?.error === 'CredentialsSignin'){
-      setCredentialsError(true);
-      toast.error('Credenciais inválidas');
+    } catch (error) {
+      console.error('Erro durante o login:', error);
+      toast.error('Erro inesperado. Tente novamente.');
       setIsSubmitting(false);
     }
-    
   };
 
   return (

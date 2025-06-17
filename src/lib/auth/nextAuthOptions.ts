@@ -188,9 +188,20 @@ export const nextAuthOptions: NextAuthOptions = {
         return true;
       },
       async redirect({ url, baseUrl }) {
-        // Prevenir redirecionamentos maliciosos
+        // Se a URL é relativa, construir URL completa
         if (url.startsWith("/")) return `${baseUrl}${url}`;
+        
+        // Se a URL tem a mesma origem, permitir
         if (new URL(url).origin === baseUrl) return url;
+        
+        // Para redirecionamentos após login, verificar se é callback padrão
+        if (url === baseUrl || url === `${baseUrl}/`) {
+          // Se não há URL específica, redirecionar baseado no contexto
+          // O redirecionamento específico será tratado no cliente
+          return baseUrl;
+        }
+        
+        // Caso contrário, usar baseUrl por segurança
         return baseUrl;
       }
     },

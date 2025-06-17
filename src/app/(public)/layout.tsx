@@ -36,11 +36,11 @@ export default function PublicLayout({
           limit={5}
           style={{ zIndex: 99999 }}
         />
-        <StyledComponentsRegistry>
-          <ThemeProvider theme={theme}>
-            {children}
-          </ThemeProvider>
-        </StyledComponentsRegistry>
+      <StyledComponentsRegistry>
+        <ThemeProvider theme={theme}>
+          {children}
+        </ThemeProvider>
+      </StyledComponentsRegistry>
       </>
     );
   
