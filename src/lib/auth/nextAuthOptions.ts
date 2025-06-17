@@ -211,63 +211,50 @@ export const nextAuthOptions: NextAuthOptions = {
     },
     cookies: {
       sessionToken: {
-        name: process.env.NODE_ENV === 'production' 
-          ? '__Secure-next-auth.session-token' 
-          : 'next-auth.session-token',
-                  options: {
-            httpOnly: true,
-            sameSite: 'strict', // Máxima proteção CSRF
-            path: '/',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 30 * 60, // 30 minutos (igual ao JWT)
-          ...(process.env.NODE_ENV === 'production' && {
-            domain: process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).hostname : undefined
-          })
+        name: 'next-auth.session-token', // Nome fixo para ambos ambientes
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 30 * 60,
         }
       },
       callbackUrl: {
-        name: process.env.NODE_ENV === 'production' 
-          ? '__Secure-next-auth.callback-url' 
-          : 'next-auth.callback-url',
+        name: 'next-auth.callback-url', // Remover __Secure- para Vercel
         options: {
-          httpOnly: true, // Adicionar para proteção extra
-          sameSite: 'strict',
+          httpOnly: true,
+          sameSite: 'lax',
           path: '/',
           secure: process.env.NODE_ENV === 'production',
           maxAge: 60 * 60, // 1 hora
         }
       },
       csrfToken: {
-        name: process.env.NODE_ENV === 'production' 
-          ? '__Host-next-auth.csrf-token' 
-          : 'next-auth.csrf-token',
+        name: 'next-auth.csrf-token', // Remover __Host- para Vercel
         options: {
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
           path: '/',
           secure: process.env.NODE_ENV === 'production',
           maxAge: 60 * 60, // 1 hora
         }
       },
       pkceCodeVerifier: {
-        name: process.env.NODE_ENV === 'production' 
-          ? '__Secure-next-auth.pkce.code_verifier' 
-          : 'next-auth.pkce.code_verifier',
+        name: 'next-auth.pkce.code_verifier', // Remover __Secure- para Vercel
         options: {
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
           path: '/',
           secure: process.env.NODE_ENV === 'production',
           maxAge: 60 * 15, // 15 minutos
         }
       },
       state: {
-        name: process.env.NODE_ENV === 'production' 
-          ? '__Secure-next-auth.state' 
-          : 'next-auth.state',
+        name: 'next-auth.state', // Remover __Secure- para Vercel
         options: {
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
           path: '/',
           secure: process.env.NODE_ENV === 'production',
           maxAge: 60 * 15, // 15 minutos
@@ -275,9 +262,29 @@ export const nextAuthOptions: NextAuthOptions = {
       }
     },
     secret: process.env.NEXTAUTH_SECRET,
+    // Configurações específicas para Vercel
+    useSecureCookies: process.env.NODE_ENV === 'production',
     // Configurações adicionais de segurança
     events: {
       async signIn({ user, account, profile, isNewUser }) {
+        // Log para debug de configuração
+        console.log('[NextAuth Debug] Configurações:', {
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+          NODE_ENV: process.env.NODE_ENV,
+          hasNEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+          NEXTAUTH_SECRET_length: process.env.NEXTAUTH_SECRET?.length || 0,
+          cookieName: 'next-auth.session-token'
+        });
+        
+                 // Log específico sobre cookies
+         console.log('[NextAuth Debug] Cookie Config:', {
+           sessionTokenName: 'next-auth.session-token',
+           isProduction: process.env.NODE_ENV === 'production',
+           secure: process.env.NODE_ENV === 'production',
+           sameSite: 'lax',
+           platform: 'vercel'
+         });
+        
         logger.info({
           message: '[auth] Usuário logado',
           userId: user.id,

@@ -47,6 +47,7 @@ const adminRoutes = [
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  console.log('[Middleware Debug] Path:', path);
   const publicRoute = publicRoutes.find(route => route.path === path) || publicDynamicRoutes.find(route => path.startsWith(route.path));
   const creatorRoute = creatorRoutes.find(route => route === path);
   const participantRoute = participantRoutes.find(route => route === path);
@@ -54,9 +55,17 @@ export async function middleware(request: NextRequest) {
 
   // Buscar o cookie correto baseado no ambiente
   const isProduction = process.env.NODE_ENV === 'production';
-  const cookieName = isProduction ? '__Secure-next-auth.session-token' : 'next-auth.session-token';
+  const cookieName = 'next-auth.session-token'; // Usando mesmo nome para ambos ambientes temporariamente
   const tokenRequest = request.cookies.get(cookieName);
-  
+
+  console.log('[Middleware Debug] Token Request:', tokenRequest);
+  console.log('[Middleware Debug] Cookie Name:', cookieName);
+  console.log('[Middleware Debug] Is Production:', isProduction);
+  console.log('[Middleware Debug] Path:', path);
+  console.log('[Middleware Debug] Public Route:', publicRoute);
+  console.log('[Middleware Debug] Creator Route:', creatorRoute);
+  console.log('[Middleware Debug] Participant Route:', participantRoute);
+  console.log('[Middleware Debug] Admin Route:', adminRoute);
   let token = null as any;
   
   if (tokenRequest) {
