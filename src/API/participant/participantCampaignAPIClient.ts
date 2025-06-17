@@ -53,7 +53,7 @@ const participantCampaignAPI = {
 
     getCampaignByIdPublic: async (campaignId: string) => {
       try {
-        const response = await fetch(`/api/campanhas/${campaignId}`);
+        const response = await fetch(`/api/participant/campanhas/${campaignId}`);
         const result = await response.json();
         return result;
       } catch (error) {

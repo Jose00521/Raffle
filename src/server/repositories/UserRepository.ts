@@ -4,7 +4,7 @@ import { IUser } from "@/models/interfaces/IUserInterfaces";
 import type { IDBConnection } from "@/server/lib/dbConnect";
 import { generateEntityCode } from "@/models/utils/idGenerator";
 import { ApiError } from "@/server/utils/errorHandler/ApiError";
-import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
+import { ApiResponse, createConflictResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
 import { maskCPF, maskEmail, maskPhone } from "@/utils/maskUtils";
 import { SecureDataUtils } from "@/utils/encryption";
 
@@ -13,6 +13,7 @@ export interface IUserRepository {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
     quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
     quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<any>>;
 }
 
 @injectable()
@@ -93,7 +94,7 @@ export class UserRepository implements IUserRepository {
         } catch (error) {
             throw new ApiError({
                 success: false,
-                message: 'Erro ao checar se o usuário já existe',
+                message: '[checkIfUserExists] Erro ao checar se o usuário já existe',
                 statusCode: 500,
                 cause: error as Error
             });
@@ -134,7 +135,60 @@ export class UserRepository implements IUserRepository {
         } catch (error) {
             throw new ApiError({
                 success: false,
-                message: 'Erro ao checar se o usuário já existe',
+                message: '[quickCheckUser] Erro ao checar se o usuário já existe',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        try {
+            await this.db.connect();
+            
+            // Cria hashes dos dados para busca segura
+            const cpfHash = SecureDataUtils.hashDocument(data.cpf);
+            const emailHash = SecureDataUtils.hashEmail(data.email);
+            const phoneHash = SecureDataUtils.hashPhone(data.phone);
+            
+            // Busca individual para identificar qual campo está duplicado
+            const [cpfExists, emailExists, phoneExists] = await Promise.all([
+                User.findOne({ cpf_hash: cpfHash }, { _id: 1 }).lean(),
+                User.findOne({ email_hash: emailHash }, { _id: 1 }).lean(),
+                User.findOne({ phone_hash: phoneHash }, { _id: 1 }).lean()
+            ]);
+            
+            // Se nenhum existe, retorna sucesso
+            if (!cpfExists && !emailExists && !phoneExists) {
+                return createSuccessResponse(null, 'Dados disponíveis para cadastro', 200);
+            }
+            
+            // Identifica quais campos estão duplicados
+            const duplicatedFields = [];
+            if (cpfExists) duplicatedFields.push({
+                field: 'cpf',
+                message: 'CPF já cadastrado'
+            });
+            if (emailExists) duplicatedFields.push({
+                field: 'email',
+                message: 'E-mail já cadastrado'
+            });
+            if (phoneExists) duplicatedFields.push({
+                field: 'telefone',
+                message: 'Telefone já cadastrado'
+            });
+            
+                
+            return createConflictResponse(
+                'Conflict', 
+                duplicatedFields,
+                409 // Status 409 - Conflict
+            );
+            
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: '[quickCheckMainData] Erro ao checar se o usuário já existe',
                 statusCode: 500,
                 cause: error as Error
             });

@@ -146,6 +146,14 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     setValue('uf', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
+  const verifyIfMainDataExists = async (data: {cpf: string, email: string, phone: string}) => {
+    const response = await userAPIClient.verifyIfMainDataExists(data);
+    if(response.statusCode === 200) {
+      return false;
+    }
+    return response;
+  }
+
   const onSubmit = async (data: SignupFormData) => {
     try {
       setIsSubmitting(true);
@@ -201,10 +209,15 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
         
         router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
         // Não desligar o loading aqui pois a página vai mudar
+      }else{
+        toast.error(result.message);
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Signup error:', error);
-      toast.error('Erro ao criar conta. Por favor tente novamente.');
+      toast.error('Erro ao criar conta. Por favor tente novamente.',{
+        position: "top-center",
+      });
       setIsSubmitting(false);
     }
   };
@@ -220,7 +233,21 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     if (isStepValid) {
       // Se estamos no step 1 (dados pessoais) e hasAddress é false, ir direto para resumo (step 4)
       if (currentStep === 1 && !hasAddress) {
-        setCurrentStep(4); // Pula endereço e senha, vai direto para resumo
+        const {cpf, email, telefone} = form.getValues();
+
+        const response = await verifyIfMainDataExists({cpf: cpf.replace(/\D/g, ''), email, phone: telefone.replace(/\D/g, '')});
+
+        console.log('response validation',response);
+
+        if(response) {          
+            response.issues.forEach((issue: {field: string, message: string}) => {
+              setError(issue.field as keyof SignupFormData, { message: issue.message });
+            });
+            return;
+        }else{
+          setCurrentStep(4); // Pula endereço e senha, vai direto para resumo
+        }
+
       } else if(currentStep === 2 && hasAddress) {
         setCurrentStep(4);
       } else {
@@ -247,11 +274,9 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     const isPhoneValid = await validateStep(0);
 
     if(!isPhoneValid) {
-      setError('telefone', { message: 'Telefone inválido' });
+      setError('telefone', { message: errors.telefone?.message as string });
       return;
     }
-
-    console.log('phone',phone);
 
     setIsLoadingVerify(true);
 

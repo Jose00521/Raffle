@@ -11,8 +11,11 @@ const publicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] =
   { path: '/cadastro-criador', whenAuthenticated: 'redirect' },
   { path: '/cadastro-sucesso', whenAuthenticated: 'redirect' },
   { path: '/cadastro-tipo', whenAuthenticated: 'redirect' },
+] as const;
+
+const publicDynamicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] = [
   { path: '/campanhas', whenAuthenticated: 'next' },
-  { path: '/campanhas/:id', whenAuthenticated: 'next' },
+
 ] as const;
 
 const REDIRECT_WHEN_NOT_AUTHENTICATED = '/login';
@@ -44,7 +47,7 @@ const adminRoutes = [
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const publicRoute = publicRoutes.find(route => route.path === path);
+  const publicRoute = publicRoutes.find(route => route.path === path) || publicDynamicRoutes.find(route => path.startsWith(route.path));
   const creatorRoute = creatorRoutes.find(route => route === path);
   const participantRoute = participantRoutes.find(route => route === path);
   const adminRoute = adminRoutes.find(route => route === path);
@@ -113,6 +116,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-   '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+   '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txticons|images|sounds|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.ico|.*\\.webp).*)',
   ],
 }; 

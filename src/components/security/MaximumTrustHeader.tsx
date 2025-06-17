@@ -294,7 +294,7 @@ const MaximumTrustHeader: React.FC = () => {
             <span>Ambiente Seguro</span>
           </CryptographyStatus>
           <SecurityBadge>
-            <span>🔒 AES-256</span>
+            <span>🔒 AES-512</span>
           </SecurityBadge>
           <SecurityBadge className="ssl">
             <span>🔐 SSL</span>

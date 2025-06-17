@@ -69,6 +69,30 @@ const userAPIClient = {
         }
     },
 
+
+    verifyIfMainDataExists: async (data: {cpf: string, email: string, phone: string}) => {
+        try {
+            const response = await fetch(`/api/user/check/main-data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            console.log('response validation',response);
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false, 
+                statusCode: 500,
+                message: 'Erro ao comunicar com o servidor',
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
+            };
+        }
+    },
+
     quickUserCreate: async (user: Partial<IUser>) => {
         try {
             const response = await fetch('/api/user/participant/quick-create', {

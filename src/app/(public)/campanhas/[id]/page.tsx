@@ -15,6 +15,7 @@ import {
 } from '@/components/campaign/CampaignStatusPages';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
 import CampanhaEmBreve from '@/components/campaign/CampanhaEmBreve';
+import participantCampaignAPI from '@/API/participant/participantCampaignAPIClient';
 
 // Dados de exemplo para a campanha
 
@@ -29,7 +30,7 @@ export default function CampanhaPage() {
     const fetchCampanha = async () => {
       try {
         setIsLoading(true);
-      const response = await creatorCampaignAPI.getCampaignById(campanhaId);
+      const response = await participantCampaignAPI.getCampaignByIdPublic(campanhaId);
         console.log("response campanha detalhes", response);
         
         if (response.success) {

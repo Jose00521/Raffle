@@ -17,6 +17,14 @@ export interface ApiErrorValidationResponse<T = any> {
   errors: z.ZodIssue[];
 }
 
+export interface ApiConflictResponse<T = any> {
+  type: 'conflict';
+  statusCode: number;
+  success: false;
+  message: string;
+  issues: {field: string, message: string}[];
+} 
+
 export const createSuccessResponse = <T>(data: T, message?: string, statusCode = 200): ApiResponse<T> => ({
   statusCode,
   success: true,
@@ -39,4 +47,13 @@ export const createValidationErrorObject = (object: z.ZodError | null,message = 
   data: null,
   errors: object?.errors || [],
 });
+
+export const createConflictResponse = (message = 'Conflict', data: {field: string, message: string}[], statusCode = 409): ApiConflictResponse<any> => ({
+  type: 'conflict',
+  statusCode,
+  success: false,
+  message,
+  issues: data,
+});
+
 

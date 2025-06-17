@@ -7,6 +7,7 @@ export interface IUserService {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
     quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
     quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<any>>;
 }
 
 @injectable()
@@ -29,5 +30,9 @@ export class UserService implements IUserService {
 
     async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>> {
         return await this.userRepository.quickUserCreate(user);
+    }
+
+    async quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+        return await this.userRepository.quickCheckMainData(data);
     }
 }   
