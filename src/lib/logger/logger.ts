@@ -13,36 +13,32 @@ function createLogger(): pino.Logger {
     return loggerInstance;
   }
 
-  // Use pino-pretty only in development and when available
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Use pino-pretty only in development
+  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+
   
   let config: pino.LoggerOptions;
   
   if (isDevelopment) {
-    try {
-      // Check if pino-pretty is available (only in development)
-      require.resolve('pino-pretty');
-      config = {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            colorizeObjects: true,
-            colorizeScopes: true,
-          },
+    config = {
+      level: process.env.LOG_LEVEL || 'info',
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          colorizeObjects: true,
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
         },
-      };
-    } catch {
-      // Fallback to JSON output if pino-pretty not available
-      config = {
-        level: process.env.LOG_LEVEL || 'info',
-      };
-    }
+      },
+    };
+    console.log('Using pino-pretty for development');
   } else {
     // Production configuration - just JSON output
     config = {
       level: process.env.LOG_LEVEL || 'info',
     };
+    console.log('Using JSON output for production');
   }
 
   loggerInstance = pino(config);
