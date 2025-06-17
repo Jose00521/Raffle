@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { NextRequest, NextResponse } from "next/server";
 import { GhostsPayService } from "@/server/services/gateways/ghostspay/GhostsPayService";
 import { createErrorResponse , createSuccessResponse} from '@/server/utils/errorHandler/api';

@@ -23,6 +23,11 @@ const nextConfig = {
       // Lidar melhor com módulos nativos
     config.externals.push({ 'thread-stream': 'commonjs thread-stream', pino: 'commonjs pino' });
 
+    // Excluir pino-pretty do bundle de produção
+    if (isServer && process.env.NODE_ENV === 'production') {
+      config.externals.push('pino-pretty');
+    }
+
     return config
 },
   compiler: {
