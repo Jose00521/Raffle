@@ -24,11 +24,6 @@ interface InstantPrizeData {
   image?: string;         // Para item prizes
 }
 
-
-interface InstantPrizesPayload {
-  prizes: InstantPrizeData[];
-}
-
 /**
  * Funções da API para interagir com rifas e seus números
  */
@@ -38,7 +33,7 @@ const creatorCampaignAPI = {
           const response = await fetch(`/api/creator/campanhas/${campaignId}`);
           const result = await response.json();
           return result;
-        } catch (error) {
+        } catch {
           return createErrorResponse('Erro ao conectar com o servidor:', 500);
         }
       },
@@ -53,7 +48,7 @@ const creatorCampaignAPI = {
             body: formData,
           });
           return await response.json();
-        } catch (error) {
+        } catch {
           return createErrorResponse('Erro ao conectar com o servidor:', 500);
         }
       },
@@ -65,7 +60,7 @@ const creatorCampaignAPI = {
             method: 'POST',
           });
           return await response.json();
-        } catch (error) {
+        } catch {
           return createErrorResponse('Erro ao conectar com o servidor:', 500);
         }
       },

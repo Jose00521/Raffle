@@ -108,7 +108,7 @@ const creatorPrizeAPIClient = {
         }
       },
     
-      createPrize: async (prize: any) => {
+      createPrize: async (prize: FormData) => {
         try {
           const response = await fetch('/api/creator/prizes', {
             method: 'POST',

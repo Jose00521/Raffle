@@ -89,10 +89,6 @@ function getKeyForVersion(version: string): Buffer {
     
   const masterKey = process.env[keyEnvVar] || process.env.ENCRYPTION_MASTER_KEY || 'default-key-change-in-production-must-be-32-characters-long';
   
-  console.log('🔧 MASTER KEY USADA:', masterKey);
-  console.log('🔧 VERSÃO:', version);
-  console.log('🔧 USANDO ENV?', !!process.env.ENCRYPTION_MASTER_KEY);
-  
   const salt = crypto.createHash('sha256').update(`raffle-salt-${version}`).digest();
   return crypto.pbkdf2Sync(masterKey, salt, 100000, 32, 'sha256');
 }
@@ -125,7 +121,7 @@ export class EncryptionService {
    */
   static decrypt(encryptedData: EncryptedData): string {
     try {
-      console.log('encryptedData', encryptedData);
+
       const version = encryptedData.keyVersion || 'v1';
       const strategy = encryptionStrategies[version as keyof typeof encryptionStrategies];
       
@@ -135,8 +131,7 @@ export class EncryptionService {
       
       return strategy.decrypt(encryptedData);
     } catch (error) {
-      console.error('❌ ERRO NA DESCRIPTOGRAFIA:', error);
-      console.error('📊 Dados recebidos:', JSON.stringify(encryptedData, null, 2));
+
       throw error;
     }
   }

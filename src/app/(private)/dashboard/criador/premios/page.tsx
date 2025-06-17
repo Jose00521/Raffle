@@ -13,60 +13,6 @@ import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import { ApiResponse } from '@/server/utils/errorHandler/api';
 import { useRouter } from 'next/navigation';
 
-// Mock data for initial development
-export const MOCK_PRIZES: IPrize[] = [
-  {
-    _id: '1',
-    name: 'iPhone 14 Pro Max',
-    description: 'Smartphone Apple 256GB de armazenamento',
-    image: 'https://images.unsplash.com/photo-1678652197831-2d180705cd2c?q=80&w=1470&auto=format&fit=crop',
-    images: [],
-    value: 'R$ 8.500,00',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '2',
-    name: 'Console PlayStation 5',
-    description: 'Edição Digital com um controle DualSense',
-    image: 'https://images.unsplash.com/photo-1607853202273-797f1c22a38e?q=80&w=1528&auto=format&fit=crop',
-    images: [],
-    value: 'R$ 3.800,00',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '3',
-    name: 'TV Samsung 65" 4K',
-    description: 'Smart TV com tecnologia QLED',
-    image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?q=80&w=1474&auto=format&fit=crop',
-    images: [],
-    value: 'R$ 5.200,00',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '4',
-    name: 'Notebook Dell XPS 13',
-    description: 'Intel Core i7, 16GB RAM, 512GB SSD',
-    image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=1470&auto=format&fit=crop',
-    images: [],
-    value: 'R$ 7.900,00',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '5',
-    name: 'Pacote Viagem para Cancún',
-    description: '7 dias com passagens e hospedagem all-inclusive',
-    image: 'https://images.unsplash.com/photo-1682553064441-b3637beb0efd?q=80&w=1470&auto=format&fit=crop',
-    images: [],
-    value: 'R$ 12.000,00',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
 // Styled components for this page
 const PageHeader = styled.div`
   display: flex;
@@ -677,7 +623,7 @@ const cardVariants = {
 export default function PrizesDashboard() {
   const router = useRouter();
   
-  const [prizes, setPrizes] = useState<IPrize[]>(MOCK_PRIZES);
+  const [prizes, setPrizes] = useState<IPrize[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortDesc, setSortDesc] = useState(false);

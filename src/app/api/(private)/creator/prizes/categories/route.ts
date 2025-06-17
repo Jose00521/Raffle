@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { PrizeCategoryController } from "@/server/controllers/PrizeCategoryController";
 import { container } from "@/server/container/container";
 import { createSuccessResponse } from "@/server/utils/errorHandler/api";

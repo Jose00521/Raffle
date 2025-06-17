@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NextRequest, NextResponse } from 'next/server';
 import { CampaignService } from '@/server/services/CampaignService';
 import { ApiResponse, createErrorResponse } from '@/server/utils/errorHandler/api';

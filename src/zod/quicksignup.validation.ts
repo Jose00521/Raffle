@@ -35,17 +35,14 @@ export const signupSchema = z.object({
     cpf: z.string()
       .nonempty('CPF é obrigatório')
       .transform(val => {
-        console.log('Transformando CPF:', val);
         return val.replace(/\D/g, '');
       })
       .refine(val => {
-        console.log('Refinando comprimento CPF:', val);
-        return val.length === 11;
+        return val.length === 11;     
       }, {
         message: 'CPF deve ter 11 dígitos'
       })
       .refine(val => {
-        console.log('Validando regras CPF:', val);
         return validateCPF(val);
       }, {
         message: 'CPF inválido'
@@ -105,23 +102,19 @@ export const signupSchema = z.object({
       .string()
       .min(1, 'Telefone é obrigatório')
       .transform(val => {
-        console.log('Transformando telefone:', val);
         return val ? val.replace(/\D/g, '') : '';
       })
       .refine(val => {
-        console.log('Verificando telefone preenchido:', val);
         return val.length > 0;
       }, {
         message: 'Telefone é obrigatório'
       })
       .refine(val => {
-        console.log('Verificando comprimento telefone:', val);
         return val.length === 0 || val.length === 11;
       }, {
         message: 'Telefone deve ter 11 dígitos'
       })
       .refine(val => {
-        console.log('Verificando DDD telefone:', val);
         // Se não tem pelo menos 2 dígitos, não valida DDD
         if (val.length < 2) return true;
         const ddd = parseInt(val.substring(0, 2));
@@ -130,7 +123,6 @@ export const signupSchema = z.object({
         message: 'DDD inválido'
       })
       .refine(val => {
-        console.log('Verificando formato celular:', val);
         // O primeiro dígito após o DDD para celular deve ser 9
         return val[2] === '9';
       }, {
@@ -140,23 +132,19 @@ export const signupSchema = z.object({
       .string()
       .min(1, 'Confirme seu telefone')
       .transform(val => {
-        console.log('Transformando confirmarTelefone:', val);
         return val ? val.replace(/\D/g, '') : '';
       })
       .refine(val => {
-        console.log('Verificando confirmarTelefone preenchido:', val);
         return val.length > 0;
       }, {
         message: 'Confirmação de telefone é obrigatória'
       })
       .refine(val => {
-        console.log('Verificando comprimento confirmarTelefone:', val);
         return val.length === 0 || val.length === 11;
       }, {
         message: 'Telefone deve ter 11 dígitos'
       })
       .refine(val => {
-        console.log('Verificando DDD confirmarTelefone:', val);
         // Se não tem pelo menos 2 dígitos, não valida DDD
         if (val.length < 2) return true;
         const ddd = parseInt(val.substring(0, 2));
@@ -165,7 +153,6 @@ export const signupSchema = z.object({
         message: 'DDD inválido'
       })
       .refine(val => {
-        console.log('Verificando formato celular confirmarTelefone:', val);
 
         // O primeiro dígito após o DDD para celular deve ser 9
         return val[2] === '9';
@@ -177,7 +164,6 @@ export const signupSchema = z.object({
       .string()
       .optional()
       .transform(val => {
-        console.log('Transformando CEP:', val);
         return val ? val.replace(/\D/g, '') : '';
       }),
     logradouro: z.string().optional(),
@@ -191,7 +177,6 @@ export const signupSchema = z.object({
     cidade: z.string().optional(),
   }).refine((data) => {
     // Remove caracteres especiais antes de comparar
-    console.log('Comparing phone numbers:', data.telefone, data.confirmarTelefone);
     
     // Se um dos telefones não estiver preenchido, não comparar
     if (!data.telefone || !data.confirmarTelefone) {
@@ -201,7 +186,6 @@ export const signupSchema = z.object({
     const phone1 = data.telefone.replace(/\D/g, '');
     const phone2 = data.confirmarTelefone.replace(/\D/g, '');
     
-    console.log('Cleaned phone numbers:', phone1, phone2);
     
     // Compare regardless of length as long as both are filled
     return phone1 === phone2;

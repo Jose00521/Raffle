@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 // Add to your container setup (e.g., src/server/container.ts or similar)
 import { container } from 'tsyringe';
 import { IUserService, UserService } from '../services/UserService'; // adjust path

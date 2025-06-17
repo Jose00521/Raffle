@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { nextAuthOptions } from '@/lib/auth/nextAuthOptions';

@@ -1,7 +1,7 @@
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 
 const userAPIClient = {
-    createUser: async (user: any) => {
+    createUser: async (user: IUser) => {
         try {
             const response = await fetch('/api/user/participant', {
               method: 'POST',

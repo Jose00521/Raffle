@@ -1,19 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 import Layout from '@/components/layout/Layout';
 import { ICampaign, INumberPackageCampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
-import { PaymentMethodEnum } from '@/models/interfaces/IPaymentInterfaces';
-import paymentAPIClient from '@/API/paymentAPIClient';
-import { v4 as uuidv4 } from 'uuid';
 import { toast, ToastContainer } from 'react-toastify';
 import SecurityModal from '@/components/auth/SecurityModal';
 import Timer from '@/components/ui/Timer';
 import { formatCurrency } from '@/utils/formatNumber';
-import { format } from 'date-fns';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
 

@@ -1,6 +1,5 @@
 // API client para operações com rifas e números
-import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
-import { ApiResponse, createErrorResponse } from '@/server/utils/errorHandler/api';
+import { createErrorResponse } from '@/server/utils/errorHandler/api';
 
 /**
  * Interface para estatísticas de números
@@ -45,7 +44,7 @@ const participantCampaignAPI = {
         
         return result;
 
-      } catch (error) {
+      } catch {
         return createErrorResponse('Erro ao conectar com o servidor:', 500);
       }
     },
@@ -53,10 +52,10 @@ const participantCampaignAPI = {
 
     getCampaignByIdPublic: async (campaignId: string) => {
       try {
-        const response = await fetch(`/api/participant/campanhas/${campaignId}`);
+        const response = await fetch(`/api/campanhas/${campaignId}`);
         const result = await response.json();
         return result;
-      } catch (error) {
+      } catch {
         return createErrorResponse('Erro ao conectar com o servidor:', 500);
       }
     },

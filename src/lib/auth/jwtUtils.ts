@@ -1,11 +1,13 @@
 import jwt from 'jsonwebtoken';
 import { JWT } from 'next-auth/jwt';
+import logger from '@/lib/logger/logger';
 
 export interface JWTPayload {
   userId: string;
   email: string;
   name: string;
   role: string;
+  phone: string;
   iat?: number;
   exp?: number;
 }
@@ -17,7 +19,9 @@ export const verifyToken = async (token: string): Promise<JWTPayload | null> => 
   try {
     const secret =  process.env.NEXTAUTH_SECRET;
     if (!secret) {
-      console.error('JWT_SECRET não está definido no ambiente');
+      logger.error({
+        message: '[jwt] JWT_SECRET não está definido no ambiente'
+      });
       return null;
     }
 
@@ -28,7 +32,10 @@ export const verifyToken = async (token: string): Promise<JWTPayload | null> => 
     }) as JWTPayload;
     return decoded;
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
+    logger.error({
+      message: '[jwt] Erro ao verificar token',
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
     return null;
   }
 };
@@ -77,7 +84,8 @@ export const convertNextAuthTokenToSocketToken = (token: JWT): string => {
     userId: token.sub,
     email: token.email as string,
     name: token.name as string,
-    role: token.role as string
+    role: token.role as string,
+    phone: token.phone as string
   };
 
   return createToken(payload);

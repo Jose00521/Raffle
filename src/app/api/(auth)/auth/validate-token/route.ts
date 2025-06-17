@@ -30,7 +30,33 @@ function getClientIp(request: NextRequest): string {
 /**
  * Função utilitária para introduzir um atraso controlado
  */
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve));
+
+/**
+ * Adiciona headers de segurança à resposta
+ */
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  // Previne clickjacking
+  response.headers.set('X-Frame-Options', 'DENY');
+  
+  // Previne MIME type sniffing
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  
+  // XSS Protection (legacy, mas ainda útil para browsers antigos)
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  
+  // Referrer policy restritiva
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Content Security Policy básica para APIs
+  response.headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none';");
+  
+  // Cache control para dados sensíveis
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  response.headers.set('Pragma', 'no-cache');
+  
+  return response;
+}
 
 /**
  * API endpoint para validar um token JWT
@@ -38,30 +64,43 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  */
 export async function GET(request: NextRequest) {
   try {
-    logger.info('Validando token...');
+    logger.info('[validate-token] Iniciando validação de token');
     const ip = getClientIp(request);
     const userAgent = request.headers.get('user-agent') || 'unknown';
     
     // Aplicar rate limiting
     try {
-      logger.info('Aplicando rate limiting...');
+      logger.info('[validate-token] Aplicando rate limiting...');
       await limiter.check(1, `${ip}:token-validation`);
     } catch {
-      logger.warn(`Rate limit excedido para IP: ${ip}`);
-      return NextResponse.json(
+      logger.warn(`[validate-token] Rate limit excedido para IP: ${ip.substring(0, 8)}***`);
+      const errorResponse = NextResponse.json(
         createErrorResponse('Muitas requisições, tente novamente mais tarde', 429),
         { status: 429 }
       );
+      return addSecurityHeaders(errorResponse);
     }
 
     // Verificar nonce para prevenir replay attacks
     const requestId = request.headers.get('X-Request-ID');
     if (!requestId) {
-      logger.warn(`Tentativa de validação sem request ID: ${ip}`);
-      return NextResponse.json(
+      logger.warn(`[validate-token] Tentativa de validação sem request ID: ${ip.substring(0, 8)}***`);
+      const errorResponse = NextResponse.json(
         createErrorResponse('Cabeçalho X-Request-ID obrigatório', 400),
         { status: 400 }
       );
+      return addSecurityHeaders(errorResponse);
+    }
+
+    // Validar formato do Request-ID (deve ser UUID v4)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(requestId)) {
+      logger.warn(`[validate-token] Request ID inválido: ${ip.substring(0, 8)}***`);
+      const errorResponse = NextResponse.json(
+        createErrorResponse('Formato de Request-ID inválido', 400),
+        { status: 400 }
+      );
+      return addSecurityHeaders(errorResponse);
     }
 
     // Obter o token bruto do cookie
@@ -69,7 +108,7 @@ export async function GET(request: NextRequest) {
     const secureSessionToken = request.cookies.get('__Secure-next-auth.session-token')?.value;
     const tokenString = sessionToken || secureSessionToken;
 
-    logger.info('Token bruto do cookie obtido');
+    logger.info('[validate-token] Verificando existência do token');
     
     // Se encontrou o token, validar
     if (tokenString) {
@@ -81,14 +120,18 @@ export async function GET(request: NextRequest) {
         
         const isValid = await verifyToken(tokenString);
 
-        logger.info('Token validado', isValid ? 'Sim' : 'Não');
+        logger.info('[validate-token] Token processado', { 
+          valid: !!isValid,
+          hasExp: !!(isValid?.exp)
+        });
         
         if (!isValid) {
-          logger.warn(`Token inválido para IP: ${ip}, User-Agent: ${userAgent}`);
-          return NextResponse.json(
+          logger.warn(`[validate-token] Token inválido para IP: ${ip.substring(0, 8)}***, User-Agent: ${userAgent.substring(0, 20)}***`);
+          const errorResponse = NextResponse.json(
             createErrorResponse('Token inválido', 401),
             { status: 401 }
           );
+          return addSecurityHeaders(errorResponse);
         }
 
         // Verificar se o token está próximo de expirar
@@ -98,8 +141,8 @@ export async function GET(request: NextRequest) {
           
           // Se faltar menos de 15 minutos para expirar, incluir aviso na resposta
           if (timeToExpire < 15 * 60) {
-            logger.info('Token próximo de expirar, incluindo aviso na resposta');
-            return NextResponse.json(
+            logger.info('[validate-token] Token próximo de expirar, incluindo aviso na resposta');
+            const warningResponse = NextResponse.json(
               { 
                 message: 'Token válido',
                 warning: 'Token próximo de expirar',
@@ -107,37 +150,47 @@ export async function GET(request: NextRequest) {
               },
               { status: 200 }
             );
+            return addSecurityHeaders(warningResponse);
           }
-          logger.info('Token válido, sem aviso de expiração');
+          logger.info('[validate-token] Token válido, sem aviso de expiração');
         }
       } catch (tokenError) {
-        logger.error(`Erro ao verificar token: ${tokenError}`);
-        return NextResponse.json(
+        logger.error(`[validate-token] Erro ao verificar token:`, { 
+          error: tokenError instanceof Error ? tokenError.message : 'Erro desconhecido',
+          ip: ip.substring(0, 8) + '***'
+        });
+        const errorResponse = NextResponse.json(
           createErrorResponse('Erro na verificação do token', 401),
           { status: 401 }
         );
+        return addSecurityHeaders(errorResponse);
       }
     } else {
-      logger.warn(`Token não encontrado para IP: ${ip}, User-Agent: ${userAgent}`);
-      return NextResponse.json(
+      logger.warn(`[validate-token] Token não encontrado para IP: ${ip.substring(0, 8)}***, User-Agent: ${userAgent.substring(0, 20)}***`);
+      const errorResponse = NextResponse.json(
         createErrorResponse('Token não encontrado', 401),
         { status: 401 }
       );
+      return addSecurityHeaders(errorResponse);
     }
 
     // Adicionar log de sucesso
-    logger.info(`Token validado com sucesso para IP: ${ip}, User-Agent: ${userAgent}`);
+    logger.info(`[validate-token] Token validado com sucesso para IP: ${ip.substring(0, 8)}***`);
 
     // Se tudo estiver OK, retornar sucesso
-    return NextResponse.json(
+    const successResponse = NextResponse.json(
       { message: 'Token válido' },
       { status: 200 }
     );
+    return addSecurityHeaders(successResponse);
   } catch (error) {
-    logger.error('Erro ao validar token:', error);
-    return NextResponse.json(
+    logger.error('[validate-token] Erro ao validar token:', { 
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
+    const errorResponse = NextResponse.json(
       createErrorResponse('Erro ao validar token', 500),
       { status: 500 }
     );
+    return addSecurityHeaders(errorResponse);
   }
 } 

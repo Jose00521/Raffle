@@ -1,8 +1,7 @@
+import 'reflect-metadata';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { CampaignController } from '@/server/controllers/CampaignController';
 import { container } from '@/server/container/container';
-import { UserController } from '@/server/controllers/UserController';
 import { createErrorResponse } from '@/server/utils/errorHandler/api';
 import { PrizeController } from '@/server/controllers/PrizeController';
 import logger from "@/lib/logger/logger";

@@ -21,8 +21,6 @@ export class UserAuthRepository implements IUserAuthRepository {
 
     async findByCredentials(phone: string, password: string): Promise<IUser | null> {
         try {
-            console.log('phone', phone);
-            console.log('password', password);
 
             const { SecureDataUtils } = await import('@/utils/encryption');
 
