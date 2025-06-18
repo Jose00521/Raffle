@@ -23,13 +23,13 @@ const ModalOverlay = styled.div`
   align-items: flex-start;
   z-index: 1000;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.5rem;
 `;
 
 const ModalContainer = styled.div<{ maxWidth?: string }>`
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   position: relative;
   width: 100%;
   max-width: ${props => props.maxWidth || '800px'};
@@ -38,7 +38,7 @@ const ModalContainer = styled.div<{ maxWidth?: string }>`
   
   @media (max-width: 640px) {
     padding: 1.25rem;
-    margin: 1rem auto;
+    margin: 0.5rem auto;
   }
 `;
 

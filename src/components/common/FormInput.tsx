@@ -109,8 +109,10 @@ const InputIcon = styled.div`
     font-size: 0.9em;
   }
   
-  @media (max-height: 700px) {
+  @media (max-height: 738px) {
     left: 8px;
+    height: 20px !important;
+    width: 20px !important;
     font-size: 0.85em;
   }
 `;
@@ -165,8 +167,8 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   }
   
   @media (max-width: 768px) {
-    height: 55px !important;
-    font-size: 1rem;
+    height: 45px !important;
+    font-size: 0.9rem;
   }
   
   @media (max-width: 480px) {

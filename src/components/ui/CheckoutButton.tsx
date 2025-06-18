@@ -662,7 +662,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       return children === "Prosseguir para Pagamento" ? "Prosseguir" : children;
     }
     if (typeof window !== 'undefined' && window.innerWidth <= 576) {
-      return children === "Prosseguir para Pagamento" ? "Pagar" : children;
+      return children === "Prosseguir para Pagamento" ? "Prosseguir para Pagamento" : children;
     }
     return children;
   };

@@ -28,74 +28,142 @@ import { IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPIClient from '@/API/userAPIClient';
 import MaximumTrustHeader from '../security/MaximumTrustHeader';
 
-// Styled Components for Summary Step
-const DataGroup = styled.div`
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  margin-bottom: 0.75rem;
+const ModalContent = styled.div`
+  padding: 0.5rem;
+`;
 
-  &:last-child {
-    margin-bottom: 0;
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #1e293b;
   }
 `;
 
+const SectionTitle = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const DataSection = styled.div`
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  overflow: hidden;
+  margin: 0.5rem 0;
+`;
+
 const DataHeader = styled.div`
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(to right, #f8fafc, #f1f5f9);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  margin-bottom: 0.5rem;
 
   svg {
-    color: #4f46e5;
-    font-size: 1rem;
+    color: #fff;
+    width: 1rem;
+    height: 1rem;
   }
 
   h3 {
-    font-size: 0.9rem;
+    color: #fff;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #1e293b;
     margin: 0;
   }
 `;
 
-const DataContent = styled.div`
-  padding: 0.75rem 1rem;
-`;
-
-const DataRow = styled.div`
+const DataGrid = styled.div`
   display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 0.75rem;
-  align-items: baseline;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  padding: 0.75rem;
+  background: #fff;
 
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
+  @media (max-width: 640px) {
+  grid-template-columns: repeat(2, 1fr);
+      flex-wrap: nowrap;
+    gap: 0.375rem;
+    padding: 0.5rem;
   }
 `;
 
-const DataLabel = styled.span`
-  font-size: 0.8rem;
+const DataItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #fff;
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  svg {
+    color: #6366f1;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+`;
+
+const DataContent = styled.div`
+  flex: 1;
+  min-width: 0; // Evita overflow em textos longos
+`;
+
+const DataLabel = styled.div`
+  font-size: 0.675rem;
+  font-weight: 500;
   color: #64748b;
-  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.125rem;
 `;
 
-const DataValue = styled.span`
-  font-size: 0.85rem;
-  color: #0f172a;
+const DataValue = styled.div`
+  font-size: 0.75rem;
   font-weight: 500;
-  word-break: break-word;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 interface QuickSignupModalProps {
@@ -493,7 +561,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
         <Form onSubmit={handleSubmit(onSubmit)}>
           {currentStep === 0 ? (
             <>
-              <SectionTitle>Checkout</SectionTitle>
+              <StepTitle>Checkout</StepTitle>
             
               <FormRow>
                 <FormInput
@@ -528,7 +596,10 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             </>
           ) : currentStep === 1 ? (
             <div key="personal-data-step">
-              <SectionTitle>Dados pessoais</SectionTitle>
+              <StepSubtitle>
+                <FaUser />
+                Dados do participante
+              </StepSubtitle>
               
               <FormInput
                 id="nome"
@@ -651,72 +722,66 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             <>
               {foundUser && (
                 <>
-                  <SectionTitle>Dados do usuário</SectionTitle>
-                  <UserDataSection>
-                    
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaUser /> Nome:
-                      </UserDataLabel>
-                      <UserDataValue>{foundUser.name}</UserDataValue>
-                    </UserDataRow>
-                    
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaEnvelope /> Email:
-                      </UserDataLabel>
-                      <UserDataValue>{foundUser.email}</UserDataValue>
-                    </UserDataRow>
-                    
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaPhone /> Telefone:
-                      </UserDataLabel>
-                      <UserDataValue>{foundUser.phone}</UserDataValue>
-                    </UserDataRow>
-                    
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaIdCard /> CPF:
-                      </UserDataLabel>
-                      <UserDataValue>{foundUser.cpf}</UserDataValue>
-                    </UserDataRow>
-                    
-                    {foundUser.address && (
-                      <>
-                        {
-                          (foundUser.address.street_display && foundUser.address.number_display && foundUser.address.city && foundUser.address.state && foundUser.address.zipCode_display) ? (
-                            <UserDataRow>
-                            <UserDataLabel>
-                              <FaMapMarkerAlt /> Endereço:
-                            </UserDataLabel>
-                            <UserDataValue>
-                              {foundUser.address.street_display}, {foundUser.address.number_display}
-                              {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
-                            </UserDataValue>
-                          </UserDataRow>
-                          ) : (
-                            <></>
-                          )
-                        }
-                        
-                        {
-                          (foundUser.address.city && foundUser.address.state && foundUser.address.zipCode_display) ? (
-                            <UserDataRow>
-                            <UserDataLabel>
-                              <FaCity /> Cidade:
-                            </UserDataLabel>
-                            <UserDataValue>
-                              {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
-                            </UserDataValue>
-                          </UserDataRow>
-                          ) : (
-                            <></>
-                          )
-                        }
-                      </>
-                    )}
-                  </UserDataSection>
+ 
+                  <DataSection>
+                    <DataHeader>
+                      <FaUserCheck />
+                      <h3>Dados do Comprador</h3>
+                    </DataHeader>
+                    <DataGrid>
+                      <DataItem>
+                        <FaUser />
+                        <DataContent>
+                          <DataLabel>Nome</DataLabel>
+                          <DataValue>{foundUser.name}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaEnvelope />
+                        <DataContent>
+                          <DataLabel>Email</DataLabel>
+                          <DataValue>{foundUser.email}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaPhone />
+                        <DataContent>
+                          <DataLabel>Telefone</DataLabel>
+                          <DataValue>{foundUser.phone}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaIdCard />
+                        <DataContent>
+                          <DataLabel>CPF</DataLabel>
+                          <DataValue>{foundUser.cpf}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      {foundUser.address && (
+                        <>
+                          <DataItem>
+                            <FaMapMarkerAlt />
+                            <DataContent>
+                              <DataLabel>Endereço</DataLabel>
+                              <DataValue>
+                                {foundUser.address.street_display}, {foundUser.address.number_display}
+                                {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
+                              </DataValue>
+                            </DataContent>
+                          </DataItem>
+                          <DataItem>
+                            <FaCity />
+                            <DataContent>
+                              <DataLabel>Cidade</DataLabel>
+                              <DataValue>
+                                {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
+                              </DataValue>
+                            </DataContent>
+                          </DataItem>
+                        </>
+                      )}
+                    </DataGrid>
+                  </DataSection>
                   
                   <SectionDivider />
                   
@@ -737,7 +802,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             </>
           ) : currentStep === 2 ? (
             <div key="address-step">
-              <SectionTitle>Endereço</SectionTitle>
+              <StepTitle>Endereço</StepTitle>
               
               <FormRow>
                 <FormInput
@@ -835,7 +900,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             </div>
           ) : currentStep === 3 ? (
             <>
-              <SectionTitle>Senha</SectionTitle>
+              <StepTitle>Senha</StepTitle>
               
               {/* <FormRow>
                 <FormInput
@@ -884,7 +949,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             </>
           ) : currentStep === 4 ? (
             <div key="summary-step">
-              <SectionTitle>Resumo da Compra</SectionTitle>
+              <StepTitle>Resumo da Compra</StepTitle>
               
               <DataGroup>
                 <DataHeader>
@@ -1009,49 +1074,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 };
 
 // Styled components
-const ModalHeader = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const HeaderActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const CloseButton = styled.button`
-  background: rgba(248, 250, 252, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.95);
-    color: #475569;
-    transform: translateY(-1px);
-  }
-  
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const ModalContent = styled.div`
-  width: 100%;
-`;
-
 const TrustBadge = styled.div`
   display: flex;
   align-items: center;
@@ -1194,25 +1216,6 @@ const SubTitle = styled.p`
   color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
-const SectionTitle = styled.h3`
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: ${({ theme }) => theme.colors.text.primary};
-  position: relative;
-  
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: -0.25rem;
-    left: 0;
-    width: 2rem;
-    height: 2px;
-    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
-    border-radius: 2px;
-  }
-`;
-
 const FormRow = styled.div`
   display: flex;
   gap: 24px;
@@ -1242,16 +1245,6 @@ const FormRow = styled.div`
     }
   }
 `;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  
-  & > div:not(${FormRow}) {
-    margin-bottom: 24px;
-  }
-`;
-
 
 const SecurityInfo = styled.div`
   display: flex;
@@ -1492,6 +1485,11 @@ const PrimaryButton = styled(Button)`
   &:active:not(:disabled) {
     transform: translateY(0);
   }
+
+    @media (min-width: 738px) {
+    height: 55px !important;
+    font-size: 0.9rem;
+  }
 `;
 
 const SecondaryButton = styled(Button)`
@@ -1503,6 +1501,16 @@ const SecondaryButton = styled(Button)`
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.gray.light};
     border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  @media (min-width: 738px) {
+    height: 55px !important;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 738px) {
+    height: 55px !important;
+    font-size: 0.9rem;
   }
 `;
 
@@ -1525,154 +1533,37 @@ const LoginLink = styled.a`
 `;
 
 // User Data Section Styled Components
-const UserDataSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  background: linear-gradient(135deg, #fdfdfd 0%, #f8fffe 100%);
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
-  border: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  position: relative;
-  overflow: hidden;
-  animation: slideIn 0.4s ease-out;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.primary}30, transparent);
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  @media (max-width: 576px) {
-    padding: 0.85rem;
-    border-radius: 10px;
-  }
-`;
-
-
-
-const UserDataRow = styled.div`
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem;
-  align-items: center;
-  padding: 0.65rem;
-  margin-bottom: 0.4rem;
-  background: white;
+const DataGroup = styled.div`
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.gray.light}40;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: ${({ theme }) => theme.colors.primary};
-    border-radius: 0 2px 2px 0;
-    opacity: 0.6;
-    transition: all 0.2s ease;
-  }
-  
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    border-color: ${({ theme }) => theme.colors.primary}30;
-    
-    &::before {
-      opacity: 1;
-      width: 4px;
-    }
-  }
-  
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0.75rem;
+
   &:last-child {
     margin-bottom: 0;
   }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 0.3rem;
-    padding: 0.55rem;
-    margin-bottom: 0.35rem;
-  }
-  
-  @media (max-width: 576px) {
-    padding: 0.5rem;
-    border-radius: 6px;
-  }
 `;
 
-const UserDataLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 500;
-  font-size: 0.7rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  min-width: 80px;
-  
-  svg {
-    font-size: 0.85rem;
-    color: ${({ theme }) => theme.colors.primary};
-    opacity: 0.8;
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 0.65rem;
-    min-width: auto;
-    margin-bottom: 0.2rem;
-    
-    svg {
-      font-size: 0.8rem;
-    }
-  }
-`;
-
-const UserDataValue = styled.div`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-weight: 600;
+const DataRow = styled.div`
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
   font-size: 0.85rem;
-  word-break: break-word;
-  line-height: 1.3;
-  
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
+
+  &:last-child {
+    margin-bottom: 0;
   }
-  
-  @media (max-width: 576px) {
-    font-size: 0.75rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
   }
 `;
 
-// Section Divider
 const SectionDivider = styled.div`
   height: 1px;
   background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.gray.medium}20, transparent);
@@ -1753,6 +1644,50 @@ const SummaryValue = styled.span`
   color: #0f172a;
   font-weight: 500;
   word-break: break-word;
+`;
+
+const StepTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a237e;
+  margin: 0.5rem 0 1rem;
+  position: relative;
+  display: inline-block;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #4f46e5);
+    border-radius: 4px;
+  }
+`;
+
+const StepSubtitle = styled.h3`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  svg {
+    color: #6366f1;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), transparent);
+    margin-left: 0.75rem;
+  }
 `;
 
 export default QuickSignupModal;
