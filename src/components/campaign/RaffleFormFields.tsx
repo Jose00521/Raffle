@@ -36,7 +36,6 @@ import FormDatePicker from '../common/FormDatePicker';
 import AdvancedDateTimePicker from '../common/AdvancedDateTimePicker';
 import WysiwygEditor from '../common/WysiwygEditor';
 import PrizeConfigForm from '../raffle/PrizeConfigForm';
-import { MOCK_PRIZES } from '@/app/(private)/dashboard/criador/premios/page';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 // Importar as funções formatPrizeValue e extractNumericValue
 // Importar os novos componentes modulares
@@ -3382,23 +3381,42 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       }),
       
       // Pacotes de números (numberPackages)
-      numberPackages: data.enablePackages ? data.numberPackages.map(pkg => {
-        // Calculate the correct price based on individualNumberPrice and discount
-        const originalPrice = data.individualNumberPrice * pkg.quantity;
-        const discountedPrice = originalPrice * (1 - pkg.discount / 100);
+      numberPackages: data.enablePackages ? (() => {
+        // Primeiro, encontrar o maior desconto entre os pacotes ativos
+        const activePackages = data.numberPackages.filter(pkg => pkg.isActive !== false);
+        const maxDiscount = activePackages.length > 0 
+          ? Math.max(...activePackages.map(pkg => (data.individualNumberPrice * pkg.quantity) * (1 - pkg.discount / 100))) 
+          : 0;
         
-        return {
-          name: pkg.name, // Preserve custom package name
-          description: pkg.description || `Pacote com ${pkg.quantity} números`,
-          quantity: pkg.quantity,
-          price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
-          discount: pkg.discount,
-          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-          highlight: pkg.highlight || false,
-          order: pkg.order || 1,
-          maxPerUser: pkg.maxPerUser
-        };
-      }) : [],
+        console.log('📊 Processando pacotes - Maior desconto encontrado:', maxDiscount + '%');
+        
+        return data.numberPackages.map(pkg => {
+          // Calculate the correct price based on individualNumberPrice and discount
+          const originalPrice = data.individualNumberPrice * pkg.quantity;
+          const discountedPrice = originalPrice * (1 - pkg.discount / 100);
+          
+          // Definir highlight=true apenas para o pacote com maior desconto (e que esteja ativo)
+          const shouldHighlight = discountedPrice === maxDiscount && 
+                                 (pkg.isActive !== false) && 
+                                 maxDiscount > 0;
+          
+          if (shouldHighlight) {
+            console.log(`🌟 Pacote "${pkg.name}" marcado como destaque (${pkg.discount}% desconto)`);
+          }
+          
+          return {
+            name: pkg.name, // Preserve custom package name
+            description: pkg.description || `Pacote com ${pkg.quantity} números`,
+            quantity: pkg.quantity,
+            price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
+            discount: pkg.discount,
+            isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+            highlight: shouldHighlight, // Automaticamente destacar o maior desconto
+            order: pkg.order || 1,
+            maxPerUser: pkg.maxPerUser
+          };
+        });
+      })() : [],
       
       // Detalhes adicionais
       regulation: data.regulation || '',
@@ -3657,6 +3675,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             control={control}
             render={({ field }) => (
                   <CustomDropdown
+                    id="winnerPositions"
                     options={winnerOptions}
                     value={field.value.toString()}
                     onChange={handleWinnerCountChange}
