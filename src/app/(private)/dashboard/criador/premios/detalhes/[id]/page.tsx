@@ -12,6 +12,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import PrizeDetailSkeleton from '@/components/ui/PrizeDetailSkeleton';
 import { toast, ToastContainer } from 'react-toastify';
 import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
+import LoadingScreen from '@/components/common/LoadingScreen';
 
 // ======== ENHANCED PROFESSIONAL UI COMPONENTS ========
 
@@ -733,7 +734,12 @@ export default function PrizeDetailPage() {
   };
   
   if (isLoading) {
-    return <PrizeDetailSkeleton withDashboard />;
+    return (
+      <LoadingScreen 
+        title="Carregando prêmio"
+        subtitle="Buscando todos os detalhes do prêmio"
+      />
+    );
   }
   
   return (

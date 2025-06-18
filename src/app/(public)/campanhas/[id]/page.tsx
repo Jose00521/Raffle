@@ -13,7 +13,7 @@ import {
   CompletedCampaignPage, 
   CanceledCampaignPage 
 } from '@/components/campaign/CampaignStatusPages';
-import LoadingAnimation from '@/components/common/LoadingAnimation';
+import LoadingScreen from '@/components/common/LoadingScreen';
 import CampanhaEmBreve from '@/components/campaign/CampanhaEmBreve';
 import participantCampaignAPI from '@/API/participant/participantCampaignAPIClient';
 
@@ -99,13 +99,19 @@ export default function CampanhaPage() {
   // Loading state
   if (isLoading) {
   return (
-      <LoadingAnimation 
-        text="Carregando campanha..." 
-        overlay={true} 
-      />
+      <LoadingScreen />
     );
   }
 
   // Renderizar o conteúdo determinado no useEffect
-  return content;
+  return (
+    <>
+      {isLoading ? (
+        <LoadingScreen />
+      ) : (
+        content
+      )}
+      <ToastContainer />
+    </>
+  );
 } 

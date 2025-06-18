@@ -112,7 +112,10 @@ export class CampaignRepository implements ICampaignRepository {
     try {
       await this.db.connect();
 
-      const campaign = await Campaign.findOne({campaignCode: id},'-_id -__v -stats').populate('createdBy', 'name email userCode').lean() as ICampaign | null;
+      const campaign = await Campaign.findOne({campaignCode: id},'-_id -__v -stats')
+      .populate('createdBy', 'name email userCode')
+      .populate('prizeDistribution.prizes', '-_id -categoryId -createdBy')
+      .lean() as ICampaign | null;
 
       return createSuccessResponse(campaign as ICampaign, 'Campanha encontrada com sucesso', 200);
 

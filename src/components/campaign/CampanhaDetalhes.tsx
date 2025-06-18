@@ -22,6 +22,43 @@ interface CampanhaDetalheProps {
 
 
 // Componente principal
+/*
+EXEMPLO DE FUNCIONAMENTO DOS PRÊMIOS POR POSIÇÃO:
+
+1. Para campanhas com múltiplas distribuições (1º, 2º, 3º lugar):
+   prizeDistribution: [
+     { position: 1, prizes: [{ name: "Carro", value: 75000 }] },
+     { position: 2, prizes: [{ name: "Moto", value: 25000 }] },
+     { position: 3, prizes: [{ name: "R$", value: 5000 }] }
+   ]
+   Resultado: 🏆 1º R$ 75.000,00  2º R$ 25.000,00  3º R$ 5.000,00
+
+2. Para campanhas com múltiplos prêmios iguais:
+   prizeDistribution: [
+     { position: 1, prizes: [
+       { name: "Carro 1", value: 75000 },
+       { name: "Carro 2", value: 75000 },
+       { name: "Carro 3", value: 75000 }
+     ]}
+   ]
+   Resultado: 🏆 1º R$ 75.000,00  2º R$ 75.000,00  3º R$ 75.000,00
+
+3. Para campanha com prêmio único (comportamento atual):
+   prizeDistribution: [
+     { position: 1, prizes: [{ name: "Carro", value: 75000 }] }
+   ]
+   Resultado: Não mostra a seção de prêmios por posição
+
+NOVA FUNCIONALIDADE - SEÇÃO DE IMAGENS DOS PRÊMIOS:
+- Aparece logo abaixo do carrossel de imagens
+- Layout horizontal discreto com scroll em mobile
+- Mostra mini-imagens dos prêmios por posição (1º, 2º, 3º)
+- Badge dourado com a posição no canto superior direito
+- Nome do prêmio (truncado) e valor abaixo da imagem
+- Indicador "+X mais" para prêmios adicionais
+- Ocupa pouco espaço vertical, máximo horizontal
+- Visual limpo e minimalista
+*/
 const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) => {
   // Valor mínimo R$12,00, então se cada número custa R$1,00, são 12 números mínimo
   const initialized = useRef(false);
@@ -343,6 +380,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     setVisiblePremiado(prev => Math.min(prev + 10, premiadoPrizes));
   };
 
+  const prizeValue = ()=>{
+
+    const sumPerPosition: number[] = []	;
+    campanhaDetalhes?.prizeDistribution?.forEach(prize => {
+      const value = prize.prizes?.reduce((acc, curr) => {
+        return acc + Number((curr as IPrize).value);
+      }, 0);
+      sumPerPosition.push(value);
+    });
+    return sumPerPosition.reduce((acc, curr) => acc + curr, 0);
+  };
+
 
   // Componente para renderizar uma categoria de prêmios
   // const PremioCategory = ({ ... entire component implementation ... }) => { ... }
@@ -357,38 +406,87 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     <Container>
       {/* Banner da campanha */}
       <Banner style={{ backgroundImage: `url(${campanhaDetalhes?.coverImage || ''})` }}>
-        {/* Botão Meus Números */}
-        <MeusTitulosButton onClick={handleMeusNumerosClick}>
-          <i className="fas fa-ticket-alt"></i> Meus Números
-        </MeusTitulosButton>
+
         
-        {/* Código do sorteio */}
-        <BannerOverlay>
-          <CodigoSorteio>
-            {campanhaDetalhes?.campaignCode}
-          </CodigoSorteio>
-          
-          {/* Título da campanha */}
-          <Titulo>{campanhaDetalhes?.title}</Titulo>
-          
-          {/* Subtítulo/prêmio principal */}
-          <SubTitulo>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name || campanhaDetalhes?.title}</SubTitulo>
-          
-          {/* Botões de ação */}
-          <BotoesAcao>
-            <BotaoCompartilhar>
-              <i className="fas fa-share-alt"></i> Compartilhar
-            </BotaoCompartilhar>
-            <BotaoFavorito>
-              <i className="fas fa-heart"></i>
-            </BotaoFavorito>
+                <BannerOverlay>
+          {/* Título principal posicionado no canto inferior esquerdo */}
+          <TituloContainer>
+            {/* Header pequeno com botão verde e código acima do título */}
+            <HeaderPequeno>
+              <BotaoVerdePequeno>Adquira já!</BotaoVerdePequeno>
+              <CodigoSorteioTitulo>{campanhaDetalhes?.campaignCode}</CodigoSorteioTitulo>
+            </HeaderPequeno>
             
-          </BotoesAcao>
+            <Titulo>{campanhaDetalhes?.title}</Titulo>
+            <SubTitulo>
+              IMAGEM ILUSTRATIVA - VALOR DO PRÊMIO {formatCurrency(Number(prizeValue()) || 0)}
+            </SubTitulo>
+            
+            {/* Mostrar prêmios por posição se houver múltiplos */}
+            {campanhaDetalhes?.prizeDistribution && (
+              campanhaDetalhes.prizeDistribution.length > 1 || 
+              (campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 1)
+            ) && (
+              <PremiosPorPosicao>
+                {/* Se há múltiplas distribuições (1º, 2º, 3º lugar) */}
+                {campanhaDetalhes.prizeDistribution.length > 1 ? (
+                  <>
+                    {campanhaDetalhes.prizeDistribution.slice(0, 3).map((distribution, index) => (
+                      <PremioItem key={index}>
+                        <PosicaoNumero>{index + 1}º</PosicaoNumero>
+                        <PremioValor>{formatCurrency(Number((distribution.prizes?.[0] as IPrize)?.value) || 0)}</PremioValor>
+                      </PremioItem>
+                    ))}
+                    {campanhaDetalhes.prizeDistribution.length > 3 && (
+                      <PremioItem>
+                        <PosicaoNumero $isExtra>+{campanhaDetalhes.prizeDistribution.length - 3}</PosicaoNumero>
+                        <PremioTexto>outros</PremioTexto>
+                      </PremioItem>
+                    )}
+                  </>
+                ) : (
+                  /* Se há múltiplos prêmios na mesma categoria (ex: 3 carros iguais) */
+                  campanhaDetalhes.prizeDistribution[0]?.prizes?.slice(0, 3).map((prize, index) => (
+                    <PremioItem key={index}>
+                      <PosicaoNumero>{index + 1}º</PosicaoNumero>
+                      <PremioValor>{formatCurrency(Number((prize as IPrize)?.value) || 0)}</PremioValor>
+                    </PremioItem>
+                  ))
+                )}
+                {/* Mostrar quantos prêmios adicionais há */}
+                                 {campanhaDetalhes.prizeDistribution.length === 1 && 
+                  campanhaDetalhes.prizeDistribution[0]?.prizes && 
+                  campanhaDetalhes.prizeDistribution[0].prizes.length > 3 && (
+                   <PremioItem>
+                     <PosicaoNumero $isExtra>+{campanhaDetalhes.prizeDistribution[0].prizes.length - 3}</PosicaoNumero>
+                     <PremioTexto>outros</PremioTexto>
+                   </PremioItem>
+                 )}
+              </PremiosPorPosicao>
+            )}
+          </TituloContainer>
         </BannerOverlay>
+        
+        {/* Seção da data do sorteio na parte inferior */}
+        <SorteioContainer>
+          <SorteioInfo $position="left">
+            <SorteioTexto>Sorteio</SorteioTexto>
+            <SorteioData>{dataSorteio}</SorteioData>
+          </SorteioInfo>
+          
+          <MeusTitulosButton onClick={handleMeusNumerosClick}>
+            <i className="fas fa-ticket-alt"></i> Meus Números
+          </MeusTitulosButton>
+          
+          <SorteioInfo $position="right">
+            <SorteioTexto>Por apenas</SorteioTexto>
+            <SorteioValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice || 0)}</SorteioValor>
+          </SorteioInfo>
+        </SorteioContainer>
       </Banner>
       
       {/* Progresso */}
-      <ProgressoContainer>
+      {/*<ProgressoContainer>
         <ProgressoInfo>
           <ProgressoTexto>
             <span>{progresso}% vendido</span>
@@ -399,7 +497,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
         <ProgressoBar>
           <ProgressoBarFill style={{ width: `${progresso}%` }} />
         </ProgressoBar>
-      </ProgressoContainer>
+      </ProgressoContainer>*/}
       
       {/* Conteúdo principal */}
       <Conteudo>
@@ -493,6 +591,76 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 </MiniaturaBotao>
               ))}
             </MiniaturasContainer>
+            
+            {/* Seção de Prêmios por Posição com Imagens */}
+            {campanhaDetalhes?.prizeDistribution && (
+              campanhaDetalhes.prizeDistribution.length > 1 || 
+              (campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 1)
+            ) && (
+              <PremiosSecaoWrapper>
+                <PremiosSecaoHeader>
+                  <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
+                  <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
+                  <PremiosSecaoSubtitulo>
+                    {campanhaDetalhes.prizeDistribution.length > 1 
+                      ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
+                      : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
+                    }
+                  </PremiosSecaoSubtitulo>
+                </PremiosSecaoHeader>
+                <PremiosImagensContainer>
+                {/* Se há múltiplas distribuições (2º lugar em diante) */}
+                {campanhaDetalhes.prizeDistribution.length > 1 ? (
+                  campanhaDetalhes.prizeDistribution.slice(1).map((distribution, index) => (
+                    <PremioImagemItem key={index}>
+                      <PremioImagemWrapper>
+                        <PremioImagem 
+                          src={(distribution.prizes?.[0] as IPrize)?.images?.[0] || campanhaDetalhes.coverImage} 
+                          alt={`Prêmio ${index + 2}º lugar`}
+                        />
+                        <PosicaoBadge>{index + 2}º</PosicaoBadge>
+                      </PremioImagemWrapper>
+                      <PremioImagemInfo>
+                        <PremioImagemNome>{(distribution.prizes?.[0] as IPrize)?.name || `${index + 2}º Lugar`}</PremioImagemNome>
+                        <PremioImagemValor>{formatCurrency(Number((distribution.prizes?.[0] as IPrize)?.value) || 0)}</PremioImagemValor>
+                      </PremioImagemInfo>
+                    </PremioImagemItem>
+                  ))
+                ) : (
+                  /* Se há múltiplos prêmios na mesma categoria (2º lugar em diante) */
+                  campanhaDetalhes.prizeDistribution[0]?.prizes?.slice(1).map((prize, index) => (
+                    <PremioImagemItem key={index}>
+                      <PremioImagemWrapper>
+                        <PremioImagem 
+                          src={(prize as IPrize)?.images?.[0] || campanhaDetalhes.coverImage} 
+                          alt={`Prêmio ${index + 2}º lugar`}
+                        />
+                        <PosicaoBadge>{index + 2}º</PosicaoBadge>
+                      </PremioImagemWrapper>
+                      <PremioImagemInfo>
+                        <PremioImagemNome>{(prize as IPrize)?.name || `${index + 2}º Lugar`}</PremioImagemNome>
+                        <PremioImagemValor>{formatCurrency(Number((prize as IPrize)?.value) || 0)}</PremioImagemValor>
+                      </PremioImagemInfo>
+                    </PremioImagemItem>
+                  ))
+                )}
+                
+                {/* Mostrar indicador de mais prêmios se necessário */}
+                {((campanhaDetalhes.prizeDistribution.length > 1 && campanhaDetalhes.prizeDistribution.length > 4) ||
+                  (campanhaDetalhes.prizeDistribution.length === 1 && campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 4)) && (
+                  <PremioMaisItem>
+                    <PremioMaisIcone>+</PremioMaisIcone>
+                    <PremioMaisTexto>
+                      {campanhaDetalhes.prizeDistribution.length > 1 
+                        ? `${campanhaDetalhes.prizeDistribution.length - 4} mais`
+                        : `${(campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0) - 4} mais`
+                      }
+                    </PremioMaisTexto>
+                  </PremioMaisItem>
+                )}
+              </PremiosImagensContainer>
+              </PremiosSecaoWrapper>
+            )}
           </PainelImagem>
           
           {/* Mobile purchase container */}
@@ -677,6 +845,64 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 </MiniaturaBotao>
               ))}
             </MiniaturasContainer>
+            
+            {/* Seção de Prêmios por Posição com Imagens */}
+            {campanhaDetalhes?.prizeDistribution && (
+              campanhaDetalhes.prizeDistribution.length > 1 || 
+              (campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 1)
+                          ) && (
+              <PremiosImagensContainer>
+                {/* Se há múltiplas distribuições (2º lugar em diante) */}
+                {campanhaDetalhes.prizeDistribution.length > 1 ? (
+                  campanhaDetalhes.prizeDistribution.slice(1).map((distribution, index) => (
+                    <PremioImagemItem key={index}>
+                      <PremioImagemWrapper>
+                        <PremioImagem 
+                          src={(distribution.prizes?.[0] as IPrize)?.images?.[0] || campanhaDetalhes.coverImage} 
+                          alt={`Prêmio ${index + 2}º lugar`}
+                        />
+                        <PosicaoBadge>{index + 2}º</PosicaoBadge>
+                      </PremioImagemWrapper>
+                      <PremioImagemInfo>
+                        <PremioImagemNome>{(distribution.prizes?.[0] as IPrize)?.name || `${index + 2}º Lugar`}</PremioImagemNome>
+                        <PremioImagemValor>{formatCurrency(Number((distribution.prizes?.[0] as IPrize)?.value) || 0)}</PremioImagemValor>
+                      </PremioImagemInfo>
+                    </PremioImagemItem>
+                  ))
+                ) : (
+                  /* Se há múltiplos prêmios na mesma categoria (2º lugar em diante) */
+                  campanhaDetalhes.prizeDistribution[0]?.prizes?.slice(1).map((prize, index) => (
+                    <PremioImagemItem key={index}>
+                      <PremioImagemWrapper>
+                        <PremioImagem 
+                          src={(prize as IPrize)?.images?.[0] || campanhaDetalhes.coverImage} 
+                          alt={`Prêmio ${index + 2}º lugar`}
+                        />
+                        <PosicaoBadge>{index + 2}º</PosicaoBadge>
+                      </PremioImagemWrapper>
+                      <PremioImagemInfo>
+                        <PremioImagemNome>{(prize as IPrize)?.name || `${index + 2}º Lugar`}</PremioImagemNome>
+                        <PremioImagemValor>{formatCurrency(Number((prize as IPrize)?.value) || 0)}</PremioImagemValor>
+                      </PremioImagemInfo>
+                    </PremioImagemItem>
+                  ))
+                )}
+                
+                {/* Mostrar indicador de mais prêmios se necessário */}
+                {((campanhaDetalhes.prizeDistribution.length > 1 && campanhaDetalhes.prizeDistribution.length > 4) ||
+                  (campanhaDetalhes.prizeDistribution.length === 1 && campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 4)) && (
+                  <PremioMaisItem>
+                    <PremioMaisIcone>+</PremioMaisIcone>
+                    <PremioMaisTexto>
+                      {campanhaDetalhes.prizeDistribution.length > 1 
+                        ? `${campanhaDetalhes.prizeDistribution.length - 4} mais`
+                        : `${(campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0) - 4} mais`
+                      }
+                    </PremioMaisTexto>
+                  </PremioMaisItem>
+                )}
+              </PremiosImagensContainer>
+            )}
           </PainelImagem>
           
           {/* Row layout below the images */}
@@ -1019,32 +1245,35 @@ const BannerOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
-  padding: 1.5rem;
+  background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: space-between;
+  
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 `;
 
 const MeusTitulosButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   background: rgba(255, 255, 255, 0.95);
   color: #2d3748;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
-  z-index: 10;
+  white-space: nowrap;
+  justify-self: center;
   
   &:hover {
     background: rgba(255, 255, 255, 1);
@@ -1064,10 +1293,9 @@ const MeusTitulosButton = styled.button`
   }
   
   @media (max-width: 768px) {
-    top: 0.75rem;
-    right: 0.75rem;
-    padding: 0.4rem 0.6rem;
+    padding: 0.4rem 0.8rem;
     font-size: 0.75rem;
+    gap: 0.3rem;
     
     i {
       font-size: 0.7rem;
@@ -1075,77 +1303,537 @@ const MeusTitulosButton = styled.button`
   }
 `;
 
-const CodigoSorteio = styled.div`
-  background-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(5px);
-  color: ${({ theme }) => theme.colors.white};
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
-  margin-bottom: 1rem;
+const HeaderPequeno = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  
+  @media (min-width: 768px) {
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const BotaoVerdePequeno = styled.div`
+  background: #10b981;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
+  animation: piscar 1.5s infinite;
+  
+  @keyframes piscar {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  @media (min-width: 768px) {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+  }
+`;
+
+const CodigoSorteioTitulo = styled.div`
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #2d3748;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   font-weight: 600;
-  font-size: 0.9rem;
-  width: fit-content;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.65rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  
+  @media (min-width: 768px) {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+  }
+`;
+
+const TituloContainer = styled.div`
+  position: absolute;
+  bottom: 4rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  z-index: 2;
+  
+  @media (min-width: 768px) {
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 5rem;
+  }
 `;
 
 const Titulo = styled.h1`
   font-size: 1.8rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  
-  @media (min-width: 768px) and (max-width: 1200px) {
-    font-size: 2rem;
-  }
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.1;
   
   @media (min-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
+    margin-bottom: 0.75rem;
   }
 `;
 
 const SubTitulo = styled.h2`
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   opacity: 0.9;
-  margin-bottom: 1.5rem;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  line-height: 1.3;
   
-  @media (min-width: 768px) and (max-width: 1200px) {
-    font-size: 1.3rem;
-    margin-bottom: 1.2rem;
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const ValoresContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  gap: 2rem;
+`;
+
+const ValorEsquerda = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+`;
+
+const ValorDireita = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+`;
+
+const ValorLabel = styled.div`
+  background: #ff4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+  
+  @media (min-width: 768px) {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+`;
+
+const ValorPrincipal = styled.div`
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+  line-height: 1;
+  
+  @media (min-width: 768px) {
+    font-size: 3.5rem;
+  }
+`;
+
+const ValorNumero = styled.div`
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+  
+  @media (min-width: 768px) {
+    font-size: 3.5rem;
+  }
+`;
+
+const SorteioContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  height: 3.5rem;
+  z-index: 1;
+  
+  @media (min-width: 768px) {
+    padding: 1rem 1.5rem;
+    height: 4rem;
+  }
+`;
+
+const SorteioInfo = styled.div<{ $position?: 'left' | 'right' }>`
+  display: flex;
+  flex-direction: column;
+  align-items: ${({ $position }) => 
+    $position === 'left' ? 'flex-start' : 
+    $position === 'right' ? 'flex-end' : 
+    'center'
+  };
+  justify-self: ${({ $position }) => 
+    $position === 'left' ? 'start' : 
+    $position === 'right' ? 'end' : 
+    'center'
+  };
+`;
+
+const SorteioTexto = styled.div`
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+  
+  @media (min-width: 768px) {
+    font-size: 0.85rem;
+  }
+`;
+
+const SorteioData = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const SorteioValor = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const PremiosPorPosicao = styled.div`
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  
+  @media (min-width: 768px) {
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+`;
+
+const PremioItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  
+  @media (min-width: 768px) {
+    padding: 0.2rem 0.5rem;
+    gap: 0.3rem;
+    border-radius: 5px;
+  }
+`;
+
+const PosicaoNumero = styled.div<{ $isExtra?: boolean }>`
+  background: ${({ $isExtra }) => $isExtra ? 
+    '#bbb' : 
+    '#ffd700'
+  };
+  color: #333;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.1rem 0.25rem;
+  border-radius: 3px;
+  min-width: 1.2rem;
+  text-align: center;
+  
+  @media (min-width: 768px) {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+    min-width: 1.4rem;
+  }
+`;
+
+const PremioValor = styled.div`
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #555;
+  
+  @media (min-width: 768px) {
+    font-size: 0.65rem;
+  }
+`;
+
+const PremioTexto = styled.div`
+  font-size: 0.55rem;
+  font-weight: 500;
+  color: #777;
+  
+  @media (min-width: 768px) {
+    font-size: 0.6rem;
+  }
+`;
+
+// Componentes para a seção de prêmios com imagens
+const PremiosSecaoWrapper = styled.div`
+  background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const PremiosSecaoHeader = styled.div`
+  text-align: center;
+  margin-bottom: 0.75rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const PremiosSecaoIcone = styled.span`
+  font-size: 1.5rem;
+  display: block;
+`;
+
+const PremiosSecaoTitulo = styled.h3`
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.3px;
+`;
+
+const PremiosSecaoSubtitulo = styled.p`
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  letter-spacing: 0.2px;
+`;
+
+const PremiosImagensContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  
+  &::-webkit-scrollbar {
+    display: none;
   }
   
   @media (min-width: 768px) {
-    font-size: 1.5rem;
+    gap: 0.75rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 0.5rem;
   }
 `;
 
-const BotoesAcao = styled.div`
+const PremioImagemItem = styled.div`
   display: flex;
-  gap: 1rem;
-`;
-
-const BotaoCompartilhar = styled.button`
-  background-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(5px);
-  color: ${({ theme }) => theme.colors.white};
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.75rem 1.25rem;
-  border-radius: 50px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  display: flex;
+  flex-direction: row;
   align-items: center;
+  min-width: 280px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  gap: 0.75rem;
   
   &:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
   }
   
-  i {
-    margin-right: 0.5rem;
+  @media (min-width: 768px) {
+    min-width: 320px;
+    padding: 0.75rem;
+  }
+`;
+
+const PremioImagemWrapper = styled.div`
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (min-width: 768px) {
+    width: 60px;
+    height: 60px;
+  }
+`;
+
+const PremioImagem = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const PosicaoBadge = styled.div`
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  background: rgba(255, 215, 0, 0.9);
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.95);
+  min-width: 18px;
+  text-align: center;
+  z-index: 1;
+  letter-spacing: 0.2px;
+`;
+
+const PremioImagemInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  gap: 0.25rem;
+`;
+
+const PremioImagemNome = styled.div`
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.2;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+`;
+
+const PremioImagemValor = styled.div`
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #FFD700;
+  background: rgba(255, 215, 0, 0.08);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  align-self: flex-start;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  letter-spacing: 0.3px;
+`;
+
+const PremioMaisItem = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: 280px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.6rem;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  gap: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+  }
+  
+  @media (min-width: 768px) {
+    min-width: 320px;
+    padding: 0.75rem;
+  }
+`;
+
+const PremioMaisIcone = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 300;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  
+  ${PremioMaisItem}:hover & {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  @media (min-width: 768px) {
+    width: 70px;
+    height: 70px;
+    border-radius: 12px;
+    font-size: 2rem;
+  }
+`;
+
+const PremioMaisTexto = styled.div`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  flex: 1;
+  
+  ${PremioMaisItem}:hover & {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  @media (min-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.9rem;
   }
 `;
 
@@ -1557,44 +2245,117 @@ const PacotesPromocionaisContainer = styled.div`
   }
 `;
 
-// Refine the title with a more premium, sophisticated style
+// Enhanced promotional title with premium design
 const PacotesPromocionaisTitulo = styled.div`
   font-size: 1.15rem;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: #FBFBFD;
-  padding: 1rem 1.25rem;
-  border-radius: 10px;
-  border-left: 4px solid ${({ theme }) => theme.colors.primary};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  gap: 0.75rem;
+  background: linear-gradient(135deg, 
+    rgba(255, 184, 0, 0.08) 0%, 
+    rgba(255, 184, 0, 0.03) 50%, 
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 184, 0, 0.15);
+  box-shadow: 
+    0 4px 12px rgba(255, 184, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  line-height: 1.3;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, 
+      ${({ theme }) => theme.colors.warning} 0%, 
+      #FFD700 50%, 
+      ${({ theme }) => theme.colors.warning} 100%
+    );
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30px;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, 
+      rgba(255, 184, 0, 0.1) 0%, 
+      transparent 70%
+    );
+    border-radius: 50%;
+  }
 
   i {
     color: ${({ theme }) => theme.colors.warning};
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+    filter: drop-shadow(0 2px 4px rgba(255, 184, 0, 0.3));
+    animation: pulse 2s ease-in-out infinite;
+    z-index: 2;
+    position: relative;
+  }
+
+  @keyframes pulse {
+    0%, 100% { 
+      transform: scale(1); 
+      filter: drop-shadow(0 2px 4px rgba(255, 184, 0, 0.3));
+    }
+    50% { 
+      transform: scale(1.1); 
+      filter: drop-shadow(0 3px 6px rgba(255, 184, 0, 0.5));
+    }
   }
 
   @media (max-width: 576px) {
-    font-size: 0.85rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    gap: 0.6rem;
+    border-radius: 10px;
+    line-height: 1.25;
+    
+    &::after {
+      width: 60px;
+      height: 60px;
+      right: -20px;
+    }
     
     i {
-      font-size: 0.9rem;
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 400px) {
+    font-size: 0.85rem;
+    padding: 0.9rem 1rem;
+    gap: 0.5rem;
+    
+    i {
+      font-size: 1rem;
     }
   }
 `;
 
-// Add more separation between packages
+// Perfectly aligned grid for promotional packages
 const PacotesPromocionaisGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(auto-fit, 1fr);
   gap: 1.25rem;
   position: relative;
   padding-top: 10px;
+  align-items: stretch;
 
   @media (max-width: 576px) {
     grid-template-columns: repeat(2, 1fr);
@@ -1606,11 +2367,11 @@ const PacotesPromocionaisGrid = styled.div`
   }
 `;
 
-// Create premium package style with better distinction
+// Create premium package style with perfect alignment
 const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: boolean }>`
-  padding: 1.5rem 1.25rem;
+  padding: ${({ $melhorOferta }) => $melhorOferta ? '2rem 1.25rem 1.5rem' : '1.5rem 1.25rem'};
   border-radius: 12px;
-  overflow:hidden;
+  overflow: visible;
   background: ${({ $melhorOferta, $ativo, theme }) => {
     if ($ativo) return `linear-gradient(120deg, rgba(106, 17, 203, 0.07), rgba(106, 17, 203, 0.12))`;
     return $melhorOferta 
@@ -1623,11 +2384,15 @@ const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: bool
   }};
   position: relative;
   transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: 0.4rem;
+  align-items: start;
+  justify-items: center;
   cursor: pointer;
   text-align: center;
+  height: 100%;
+  min-height: 180px;
   box-shadow: ${({ $melhorOferta, $ativo }) => {
     if ($ativo) return `0 8px 20px rgba(106, 17, 203, 0.15), 0 2px 6px rgba(106, 17, 203, 0.1)`;
     return $melhorOferta 
@@ -1636,8 +2401,10 @@ const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: bool
   }};
 
   @media (max-width: 576px) {
-    padding: 0.6rem 0.5rem;
+    padding: ${({ $melhorOferta }) => $melhorOferta ? '1rem 0.5rem 0.6rem' : '0.6rem 0.5rem'};
     border-radius: 8px;
+    min-height: 150px;
+    gap: 0.25rem;
   }
 
   &::after {
@@ -1682,42 +2449,50 @@ const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: bool
   }
 `;
 
-// Refine quantity styling
+// Perfectly aligned quantity styling
 const PacoteQuantidade = styled.div`
   font-size: 1.5rem;
   font-weight: 800;
   color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 0.75rem;
   letter-spacing: -0.01em;
+  grid-row: 1;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
 
   @media (max-width: 576px) {
     font-size: 0.85rem;
-    margin-bottom: 0.3rem;
+    height: 1.5rem;
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
     font-size: 1.3rem;
-    margin-bottom: 0.6rem;
+    height: 1.8rem;
   }
 `;
 
-// More premium price styling
+// Perfectly aligned premium price styling
 const PacotePreco = styled.div`
   font-size: 1.35rem;
   font-weight: 800;
-  margin-bottom: 0.5rem;
   background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   position: relative;
-  display: inline-block;
-  padding-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-row: 3;
+  margin: 0;
+  height: 2.5rem;
   
   &::after {
     content: '';
     position: absolute;
-    bottom: 0;
+    bottom: 0.2rem;
     left: 50%;
     transform: translateX(-50%);
     width: 40px;
@@ -1728,21 +2503,22 @@ const PacotePreco = styled.div`
 
   @media (max-width: 576px) {
     font-size: 1.05rem;
-    margin-bottom: 0.35rem;
-    padding-bottom: 0.35rem;
+    height: 2rem;
     
     &::after {
       width: 30px;
       height: 1.5px;
+      bottom: 0.1rem;
     }
   }
   
   @media (min-width: 577px) and (max-width: 1200px) {
     font-size: 1.2rem;
+    height: 2.2rem;
   }
 `;
 
-// Enhanced visual separation for economy badge
+// Perfectly aligned economy badge
 const PacoteEconomia = styled.div`
   font-size: 0.85rem;
   font-weight: 700;
@@ -1750,14 +2526,20 @@ const PacoteEconomia = styled.div`
   background-color: ${({ theme }) => theme.colors.success};
   padding: 0.35rem 1rem;
   border-radius: 20px;
-  margin-top: 0.7rem;
   box-shadow: 0 3px 8px rgba(40, 167, 69, 0.15);
   letter-spacing: 0.02em;
+  grid-row: 5;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  align-self: end;
 
   @media (max-width: 576px) {
     font-size: 0.65rem;
     padding: 0.25rem 0.75rem;
-    margin-top: 0.5rem;
+    height: 1.6rem;
   }
 `;
 
@@ -1796,20 +2578,23 @@ const PacoteMelhorOferta = styled.div`
   }
 `;
 
-// More distinct unit price info
+// Perfectly aligned unit price info
 const PacoteDescricaoValor = styled.div`
   font-size: 0.85rem;
   text-decoration: line-through;
   color: ${({ theme }) => theme.colors.text.secondary};
-  margin-top: 0.25rem;
   font-weight: 500;
   opacity: 0.9;
-  padding-top: 0.25rem;
+  grid-row: 2;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.2rem;
 
   @media (max-width: 576px) {
     font-size: 0.7rem;
-    margin-top: 0.15rem;
-    padding-top: 0.15rem;
+    height: 1rem;
   }
 `;
 
@@ -3253,6 +4038,86 @@ const FoundTitleDetails = styled.div`
         font-size: 0.65rem;
       }
     }
+  }
+`;
+
+// Componentes para as informações organizadas
+const InfoContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: -2rem 1rem 2rem;
+  position: relative;
+  z-index: 10;
+  
+  @media (min-width: 768px) {
+    margin: -2rem 2rem 2rem;
+    gap: 1.5rem;
+  }
+`;
+
+const InfoCard = styled.div<{ $destaque?: boolean }>`
+  background: ${({ $destaque }) => $destaque ? 
+    'linear-gradient(135deg, #ff4444, #ff6b6b)' : 
+    'white'
+  };
+  color: ${({ $destaque }) => $destaque ? 'white' : '#2d3748'};
+  padding: 1.25rem 1rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: ${({ $destaque }) => $destaque ? 
+    '0 8px 25px rgba(255, 68, 68, 0.3)' : 
+    '0 4px 15px rgba(0, 0, 0, 0.1)'
+  };
+  transform: ${({ $destaque }) => $destaque ? 'scale(1.05)' : 'scale(1)'};
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: ${({ $destaque }) => $destaque ? 'scale(1.08)' : 'scale(1.03)'};
+    box-shadow: ${({ $destaque }) => $destaque ? 
+      '0 12px 30px rgba(255, 68, 68, 0.4)' : 
+      '0 8px 20px rgba(0, 0, 0, 0.15)'
+    };
+  }
+  
+  @media (max-width: 576px) {
+    padding: 1rem 0.75rem;
+  }
+`;
+
+const InfoIcon = styled.div`
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  
+  @media (max-width: 576px) {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+  }
+`;
+
+const InfoTitle = styled.div`
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  margin-bottom: 0.3rem;
+  
+  @media (max-width: 576px) {
+    font-size: 0.7rem;
+  }
+`;
+
+const InfoValue = styled.div`
+  font-size: 1.1rem;
+  font-weight: 800;
+  
+  @media (min-width: 768px) {
+    font-size: 1.3rem;
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.9rem;
   }
 `;
 

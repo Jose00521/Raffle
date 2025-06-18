@@ -10,13 +10,13 @@ import logger from '@/lib/logger/logger';
 import { createToken, verifyToken } from "./jwtUtils";
 
 // Validar se as variáveis de ambiente necessárias estão definidas
-// if (!process.env.NEXTAUTH_SECRET) {
-//   logger.error({
-//     message: '[auth] NEXTAUTH_SECRET não definido',
-//     env: process.env.NODE_ENV
-//   });
-//   throw new Error('NEXTAUTH_SECRET é obrigatório');
-// }
+if (!process.env.NEXTAUTH_SECRET) {
+  logger.error({
+    message: '[auth] NEXTAUTH_SECRET não definido',
+    env: process.env.NODE_ENV
+  });
+  throw new Error('NEXTAUTH_SECRET é obrigatório');
+}
 
 export const nextAuthOptions: NextAuthOptions = {
     providers: [

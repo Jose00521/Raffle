@@ -14,7 +14,7 @@ import { validateCPF } from '@/utils/validators';
 import { useAddressField } from '@/hooks/useAddressField';
 import { useHookFormMask } from 'use-mask-input';
 import { signupSchema, SignupFormData } from '@/zod/quicksignup.validation';
-import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity, FaShieldAlt, FaLock, FaCertificate, FaMapPin, FaRoad, FaHome, FaBuilding, FaGlobe } from 'react-icons/fa';
+import { FaEnvelope, FaIdCard, FaPhone, FaUser, FaUserCheck, FaMapMarkerAlt, FaCity, FaShieldAlt, FaLock, FaCertificate, FaMapPin, FaRoad, FaHome, FaBuilding, FaGlobe, FaShoppingCart } from 'react-icons/fa';
 import Image from 'next/image';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { PurchaseSummary } from '@/components/order/PurchaseSummary';
@@ -28,6 +28,75 @@ import { IUser } from '@/models/interfaces/IUserInterfaces';
 import userAPIClient from '@/API/userAPIClient';
 import MaximumTrustHeader from '../security/MaximumTrustHeader';
 
+// Styled Components for Summary Step
+const DataGroup = styled.div`
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const DataHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+
+  svg {
+    color: #4f46e5;
+    font-size: 1rem;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+`;
+
+const DataContent = styled.div`
+  padding: 0.75rem 1rem;
+`;
+
+const DataRow = styled.div`
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const DataLabel = styled.span`
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+`;
+
+const DataValue = styled.span`
+  font-size: 0.85rem;
+  color: #0f172a;
+  font-weight: 500;
+  word-break: break-word;
+`;
 
 interface QuickSignupModalProps {
   isOpen: boolean;
@@ -45,6 +114,19 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const [isUserFound, setIsUserFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+
+  // Bloqueia o scroll da página quando o modal está aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('no-scroll');
+    } else {
+      document.body.classList.remove('no-scroll');
+    }
+    
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, [isOpen]);
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema) as any,
@@ -397,15 +479,15 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleModalClose} maxWidth="700px">
-      <MaximumTrustHeader />
+    <Modal isOpen={isOpen} onClose={handleModalClose} >
       <ModalContent>
         <ModalHeader>
-          <CloseButtonWrapper>
+          <HeaderActions>
             <CloseButton onClick={handleModalClose} disabled={isLoading || isSubmitting}>
               Fechar
             </CloseButton>
-          </CloseButtonWrapper>
+          </HeaderActions>
+          <MaximumTrustHeader />
         </ModalHeader>
         
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -804,63 +886,73 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
             <div key="summary-step">
               <SectionTitle>Resumo da Compra</SectionTitle>
               
-              <UserDataSection>
-                <UserDataRow>
-                  <UserDataLabel>
-                    <FaUser /> Nome:
-                  </UserDataLabel>
-                  <UserDataValue>{watch('nome')}</UserDataValue>
-                </UserDataRow>
-                
-                <UserDataRow>
-                  <UserDataLabel>
-                    <FaEnvelope /> Email:
-                  </UserDataLabel>
-                  <UserDataValue>{watch('email')}</UserDataValue>
-                </UserDataRow>
-                
-                <UserDataRow>
-                  <UserDataLabel>
-                    <FaPhone /> Telefone:
-                  </UserDataLabel>
-                  <UserDataValue>{watch('telefone')}</UserDataValue>
-                </UserDataRow>
-                
-                <UserDataRow>
-                  <UserDataLabel>
-                    <FaIdCard /> CPF:
-                  </UserDataLabel>
-                  <UserDataValue>{watch('cpf')}</UserDataValue>
-                </UserDataRow>
-                
-                {hasAddress && (
-                  <>
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaMapMarkerAlt /> Endereço:
-                      </UserDataLabel>
-                      <UserDataValue>
+              <DataGroup>
+                <DataHeader>
+                  <FaUser />
+                  <h3>Dados Pessoais</h3>
+                </DataHeader>
+                <DataContent>
+                  <DataRow>
+                    <DataLabel>Nome</DataLabel>
+                    <DataValue>{watch('nome')}</DataValue>
+                  </DataRow>
+                  <DataRow>
+                    <DataLabel>CPF</DataLabel>
+                    <DataValue>{watch('cpf')}</DataValue>
+                  </DataRow>
+                  <DataRow>
+                    <DataLabel>Email</DataLabel>
+                    <DataValue>{watch('email')}</DataValue>
+                  </DataRow>
+                  <DataRow>
+                    <DataLabel>Telefone</DataLabel>
+                    <DataValue>{watch('telefone')}</DataValue>
+                  </DataRow>
+                </DataContent>
+              </DataGroup>
+
+              {hasAddress && (
+                <DataGroup>
+                  <DataHeader>
+                    <FaMapMarkerAlt />
+                    <h3>Endereço de Entrega</h3>
+                  </DataHeader>
+                  <DataContent>
+                    <DataRow>
+                      <DataLabel>Endereço</DataLabel>
+                      <DataValue>
                         {watch('logradouro')}, {watch('numero')}
                         {watch('complemento') && `, ${watch('complemento')}`}
-                      </UserDataValue>
-                    </UserDataRow>
-                    
-                    <UserDataRow>
-                      <UserDataLabel>
-                        <FaCity /> Cidade:
-                      </UserDataLabel>
-                      <UserDataValue>
-                        {watch('cidade')}, {watch('uf')} - CEP: {watch('cep')}
-                      </UserDataValue>
-                    </UserDataRow>
-                  </>
-                )}
-              </UserDataSection>
-              
-              <SectionDivider />
-              
-              <PurchaseSummary selection={campaignSelection} />
-              
+                      </DataValue>
+                    </DataRow>
+                    <DataRow>
+                      <DataLabel>Bairro</DataLabel>
+                      <DataValue>{watch('bairro')}</DataValue>
+                    </DataRow>
+                    <DataRow>
+                      <DataLabel>Cidade/UF</DataLabel>
+                      <DataValue>
+                        {watch('cidade')}/{watch('uf')}
+                      </DataValue>
+                    </DataRow>
+                    <DataRow>
+                      <DataLabel>CEP</DataLabel>
+                      <DataValue>{watch('cep')}</DataValue>
+                    </DataRow>
+                  </DataContent>
+                </DataGroup>
+              )}
+
+              <DataGroup>
+                <DataHeader>
+                  <FaShoppingCart />
+                  <h3>Detalhes da Compra</h3>
+                </DataHeader>
+                <DataContent>
+                  <PurchaseSummary selection={campaignSelection} />
+                </DataContent>
+              </DataGroup>
+
               <ButtonGroup>
                 <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
                   Voltar
@@ -917,114 +1009,47 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 };
 
 // Styled components
-const CloseButtonWrapper = styled.div`
+const ModalHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const HeaderActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 1rem;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 0.8rem;
-  }
-  
-  @media (max-width: 576px) {
-    margin-bottom: 0.6rem;
-  }
 `;
 
 const CloseButton = styled.button`
   background: rgba(248, 250, 252, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 25px;
-  padding: 8px 18px;
-  font-size: 0.85rem;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transition: left 0.6s ease;
-  }
+  transition: all 0.2s ease;
   
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.95);
     color: #475569;
-    border-color: rgba(148, 163, 184, 0.3);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    
-    &::before {
-      left: 100%;
-    }
   }
   
   &:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
   
   &:disabled {
-    opacity: 0.4;
+    opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
-    
-    &::before {
-      display: none;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    padding: 7px 16px;
-    font-size: 0.8rem;
-    border-radius: 22px;
-  }
-  
-  @media (max-width: 576px) {
-    padding: 6px 14px;
-    font-size: 0.75rem;
-    border-radius: 20px;
   }
 `;
 
 const ModalContent = styled.div`
-  padding: 0.7rem 2rem;
-  max-height: 85vh;
-  overflow-y: auto;
-  overflow-x: visible;
-  
-  @media (max-width: 768px) {
-    padding: 2rem;
-  }
-  
-  @media (max-width: 576px) {
-    padding: 1.5rem;
-  }
-`;
-
-const ModalHeader = styled.div`
-  text-align: center;
-  margin-bottom: 1rem;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 0.8rem;
-  }
-  
-  @media (max-width: 576px) {
-    margin-bottom: 0.6rem;
-  }
+  width: 100%;
 `;
 
 const TrustBadge = styled.div`
@@ -1170,26 +1195,21 @@ const SubTitle = styled.p`
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 1.5rem;
-  margin-top: 1.5rem;
+  margin-bottom: 1rem;
   color: ${({ theme }) => theme.colors.text.primary};
   position: relative;
   
   &:after {
     content: '';
     position: absolute;
-    bottom: -0.5rem;
+    bottom: -0.25rem;
     left: 0;
-    width: 3rem;
-    height: 3px;
+    width: 2rem;
+    height: 2px;
     background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
-    border-radius: 3px;
-  }
-  
-  &:first-of-type {
-    margin-top: 0;
+    border-radius: 2px;
   }
 `;
 
@@ -1414,27 +1434,24 @@ const LogoItem = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  background: white;
   
   .checkout-button-wrapper {
     flex: 2;
-    display: flex;
-    justify-content: flex-end;
   }
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.5rem;
     
     .checkout-button-wrapper {
-      justify-content: stretch;
       width: 100%;
-      flex: 1;
     }
     
-    /* Garantir que ambos os botões tenham a mesma largura */
     button {
       width: 100%;
     }
@@ -1442,11 +1459,11 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 1rem 1.5rem;
-  height: 55px;
-  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  height: 45px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -1457,10 +1474,6 @@ const Button = styled.button`
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-  }
-  
-  @media (max-width: 576px) {
-    width: 100%;
   }
 `;
 
@@ -1670,6 +1683,76 @@ const SectionDivider = styled.div`
   }
 `;
 
+// Atualizar o step 4 (resumo)
+const SummaryContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+`;
 
+const SummarySection = styled.div`
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+`;
+
+const SummaryHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+
+  svg {
+    color: #4f46e5;
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+`;
+
+const SummaryContent = styled.div`
+  padding: 1.25rem;
+`;
+
+const SummaryRow = styled.div`
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const SummaryLabel = styled.span`
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+`;
+
+const SummaryValue = styled.span`
+  font-size: 0.9rem;
+  color: #0f172a;
+  font-weight: 500;
+  word-break: break-word;
+`;
 
 export default QuickSignupModal;

@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import CampaignGrid from '../../../components/campaign/CampaignGrid';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import participantCampaignAPI from '../../../API/participant/participantCampaignAPIClient';
+import LoadingScreen from '@/components/common/LoadingScreen';
 
 // Dados de exemplo para as campanhas
 
@@ -54,21 +55,25 @@ export default function CampanhasPage() {
   }, []);
 
   return (
-    <Layout>
-      <PageContainer>
-        <PageHeader>
-          <PageTitle>Campanhas Disponíveis</PageTitle>
-          <PageDescription>
-            Escolha uma de nossas campanhas e concorra a prêmios incríveis. Quanto mais números você adquirir, maiores são suas chances de ganhar!
-          </PageDescription>
-        </PageHeader>
-        
-        {loading ? (
-          <div>Carregando campanhas...</div>
-        ) : (
-          <CampaignGrid campaigns={campanhas} />
-        )}
-      </PageContainer>
-    </Layout>
+    <>
+      {loading ? (
+        <LoadingScreen 
+          title="Carregando campanhas"
+          subtitle="Buscando as melhores oportunidades para você"
+        />
+      ) : (
+        <Layout>
+          <PageContainer>
+            <PageHeader>
+              <PageTitle>Campanhas Disponíveis</PageTitle>
+              <PageDescription>
+                Escolha uma de nossas campanhas e concorra a prêmios incríveis. Quanto mais números você adquirir, maiores são suas chances de ganhar!
+              </PageDescription>
+            </PageHeader>
+            <CampaignGrid campaigns={campanhas} />
+          </PageContainer>
+        </Layout>
+      )}
+    </>
   );
 } 
