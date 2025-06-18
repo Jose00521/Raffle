@@ -84,6 +84,11 @@ const DropdownButton = styled.button<{ $isOpen: boolean, $hasValue: boolean }>`
     font-size: 0.8rem;
     padding: 0 10px;
   }
+  
+  @media (max-width: 768px) {
+    height: 45px !important;
+    font-size: 0.9rem;
+  }
 `;
 
 const DropdownContent = styled.div<{ 

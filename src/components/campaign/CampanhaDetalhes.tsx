@@ -850,8 +850,19 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             {campanhaDetalhes?.prizeDistribution && (
               campanhaDetalhes.prizeDistribution.length > 1 || 
               (campanhaDetalhes.prizeDistribution[0]?.prizes && campanhaDetalhes.prizeDistribution[0].prizes.length > 1)
-                          ) && (
-              <PremiosImagensContainer>
+            ) && (
+              <PremiosSecaoWrapper>
+                <PremiosSecaoHeader>
+                  <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
+                  <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
+                  <PremiosSecaoSubtitulo>
+                    {campanhaDetalhes.prizeDistribution.length > 1 
+                      ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
+                      : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
+                    }
+                  </PremiosSecaoSubtitulo>
+                </PremiosSecaoHeader>
+                <PremiosImagensContainer>
                 {/* Se há múltiplas distribuições (2º lugar em diante) */}
                 {campanhaDetalhes.prizeDistribution.length > 1 ? (
                   campanhaDetalhes.prizeDistribution.slice(1).map((distribution, index) => (
@@ -902,6 +913,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   </PremioMaisItem>
                 )}
               </PremiosImagensContainer>
+              </PremiosSecaoWrapper>
             )}
           </PainelImagem>
           
@@ -1325,11 +1337,11 @@ const BotaoVerdePequeno = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.3px;
   box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
-  animation: piscar 1.5s infinite;
+  animation: blink 2s ease infinite;
   
-  @keyframes piscar {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+  @keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
   }
   
   @media (min-width: 768px) {
@@ -1609,11 +1621,11 @@ const PremiosSecaoWrapper = styled.div`
 const PremiosSecaoHeader = styled.div`
   text-align: center;
   margin-bottom: 0.75rem;
+  justify-content: space-between;
+  width: 100%;
   color: white;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
 `;
 
 const PremiosSecaoIcone = styled.span`
@@ -1623,14 +1635,22 @@ const PremiosSecaoIcone = styled.span`
 
 const PremiosSecaoTitulo = styled.h3`
   font-size: 1rem;
+  text-align: center;
+  justify-content: center;
+  white-space: nowrap;
   font-weight: 600;
   margin: 0;
   color: rgba(255, 255, 255, 0.95);
   letter-spacing: 0.3px;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const PremiosSecaoSubtitulo = styled.p`
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+    white-space: nowrap;
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
   letter-spacing: 0.2px;
@@ -2195,7 +2215,7 @@ const MensagemIncentivo = styled.div`
   gap: 0.5rem;
   
   @media (max-width: 576px) {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     margin-bottom: 0.75rem;
     gap: 0.2rem;
   }
@@ -2235,9 +2255,16 @@ const PacotesPromocionaisContainer = styled.div`
   }
 
   @media (max-width: 576px) {
-    padding: 1rem;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
+
+    &::before {
+      display: none;
+    }
   }
   
   @media (min-width: 992px) {
@@ -2247,7 +2274,7 @@ const PacotesPromocionaisContainer = styled.div`
 
 // Enhanced promotional title with premium design
 const PacotesPromocionaisTitulo = styled.div`
-  font-size: 1.15rem;
+  font-size: 0,8rem;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 1.25rem;
@@ -2269,19 +2296,7 @@ const PacotesPromocionaisTitulo = styled.div`
   overflow: hidden;
   line-height: 1.3;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, 
-      ${({ theme }) => theme.colors.warning} 0%, 
-      #FFD700 50%, 
-      ${({ theme }) => theme.colors.warning} 100%
-    );
-  }
+
 
   &::after {
     content: '';
@@ -2301,24 +2316,12 @@ const PacotesPromocionaisTitulo = styled.div`
     color: ${({ theme }) => theme.colors.warning};
     font-size: 1.3rem;
     filter: drop-shadow(0 2px 4px rgba(255, 184, 0, 0.3));
-    animation: pulse 2s ease-in-out infinite;
     z-index: 2;
     position: relative;
   }
 
-  @keyframes pulse {
-    0%, 100% { 
-      transform: scale(1); 
-      filter: drop-shadow(0 2px 4px rgba(255, 184, 0, 0.3));
-    }
-    50% { 
-      transform: scale(1.1); 
-      filter: drop-shadow(0 3px 6px rgba(255, 184, 0, 0.5));
-    }
-  }
-
   @media (max-width: 576px) {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     padding: 1rem 1.25rem;
     margin-bottom: 1rem;
     gap: 0.6rem;
@@ -2337,7 +2340,7 @@ const PacotesPromocionaisTitulo = styled.div`
   }
 
   @media (max-width: 400px) {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     padding: 0.9rem 1rem;
     gap: 0.5rem;
     
@@ -2537,7 +2540,7 @@ const PacoteEconomia = styled.div`
   align-self: end;
 
   @media (max-width: 576px) {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     padding: 0.25rem 0.75rem;
     height: 1.6rem;
   }

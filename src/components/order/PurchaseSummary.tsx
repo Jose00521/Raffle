@@ -168,8 +168,7 @@ const bounce = keyframes`
 
 // Styled Components
 const Container = styled.div<{ $isCombo: boolean }>`
-  width: 100%;
-  max-width: 650px;
+  width: 100% !important;
   background: ${props => props.$isCombo 
     ? 'linear-gradient(145deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%)'
     : 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)'

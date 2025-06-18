@@ -184,16 +184,39 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const router = useRouter();
 
   // Bloqueia o scroll da página quando o modal está aberto
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     document.body.classList.add('no-scroll');
+  //   } else {
+  //     document.body.classList.remove('no-scroll');
+  //   }
+    
+  //   return () => {
+  //     document.body.classList.remove('no-scroll');
+  //   };
+  // }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add('no-scroll');
-    } else {
-      document.body.classList.remove('no-scroll');
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.body.style.overflowY = 'scroll';
+      document.body.dataset.scrollY = scrollY.toString();
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflowY = '';
+        window.scrollTo(0, parseInt(document.body.dataset.scrollY || '0', 10));
+        delete document.body.dataset.scrollY;
+      };
     }
-    
-    return () => {
-      document.body.classList.remove('no-scroll');
-    };
   }, [isOpen]);
 
   const form = useForm<SignupFormData>({
@@ -550,12 +573,12 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     <Modal isOpen={isOpen} onClose={handleModalClose} >
       <ModalContent>
         <ModalHeader>
+        <MaximumTrustHeader />
           <HeaderActions>
             <CloseButton onClick={handleModalClose} disabled={isLoading || isSubmitting}>
               Fechar
             </CloseButton>
           </HeaderActions>
-          <MaximumTrustHeader />
         </ModalHeader>
         
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -975,6 +998,66 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   </DataRow>
                 </DataContent>
               </DataGroup>
+
+              <DataSection>
+                    <DataHeader>
+                      <FaUserCheck />
+                      <h3>Dados do Comprador</h3>
+                    </DataHeader>
+                    <DataGrid>
+                      <DataItem>
+                        <FaUser />
+                        <DataContent>
+                          <DataLabel>Nome</DataLabel>
+                          <DataValue>{watch('nome')}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaEnvelope />
+                        <DataContent>
+                          <DataLabel>Email</DataLabel>
+                          <DataValue>{foundUser.email}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaPhone />
+                        <DataContent>
+                          <DataLabel>Telefone</DataLabel>
+                          <DataValue>{watch('telefone')}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      <DataItem>
+                        <FaIdCard />
+                        <DataContent>
+                          <DataLabel>CPF</DataLabel>
+                          <DataValue>{foundUser.cpf}</DataValue>
+                        </DataContent>
+                      </DataItem>
+                      {foundUser.address && (
+                        <>
+                          <DataItem>
+                            <FaMapMarkerAlt />
+                            <DataContent>
+                              <DataLabel>Endereço</DataLabel>
+                              <DataValue>
+                                {foundUser.address.street_display}, {foundUser.address.number_display}
+                                {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
+                              </DataValue>
+                            </DataContent>
+                          </DataItem>
+                          <DataItem>
+                            <FaCity />
+                            <DataContent>
+                              <DataLabel>Cidade</DataLabel>
+                              <DataValue>
+                                {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
+                              </DataValue>
+                            </DataContent>
+                          </DataItem>
+                        </>
+                      )}
+                    </DataGrid>
+                  </DataSection>
 
               {hasAddress && (
                 <DataGroup>
