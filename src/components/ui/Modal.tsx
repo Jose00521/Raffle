@@ -15,24 +15,24 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, maxWidth = '50
   const modalRef = useRef<HTMLDivElement>(null);
   
   // Close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+  //       onClose();
+  //     }
+  //   };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
-    }
+  //   if (isOpen) {
+  //     document.addEventListener('mousedown', handleClickOutside);
+  //     // Prevent body scroll when modal is open
+  //     document.body.style.overflow = 'hidden';
+  //   }
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen, onClose]);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //     document.body.style.overflow = 'auto';
+  //   };
+  // }, [isOpen, onClose]);
   
   // Close on escape key
   useEffect(() => {

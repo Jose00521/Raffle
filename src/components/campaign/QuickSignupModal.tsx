@@ -85,6 +85,68 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const hasAddress = watch('hasAddress',false);
   const termsAccepted = watch('termsAgreement',false);
 
+  // Monitorar todos os campos do formulário para validação em tempo real
+  const watchedFields = watch();
+
+  // Função de validação de step otimizada - versão síncrona para validação rápida
+  const isCurrentStepValid = (): boolean => {
+    switch(currentStep) {
+      case 0:
+        // Step de telefone
+        return Boolean(
+          watchedFields.telefone && 
+          watchedFields.telefone.replace(/\D/g, '').length === 11 && 
+          !errors.telefone
+        );
+      
+      case 1:
+        // Step de dados pessoais
+        return Boolean(
+          watchedFields.nome && 
+          watchedFields.email && 
+          watchedFields.cpf && 
+          watchedFields.telefone && 
+          watchedFields.confirmarTelefone && 
+          termsAccepted &&
+          !errors.nome && 
+          !errors.email && 
+          !errors.cpf && 
+          !errors.telefone && 
+          !errors.confirmarTelefone &&
+          !errors.termsAgreement
+        );
+      
+      case 2:
+        // Step de endereço - só valida se hasAddress for true
+        if (!hasAddress) return true;
+        
+        return Boolean(
+          watchedFields.cep && 
+          watchedFields.uf && 
+          watchedFields.cidade && 
+          watchedFields.bairro && 
+          watchedFields.logradouro && 
+          watchedFields.numero &&
+          !errors.cep && 
+          !errors.uf && 
+          !errors.cidade && 
+          !errors.bairro && 
+          !errors.logradouro && 
+          !errors.numero
+        );
+      
+      case 3:
+      case 4:
+      case 10:
+        // Steps que não precisam de validação ou são sempre válidos
+        return true;
+      
+      default:
+        return false;
+    }
+  };
+
+  // Função de validação de step otimizada - versão assíncrona para validação completa
   const validateStep = async (currentStep: number) => {
     let fieldsToValidate: (keyof SignupFormData)[] = [];
     
@@ -124,7 +186,12 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       return false;
     }
   };
-// Revalida quando step, hasAddress, termsAccepted ou errors mudam
+
+  // Atualizar isStepValid sempre que os campos ou step mudarem
+  useEffect(() => {
+    const stepValid = isCurrentStepValid();
+    setIsStepValid(Boolean(stepValid));
+  }, [watchedFields, currentStep, hasAddress, termsAccepted, errors]);
 
   const registerWithMask = useHookFormMask(register);
   
@@ -132,11 +199,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   const { isLoadingCep, handleCepChange, clearAddressFields } = useAddressField(setValue, setError, clearErrors,trigger);
   const [isLoadingVerify, setIsLoadingVerify] = useState(false);
 
-
-  const handleCepOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Apenas chamar o handleCepChange do hook
-    handleCepChange(e);
-  };
 
   const selectedUF = watch('uf');
   
@@ -152,6 +214,23 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       return false;
     }
     return response;
+  }
+
+  const verifyMainData  = async (step: number) => {
+    const {cpf, email, telefone} = form.getValues();
+
+    const response = await verifyIfMainDataExists({cpf: cpf.replace(/\D/g, ''), email, phone: telefone.replace(/\D/g, '')});
+
+    console.log('response validation',response);
+
+    if(response) {          
+        response.issues.forEach((issue: {field: string, message: string}) => {
+          setError(issue.field as keyof SignupFormData, { message: issue.message });
+        });
+        return;
+    }else{
+      setCurrentStep(step); // Pula endereço e senha, vai direto para resumo
+    }
   }
 
   const onSubmit = async (data: SignupFormData) => {
@@ -223,8 +302,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
   };
 
   const handleModalClose = () => {
-    reset();
-    setCurrentStep(0);
+    // reset();
+    // setCurrentStep(0);
     onClose();
   };
   
@@ -233,22 +312,12 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
     if (isStepValid) {
       // Se estamos no step 1 (dados pessoais) e hasAddress é false, ir direto para resumo (step 4)
       if (currentStep === 1 && !hasAddress) {
-        const {cpf, email, telefone} = form.getValues();
+        await verifyMainData(4);
 
-        const response = await verifyIfMainDataExists({cpf: cpf.replace(/\D/g, ''), email, phone: telefone.replace(/\D/g, '')});
-
-        console.log('response validation',response);
-
-        if(response) {          
-            response.issues.forEach((issue: {field: string, message: string}) => {
-              setError(issue.field as keyof SignupFormData, { message: issue.message });
-            });
-            return;
-        }else{
-          setCurrentStep(4); // Pula endereço e senha, vai direto para resumo
-        }
-
-      } else if(currentStep === 2 && hasAddress) {
+      } else if(currentStep === 1 && hasAddress) {
+        await verifyMainData(currentStep + 1);
+      }
+      else if(currentStep === 2 && hasAddress) {
         setCurrentStep(4);
       } else {
         setCurrentStep(currentStep + 1);
@@ -332,6 +401,11 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       <MaximumTrustHeader />
       <ModalContent>
         <ModalHeader>
+          <CloseButtonWrapper>
+            <CloseButton onClick={handleModalClose} disabled={isLoading || isSubmitting}>
+              Fechar
+            </CloseButton>
+          </CloseButtonWrapper>
         </ModalHeader>
         
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -359,7 +433,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <SecondaryButton type="button" onClick={handleModalClose} disabled={isLoading}>
                   Cancelar
                 </SecondaryButton>
-                <PrimaryButton type="button" onClick={handleVerify} disabled={isLoading || isLoadingVerify}>
+                <PrimaryButton type="button" onClick={handleVerify} disabled={isLoading || isLoadingVerify || !isStepValid}>
                   {isLoadingVerify ? (
                     <LoadingContainer>
                       <LoadingSpinner />Verificando...
@@ -486,7 +560,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
                   Voltar
                 </SecondaryButton>
-                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading}>
+                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading || !isStepValid}>
                   Continuar
                 </PrimaryButton>
               </ButtonGroup>
@@ -592,7 +666,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                   error={errors.cep?.message}
                   required
                   {...registerWithMask('cep','99999-999')}
-                  onChange={handleCepOnChange}
+                  onChange={handleCepChange}
                 />
                 
 
@@ -672,7 +746,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 <SecondaryButton type="button" onClick={prevStep} disabled={isLoading}>
                   Voltar
                 </SecondaryButton>
-                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading}>
+                <PrimaryButton type="button" onClick={nextStep} disabled={isLoading || !isStepValid}>
                   Continuar
                 </PrimaryButton>
               </ButtonGroup>
@@ -843,6 +917,88 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
 };
 
 // Styled components
+const CloseButtonWrapper = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 0.8rem;
+  }
+  
+  @media (max-width: 576px) {
+    margin-bottom: 0.6rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 25px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
+  }
+  
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.95);
+    color: #475569;
+    border-color: rgba(148, 163, 184, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    
+    &::before {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 7px 16px;
+    font-size: 0.8rem;
+    border-radius: 22px;
+  }
+  
+  @media (max-width: 576px) {
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    border-radius: 20px;
+  }
+`;
+
 const ModalContent = styled.div`
   padding: 0.7rem 2rem;
   max-height: 85vh;
@@ -860,7 +1016,15 @@ const ModalContent = styled.div`
 
 const ModalHeader = styled.div`
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 0.8rem;
+  }
+  
+  @media (max-width: 576px) {
+    margin-bottom: 0.6rem;
+  }
 `;
 
 const TrustBadge = styled.div`
