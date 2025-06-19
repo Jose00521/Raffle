@@ -787,7 +787,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                    )}
                    
                   </QuantidadeNumero>
-                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
+                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
                   <span>+</span>
                 </BotaoMais>
               </QuantidadeControle>
@@ -798,7 +798,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   <OpcaoLote 
                     key={opcao} 
                     onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
-                    $disabled={selection?.quantity && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
+                    $disabled={selection?.quantity && campanhaDetalhes?.maxNumbersPerUser && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
                     $popular={opcao === 100}
                   >
                     +{opcao}
@@ -1070,7 +1070,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       )}
                    
                     </QuantidadeNumero>
-                    <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
+                    <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
                     <span>+</span>
                   </BotaoMais>
                 </QuantidadeControle>
@@ -1081,7 +1081,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     <OpcaoLote 
                       key={opcao} 
                       onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
-                      $disabled={selection?.quantity && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
+                      $disabled={selection?.quantity && campanhaDetalhes?.maxNumbersPerUser && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
                       $popular={opcao === 100}
                     >
                       +{opcao}

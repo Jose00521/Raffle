@@ -61,9 +61,14 @@ export const useCampaignSelection = (campaign: ICampaign) => {
     }, [campaign]);
     
     const updateQuantity = useCallback((newQuantity: number ) => {
-        if(newQuantity > (campaign.maxNumbersPerUser || 0) || newQuantity < (campaign.minNumbersPerUser || 0)){
+        if(campaign.maxNumbersPerUser && newQuantity > (campaign.maxNumbersPerUser || 0)){
             return;
         }
+
+        if(campaign.minNumbersPerUser && newQuantity < campaign.minNumbersPerUser   ){
+            return;
+        }
+
         const matchingPackage = campaign.numberPackages.find(pkg => pkg.quantity === newQuantity);
         if(matchingPackage){
             setIsCombo(true);
