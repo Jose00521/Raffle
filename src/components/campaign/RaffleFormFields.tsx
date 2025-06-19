@@ -50,6 +50,7 @@ import CurrencyInput from '../common/CurrencyInput';
 import PrizeIntelligentSummaryComponent from './PrizeIntelligentSummary';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { useSession } from 'next-auth/react';
+import { formatCurrency } from '@/utils/formatNumber';
 
 // Prize category interface
 interface PrizeCategory {
@@ -102,6 +103,7 @@ export type RaffleFormData = {
   totalNumbers: number;
   drawDate: string;
   minNumbersPerUser: number;
+  maxNumbersPerUser?: number;
   status: string; // Enum status (ACTIVE, COMPLETED, PENDING)
   canceled: boolean;
   
@@ -173,6 +175,7 @@ const raffleFormSchema = z.object({
   status: z.string().optional().default('ACTIVE'),
   canceled: z.boolean().optional().default(false),
   minNumbersPerUser: z.number().min(1, 'Pelo menos um número é obrigatório'),
+  maxNumbersPerUser: z.number().min(1, 'Pelo menos um número é obrigatório').optional(),
   returnExpected: z.string().optional(),
   isScheduled: z.boolean(),
   scheduledActivationDate: z.string().optional(),
@@ -231,6 +234,24 @@ const raffleFormSchema = z.object({
         });
       }
     }
+  }
+  
+  // Validate that maxNumbersPerUser is greater than minNumbersPerUser
+  if (data.maxNumbersPerUser && data.minNumbersPerUser && data.maxNumbersPerUser < data.minNumbersPerUser) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Deve ser maior que o mínimo',
+      path: ['maxNumbersPerUser']
+    });
+  }
+
+
+  if (data.maxNumbersPerUser && data.minNumbersPerUser && data.maxNumbersPerUser < data.minNumbersPerUser) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Deve ser menor que o máximo',
+      path: ['minNumbersPerUser']
+    });
   }
   
   // Verificar se há pelo menos um prêmio principal configurado
@@ -2208,6 +2229,122 @@ const CalculationDisplay = styled.div`
   }
 `;
 
+// Componente para exibir a faixa de valores por participante
+const ValueRangeDisplay = styled.div`
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(22, 163, 74, 0.05) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  
+  h5 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #22c55e;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    svg {
+      font-size: 1rem;
+    }
+  }
+  
+  .value-range-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .value-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    &.min {
+      border-left: 4px solid #22c55e;
+      
+      .value-label {
+        color: #22c55e;
+      }
+    }
+    
+    &.max {
+      border-left: 4px solid #3b82f6;
+      
+      .value-label {
+        color: #3b82f6;
+      }
+    }
+    
+    &.unlimited {
+      border-left: 4px solid #f59e0b;
+      
+      .value-label {
+        color: #f59e0b;
+      }
+      
+      .value-amount {
+        color: #f59e0b;
+      }
+    }
+  }
+  
+  .value-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  
+  .value-amount {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+  }
+  
+  .value-description {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .value-explanation {
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-align: center;
+    font-style: italic;
+  }
+  
+  @media (max-width: 640px) {
+    .value-range-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    
+    .value-item {
+      padding: 12px;
+    }
+    
+    .value-amount {
+      font-size: 1.2rem;
+    }
+  }
+`;
+
 // 🚨 COMPONENTES PARA SEÇÕES DESABILITADAS
 const DisabledSection = styled.div<{ $disabled: boolean }>`
   position: relative;
@@ -2831,6 +2968,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     },
     regulation: initialData.regulation || '',
     returnExpected: initialData.returnExpected || '',
+    minNumbersPerUser: initialData.minNumbersPerUser || 1,
+    maxNumbersPerUser: initialData.maxNumbersPerUser || undefined,
     images: initialData.images || [],
     coverImage: initialData.coverImage || (initialData.images && initialData.images.length > 0 ? initialData.images[0] : undefined),
     mainPrize: initialData.mainPrize || '',
@@ -2868,6 +3007,9 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   const isScheduled = watch('isScheduled');
   const prizeCategories = watch('prizeCategories');
   const price = watch('individualNumberPrice');
+  const returnExpected = watch('returnExpected');
+  const minNumbers = watch('minNumbersPerUser');
+  const maxNumbers = watch('maxNumbersPerUser');
   
   // Observar número de vencedores
   const winnerCount = watch('winnerPositions');
@@ -2875,18 +3017,21 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
 
   // 🔒 VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS PARA FUNCIONALIDADES AVANÇADAS
   const hasBasicRequirements = useMemo(() => {
-    return totalNumbers > 0 && price > 0;
-  }, [totalNumbers, price]);
+    return totalNumbers > 0 && price > 0 && returnExpected && returnExpected.trim() !== '';
+  }, [totalNumbers, price, returnExpected]);
 
   const basicRequirementsMessage = useMemo(() => {
     if (!price || price <= 0) {
       return "Defina o preço por número primeiro";
     }
+    if (!returnExpected || returnExpected.trim() === '') {
+      return "Defina o retorno esperado primeiro";
+    }
     if (!totalNumbers || totalNumbers <= 0) {
-      return "Defina a quantidade total de números primeiro";
+      return "Aguarde o cálculo automático do total de números";
     }
     return "";
-  }, [totalNumbers, price]);
+  }, [totalNumbers, price, returnExpected]);
 
   // Memoizar valores para evitar loops infinitos
   const instantPrizes = watch('instantPrizes') || [];
@@ -2935,8 +3080,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       }).format(numericValue);
   };
 
-  
-  
   // Carregar prêmios mock quando o componente montar
   useEffect(() => {
     const fetchPrizes = async () => {
@@ -3335,6 +3478,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       individualNumberPrice: data.individualNumberPrice,
       totalNumbers: data.totalNumbers,
       minNumbersPerUser: data.minNumbersPerUser,
+      maxNumbersPerUser: data.maxNumbersPerUser,
       drawDate: new Date(data.drawDate),
       // Set status to "PENDING" if scheduled for future date, otherwise "ACTIVE"
       status: data.isScheduled ? CampaignStatusEnum.SCHEDULED : (data.status || CampaignStatusEnum.ACTIVE),
@@ -3788,29 +3932,71 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
           </FormRow>
           
           <FormRow>
-          <Controller
-            name="minNumbersPerUser"
-            control={control}
-            render={({ field }) => (
-              <FormInput
-                id="minNumbersPerUser"
-                label="Mínimo de Números por Usuário"
-                icon={<FaHashtag />}
-                placeholder="Ex: 1"
-                type="number"
-                value={field.value || ''}
-                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                onBlur={field.onBlur}
-                error={errors.minNumbersPerUser?.message}
-                disabled={isSubmitting}
-                required
-                min={1}
-                step="1"
-                  helpText="Calculado automaticamente com base no preço e retorno esperado"
-              />
-            )}
-          />
-            
+            <Controller
+              name="minNumbersPerUser"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  id="minNumbersPerUser"
+                  label="Mínimo de Números por Usuário"
+                  icon={<FaHashtag />}
+                  placeholder="Ex: 1"
+                  type="number"
+                  value={field.value || ''}
+                  onChange={e => {
+                    const value = parseFloat(e.target.value) || 1;
+                    field.onChange(value);
+                    
+                    // Validar se o mínimo não é maior que o máximo
+                    // const maxValue = getValues('maxNumbersPerUser');
+                    // if (maxValue && value > maxValue) {
+                    //   setValue('maxNumbersPerUser', value);
+                    // }
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.minNumbersPerUser?.message}
+                  disabled={isSubmitting}
+                  required
+                  min={1}
+                  step="1"
+                  helpText="Quantidade mínima de números que um usuário deve comprar"
+                />
+              )}
+            />
+
+            <Controller
+              name="maxNumbersPerUser"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  id="maxNumbersPerUser"
+                  label="Máximo de Números por Usuário"
+                  icon={<FaHashtag />}
+                  placeholder="Ex: 100 (opcional)"
+                  type="number"
+                  value={field.value || ''}
+                  onChange={e => {
+                    const value = parseFloat(e.target.value) || undefined;
+                    field.onChange(value);
+                    
+                    // Validar se o máximo não é menor que o mínimo
+                    // const minValue = getValues('minNumbersPerUser');
+                    // if (value && minValue && value < minValue) {
+                    //   setValue('minNumbersPerUser', value);
+                    // }
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.maxNumbersPerUser?.message}
+                  disabled={isSubmitting}
+                  min={watch('minNumbersPerUser') || 1}
+                  step="1"
+                  helpText="Quantidade máxima de números que um usuário pode comprar (opcional)"
+                />
+              )}
+            />
+          </FormRow>
+
+          <FormRow>
             <Controller
               name="drawDate"
               control={control}
@@ -3837,16 +4023,16 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             />
           </FormRow>
             
-          {watch('individualNumberPrice') > 0 && watch('returnExpected') && (
+          {hasBasicRequirements && (
             <CalculationDisplay>
               <h5><FaCalculator /> Cálculo do Total de Números</h5>
               <div className="calculation">
                 <div className="formula-item">
-                  R$ {formatPrizeValue(watch('returnExpected'))}
+                  R$ {formatPrizeValue(returnExpected)}
                 </div>
                 <div className="operator">÷</div>
                 <div className="formula-item">
-                  R$ {(watch('individualNumberPrice')).toFixed(2).replace('.', ',')}
+                  R$ {formatCurrency(price)}
                 </div>
                 <div className="operator">=</div>
                 <div className="result">
@@ -3857,6 +4043,46 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 Retorno esperado ÷ Preço por número = Total de números a serem vendidos
               </div>
             </CalculationDisplay>
+          )}
+
+          {price > 0 && (minNumbers > 0 || maxNumbers) && (
+            <ValueRangeDisplay>
+              <h5><FaMoneyBillWave /> Valores por Participante</h5>
+              <div className="value-range-grid">
+                <div className="value-item min">
+                  <div className="value-label">Valor Mínimo</div>
+                  <div className="value-amount">
+                    {formatCurrency((minNumbers || 0) * (price || 0))}
+                  </div>
+                  <div className="value-description">
+                    {minNumbers || 0} número{(minNumbers || 0) > 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                {maxNumbers && (
+                  <div className="value-item max">
+                    <div className="value-label">Valor Máximo</div>
+                    <div className="value-amount">
+                      {formatCurrency((maxNumbers || 0) * (price || 0))}
+                    </div>
+                    <div className="value-description">
+                      {maxNumbers || 0} número{(maxNumbers || 0) > 1 ? 's' : ''}
+                    </div>
+                  </div>
+                )}
+                
+                {!maxNumbers && (
+                  <div className="value-item unlimited">
+                    <div className="value-label">Valor Máximo</div>
+                    <div className="value-amount">Ilimitado</div>
+                    <div className="value-description">Sem limite definido</div>
+                  </div>
+                )}
+              </div>
+              <div className="value-explanation">
+                Faixa de valores que cada participante pode investir na sua rifa
+              </div>
+            </ValueRangeDisplay>
           )}
           
           <InfoAlert>
@@ -3880,7 +4106,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   <p>{basicRequirementsMessage}</p>
                   <ul>
                     <li>Configure o preço por número primeiro</li>
-                    <li>Defina a quantidade total de números</li>
+                    <li>Defina o retorno esperado</li>
+                    <li>Aguarde o cálculo automático do total de números</li>
                     <li>Depois você poderá criar combos com desconto</li>
                   </ul>
                 </div>

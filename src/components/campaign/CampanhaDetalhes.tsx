@@ -67,7 +67,6 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   const numeroMinimo = Math.max(12, Math.ceil(12 / (campanhaDetalhes?.individualNumberPrice || 0)));
   const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(numeroMinimo);
   const [activeTab, setActiveTab] = useState('titulos');
-  const [animateValue, setAnimateValue] = useState(false);
   // Estado para o carrossel de imagens
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(true);
@@ -599,14 +598,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             ) && (
               <PremiosSecaoWrapper>
                 <PremiosSecaoHeader>
-                  <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
-                  <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
-                  <PremiosSecaoSubtitulo>
-                    {campanhaDetalhes.prizeDistribution.length > 1 
-                      ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
-                      : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
-                    }
-                  </PremiosSecaoSubtitulo>
+                  <PremiosSecaoHeaderLeft>
+                    <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
+                    <PremiosSecaoTitleWrapper>
+                      <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
+                      <PremiosSecaoSubtitulo>
+                        {campanhaDetalhes.prizeDistribution.length > 1 
+                          ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
+                          : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
+                        }
+                      </PremiosSecaoSubtitulo>
+                    </PremiosSecaoTitleWrapper>
+                  </PremiosSecaoHeaderLeft>
                 </PremiosSecaoHeader>
                 <PremiosImagensContainer>
                 {/* Se há múltiplas distribuições (2º lugar em diante) */}
@@ -713,7 +716,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 <QuantidadeNumero>
                   <span>{selection?.quantity}</span>
                 </QuantidadeNumero>
-                <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)}>
+                <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
                   <span>+</span>
                 </BotaoMais>
               </QuantidadeControle>
@@ -724,6 +727,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   <OpcaoLote 
                     key={opcao} 
                     onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
+                    $disabled={selection?.quantity && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
                     $popular={opcao === 100}
                   >
                     +{opcao}
@@ -853,14 +857,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             ) && (
               <PremiosSecaoWrapper>
                 <PremiosSecaoHeader>
-                  <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
-                  <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
-                  <PremiosSecaoSubtitulo>
-                    {campanhaDetalhes.prizeDistribution.length > 1 
-                      ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
-                      : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
-                    }
-                  </PremiosSecaoSubtitulo>
+                  <PremiosSecaoHeaderLeft>
+                    <PremiosSecaoIcone>🏆</PremiosSecaoIcone>
+                    <PremiosSecaoTitleWrapper>
+                      <PremiosSecaoTitulo>Múltiplos Ganhadores</PremiosSecaoTitulo>
+                      <PremiosSecaoSubtitulo>
+                        {campanhaDetalhes.prizeDistribution.length > 1 
+                          ? `${campanhaDetalhes.prizeDistribution.length} posições premiadas`
+                          : `${campanhaDetalhes.prizeDistribution[0]?.prizes?.length || 0} ganhadores`
+                        }
+                      </PremiosSecaoSubtitulo>
+                    </PremiosSecaoTitleWrapper>
+                  </PremiosSecaoHeaderLeft>
                 </PremiosSecaoHeader>
                 <PremiosImagensContainer>
                 {/* Se há múltiplas distribuições (2º lugar em diante) */}
@@ -976,7 +984,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   <QuantidadeNumero>
                     <span>{selection?.quantity}</span>
                   </QuantidadeNumero>
-                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)}>
+                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
                     <span>+</span>
                   </BotaoMais>
                 </QuantidadeControle>
@@ -987,6 +995,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     <OpcaoLote 
                       key={opcao} 
                       onClick={() => selection?.quantity && updateQuantity(selection.quantity + opcao)}
+                      $disabled={selection?.quantity && selection.quantity+opcao > (campanhaDetalhes?.maxNumbersPerUser || 0) || false}
                       $popular={opcao === 100}
                     >
                       +{opcao}
@@ -1611,119 +1620,181 @@ const PremioTexto = styled.div`
 
 // Componentes para a seção de prêmios com imagens
 const PremiosSecaoWrapper = styled.div`
-  background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 0.75rem 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, #1e293b 0%, #334155 50%, #475569 100%);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  }
+  
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
 `;
 
 const PremiosSecaoHeader = styled.div`
-  text-align: center;
-  margin-bottom: 0.75rem;
-  justify-content: space-between;
-  width: 100%;
-  color: white;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 `;
 
-const PremiosSecaoIcone = styled.span`
-  font-size: 1.5rem;
-  display: block;
+const PremiosSecaoHeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const PremiosSecaoIcone = styled.div`
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+  
+  @media (max-width: 768px) {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+    border-radius: 8px;
+  }
+`;
+
+const PremiosSecaoTitleWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 `;
 
 const PremiosSecaoTitulo = styled.h3`
-  font-size: 1rem;
-  text-align: center;
-  justify-content: center;
-  white-space: nowrap;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
   margin: 0;
-  color: rgba(255, 255, 255, 0.95);
-  letter-spacing: 0.3px;
+  color: #f8fafc;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 
   @media (max-width: 768px) {
-    font-size: 0.7rem;
+    font-size: 1rem;
   }
 `;
 
 const PremiosSecaoSubtitulo = styled.p`
-  font-size: 0.7rem;
-    white-space: nowrap;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  color: #94a3b8;
   margin: 0;
-  letter-spacing: 0.2px;
+  font-weight: 500;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const PremiosImagensContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  padding: 0;
   
-  &::-webkit-scrollbar {
-    display: none;
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
   
-  @media (min-width: 768px) {
-    gap: 0.75rem;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    overflow-x: visible;
-    padding: 0.5rem;
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
   }
 `;
 
 const PremioImagemItem = styled.div`
   display: flex;
-  flex-direction: row;
   align-items: center;
-  min-width: 280px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
   
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   }
   
-  @media (min-width: 768px) {
-    min-width: 320px;
-    padding: 0.75rem;
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(148, 163, 184, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: 640px) {
+    padding: 0.875rem;
+    gap: 0.75rem;
   }
 `;
 
 const PremioImagemWrapper = styled.div`
   position: relative;
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
   
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: rgba(148, 163, 184, 0.3);
   }
   
   @media (min-width: 768px) {
-    width: 60px;
-    height: 60px;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 16px;
   }
 `;
 
@@ -1735,125 +1806,138 @@ const PremioImagem = styled.img`
 
 const PosicaoBadge = styled.div`
   position: absolute;
-  top: -4px;
-  left: -4px;
-  background: rgba(255, 215, 0, 0.9);
-  color: rgba(0, 0, 0, 0.8);
-  font-size: 0.6rem;
-  font-weight: 600;
-  padding: 0.15rem 0.35rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 215, 0, 0.95);
-  min-width: 18px;
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: 
+    0 4px 6px -1px rgba(245, 158, 11, 0.4),
+    0 2px 4px -1px rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 24px;
   text-align: center;
-  z-index: 1;
-  letter-spacing: 0.2px;
+  z-index: 2;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+  
+  @media (max-width: 640px) {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    min-width: 20px;
+  }
 `;
 
 const PremioImagemInfo = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   flex: 1;
   min-width: 0;
-  gap: 0.25rem;
+  gap: 0.5rem;
 `;
 
 const PremioImagemNome = styled.div`
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  line-height: 1.2;
-  width: 100%;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  letter-spacing: -0.025em;
+  
+  @media (max-width: 640px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const PremioImagemValor = styled.div`
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #FFD700;
-  background: rgba(255, 215, 0, 0.08);
-  padding: 0.15rem 0.4rem;
-  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
   align-self: flex-start;
-  border: 1px solid rgba(255, 215, 0, 0.15);
-  letter-spacing: 0.3px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  
+  @media (max-width: 640px) {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
 `;
 
 const PremioMaisItem = styled.div`
   display: flex;
-  flex-direction: row;
   align-items: center;
-  min-width: 280px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.6rem;
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   gap: 0.75rem;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  text-align: center;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(148, 163, 184, 0.3);
+    transform: translateY(-2px);
   }
   
-  @media (min-width: 768px) {
-    min-width: 320px;
-    padding: 0.75rem;
+  @media (max-width: 640px) {
+    padding: 1.25rem 0.875rem;
+    gap: 0.5rem;
   }
 `;
 
 const PremioMaisIcone = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 300;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
+  border: 2px dashed rgba(148, 163, 184, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   ${PremioMaisItem}:hover & {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(148, 163, 184, 0.15);
+    border-color: rgba(148, 163, 184, 0.4);
+    color: #cbd5e1;
   }
   
-  @media (min-width: 768px) {
-    width: 70px;
-    height: 70px;
-    border-radius: 12px;
-    font-size: 2rem;
+  @media (max-width: 640px) {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
   }
 `;
 
 const PremioMaisTexto = styled.div`
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.025em;
   
   ${PremioMaisItem}:hover & {
-    background: rgba(255, 255, 255, 0.15);
+    color: #f1f5f9;
   }
   
-  @media (min-width: 768px) {
-    font-size: 0.9rem;
-    padding: 0.3rem 0.9rem;
+  @media (max-width: 640px) {
+    font-size: 0.8rem;
   }
 `;
 
@@ -2768,13 +2852,14 @@ const ControlButton = styled.button`
   }
 `;
 
-const BotaoMais = styled(ControlButton)`
+const BotaoMais = styled(ControlButton)<{ $disabled?: boolean }>`
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
   color: white;
   font-size: 1.8rem;
-  
+  opacity: ${({ $disabled }) => $disabled ? 0.5 : 1};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
   border: 1px solid rgba(255,255,255,0.4);
   
 
@@ -2876,7 +2961,7 @@ const SeletorLotes = styled.div`
 `;
 
 // Better contrast for lot options
-const OpcaoLote = styled.div<{ $popular?: boolean }>`
+const OpcaoLote = styled.div<{ $popular?: boolean, $disabled?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2884,6 +2969,8 @@ const OpcaoLote = styled.div<{ $popular?: boolean }>`
   border: 1px solid ${({ theme, $popular }) => $popular 
     ? `rgba(106, 17, 203, 0.4)` 
     : `rgba(0, 0, 0, 0.08)`};
+  opacity: ${({ $disabled }) => $disabled ? 0.5 : 1};
+  pointer-events: ${({ $disabled }) => $disabled ? 'none' : 'auto'};
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;

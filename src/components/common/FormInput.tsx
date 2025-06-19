@@ -172,7 +172,7 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   }
   
   @media (max-width: 480px) {
-    height: 55px !important;
+    height: 45px !important;
     font-size:1rem;
   }
 `;

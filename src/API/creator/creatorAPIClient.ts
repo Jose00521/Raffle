@@ -1,7 +1,7 @@
 import { ICreator } from '@/models/interfaces/IUserInterfaces';
 
 const creatorAPIClient = {
-    createCreator: async (creator: ICreator | FormData) => {
+    createCreator: async (creator: Partial<ICreator>) => {
         try {
             const response = await fetch('/api/user/creator', {
               method: 'POST',

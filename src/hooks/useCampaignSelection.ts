@@ -61,7 +61,9 @@ export const useCampaignSelection = (campaign: ICampaign) => {
     }, [campaign]);
     
     const updateQuantity = useCallback((newQuantity: number ) => {
-        console.log('updateQuantity', newQuantity);
+        if(newQuantity > (campaign.maxNumbersPerUser || 0) || newQuantity < (campaign.minNumbersPerUser || 0)){
+            return;
+        }
         const matchingPackage = campaign.numberPackages.find(pkg => pkg.quantity === newQuantity);
         if(matchingPackage){
             setIsCombo(true);
