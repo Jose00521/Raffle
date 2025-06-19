@@ -31,7 +31,8 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
                 logger.info(`- ${key}: ${formData.get(key)}`);
             } else {
                 const value = formData.get(key);
-                logger.info(`- ${key}: ${value instanceof File ? `File: ${value.name}, type: ${value.type}, size: ${value.size}` : value}`);
+                const isFile = value && typeof value === 'object' && value.constructor?.name === 'File';
+                logger.info(`- ${key}: ${isFile ? `File: ${value.name}, type: ${value.type}, size: ${value.size}` : value}`);
             }
         }
         
@@ -39,7 +40,8 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
         const images = formData.getAll('images');
         logger.info(`Total de imagens recebidas: ${images.length}`);
         images.forEach((img, i) => {
-            if (img instanceof File) {
+            const isFile = img && typeof img === 'object' && img.constructor?.name === 'File';
+            if (isFile) {
                 logger.info(`Imagem ${i}: ${img.name}, tipo: ${img.type}, tamanho: ${img.size}`);
             } else {
                 logger.info(`Imagem ${i}: não é um arquivo, é ${typeof img}`);
@@ -48,18 +50,18 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
         
         const prizeText  = JSON.parse(formData.get('data') as string);
         
-        const image = formData.get('image') as File;
+        const image = formData.get('image');
         const prize = {
             ...prizeText,
             image: image,
-            images: images as File[]
+            images: images
         }
 
         logger.info("Dados do prêmio montados:", {
             ...prizeText,
             hasImage: !!image,
-            imageType: image?.type,
-            imageSize: image?.size,
+            imageType: (image as any)?.type,
+            imageSize: (image as any)?.size,
             imagesCount: images.length
         });
 

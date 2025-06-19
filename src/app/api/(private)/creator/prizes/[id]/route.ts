@@ -72,7 +72,7 @@ export const PUT = withAuth(async (request: NextRequest, { params, session }: { 
             
             // Handle image arrays specially
             if (field === 'images') {
-                const imageFiles: File[] = [];
+                const imageFiles: any[] = [];
                 
                 // Check for image[index] format for multiple files
                 for (let i = 0; ; i++) {
@@ -81,11 +81,12 @@ export const PUT = withAuth(async (request: NextRequest, { params, session }: { 
                     
                     if (!image) break;
                     
-                    if (image instanceof File) {
+                    const isFile = image && typeof image === 'object' && image.constructor?.name === 'File';
+                    if (isFile) {
                         imageFiles.push(image);
                     } else if (typeof image === 'string') {
                         // For URLs that weren't changed, push them as is
-                        imageFiles.push(image as unknown as File);
+                        imageFiles.push(image as unknown as any);
                     }
                 }
                 
