@@ -4,12 +4,22 @@ const EventEmitter = require('events');
 // Increase max listeners to prevent memory leak warnings
 EventEmitter.defaultMaxListeners = 50;
 
-const { parsed: myEnv } = require('dotenv').config({
-  path:'.env.example'
-})
+// Carregar variáveis de ambiente condicionalmente
+let myEnv = {};
+try {
+  const { parsed } = require('dotenv').config({
+    path: '.env.example'
+  });
+  myEnv = parsed || {};
+} catch (error) {
+  console.warn('Arquivo .env.example não encontrado, continuando sem ele...');
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Configuração para produção
+  output: 'standalone',
+  
   // Ignorar erros de ESLint durante o build
   eslint: {
     ignoreDuringBuilds: true,
@@ -18,9 +28,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack(config,{ isServer }) {
-    config.plugins.push(new webpack.EnvironmentPlugin(myEnv))
-      // Lidar melhor com módulos nativos
+  webpack(config, { isServer }) {
+    // Só adicionar plugins de environment se houver variáveis
+    if (Object.keys(myEnv).length > 0) {
+      config.plugins.push(new webpack.EnvironmentPlugin(myEnv));
+    }
+    
+    // Lidar melhor com módulos nativos
     config.externals.push({ 'thread-stream': 'commonjs thread-stream', pino: 'commonjs pino' });
 
     // Excluir pino-pretty do bundle de produção
@@ -28,8 +42,8 @@ const nextConfig = {
       config.externals.push('pino-pretty');
     }
 
-    return config
-},
+    return config;
+  },
   compiler: {
     styledComponents: true,
   },

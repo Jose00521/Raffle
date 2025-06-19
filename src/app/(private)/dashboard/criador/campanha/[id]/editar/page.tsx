@@ -319,14 +319,15 @@ export default function EditCampaignPage() {
 
   // Preparar dados iniciais para o formulário
   const prepareInitialData = (campaign: ICampaign): any => {
-    return {
+    // Removendo logs para evitar loops
+    const formData = {
       title: campaign.title || '',
       description: campaign.description || '',
-      individualNumberPrice: campaign.individualNumberPrice || 0,
+      individualNumberPrice: typeof campaign.individualNumberPrice === 'number' ? campaign.individualNumberPrice : 0,
       totalNumbers: campaign.totalNumbers || 0,
       drawDate: campaign.drawDate ? new Date(campaign.drawDate).toISOString() : '',
-      minNumbersPerUser: campaign.minNumbersPerUser || 1,
-      maxNumbersPerUser: campaign.maxNumbersPerUser,
+      minNumbersPerUser: typeof campaign.minNumbersPerUser === 'number' ? campaign.minNumbersPerUser : 1,
+      maxNumbersPerUser: typeof campaign.maxNumbersPerUser === 'number' ? campaign.maxNumbersPerUser : undefined,
       status: campaign.status || 'ACTIVE',
       canceled: Boolean(campaign.canceled) || false,
       isScheduled: (campaign as any).isScheduled || false,
@@ -345,12 +346,15 @@ export default function EditCampaignPage() {
         premiado: { active: false, quantity: 50, value: 500 }
       },
       regulation: campaign.regulation || '',
-      returnExpected: campaign.returnExpected || '',
+      returnExpected: campaign.returnExpected !== undefined ? String(campaign.returnExpected) : '',
       images: campaign.images || [],
       coverImage: campaign.coverImage,
       mainPrize: (campaign as any).mainPrize || '',
       valuePrize: (campaign as any).valuePrize || ''
     };
+    
+    // Removendo logs para evitar loops
+    return formData;
   };
 
   // Renderização
@@ -450,7 +454,7 @@ export default function EditCampaignPage() {
       <ContentContainer>
         <RaffleFormFieldsUpdate
           initialData={prepareInitialData(campaign)}
-          campaignId={campaign._id || (campaign as any).id || id as string}
+          campaignId={campaign.campaignCode as string}
           onSubmit={handleUpdateSubmit}
           onCancel={handleCancel}
           isSubmitting={submitting}

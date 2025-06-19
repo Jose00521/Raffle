@@ -180,7 +180,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
         const response = await creatorPrizeAPIClient.getAllPrizes();
         setAvailablePrizes(response.data);
       } catch (error) {
-        console.error('Erro ao carregar prêmios:', error);
+        // Removendo log para evitar loops
       }
     };
     fetchPrizes();
@@ -332,7 +332,18 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
   }, [totalNumbers]); // Apenas totalNumbers nas dependências
   
   // Atualizar o useEffect para chamar onPrizesGenerated quando os prêmios forem alterados
+  // Usando uma ref para evitar loops infinitos
+  const prizeConfigRef = useRef(prizeConfig);
+  
   useEffect(() => {
+    // Verificar se houve mudança real no prizeConfig
+    if (JSON.stringify(prizeConfigRef.current) === JSON.stringify(prizeConfig)) {
+      return; // Não fazer nada se não houve mudança real
+    }
+    
+    // Atualizar a ref com o novo valor
+    prizeConfigRef.current = prizeConfig;
+    
     // Apenas se a função de callback foi fornecida
     if (onPrizesGenerated) {
       // Converter IndividualPrize[] para InstantPrize[]
@@ -362,10 +373,13 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
         }
       });
       
-      // Notificar o componente pai sobre os novos prêmios
-      onPrizesGenerated(allPrizes);
+      // Notificar o componente pai sobre os novos prêmios com um pequeno atraso
+      // para evitar loops de renderização
+      setTimeout(() => {
+        onPrizesGenerated(allPrizes);
+      }, 0);
     }
-  }, [prizeConfig]); // Mudou para observar prizeConfig ao invés de generatedPrizes
+  }, [prizeConfig, onPrizesGenerated, totalNumbers]);
   
   const handleToggleCategory = (category: keyof PrizeCategoriesConfig) => {
     if (disabled) return;

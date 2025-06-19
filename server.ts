@@ -32,7 +32,7 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000');
 const db = container.resolve<IDBConnection>('db');
 
 // Variável de controle global para garantir a inicialização única
@@ -149,7 +149,8 @@ app.prepare().then(async () => {
   process.on('SIGTERM', gracefulShutdown);
   process.on('SIGINT', gracefulShutdown);
   
-  httpServer.listen(PORT, () => {
-    logger.info(`> Servidor rodando em http://localhost:${PORT}`);
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    logger.info(`> Servidor rodando na porta ${PORT}`);
+    logger.info(`> Ambiente: ${process.env.NODE_ENV}`);
   });
 }); 
