@@ -231,6 +231,10 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     sold: 0,
     percentComplete: 0
   });
+
+  // Estados para input editável de quantidade
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [tempQuantity, setTempQuantity] = useState('');
   
   // Buscar estatísticas dos números ao carregar o componente
   useEffect(() => {
@@ -399,6 +403,58 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   const handleMeusNumerosClick = () => {
     // Implementar a lógica para mostrar os números do usuário
     console.log("Meus Números clicado");
+  };
+
+  // Funções para input editável de quantidade
+  const handleQuantityClick = () => {
+    setIsEditingQuantity(true);
+    setTempQuantity((selection?.quantity || 0).toString());
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Apenas números
+    const maxQuantity = campanhaDetalhes?.maxNumbersPerUser || 999999;
+    const maxDigits = maxQuantity.toString().length;
+    
+    // Limitar à quantidade de dígitos do valor máximo
+    if (value.length > maxDigits) {
+      return;
+    }
+    
+    setTempQuantity(value);
+  };
+
+  const handleQuantitySubmit = () => {
+    const newQuantity = parseInt(tempQuantity) || 0;
+    const minQuantity = campanhaDetalhes?.minNumbersPerUser || 1;
+    const maxQuantity = campanhaDetalhes?.maxNumbersPerUser || 999999;
+
+    if (newQuantity < minQuantity) {
+      toast.warning(`Quantidade mínima é ${minQuantity} números`);
+      setTempQuantity(minQuantity.toString());
+      updateQuantity(minQuantity);
+    } else if (newQuantity > maxQuantity) {
+      toast.warning(`Quantidade máxima é ${maxQuantity} números`);
+      setTempQuantity(maxQuantity.toString());
+      updateQuantity(maxQuantity);
+    } else {
+      updateQuantity(newQuantity);
+    }
+    
+    setIsEditingQuantity(false);
+  };
+
+  const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleQuantitySubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditingQuantity(false);
+      setTempQuantity((selection?.quantity || 0).toString());
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    handleQuantitySubmit();
   };
   
   return (
@@ -713,10 +769,25 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     <span>−</span>
                   </BotaoMenos>
                 </BotoesEsquerda>
-                <QuantidadeNumero>
-                  <span>{selection?.quantity}</span>
-                </QuantidadeNumero>
-                <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
+                <QuantidadeNumero onClick={handleQuantityClick}>
+                  <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
+                    {selection?.quantity}
+                  </span>
+                  {isEditingQuantity && (
+                    <QuantidadeInput
+                      type="text"
+                      value={tempQuantity}
+                      onChange={handleQuantityChange}
+                      onKeyDown={handleQuantityKeyDown}
+                      onBlur={handleQuantityBlur}
+                                             autoFocus
+                       maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                       placeholder="Digite a quantidade"
+                     />
+                   )}
+                   
+                  </QuantidadeNumero>
+                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
                   <span>+</span>
                 </BotaoMais>
               </QuantidadeControle>
@@ -741,7 +812,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <ValorTotalContainer>
                 <ValorTotalLabel>Total:</ValorTotalLabel>
                 <ValorTotal>
-                  {formatCurrency(selection?.totalPrice || 0)}
+                  {isEditingQuantity? formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)):formatCurrency(selection?.totalPrice || 0)}
                 </ValorTotal>
               </ValorTotalContainer>
             </QuantidadeSelector>
@@ -981,10 +1052,25 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       <span>−</span>
                     </BotaoMenos>
                   </BotoesEsquerda>
-                  <QuantidadeNumero>
-                    <span>{selection?.quantity}</span>
-                  </QuantidadeNumero>
-                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
+                  <QuantidadeNumero onClick={handleQuantityClick}>
+                    <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
+                      {selection?.quantity}
+                    </span>
+                    {isEditingQuantity && (
+                      <QuantidadeInput
+                        type="text"
+                        value={tempQuantity}
+                        onChange={handleQuantityChange}
+                        onKeyDown={handleQuantityKeyDown}
+                        onBlur={handleQuantityBlur}
+                                                  autoFocus
+                          maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                          placeholder="Digite a quantidade"
+                        />
+                      )}
+                   
+                    </QuantidadeNumero>
+                    <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
                     <span>+</span>
                   </BotaoMais>
                 </QuantidadeControle>
@@ -1009,7 +1095,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 <ValorTotalContainer>
                   <ValorTotalLabel>Total:</ValorTotalLabel>
                   <ValorTotal>
-                    {formatCurrency(selection?.totalPrice || 0)}
+                    {isEditingQuantity? formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)):formatCurrency(selection?.totalPrice || 0)}
                   </ValorTotal>
                 </ValorTotalContainer>
               </QuantidadeSelector>
@@ -2767,6 +2853,8 @@ const QuantidadeNumero = styled.div`
   color: ${({ theme }) => theme.colors.primary}; /* Fallback color */
   position: relative;
   padding: 0 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
   
   span {
     position: relative;
@@ -2776,6 +2864,8 @@ const QuantidadeNumero = styled.div`
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text; /* Standard syntax */
+    width: 100% !important; 
+    text-align: center;
     
     &::before {
       content: '';
@@ -2940,6 +3030,71 @@ const BotaoReset = styled(ControlButton)<{ disabled: boolean }>`
     width: 24px;
     height: 24px;
     font-size: 0.7rem;
+  }
+`;
+
+// Input editável para quantidade
+const QuantidadeInput = styled.input`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+  width: 100%;
+  height: auto;
+  color: ${({ theme }) => theme.colors.primary};
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding: 0.2rem;
+  margin: 0;
+  min-width: 120px;
+  
+  &::placeholder {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.6;
+    -webkit-text-fill-color: rgba(106, 17, 203, 0.6);
+  }
+
+  @media (max-width: 576px) {
+    font-size: 1.2rem;
+    width: 80%;
+    min-width: 80px;
+    padding: 0.1rem;
+    
+    &::placeholder {
+      font-size: 0.7rem;
+    }
+  }
+`;
+
+// Dica de edição
+const EditHint = styled.div`
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: rgba(106, 17, 203, 0.6);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  ${QuantidadeNumero}:hover & {
+    opacity: 1;
+  }
+
+  @media (max-width: 576px) {
+    font-size: 0.6rem;
+    bottom: -15px;
   }
 `;
 
