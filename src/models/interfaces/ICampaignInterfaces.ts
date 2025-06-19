@@ -47,8 +47,8 @@ export enum CampaignStatusEnum {
     createdBy: mongoose.Types.ObjectId | null;
     title: string;
     description: string;
-    coverImage: File | string;
-    images: File[] | string[];
+      coverImage: any;
+  images: any[];
     individualNumberPrice: number;
     minNumbersPerUser: number;
     maxNumbersPerUser: number;

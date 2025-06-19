@@ -197,12 +197,12 @@ export class CampaignService implements ICampaignService {
 
     logger.info("Processando imagens");
     const processedImages = await Promise.all(
-        [campaignData.coverImage, ...campaignData.images].map(async (image: File | string, index: number) => {
+        [campaignData.coverImage, ...campaignData.images].map(async (image: any, index: number) => {
             logger.info(`Processando imagem ${index}`, {
-                type: image instanceof File ? image.type : 'string',
-                size: image instanceof File ? image.size : 0
+                type: typeof image === 'object' && image?.constructor?.name || typeof image,
+                size: image?.size || 0
             });
-            return processImage(image as File);
+            return processImage(image);
         })
     );
 
