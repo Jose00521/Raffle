@@ -83,6 +83,8 @@ const HeroSubtitle = styled.p`
 
 const ButtonGroup = styled.div`
   display: flex;
+  flex-wrap: wrap;
+  min-width: 300px !important;
   gap: 1rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {

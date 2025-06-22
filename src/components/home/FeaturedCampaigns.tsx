@@ -68,9 +68,6 @@ interface FeaturedCampaignsProps {
 
 const FeaturedCampaigns: React.FC<FeaturedCampaignsProps> = ({ campaigns }) => {
   // Only show up to 3 active campaigns in the featured section
-  const activeCampaigns = campaigns
-    .filter(campaign => campaign.status === CampaignStatusEnum.ACTIVE)
-    .slice(0, 3);
   
   return (
     <SectionContainer>
@@ -82,7 +79,7 @@ const FeaturedCampaigns: React.FC<FeaturedCampaignsProps> = ({ campaigns }) => {
           </SectionDescription>
         </SectionHeader>
         
-        <CampaignGrid campaigns={activeCampaigns} emptyMessage="Não há campanhas em destaque no momento. Confira todas as campanhas disponíveis." />
+        <CampaignGrid campaigns={campaigns} emptyMessage="Não há campanhas em destaque no momento. Confira todas as campanhas disponíveis." />
         
         <ViewAllLink>
           <Link href="/campanhas" className="view-all-button">

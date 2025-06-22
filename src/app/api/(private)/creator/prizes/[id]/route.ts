@@ -81,8 +81,7 @@ export const PUT = withAuth(async (request: NextRequest, { params, session }: { 
                     
                     if (!image) break;
                     
-                    const isFile = image && typeof image === 'object' && image.constructor?.name === 'File';
-                    if (isFile) {
+                    if (image instanceof File) {
                         imageFiles.push(image);
                     } else if (typeof image === 'string') {
                         // For URLs that weren't changed, push them as is

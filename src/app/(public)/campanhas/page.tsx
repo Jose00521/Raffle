@@ -42,9 +42,10 @@ export default function CampanhasPage() {
   useEffect(() => {
     const fetchCampanhas = async () => {
       try {
-        const data = await participantCampaignAPI.getCampanhasAtivas();
-        setCampanhas(Array.isArray(data) ? data : []);
-      } catch (error) {
+        const response = await participantCampaignAPI.getActiveCampaignsPublic();
+        console.log("data",response);
+        setCampanhas(response.data as ICampaign[]);
+      } catch (error) { 
         setCampanhas([]);
       } finally {
         setLoading(false);

@@ -376,7 +376,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
       // Notificar o componente pai sobre os novos prêmios com um pequeno atraso
       // para evitar loops de renderização
       setTimeout(() => {
-        onPrizesGenerated(allPrizes);
+      onPrizesGenerated(allPrizes);
       }, 0);
     }
   }, [prizeConfig, onPrizesGenerated, totalNumbers]);

@@ -151,7 +151,7 @@ export type RaffleFormData = {
   
   // Campos para detalhes e regulamento
   regulation: string;
-  returnExpected: string;
+  returnExpected: number;
   
   // Imagens da campanha - separando capa das demais imagens
   coverImage?: File | string;
@@ -176,7 +176,7 @@ const raffleFormSchema = z.object({
   canceled: z.boolean().optional().default(false),
   minNumbersPerUser: z.number().min(1, 'Pelo menos um número é obrigatório'),
   maxNumbersPerUser: z.number().min(1, 'Pelo menos um número é obrigatório').optional(),
-  returnExpected: z.string().optional(),
+  returnExpected: z.number().min(1, 'Valor esperado muito baixo').optional(),
   isScheduled: z.boolean(),
   scheduledActivationDate: z.string().optional(),
   prizeCategories: z.any().optional(),
@@ -2967,7 +2967,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       premiado: { active: false, quantity: 50, value: 500 }
     },
     regulation: initialData.regulation || '',
-    returnExpected: initialData.returnExpected || '',
+    returnExpected: initialData.returnExpected || 0,
     minNumbersPerUser: initialData.minNumbersPerUser || 1,
     maxNumbersPerUser: initialData.maxNumbersPerUser || undefined,
     images: initialData.images || [],
@@ -3017,14 +3017,14 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
 
   // 🔒 VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS PARA FUNCIONALIDADES AVANÇADAS
   const hasBasicRequirements = useMemo(() => {
-    return totalNumbers > 0 && price > 0 && returnExpected && returnExpected.trim() !== '';
+    return totalNumbers > 0 && price > 0 && returnExpected && returnExpected !== 0;
   }, [totalNumbers, price, returnExpected]);
 
   const basicRequirementsMessage = useMemo(() => {
     if (!price || price <= 0) {
       return "Defina o preço por número primeiro";
     }
-    if (!returnExpected || returnExpected.trim() === '') {
+    if (!returnExpected || returnExpected === 0) {
       return "Defina o retorno esperado primeiro";
     }
     if (!totalNumbers || totalNumbers <= 0) {
@@ -3088,6 +3088,42 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     };
     fetchPrizes();
   }, []);
+
+    // Handlers para Prize Selector
+    const openPrizeSelector = () => {
+      setShowPrizeSelector(true);
+    };
+    
+    let closePrizeSelector = () => {
+      setShowPrizeSelector(false);
+    };
+    
+    const openNewPrizeModal = () => {
+      setShowNewPrizeModal(true);
+    };
+    
+    const closeNewPrizeModal = () => {
+      setShowNewPrizeModal(false);
+    };
+    
+    let handleSelectPrize = (prize: IPrize) => {
+      console.log('Prêmio selecionado (principal):', prize);
+      console.log('prizeCode do prêmio principal:', prize.prizeCode);
+      setSelectedPrize(prize);
+      closePrizeSelector();
+    };
+    
+    const handlePrizeCreated = (prize: IPrize) => {
+      // Adicionar o novo prêmio à lista
+      setAvailablePrizes(prev => [prize, ...prev]);
+      // Selecionar o prêmio recém-criado
+      setSelectedPrize(prize);
+      // Fechar o modal
+      closeNewPrizeModal();
+    };
+
+    const [currentPrizeSelectHandler, setCurrentPrizeSelectHandler] = useState<(prize: IPrize) => void>(() => handleSelectPrize);
+    const [currentCloseHandler, setCurrentCloseHandler] = useState<() => void>(() => closePrizeSelector);
   
   // Adicionar o efeito para calcular o valor total dos prêmios
   useEffect(() => {
@@ -3300,159 +3336,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     }
   }, [totalNumbers, prizeCategories, setValue]);
   
-  // Handlers para Prize Selector
-  const openPrizeSelector = () => {
-    setShowPrizeSelector(true);
-  };
-  
-  let closePrizeSelector = () => {
-    setShowPrizeSelector(false);
-  };
-  
-  const openNewPrizeModal = () => {
-    setShowNewPrizeModal(true);
-  };
-  
-  const closeNewPrizeModal = () => {
-    setShowNewPrizeModal(false);
-  };
-  
-  let handleSelectPrize = (prize: IPrize) => {
-    console.log('Prêmio selecionado (principal):', prize);
-    console.log('prizeCode do prêmio principal:', prize.prizeCode);
-    setSelectedPrize(prize);
-    closePrizeSelector();
-  };
-  
-  const handlePrizeCreated = (prize: IPrize) => {
-    // Adicionar o novo prêmio à lista
-    setAvailablePrizes(prev => [prize, ...prev]);
-    // Selecionar o prêmio recém-criado
-    setSelectedPrize(prize);
-    // Fechar o modal
-    closeNewPrizeModal();
-  };
-  
-  const handleClearSelectedPrize = () => {
-    setSelectedPrize(null);
-    setValue('mainPrize', '');
-    setValue('valuePrize', '');
-  };
-  
-  // Handlers para Instant Prizes
-  const handleAddInstantPrize = () => {
-    const currentPrizes = getValues('instantPrizes');
-    const newPrize: InstantPrize = {
-      id: `prize-${Date.now()}`,
-      number: '',
-      value: 0,
-      claimed: false
-    };
-    setValue('instantPrizes', [...currentPrizes, newPrize]);
-  };
-  
-  const handleRemoveInstantPrize = (id: string) => {
-    const currentPrizes = getValues('instantPrizes');
-    setValue('instantPrizes', currentPrizes.filter(prize => prize.id !== id));
-  };
-  
-  const handleInstantPrizeChange = (id: string, field: 'number' | 'value' | 'categoryId', value: string | number) => {
-    const currentPrizes = getValues('instantPrizes');
-    const updatedPrizes = currentPrizes.map(prize => {
-      if (prize.id === id) {
-        return { ...prize, [field]: value };
-      }
-      return prize;
-    });
-    
-    setValue('instantPrizes', updatedPrizes);
-  };
-  
-  // Add these state variables near the top of the component, with other state declarations
-  const [currentPrizeSelectHandler, setCurrentPrizeSelectHandler] = useState<(prize: IPrize) => void>(() => handleSelectPrize);
-  const [currentCloseHandler, setCurrentCloseHandler] = useState<() => void>(() => closePrizeSelector);
-
-  // Replace the handleSelectPrizeForPosition function with this version
-  const handleSelectPrizeForPosition = (position: number) => {
-    console.log('handleSelectPrizeForPosition - availablePrizes:', availablePrizes);
-    
-    // Create a handler for this specific position
-    const onSelectForPosition = (prize: IPrize) => {
-      console.log('Prêmio selecionado completo:', prize);
-      
-      const prizeIdentifier = prize.prizeCode || prize._id?.toString() || '';
-      console.log('Identificador do prêmio:', prizeIdentifier);
-      
-      const updatedPrizes = [...prizes];
-      const positionIndex = updatedPrizes.findIndex(p => p.position === position);
-      
-      if (positionIndex >= 0) {
-        // Posição já existe, atualizar o primeiro prêmio
-        if (updatedPrizes[positionIndex].prizes.length > 0) {
-          updatedPrizes[positionIndex].prizes[0] = {
-            prizeId: prizeIdentifier,
-            name: prize.name,
-            value: prize.value,
-            image: prize.image
-          };
-          
-          console.log('Prêmio selecionado para posição:', {
-            position,
-            name: prize.name,
-            id: prizeIdentifier
-          });
-        } else {
-          // Se não houver prêmios, adicionar um
-          updatedPrizes[positionIndex].prizes.push({
-            prizeId: prizeIdentifier,
-            name: prize.name,
-            value: prize.value,
-            image: prize.image
-          });
-        }
-      } else {
-        // Criar nova posição com o prêmio
-        updatedPrizes.push({
-          position,
-          prizes: [{
-            prizeId: prizeIdentifier,
-            name: prize.name,
-            value: prize.value,
-            image: prize.image
-          }]
-        });
-        
-        // Ordenar por posição
-        updatedPrizes.sort((a, b) => a.position - b.position);
-      }
-      
-      setValue('prizeDistribution', updatedPrizes);
-      
-      // If it's the first position, update the main prize too
-      if (position === 1) {
-        setSelectedPrize(prize);
-        setValue('mainPrize', prize.name);
-        setValue('valuePrize', prize.value);
-      }
-      
-      setShowPrizeSelector(false);
-    };
-    
-    // Store the original handlers in state
-    setCurrentPrizeSelectHandler(() => onSelectForPosition);
-    setCurrentCloseHandler(() => {
-      return () => {
-        // Reset to default handlers when modal closes
-        setCurrentPrizeSelectHandler(() => handleSelectPrize);
-        setCurrentCloseHandler(() => closePrizeSelector);
-        closePrizeSelector();
-      };
-    });
-    
-    // Open the modal
-    setShowPrizeSelector(true);
-  };
-  
   // Opções para o dropdown de quantidade de vencedores
   const winnerOptions = [
     { value: '1', label: '1 vencedor' },
@@ -3525,6 +3408,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       }),
       
       // Pacotes de números (numberPackages)
+      enablePackages: data.enablePackages,
       numberPackages: data.enablePackages ? (() => {
         // Primeiro, encontrar o maior desconto entre os pacotes ativos
         const activePackages = data.numberPackages.filter(pkg => pkg.isActive !== false);
@@ -3753,6 +3637,11 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
       <form onSubmit={handleSubmit(onFormSubmit as any)}>
         {/* Basic Information Section */}
         <FormSection>
+
+
+          
+
+          
           <SectionTitle>
             <FaInfo /> Informações Básicas
           </SectionTitle>
@@ -3863,7 +3752,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
               <MultiPrizePosition
                 key={`prize-position-${prizePosition.position}`}
                 position={prizePosition.position}
-                prizes={prizePosition.prizes}
+                prizes={prizePosition.prizes as IPrize[]}
                 onAddPrize={handleAddPrizeToPosition}
                 onRemovePrize={handleRemovePrizeFromPosition}
                 onCreatePrize={openNewPrizeModal}
@@ -3889,7 +3778,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                     // Se temos um retorno esperado e preço > 0, calcular total de números
                     const returnExpected = getValues('returnExpected');
                     if (returnExpected && price > 0) {
-                      const returnValue = extractNumericValue(returnExpected);
+                      const returnValue = extractNumericValue(returnExpected.toString());
                       const totalNumbers = Math.ceil(returnValue / price);
                       setValue('totalNumbers', totalNumbers);
                     }
@@ -3897,7 +3786,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   error={errors.individualNumberPrice?.message}
                   disabled={isSubmitting}
                   required
-                  currency="R$"
+                  currency="BRL"
                 />
               )}
             />
@@ -3912,7 +3801,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   icon={<FaMoneyBill />}
                   placeholder="Ex: R$10.000,00"
                   onChange={e => {
-                    field.onChange(e.target.value);
+                    const returnExpecteds = parseFloat(e.target.value) || 0;
+                    field.onChange(returnExpecteds);
                     
                     // Se temos preço por número > 0, calcular total de números
                     const price = getValues('individualNumberPrice') || 0;
@@ -3924,7 +3814,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   }}
                   error={errors.returnExpected?.message}
                   disabled={isSubmitting}
-                  currency="R$"
+                  currency="BRL"
                   helpText="O valor total que você deseja arrecadar com esta rifa"
                 />
               )}

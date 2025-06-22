@@ -11,7 +11,7 @@ interface FormInputProps {
   icon?: ReactNode;
   placeholder?: string;
   type?: string;
-  value?: string | number | Date;
+  value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   error?: string;
@@ -424,7 +424,6 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   icon,
   placeholder,
   type = 'text',
-  value,
   error,
   disabled = false,
   required = false,
@@ -437,6 +436,7 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   helpText,
   ...props
 }, ref) => {
+  
   
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | undefined>(error);

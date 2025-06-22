@@ -17,6 +17,7 @@ import { ApiError } from '../utils/errorHandler/ApiError';
 import { deleteMultipleFromS3 } from '@/lib/upload-service/client/deleteFromS3';
 import InstantPrize from '@/models/InstantPrize';
 import BitMapModel from '@/models/BitMapModel';
+import Prize from '@/models/Prize';
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
   type: 'money' | 'item';
@@ -38,7 +39,7 @@ interface InstantPrizesPayload {
 // Interface legada para compatibilidade (será removida gradualmente)
 
 export interface ICampaignRepository {
-  buscarCampanhasAtivas(userCode: string): Promise<ICampaign[] | ApiResponse<null>>;
+  listActiveCampaignsPublic(): Promise<ICampaign[] | ApiResponse<null>>;
   criarNovaCampanha(campaignData: ICampaign, instantPrizesData?: InstantPrizesPayload): Promise<ICampaign>;
   contarNumeroPorStatus(rifaId: string): Promise<any[]>;
   buscarUltimosNumerosVendidos(rifaId: string, limite: number): Promise<any[]>;
@@ -46,6 +47,8 @@ export interface ICampaignRepository {
   getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null> | ApiResponse<null>>;
   deleteCampaign(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
+  updateCampaign(id: string, userCode: string, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  listActiveCampaigns(userCode: string): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -61,8 +64,20 @@ export class CampaignRepository implements ICampaignRepository {
   /**
    * Busca todas as campanhas ativas
    */
-   async buscarCampanhasAtivas(userCode: string): Promise<ICampaign[] | ApiResponse<null>> {
+   async listActiveCampaignsPublic(): Promise<ICampaign[] | ApiResponse<null>> {
     try {
+
+      const campaigns = await Campaign.find({canceled: false, status: CampaignStatusEnum.ACTIVE},'-_id').exec();
+
+      return campaigns;
+    } catch (error) {
+      console.error('Erro ao buscar campanhas ativas:', error);
+      throw error;
+    }
+  }
+
+  async listActiveCampaigns(userCode: string): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
+        try {
       await this.db.connect();
 
       const user = await User.findOne({ userCode: userCode });
@@ -75,7 +90,7 @@ export class CampaignRepository implements ICampaignRepository {
 
       const campaigns = await Campaign.find({createdBy: user?._id},'-_id').exec();
 
-      return campaigns;
+      return createSuccessResponse(campaigns as ICampaign[], 'Campanhas ativas carregadas com sucesso', 200);
     } catch (error) {
       console.error('Erro ao buscar campanhas ativas:', error);
       throw error;
@@ -95,7 +110,10 @@ export class CampaignRepository implements ICampaignRepository {
         return createErrorResponse('Usuário não encontrado', 404);
       }
 
-      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id},'-_id').populate('createdBy', 'name email userCode').lean() as ICampaign | null;
+      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id},'-_id')
+      .populate('createdBy', 'name email userCode')
+      .populate('prizeDistribution.prizes', '-_id -categoryId -createdBy')
+      .lean() as ICampaign | null;
 
       return createSuccessResponse(campaign as ICampaign, 'Campanha encontrada com sucesso', 200);
     } catch (error) {
@@ -321,6 +339,66 @@ export class CampaignRepository implements ICampaignRepository {
     }
   }
 
+  async updateCampaign(id: string, userCode: string, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
+    try {
+      await this.db.connect();
+
+
+      const campaign = await Campaign.findOne({campaignCode: id});
+
+      if(!campaign){
+        return createErrorResponse(`Campanha não encontrada: ${id}`, 404);
+      }
+
+      if(userCode){
+        const user = await User.findOne({userCode: userCode});
+        if(!user){
+          return createErrorResponse(`Usuário não encontrado: ${userCode}`, 404);
+        }
+
+        if(campaign.createdBy && campaign.createdBy.toString() !== user._id.toString()){
+          return createErrorResponse(`Você não tem permissão para atualizar esta campanha`, 403);
+        }
+      }
+
+      let campaignUpdated = updatedCampaign;
+
+      if(Object.keys(updatedCampaign).includes('prizeDistribution')){
+        //converter a lista de premios de cada posição de item para ID
+        const prizeDistribution = updatedCampaign.prizeDistribution;
+
+        if(prizeDistribution){
+          
+          campaignUpdated.prizeDistribution = await this.convertPrizeObjectsToIds(prizeDistribution);
+
+        }
+
+
+      }
+
+
+
+      Object.keys(updatedCampaign).forEach((key: string) => {
+        campaign[key as keyof ICampaign] = updatedCampaign[key as keyof ICampaign];
+      });
+
+      campaign.updatedAt = new Date();
+
+      await campaign.save();
+
+      return createSuccessResponse(campaign, 'Campanha atualizada com sucesso', 200);
+
+      
+    } catch (error) {
+      throw new ApiError({
+        success: false,
+        message: '[CampaignRepository] Erro ao atualizar campanha:',
+        statusCode: 500,
+        cause: error as Error
+      });
+    }
+  }
+
   /**
    * Conta o número de números por status para uma campanha
    */
@@ -348,5 +426,59 @@ export class CampaignRepository implements ICampaignRepository {
       .limit(limite)
       .populate('userId', 'name')
       .lean();
+  }
+
+  /**
+   * 🏆 Converte objetos de prêmios completos para seus ObjectIds correspondentes
+   * @param prizeDistribution Array de distribuição de prêmios com objetos completos
+   * @returns Array de distribuição atualizada com apenas IDs de prêmios
+   */
+  async convertPrizeObjectsToIds(prizeDistribution: any[]): Promise<any[]> {
+    if (!prizeDistribution?.length) {
+      console.log('⚠️ [CampaignProcessor] Nenhuma distribuição de prêmios para converter');
+      return [];
+    }
+
+    console.log(`🏆 [CampaignProcessor] Convertendo objetos de prêmios para ObjectIds em ${prizeDistribution.length} posições...`);
+    
+    const convertedDistribution = [];
+    
+    for (const distribution of prizeDistribution) {
+      if (!distribution.prizes?.length) {
+        convertedDistribution.push(distribution);
+        continue;
+      }
+      
+      console.log(`🔍 [CampaignProcessor] Processando ${distribution.prizes.length} prêmios da posição ${distribution.position}...`);
+      
+      const prizeIds = [];
+      for (const prizeObject of distribution.prizes) {
+        if (!prizeObject.prizeId && !prizeObject.prizeCode) {
+          console.warn(`⚠️ [CampaignProcessor] Prêmio sem identificador encontrado na posição ${distribution.position}`);
+          continue;
+        }
+        
+        // Usa o identificador disponível (prioriza prizeCode que é o Snowflake ID)
+        const prizeIdentifier = prizeObject.prizeCode || prizeObject.prizeId;
+        
+        try {
+          const objectId = await this.dataProcessor.convertSinglePrizeSnowflakeToObjectId(prizeIdentifier);
+          prizeIds.push(objectId);
+          console.log(`✅ [CampaignProcessor] Prêmio convertido: ${prizeIdentifier} -> ${objectId}`);
+        } catch (error) {
+          console.error(`❌ [CampaignProcessor] Falha ao converter prêmio ${prizeIdentifier}:`, error);
+          throw error;
+        }
+      }
+      
+      convertedDistribution.push({
+        ...distribution,
+        prizes: prizeIds
+      });
+      
+      console.log(`✅ [CampaignProcessor] Posição ${distribution.position}: ${prizeIds.length} prêmios convertidos`);
+    }
+    
+    return convertedDistribution;
   }
 } 

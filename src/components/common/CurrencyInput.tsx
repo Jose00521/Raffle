@@ -3,15 +3,16 @@
 import React, { useState, ReactNode, useEffect, useRef, useCallback, forwardRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FaEye, FaEyeSlash, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
+import { formatCurrency, parseCurrencyToNumber, formatCurrencyForTyping, stripCurrencyFormat } from '@/utils/formatNumber';
 
-interface FormInputProps {
+interface FormInputProps {  
   id: string;
   name?: string;
   label?: string;
   icon?: ReactNode;
   placeholder?: string;
   type?: string;
-  value?: string | number | Date;
+  value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
@@ -28,6 +29,7 @@ interface FormInputProps {
   currency?: string;
   helpText?: string;
   ref?: React.Ref<HTMLInputElement>;
+  allowNegative?: boolean;
 }
 
 const InputGroup = styled.div<{ $fullWidth?: boolean }>`
@@ -142,7 +144,7 @@ const InputIcon = styled.div`
 const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   width: 100%;
   border: ${props => props.$hasError ? '2px solid #ef4444' : '2px solid rgba(0, 0, 0, 0)'};
-  padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
+  padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '16px 15px'};
   padding-right: 40px; /* Ensure space for password toggle button */
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -176,15 +178,14 @@ const StyledInput = styled.input<{ $hasIcon: boolean; $hasError?: boolean }>`
   }
   
   @media (max-height: 800px) {
-
     font-size: 1rem;
-      padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
+    padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '16px 15px'};
   }
   
   @media (max-height: 700px) {
     height: 55px !important;
     font-size:1rem;
-  padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '0 15px'};
+    padding: ${props => props.$hasIcon ? '16px 15px 16px 40px' : '16px 15px'};
   }
   
   @media (max-width: 768px) {
@@ -298,67 +299,6 @@ const Tooltip = styled.div<{ $visible: boolean }>`
   }
 `;
 
-// Função para formatar valor como moeda
-const formatCurrency = (value: string, currencySymbol: string = 'R$'): string => {
-  // Remove todos os caracteres não numéricos exceto vírgula e ponto
-  let numericValue = value.replace(/[^\d.,]/g, '');
-  
-  // Converte para o formato de número com 2 casas decimais
-  let cleanValue = numericValue.replace(/[^\d]/g, '');
-  
-  // Se não tiver valor, retorna vazio
-  if (!cleanValue) return '';
-  
-  // Formata o número como monetário (123456.78 => 123.456,78)
-  // Primeiro converte para centavos
-  const cents = parseInt(cleanValue, 10);
-  
-  // Divide por 100 para obter o valor real (com 2 casas decimais)
-  const valueWithDecimals = (cents / 100).toFixed(2);
-  
-  // Substitui ponto por vírgula para o formato brasileiro
-  const decimalPart = valueWithDecimals.split('.')[1];
-  
-  // Formata a parte inteira com separadores de milhar
-  let integerPart = valueWithDecimals.split('.')[0];
-  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  
-  // Retorna o valor formatado com o símbolo da moeda
-  return `${currencySymbol} ${integerPart},${decimalPart}`;
-};
-
-// Função para obter o valor numérico sem formatação
-const parseCurrencyToNumber = (formattedValue: string): number => {
-  try {
-    // Se o valor for vazio ou não for uma string, retornar 0
-    if (!formattedValue || typeof formattedValue !== 'string') {
-      return 0;
-    }
-
-    // Remover o símbolo da moeda (R$) e espaços
-    let cleanValue = formattedValue.replace(/[R$\s]/g, '');
-    
-    // Tratar formato brasileiro (1.234,56):
-    // 1. Remover pontos (separadores de milhar)
-    cleanValue = cleanValue.replace(/\./g, '');
-    
-    // 2. Substituir vírgula por ponto para o JavaScript entender como decimal
-    cleanValue = cleanValue.replace(/,/g, '.');
-    
-    // Converter para número com parseFloat para preservar os decimais
-    const numericValue = parseFloat(cleanValue);
-    
-    // Log para depuração
-    console.log(`Conversão de valor monetário: "${formattedValue}" → "${cleanValue}" → ${numericValue}`);
-    
-    // Retornar 0 se não for um número válido
-    return isNaN(numericValue) ? 0 : numericValue;
-  } catch (error) {
-    console.error("Erro ao converter valor monetário:", error);
-    return 0;
-  }
-};
-
 const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   id,
   name = id,
@@ -379,8 +319,9 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   isPassword = false,
   fullWidth = false,
   className,
-  currency,
+  currency = 'BRL',
   helpText,
+  allowNegative = false,
   ...props
 }, ref) => {
   
@@ -388,6 +329,12 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   const [localError, setLocalError] = useState<string | undefined>(error);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [internalValue, setInternalValue] = useState<string | number>(
+    typeof value === 'string' || typeof value === 'number' ? value : ''
+  );
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  
   const inputRef = useRef<HTMLInputElement | null>(null);
   
   // Merge dos refs para permitir acesso ao ref interno e ao ref fornecido pelo usuário
@@ -401,19 +348,51 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
       (ref as React.MutableRefObject<HTMLInputElement | null>).current = element;
     }
   }, [ref]);
-  
-  // Inicializar valor de exibição
+
+  // Atualiza a posição do cursor de forma controlada e segura
+  const updateCursorPosition = useCallback(() => {
+    if (isFocused && cursorPosition !== null && inputRef.current) {
+      setTimeout(() => {
+        if (inputRef.current) {
+          try {
+            inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+          } catch (error) {
+            console.warn('Erro ao atualizar posição do cursor:', error);
+          }
+        }
+      }, 0);
+    }
+  }, [cursorPosition, isFocused]);
+
+  // Use effect para atualizar a posição do cursor após a renderização
   useEffect(() => {
+    updateCursorPosition();
+  }, [displayValue, updateCursorPosition]);
+  
+  // Atualiza o valor interno quando o valor externo muda
+  useEffect(() => {
+    if (value !== undefined) {
+      setInternalValue(value);
+    }
+  }, [value]);
+  
+  // Inicializar valor de exibição apenas na primeira renderização ou quando o value muda externamente
+  useEffect(() => {
+    // Verificar se o input está focado - se estiver, não atualizar o valor para não interferir na digitação
+    if (document.activeElement === inputRef.current) {
+      return;
+    }
+    
     if (value !== undefined) {
       if (currency) {
         // Se for um formato de moeda
         if (typeof value === 'number') {
           // Se for um número, formatar como moeda
-          setDisplayValue(formatCurrency(value.toString(), currency));
+          setDisplayValue(formatCurrency(value, currency));
         } else if (typeof value === 'string') {
           // Se for uma string, verificar se é válido e formatar
-          const numericValue = value.replace(/[^\d.,]/g, '');
-          if (numericValue) {
+          const numericValue = parseCurrencyToNumber(value);
+          if (numericValue !== 0 || value.trim() !== '') {
             setDisplayValue(formatCurrency(numericValue, currency));
           } else {
             setDisplayValue('');
@@ -433,23 +412,70 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   // Manipular mudanças no campo quando é uma moeda
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
+    const currentCursorPosition = e.target.selectionStart || 0;
     
-    // Remover formatação para processar apenas números
-    const numericValue = inputValue.replace(/[^\d]/g, '');
+    // Armazenar o valor anterior para cálculo da posição do cursor
+    const previousValue = displayValue;
     
-    // Formatar o valor como moeda
-    const formattedValue = formatCurrency(numericValue, currency);
+    // Se o campo estiver vazio, limpar o valor
+    if (!inputValue || inputValue.trim() === '') {
+      setDisplayValue('');
+      setInternalValue('');
+      
+      // Criar um evento sintético com valor como string vazia
+      const syntheticEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          name: e.target.name,
+          value: ''
+        }
+      };
+      
+      onChange?.(syntheticEvent as any);
+      return;
+    }
+
+    // Verificar se tem sinal negativo (se permitido)
+    const isNegative = allowNegative && inputValue.includes('-');
     
-    // Atualizar o valor exibido
+    // Remover formatação e manter apenas dígitos
+    let digits = stripCurrencyFormat(inputValue);
+    
+    // Se não tem dígitos, não processa
+    if (!digits) {
+      setDisplayValue('');
+      setInternalValue('');
+      return;
+    }
+    
+    // Converte para number para processamento interno
+    let valueInCents = parseInt(digits, 10) || 0;
+    
+    // Formatar em tempo real para exibição
+    let formattedValue = formatCurrencyForTyping(digits, currency);
+    
+    // Adicionar sinal negativo se necessário
+    if (isNegative && allowNegative) {
+      formattedValue = '-' + formattedValue;
+      valueInCents = -valueInCents;
+    }
+    
+    // Atualizar o valor exibido e valor interno
     setDisplayValue(formattedValue);
     
-    // Criar um evento sintético para passar o valor sem formatação
+    // Valor numérico em centavos
+    const numericValue = valueInCents / 100;
+    setInternalValue(numericValue);
+    
+    
+    // Criar um evento sintético para passar o valor como string para compatibilidade
     const syntheticEvent = {
       ...e,
       target: {
         ...e.target,
         name: e.target.name,
-        value: parseCurrencyToNumber(formattedValue).toString()
+        value: numericValue.toString()
       }
     };
     
@@ -457,14 +483,9 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
     onChange?.(syntheticEvent as any);
   };
   
-  // Manipular eventos de foco e clique para melhorar a experiência com moeda
+  // Manipular eventos de foco
   const handleCurrencyFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Ao receber foco, posicionar o cursor no final
-    const input = e.target;
-    setTimeout(() => {
-      input.selectionStart = input.value.length;
-      input.selectionEnd = input.value.length;
-    }, 0);
+    setIsFocused(true);
     
     // Chamar o onFocus original
     onFocus?.(e);
@@ -480,6 +501,30 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
   }, [error]);
   
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+  
+  // Manipular eventos de blur para formatar o valor quando o campo perde o foco
+  const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(false);
+    
+    // Formatar o valor quando o campo perde o foco
+    if (displayValue) {
+      try {
+        // Obter o valor numérico
+        const numericValue = parseCurrencyToNumber(displayValue);
+        
+        // Formatar como moeda final
+        const formattedValue = formatCurrency(numericValue, currency);
+        
+        // Atualizar o valor exibido com a formatação completa
+        setDisplayValue(formattedValue);
+      } catch (error) {
+        console.error("Erro ao formatar valor monetário:", error);
+      }
+    }
+    
+    // Chamar o onBlur original
+    onBlur?.(e);
+  };
   
   return (
     <InputGroup $fullWidth={fullWidth} className={className}>
@@ -510,7 +555,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
           id={id}
           name={name}
           type={inputType}
-          placeholder={placeholder}
+          placeholder={placeholder || (currency ? `${currency === 'BRL' ? 'R$' : currency} 0,00` : undefined)}
           disabled={disabled}
           required={required}
           min={min}
@@ -523,6 +568,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, FormInputProps>(({
           value={displayValue}
           onChange={currency ? handleCurrencyChange : onChange}
           onFocus={currency ? handleCurrencyFocus : onFocus}
+          onBlur={currency ? handleCurrencyBlur : onBlur}
           {...props}
         />
         

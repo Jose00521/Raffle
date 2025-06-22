@@ -741,7 +741,7 @@ const PrizeForm: React.FC<PrizeFormProps> = ({
             error={errors.value?.message}
             required
             fullWidth
-            currency="R$"
+            currency="BRL"
           />
         </FormGroup>
         

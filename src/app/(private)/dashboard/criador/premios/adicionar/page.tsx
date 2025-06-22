@@ -9,6 +9,7 @@ import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import mongoose from 'mongoose';
 import { toast, ToastContainer } from 'react-toastify';
 import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
+import { parseCurrencyToNumber } from '@/utils/formatNumber';
 
 const PageHeader = styled.div`
   display: flex;
@@ -78,7 +79,7 @@ export default function AddPrizePage() {
       formData.append('data', JSON.stringify({
         name: data.name,
         description: data.description,
-        value: data.value,
+        value: parseCurrencyToNumber(data.value as string),
         categoryId: data.categoryId,
       }));
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 
@@ -32,13 +32,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   children, 
   namespace = '/stats' 
 }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { data: session, status } = useSession();
 
   useEffect(() => {
     // Só tenta conectar se o usuário estiver autenticado
     if (status !== 'authenticated' || !session?.user?.id) {
+      return;
+    }
+
+    // Evitar criar múltiplas conexões
+    if (socketRef.current) {
       return;
     }
 
@@ -63,18 +68,19 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     socketInstance.on('connect', onConnect);
     socketInstance.on('disconnect', onDisconnect);
 
-    setSocket(socketInstance);
+    socketRef.current = socketInstance;
 
     // Limpar ao desmontar
     return () => {
       socketInstance.off('connect', onConnect);
       socketInstance.off('disconnect', onDisconnect);
       socketInstance.disconnect();
+      socketRef.current = null;
     };
-  }, [namespace, session, status]);
+  }, [namespace, session?.user?.id, status]);
 
   const value = {
-    socket,
+    socket: socketRef.current,
     isConnected,
   };
 

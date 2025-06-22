@@ -72,7 +72,7 @@ const CampaignGrid: React.FC<CampaignGridProps> = ({
   return (
     <Grid>
       {campaigns.map((campaign) => (
-        <CampaignCard key={campaign._id} campaign={campaign} />
+        <CampaignCard key={campaign.campaignCode} campaign={campaign} />
       ))}
     </Grid>
   );

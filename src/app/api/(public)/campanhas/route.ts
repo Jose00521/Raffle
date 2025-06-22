@@ -24,7 +24,7 @@ interface InstantPrizesPayload {
 export async function GET() {
   try {
     const campaignController = container.resolve(CampaignController);
-    const result = await campaignController.listarCampanhasAtivas();
+    const result = await campaignController.listActiveCampaignsPublic();
 
     return NextResponse.json(result, { status: result.statusCode || 200 });
   } catch (error) {

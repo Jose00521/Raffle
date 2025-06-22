@@ -32,22 +32,23 @@ interface InstantPrizesPayload {
  * Funções da API para interagir com rifas e seus números
  */
 const participantCampaignAPI = {
-    /**
-   * Obtém todas as campanhas ativas
-   */
-    getCampanhasAtivas: async () => {
-      try {
-        const response = await fetch('/api/campanhas');
-        const result = await response.json();
-        
-        console.log("API response:", result);
-        
-        return result;
 
-      } catch {
-        return createErrorResponse('Erro ao conectar com o servidor:', 500);
-      }
-    },
+
+  getActiveCampaignsPublic: async () => {
+    try {
+      const response = await fetch('/api/campanhas');
+      const result = await response.json();
+      
+      console.log("API response:", result);
+      
+      return result;
+
+    } catch (error) {
+      console.log("error",error);
+      return createErrorResponse('Erro ao conectar com o servidor:', 500);
+    }
+  },
+
 
 
     getCampaignByIdPublic: async (campaignId: string) => {

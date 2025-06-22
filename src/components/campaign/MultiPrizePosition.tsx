@@ -15,7 +15,7 @@ export interface PrizeItemProps {
 
 interface MultiPrizePositionProps {
   position: number;
-  prizes: PrizeItemProps[];
+  prizes: IPrize[];
   onAddPrize: (position: number) => void;
   onRemovePrize: (position: number, prizeIndex: number) => void;
   onCreatePrize?: () => void;

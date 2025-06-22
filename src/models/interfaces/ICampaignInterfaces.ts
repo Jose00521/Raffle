@@ -47,8 +47,9 @@ export enum CampaignStatusEnum {
     createdBy: mongoose.Types.ObjectId | null;
     title: string;
     description: string;
-      coverImage: any;
-  images: any[];
+    winnerPositions: number;
+    coverImage: File | string;
+    images: File[] | string[];
     individualNumberPrice: number;
     minNumbersPerUser: number;
     maxNumbersPerUser: number;
@@ -59,9 +60,11 @@ export enum CampaignStatusEnum {
     drawDate: Date;
     canceled: Boolean; 
     status: CampaignStatusEnum; // Os valores possíveis são: "PENDING", "ACTIVE", "COMPLETED"
+    isScheduled: boolean;
     scheduledActivationDate: Date | null;
     winners: Array<IWinner>;
     numberPackages: Array<INumberPackage>;
+    enablePackages: boolean;
     // Prêmios distribuídos por posição
     prizeDistribution?: Array<{
       position: number;

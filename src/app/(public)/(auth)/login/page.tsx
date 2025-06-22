@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import Link from 'next/link';
-import { FaPhone, FaLock, FaArrowLeft, FaEye, FaEyeSlash, FaMobileAlt, FaUserPlus, FaShieldAlt } from 'react-icons/fa';
+import { FaPhone, FaLock, FaArrowLeft, FaEye, FaEyeSlash, FaMobileAlt, FaUserPlus, FaShieldAlt, FaHome } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { LoginFormData, loginUserSchema } from '@/zod/user.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -100,6 +100,10 @@ export default function LoginPage() {
         <ToastContainer />
         
       <LoginContainer>
+        <HomeButton href="/" aria-label="Voltar para página inicial">
+          <FaHome /> <span>Início</span>
+        </HomeButton>
+        
         <PageDecoration />
         
         <LoginHeader>
@@ -578,5 +582,41 @@ const SecurityDot = styled.div`
   border-radius: 50%;
   background-color: ${({ theme }) => theme.colors.success};
   animation: ${css`${pulse} 2s infinite`};
+`;
+
+const HomeButton = styled(Link)`
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  color: ${({ theme }) => theme.colors.primary};
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  
+  span {
+    font-size: 0.85rem;
+  }
+  
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: 480px) {
+    span {
+      display: none;
+    }
+    padding: 6px;
+  }
 `; 
 

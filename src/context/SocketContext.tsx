@@ -46,15 +46,13 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
 
   // Inicializar a conexão Socket.IO quando o usuário estiver autenticado
   useEffect(() => {
-    let socketInstance: Socket | null = null;
-
     // Se não há usuário autenticado, não faz nada
     if (!session?.user?.id) return;
     
-    // Criar socket se ainda não existe
-    if (!socketInstance) {
+    // Criar socket apenas se ainda não existe
+    if (!socketRef.current) {
       console.log('Inicializando conexão Socket.IO...');
-      socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin, {
+      const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin, {
         path: '/api/socket/io'
       });
       socketRef.current = socketInstance;
@@ -65,7 +63,7 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
         console.log('Conectado ao servidor Socket.IO');
         
         // Autenticar o socket com o ID do usuário
-        socketInstance!.emit('authenticate', { 
+        socketInstance.emit('authenticate', { 
           userId: session.user.id,
           userType: session.user.role === 'creator' ? 'creator' : 'participant'
         });
@@ -103,20 +101,18 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
             theme: "colored"
           });
         }
-        
       });
-    
     }
 
     // Limpar ao desmontar
     return () => {
-      if (socketInstance) {
+      if (socketRef.current) {
         console.log('Desconectando Socket.IO...');
-        socketInstance.disconnect();
+        socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, [session, autoToast]);
+  }, [session?.user?.id, autoToast]); // Remova a dependência de session e use apenas session?.user?.id
 
   // Função para subscrever a atualizações de uma campanha específica
   const subscribeToCampaign = useCallback((campaignId: string) => {

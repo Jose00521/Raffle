@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import styled from 'styled-components';
 import { FaArrowLeft, FaEdit, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
-import RaffleFormFieldsUpdate from '@/components/campaign/RaffleFormFieldsUpdate';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 import { toast } from 'react-toastify';
+import RaffleFormFieldsUpdateOptimized from '@/components/campaign/RaffleFormFieldsUpdateOptimized';
+import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 
 // Styled components
 const PageContainer = styled.div`
@@ -18,89 +19,94 @@ const PageContainer = styled.div`
 `;
 
 const Header = styled.div`
-  background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px 0;
-  margin-bottom: 40px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-`;
-
-const HeaderContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  padding: 24px 20px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 40px;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(to right, #6366f1, #818cf8);
+  }
   
   @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
+    padding: 20px;
+    margin-bottom: 32px;
   }
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: 2px solid #6a11cb;
-  color: #6a11cb;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background-color: #f8fafc;
+  color: #475569;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   
   &:hover {
-    background: #6a11cb;
-    color: white;
+    background-color: #f1f5f9;
+    color: #4f46e5;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
   
-  svg {
-    font-size: 1rem;
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    width: 38px;
+    height: 38px;
   }
 `;
 
-const HeaderTitle = styled.div`
-  h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #333;
-    margin: 0 0 4px 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    
-    svg {
-      color: #6a11cb;
-      font-size: 1.6rem;
-    }
-    
-    @media (max-width: 768px) {
-      font-size: 1.5rem;
-    }
-  }
+const HeaderContent = styled.div`
+  margin-left: 18px;
+`;
+
+const HeaderTitle = styled.h1`
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.01em;
   
-  p {
-    margin: 0;
-    color: #666;
-    font-size: 0.95rem;
-    
-    @media (max-width: 768px) {
-      font-size: 0.9rem;
-    }
+  svg {
+    color: #6366f1;
+  }
+`;
+
+const HeaderSubtitle = styled.div`
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  svg {
+    font-size: 12px;
   }
 `;
 
@@ -112,6 +118,7 @@ const StatusBadge = styled.div<{ $status: string }>`
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-left: auto;
   
   background: ${({ $status }) => {
     switch ($status) {
@@ -263,10 +270,10 @@ export default function EditCampaignPage() {
 
   // Carregar campanha quando o componente montar
   useEffect(() => {
-    if (id && session) {
+
       loadCampaign();
-    }
-  }, [id, session]);
+ 
+  }, []);
 
   // Handler para submissão do formulário de atualização
   const handleUpdateSubmit = async (changes: {
@@ -282,8 +289,8 @@ export default function EditCampaignPage() {
       
       // Realizar a atualização via API
       // TODO: Implementar método updateCampaign no creatorCampaignAPI
-      const response = await creatorCampaignAPI.getCampaignById(
-        changes.campaignId
+      const response = await creatorCampaignAPI.updateCampaign(
+        changes
       );
       
       if (response.success) {
@@ -292,12 +299,12 @@ export default function EditCampaignPage() {
         toast.success('Campanha atualizada com sucesso!');
         
         // Atualizar o estado local
-        setCampaign(response.data);
+        setCampaign(response.data as ICampaign);
         
         // Redirecionar para a página da campanha
         router.push(`/dashboard/criador/campanha/${id}`);
       } else {
-        throw new Error(response.message || 'Erro ao atualizar campanha');
+        toast.info(response.message || 'Erro ao atualizar campanha');
       }
     } catch (error: any) {
       console.error('❌ Erro ao atualizar campanha:', error);
@@ -317,64 +324,22 @@ export default function EditCampaignPage() {
     router.back();
   };
 
-  // Preparar dados iniciais para o formulário
-  const prepareInitialData = (campaign: ICampaign): any => {
-    // Removendo logs para evitar loops
-    const formData = {
-      title: campaign.title || '',
-      description: campaign.description || '',
-      individualNumberPrice: typeof campaign.individualNumberPrice === 'number' ? campaign.individualNumberPrice : 0,
-      totalNumbers: campaign.totalNumbers || 0,
-      drawDate: campaign.drawDate ? new Date(campaign.drawDate).toISOString() : '',
-      minNumbersPerUser: typeof campaign.minNumbersPerUser === 'number' ? campaign.minNumbersPerUser : 1,
-      maxNumbersPerUser: typeof campaign.maxNumbersPerUser === 'number' ? campaign.maxNumbersPerUser : undefined,
-      status: campaign.status || 'ACTIVE',
-      canceled: Boolean(campaign.canceled) || false,
-      isScheduled: (campaign as any).isScheduled || false,
-      scheduledActivationDate: campaign.scheduledActivationDate 
-        ? new Date(campaign.scheduledActivationDate).toISOString() 
-        : '',
-      winnerPositions: (campaign as any).winnerPositions || 1,
-      prizeDistribution: campaign.prizeDistribution || [],
-      winners: campaign.winners || [],
-      enablePackages: Boolean(campaign.numberPackages && campaign.numberPackages.length > 0),
-      numberPackages: campaign.numberPackages || [],
-      instantPrizes: (campaign as any).instantPrizes || [],
-      prizeCategories: (campaign as any).prizeCategories || {
-        diamante: { active: false, quantity: 10, value: 2000 },
-        master: { active: false, quantity: 20, value: 1000 },
-        premiado: { active: false, quantity: 50, value: 500 }
-      },
-      regulation: campaign.regulation || '',
-      returnExpected: campaign.returnExpected !== undefined ? String(campaign.returnExpected) : '',
-      images: campaign.images || [],
-      coverImage: campaign.coverImage,
-      mainPrize: (campaign as any).mainPrize || '',
-      valuePrize: (campaign as any).valuePrize || ''
-    };
-    
-    // Removendo logs para evitar loops
-    return formData;
-  };
 
   // Renderização
   if (loading) {
     return (
+      <CreatorDashboard>
       <PageContainer>
         <Header>
+          <BackButton onClick={handleBack}>
+            <FaArrowLeft size={18} />
+          </BackButton>
+          
           <HeaderContent>
-            <HeaderLeft>
-              <BackButton onClick={handleBack}>
-                <FaArrowLeft />
-                Voltar
-              </BackButton>
-              <HeaderTitle>
-                <h1>
-                  <FaEdit />
-                  Carregando...
-                </h1>
-              </HeaderTitle>
-            </HeaderLeft>
+            <HeaderTitle>
+              <FaEdit />
+              Carregando...
+            </HeaderTitle>
           </HeaderContent>
         </Header>
         
@@ -387,26 +352,24 @@ export default function EditCampaignPage() {
           </LoadingContainer>
         </ContentContainer>
       </PageContainer>
+      </CreatorDashboard>
     );
   }
 
   if (error || !campaign) {
     return (
+      <CreatorDashboard>  
       <PageContainer>
         <Header>
+          <BackButton onClick={handleBack}>
+            <FaArrowLeft size={18} />
+          </BackButton>
+          
           <HeaderContent>
-            <HeaderLeft>
-              <BackButton onClick={handleBack}>
-                <FaArrowLeft />
-                Voltar
-              </BackButton>
-              <HeaderTitle>
-                <h1>
-                  <FaEdit />
-                  Erro ao Carregar
-                </h1>
-              </HeaderTitle>
-            </HeaderLeft>
+            <HeaderTitle>
+              <FaEdit />
+              Erro ao Carregar
+            </HeaderTitle>
           </HeaderContent>
         </Header>
         
@@ -424,36 +387,36 @@ export default function EditCampaignPage() {
           </ErrorContainer>
         </ContentContainer>
       </PageContainer>
+      </CreatorDashboard>
     );
   }
 
   return (
+    <CreatorDashboard>
     <PageContainer>
       <Header>
+        <BackButton onClick={handleBack}>
+          <FaArrowLeft size={18} />
+        </BackButton>
+        
         <HeaderContent>
-          <HeaderLeft>
-            <BackButton onClick={handleBack}>
-              <FaArrowLeft />
-              Voltar
-            </BackButton>
-            <HeaderTitle>
-              <h1>
-                <FaEdit />
-                Editar Campanha
-              </h1>
-              <p>Atualize as informações da sua rifa</p>
-            </HeaderTitle>
-          </HeaderLeft>
-          
-          <StatusBadge $status={campaign.status || 'INACTIVE'}>
-            {getStatusLabel(campaign.status || 'INACTIVE')}
-          </StatusBadge>
+          <HeaderTitle>
+            <FaEdit />
+            Editar Campanha
+          </HeaderTitle>
+          <HeaderSubtitle>
+            Atualize as informações da sua rifa
+          </HeaderSubtitle>
         </HeaderContent>
+        
+        <StatusBadge $status={campaign.status || 'INACTIVE'}>
+          {getStatusLabel(campaign.status || 'INACTIVE')}
+        </StatusBadge>
       </Header>
       
       <ContentContainer>
-        <RaffleFormFieldsUpdate
-          initialData={prepareInitialData(campaign)}
+        <RaffleFormFieldsUpdateOptimized
+          initialData={campaign as any}
           campaignId={campaign.campaignCode as string}
           onSubmit={handleUpdateSubmit}
           onCancel={handleCancel}
@@ -461,5 +424,6 @@ export default function EditCampaignPage() {
         />
       </ContentContainer>
     </PageContainer>
+    </CreatorDashboard>
   );
 } 

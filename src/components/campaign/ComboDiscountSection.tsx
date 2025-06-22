@@ -5,6 +5,8 @@ import styled from 'styled-components';
 import { FaPercentage, FaInfoCircle, FaTrashAlt, FaPlusCircle, FaEdit, FaCheck } from 'react-icons/fa';
 import { Control, UseFormWatch, useForm, Controller, UseFormSetValue } from 'react-hook-form';
 import { RaffleFormData } from '@/components/campaign/RaffleFormFields';
+import { RaffleFormUpdateData } from './update-form/types';
+import { formatCurrency } from '@/utils/formatters';
 
 // Interface para representar um pacote de números
 interface Package {
@@ -19,10 +21,18 @@ interface Package {
   maxPerUser?: number;
 }
 
+// Interface com as propriedades mínimas necessárias
+interface FormDataBase {
+  enablePackages?: boolean;
+  numberPackages?: Package[];
+  individualNumberPrice?: number;
+}
+
+// Interface para as props do componente
 interface ComboDiscountSectionProps {
-  control: Control<RaffleFormData>;
-  watch: UseFormWatch<RaffleFormData>;
-  initialData: Partial<RaffleFormData>;
+  control: Control<any>;
+  watch: UseFormWatch<any>;
+  initialData: Partial<FormDataBase>;
   isSubmitting?: boolean;
 }
 
@@ -715,6 +725,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
     if (!isNaN(quantity) && quantity >= 2) {
       const newCombos = [...field.value];
       newCombos[index].quantity = quantity;
+      newCombos[index].price = calculateDiscountedPrice(quantity, newCombos[index].discount);
       field.onChange(newCombos);
     }
     setEditingQuantityIndex(null);
@@ -779,7 +790,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
             <ComboVisualizerHeader>
               <ComboPriceInfo>
                 <span>Preço por número:</span>
-                <strong>R$ {(watch('individualNumberPrice') || 0).toFixed(2).replace('.', ',')}</strong>
+                <strong>R$ {formatCurrency(watch('individualNumberPrice') || 0)}</strong>
               </ComboPriceInfo>
               <ComboInfoText>
                 <FaInfoCircle /> Arraste para ajustar os descontos até 100%
@@ -890,6 +901,8 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                               if (finalValue !== undefined && finalValue !== combo.discount) {
                                 const newCombos = [...field.value];
                                 newCombos[index].discount = finalValue;
+                                newCombos[index].price = calculateDiscountedPrice(combo.quantity, finalValue);
+
                                 field.onChange(newCombos);
                               }
                               

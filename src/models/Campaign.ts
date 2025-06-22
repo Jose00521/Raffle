@@ -57,7 +57,9 @@ const CampaignSchema = new mongoose.Schema(
       required: [true, 'Please provide a draw date'],
     },
     returnExpected: {
-      type: String,
+      type: Number,
+      required: [true, 'Preço do número individual é obrigatório'],
+      min: [0, 'Preço não pode ser negativo']
     },
     status: {
       type: String,
@@ -66,6 +68,11 @@ const CampaignSchema = new mongoose.Schema(
       required: true,
     },
     canceled: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    isScheduled: {
       type: Boolean,
       default: false,
       index: true
@@ -137,6 +144,11 @@ const CampaignSchema = new mongoose.Schema(
         maxPerUser: Number
       }],
       default: [],
+    },
+    enablePackages: {
+      type: Boolean,
+      default: false,
+      index: true
     },
     stats: {
       type: {

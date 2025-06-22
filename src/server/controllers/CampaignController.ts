@@ -23,12 +23,14 @@ interface InstantPrizesPayload {
 }
 
 export interface ICampaignController {
-  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
+  listActiveCampaignsPublic(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   criarNovaCampanha(campaignData: ICampaign, session: Session, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
   getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
   getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
   deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
+  updateCampaign(id: string, session: Session, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  listActiveCampaigns(session: Session): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -44,8 +46,12 @@ export class CampaignController implements ICampaignController {
   /**
    * Controller para listar todas as campanhas ativas
    */
-   async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
-    return await this.campaignService.listarCampanhasAtivas();
+   async listActiveCampaignsPublic(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
+    return await this.campaignService.listActiveCampaignsPublic();
+  }
+
+  async listActiveCampaigns(session: Session): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
+    return await this.campaignService.listActiveCampaigns(session);
   }
 
   async getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
@@ -85,5 +91,9 @@ export class CampaignController implements ICampaignController {
     
     console.log(`✅ Controller: Campanha criada com sucesso`);
     return result;
+  }
+
+  async updateCampaign(id: string, session: Session, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
+    return await this.campaignService.updateCampaign(id, session, updatedCampaign);
   }
 } 

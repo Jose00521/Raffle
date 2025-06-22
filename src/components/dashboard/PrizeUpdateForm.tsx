@@ -16,6 +16,7 @@ import { fadeIn } from '@/styles/registration.styles';
 import CurrencyInput from '../common/CurrencyInput';
 import prizeCategoryAPIClient from '@/API/prizeCategoryAPIClient';
 import { ICategory } from '@/models/interfaces/IPrizeInterfaces';
+import { parseCurrencyToNumber } from '@/utils/formatNumber';
 
 interface PrizeUpdateFormProps {
   initialData: Partial<IPrizeInitialData>; // Obrigatório para atualização
@@ -695,7 +696,8 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
     
     // Criar objeto base para submissão
     const submissionData: any = {
-      ...data
+      ...data,
+      value: parseCurrencyToNumber(data.value as string),
     };
     
     // Processar imagens para submissão
@@ -921,7 +923,7 @@ const PrizeUpdateForm: React.FC<PrizeUpdateFormProps> = ({
             error={errors.value?.message}
             required
             fullWidth
-            currency="R$"
+            currency="BRL"
           />
         </FormGroup>
         

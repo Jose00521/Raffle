@@ -6,11 +6,10 @@ import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { FaPlus, FaSearch, FaEllipsisV, FaEye, FaEdit, FaTrash, FaChartLine, FaTicketAlt, FaPowerOff } from 'react-icons/fa';
 import Link from 'next/link';
 import ToggleSwitch from '@/components/common/ToggleSwitch';
-import campaignAPIClient from '@/API/participant/participantCampaignAPIClient';
+import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { useSocket } from '@/context/SocketContext';
 import { toast, ToastContainer } from 'react-toastify';
-import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -760,7 +759,7 @@ export default function MinhasRifasPage() {
   useEffect(() => {
     // Simulate data loading
     const fetchCampaigns = async () => {
-      const response = await campaignAPIClient.getCampanhasAtivas();
+      const response = await creatorCampaignAPI.getActiveCampaigns();
       setCampaigns(response.data);
       setIsLoading(false);
     };
@@ -990,6 +989,7 @@ export default function MinhasRifasPage() {
                     <RifaMeta>
                       <div>Criada em {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}</div>
                       <div>R$ {campaign.individualNumberPrice.toFixed(2)}</div>
+                      <div>{campaign.winnerPositions} vencedores</div>
                     </RifaMeta>
                     
                     <RifaStats>

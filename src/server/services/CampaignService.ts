@@ -29,12 +29,14 @@ interface InstantPrizesPayload {
 }
 
 export interface ICampaignService {
-  listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
+  listActiveCampaignsPublic(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
   criarNovaCampanha(campaignData: ICampaign, session: Session, instantPrizesData?: InstantPrizesPayload): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
   getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>>;
   getCampaignByIdPublic(id: string): Promise<ApiResponse<ICampaign | null>>;
   deleteCampaign(id: string, session: Session): Promise<ApiResponse<ICampaign | null>>;
   toggleCampaignStatus(id: string): Promise<ApiResponse<ICampaign | null>>;
+  updateCampaign(id: string, session: Session, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>>;
+  listActiveCampaigns(session: Session): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -49,17 +51,11 @@ export class CampaignService implements ICampaignService {
   /**
    * Obtém todas as campanhas ativas com suas estatísticas
    */
-  async listarCampanhasAtivas(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
+  async listActiveCampaignsPublic(): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
     try {
-      const session = await getServerSession(nextAuthOptions);
 
-      if(!session){
-        return createErrorResponse('Não autorizado', 401);
-      }
 
-      const userCode = session.user.id;
-
-      const campanhas: ICampaign[] | ApiResponse<null> = await this.campaignRepository.buscarCampanhasAtivas(userCode);
+      const campanhas: ICampaign[] | ApiResponse<null> = await this.campaignRepository.listActiveCampaignsPublic();
     
       
       return createSuccessResponse(campanhas as ICampaign[], 'Campanhas ativas carregadas com sucesso', 200);
@@ -72,6 +68,11 @@ export class CampaignService implements ICampaignService {
         cause: error as Error
       });
     }
+  }
+
+  async listActiveCampaigns(session: Session): Promise<ApiResponse<ICampaign[]> | ApiResponse<null>> {
+    const userCode = session.user.id;
+    return await this.campaignRepository.listActiveCampaigns(userCode);
   }
 
   async getCampaignById(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
@@ -197,12 +198,12 @@ export class CampaignService implements ICampaignService {
 
     logger.info("Processando imagens");
     const processedImages = await Promise.all(
-        [campaignData.coverImage, ...campaignData.images].map(async (image: any, index: number) => {
+        [campaignData.coverImage, ...campaignData.images].map(async (image: File | string, index: number) => {
             logger.info(`Processando imagem ${index}`, {
-                type: typeof image === 'object' && image?.constructor?.name || typeof image,
-                size: image?.size || 0
+                type: image instanceof File ? image.type : 'string',
+                size: image instanceof File ? image.size : 0
             });
-            return processImage(image);
+            return processImage(image as File);
         })
     );
 
@@ -303,6 +304,128 @@ export class CampaignService implements ICampaignService {
       throw new ApiError({
         success: false,
         message: 'Erro ao criar nova campanha',
+        statusCode: 500,
+        cause: error as Error
+      });
+    }
+  }
+
+  async updateCampaign(id: string, session: Session, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
+    try {
+      const userCode = session?.user?.id;
+
+      console.log("updatedData",updatedCampaign);
+      console.log("id",id);
+
+      // Aplicar rate limiting
+      const limiter = rateLimit({
+          interval: 60 * 1000,
+          uniqueTokenPerInterval: 500,
+          tokensPerInterval: 15 // Permitir mais atualizações que criações
+      });
+
+      try {
+          await limiter.check(15, `${userCode}:premio-update`);
+      } catch {
+          return createErrorResponse('Muitas requisições, tente novamente mais tarde', 429);
+      }
+
+      const existingCampaignResponse = await this.campaignRepository.getCampaignById(id, userCode);
+
+      if (!existingCampaignResponse.success) {
+        return createErrorResponse('Campanha não encontrada', 404);
+      }
+
+            // Processar imagens se foram atualizadas
+      const processedUpdates: Record<string, any> = { ...updatedCampaign };
+      delete processedUpdates.coverImage; // Remover temporariamente para processamento separado
+      delete processedUpdates.images; // Remover temporariamente para processamento separado
+
+                  // Processar imagem principal se foi atualizada
+                  if (updatedCampaign.coverImage && typeof updatedCampaign.coverImage !== 'string') {
+                    logger.info("Processando nova imagem principal");
+                    try {
+                        const processedImage = await processImage(updatedCampaign.coverImage);
+                        
+                        if (processedImage) {
+                            const imageUrl = await uploadToS3(
+                                processedImage.buffer, 
+                                userCode, 
+                                "rifas/campaigns",
+                                processedImage.originalName
+                            );
+                            processedUpdates.coverImage = imageUrl;
+                            logger.info("Nova imagem principal processada com sucesso", { imageUrl });
+                        } else {
+                            return createErrorResponse('Falha ao processar a imagem principal', 400);
+                        }
+                    } catch (error) {
+                        logger.error("Erro ao processar imagem principal:", error);
+                        return createErrorResponse('Erro ao processar a imagem principal', 500);
+                    }
+                } else if (updatedCampaign.coverImage) {
+                    // Se a imagem é uma string (URL), mantê-la como está
+                    processedUpdates.coverImage = updatedCampaign.coverImage;
+                }
+    
+                // Processar imagens adicionais se foram atualizadas
+                if (updatedCampaign.images && Array.isArray(updatedCampaign.images)) {
+                    logger.info("Processando novas imagens adicionais");
+                    
+                    const imagesToProcess = updatedCampaign.images.filter(img => 
+                        img && typeof img !== 'string' && 'name' in img && 'type' in img && 'size' in img
+                    );
+                    
+                    const existingImageUrls = updatedCampaign.images.filter(img => 
+                        typeof img === 'string'
+                    );
+                    
+                    if (imagesToProcess.length > 0) {
+                        try {
+                            const processedImages = await Promise.all(
+                                imagesToProcess.map(async (image) => {
+                                    return await processImage(image as File);
+                                })
+                            );
+                            
+                            const validImages = processedImages.filter(Boolean) as { buffer: Buffer, originalName: string }[];
+                            
+                            const uploadedImageUrls = await Promise.all(
+                                validImages.map(async (img) => {
+                                    return await uploadToS3(img.buffer, userCode, "rifas/campaigns", img.originalName);
+                                })
+                            );
+                            
+                            // Combinar URLs existentes com novas URLs
+                            processedUpdates.images = [...existingImageUrls, ...uploadedImageUrls];
+                            logger.info("Novas imagens adicionais processadas com sucesso", { 
+                                count: processedUpdates.images.length 
+                            });
+                        } catch (error) {
+                            logger.error("Erro ao processar imagens adicionais:", error);
+                            throw new ApiError({
+                              success: false,
+                              message: 'Erro ao processar as imagens adicionais',
+                              statusCode: 500,
+                              cause: error as Error
+                            });
+                        }
+                    } else {
+                        // Se todas as imagens são strings (URLs), mantê-las como estão
+                        processedUpdates.images = existingImageUrls;
+                    }
+                }
+
+      const campaignUpdated = await this.campaignRepository.updateCampaign(id, userCode, processedUpdates);
+
+      return campaignUpdated as ApiResponse<ICampaign> | ApiResponse<null>;
+
+
+
+    } catch (error) {
+      throw new ApiError({
+        success: false,
+        message: 'Erro ao atualizar campanha:',
         statusCode: 500,
         cause: error as Error
       });

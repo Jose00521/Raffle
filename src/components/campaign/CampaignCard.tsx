@@ -3,7 +3,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import { formatCurrency } from '@/utils/formatters';
 
 const Card = styled.div`
   display: flex;
@@ -28,7 +29,7 @@ const CardImageContainer = styled.div`
   overflow: hidden;
 `;
 
-const CardBadge = styled.div<{ $status: 'active' | 'completed' | 'ending' }>`
+const CardBadge = styled.div<{ $status: CampaignStatusEnum }>`
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -40,12 +41,12 @@ const CardBadge = styled.div<{ $status: 'active' | 'completed' | 'ending' }>`
   z-index: 2;
   
   ${({ $status, theme }) => {
-    if ($status === 'active') {
+    if ($status === CampaignStatusEnum.ACTIVE) {
       return `
         background-color: ${theme.colors.success};
         color: white;
       `;
-    } else if ($status === 'completed') {
+    } else if ($status === CampaignStatusEnum.COMPLETED) {
       return `
         background-color: ${theme.colors.gray.dark};
         color: white;
@@ -192,13 +193,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const today = new Date();
   const drawDate = new Date(campaign.drawDate);
   const daysUntilDraw = Math.ceil((drawDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  let status: 'active' | 'completed' | 'ending' = 'active';
-  if (!campaign.status || campaign.winnerNumber !== null) {
-    status = 'completed';
-  } else if (daysUntilDraw <= 3 || progressPercentage >= 90) {
-    status = 'ending';
-  }
+
   
   // Format the date
   const formatDate = (date: Date) => {
@@ -210,19 +205,19 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   };
   
   // Campaign code (for display)
-  const campaignCode = `RA${String(campaign._id).substring(0, 4)}`;
+  const campaignCode = campaign.campaignCode;
   
   return (
     <Card>
       <CardImageContainer>
-        <CardBadge $status={status}>
-          {status === 'active' && 'Ativo'}
-          {status === 'completed' && 'Concluído'}
-          {status === 'ending' && 'Finalizando'}
+        <CardBadge $status={campaign.status}>
+          {campaign.status === CampaignStatusEnum.ACTIVE && 'Ativo'}
+          {campaign.status === CampaignStatusEnum.COMPLETED && 'Concluído'}
+          {campaign.status === CampaignStatusEnum.PENDING && 'Finalizando'}
         </CardBadge>
         <CardCode>{campaignCode}</CardCode>
         <img
-          src={campaign.prizes[0].image}
+          src={campaign.coverImage}
           alt={campaign.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
@@ -230,7 +225,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
       
       <CardContent>
         <CardCategory>
-          {campaign.price <= 10 ? 'Econômica' : campaign.price <= 30 ? 'Premium' : 'Especial'}
+          {campaign.individualNumberPrice <= 10 ? 'Econômica' : campaign.individualNumberPrice <= 30 ? 'Premium' : 'Especial'}
         </CardCategory>
         <CardTitle>{campaign.title}</CardTitle>
         
@@ -256,10 +251,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
         <CardFooter>
           <CardPrice>
             <PriceLabel>Valor por número</PriceLabel>
-            <Price>R$ {campaign.price.toFixed(2)}</Price>
+            <Price>{formatCurrency(campaign.individualNumberPrice)}</Price>
           </CardPrice>
           
-          <Link href={`/campanhas/${campaign._id}`} className="card-button">
+          <Link href={`/campanhas/${campaign.campaignCode}`} className="card-button">
             Ver Campanha
           </Link>
         </CardFooter>
