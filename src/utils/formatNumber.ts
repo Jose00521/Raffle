@@ -33,28 +33,28 @@ export const formatCurrency = (value: string | number, currencySymbol: string = 
  * Suporta diferentes formatos, como R$ 1.234,56 ou 1234.56
  */
 export const parseCurrencyToNumber = (value: string | number): number => {
-  // Se já for um número, retornar diretamente
-  if (typeof value === 'number') {
-    return value;
-  }
-  
-  // Se for vazio ou não for string, retornar zero
-  if (!value || typeof value !== 'string') {
-    return 0;
-  }
-  
-  try {
+    // Se já for um número, retornar diretamente
+    if (typeof value === 'number') {
+      return value;
+    }
+    
+    // Se for vazio ou não for string, retornar zero
+    if (!value || typeof value !== 'string') {
+      return 0;
+    }
+    
+    try {
     // Remover todos os caracteres não numéricos, exceto ponto, vírgula e sinal negativo
     let cleanValue = value.replace(/[^\d.,\-]/g, '');
-    
+      
     // Verificar se é um valor negativo
     const isNegative = value.includes('-');
     
     // Se for um número simples sem formatação (sem vírgula ou ponto)
-    if (/^\d+$/.test(cleanValue)) {
+      if (/^\d+$/.test(cleanValue)) {
       return isNegative ? -parseInt(cleanValue, 10) : parseInt(cleanValue, 10);
-    }
-    
+      }
+      
     // Determinar o formato usado (brasileiro ou internacional)
     const hasBrazilianFormat = cleanValue.includes(',');
     
@@ -73,22 +73,22 @@ export const parseCurrencyToNumber = (value: string | number): number => {
       // Em caso de múltiplos pontos, consideramos apenas o último como decimal
       cleanValue = parts[0] + '.' + parts.slice(1).join('');
     }
-    
-    // Converter para número
+      
+      // Converter para número
     let numericValue = parseFloat(cleanValue);
     
     // Aplicar sinal negativo se necessário
     if (isNegative) {
       numericValue = -Math.abs(numericValue);
     }
-    
-    // Retornar 0 se não for um número válido
-    return isNaN(numericValue) ? 0 : numericValue;
-  } catch (error) {
-    console.error("Erro ao converter valor monetário:", error);
-    return 0;
-  }
-};
+      
+      // Retornar 0 se não for um número válido
+      return isNaN(numericValue) ? 0 : numericValue;
+    } catch (error) {
+      console.error("Erro ao converter valor monetário:", error);
+      return 0;
+    }
+  };
 
 /**
  * Formata um número para exibição durante digitação, mantendo posição do cursor

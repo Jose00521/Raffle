@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 import Layout from '@/components/layout/Layout';
@@ -12,6 +12,7 @@ import Timer from '@/components/ui/Timer';
 import { formatCurrency } from '@/utils/formatNumber';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
+import { SocketProvider, useSocket } from '@/context/SocketContext';
 
 // Interfaces
 // Interface removida - usando a interface CheckoutData mais abaixo que é compatível com INumberPackageCampaign
@@ -1801,12 +1802,13 @@ interface Pix {
   expiresAt: string;
 }
 
-
-
-export default function CheckoutPage() {
+// Componente interno que usa o contexto do Socket
+function CheckoutContent() {
   const params = useParams();
   const campanhaId = params?.id as string;
-  const router = useRouter(); // Ainda necessário para o Timer
+  const router = useRouter();
+  const { isConnected, joinPaymentRoom, paymentNotifications } = useSocket();
+  const [userCode, setUserCode] = useState<string | null>(null);
   
   // 🚀 Hook principal que gerencia todo o fluxo
   const {
@@ -1824,8 +1826,53 @@ export default function CheckoutPage() {
   const [copied, setCopied] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-
-  // 🎯 Todo o fluxo de checkout agora é gerenciado pelo hook useCheckoutFlow
+  
+  // Efeito para obter o userCode do localStorage
+  useEffect(() => {
+    try {
+      const checkoutDataStr = localStorage.getItem('checkoutData');
+      if (checkoutDataStr) {
+        const data = JSON.parse(checkoutDataStr);
+        if (data.foundUser?.userCode) {
+          setUserCode(data.foundUser.userCode);
+          console.log('UserCode encontrado no localStorage:', data.foundUser.userCode);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao obter dados do localStorage:', error);
+    }
+  }, []);
+  
+  // Efeito para entrar na room específica do usuário para pagamentos
+  useEffect(() => {
+    if (isConnected && userCode) {
+      joinPaymentRoom();
+      console.log('Entrando na room de pagamento para o usuário:', userCode);
+    }
+  }, [isConnected, joinPaymentRoom, userCode]);
+  
+  // Efeito para ouvir notificações de pagamento aprovado
+  useEffect(() => {
+    if (paymentNotifications.length > 0) {
+      // Pegar a notificação mais recente
+      const latestNotification = paymentNotifications[0];
+      
+      console.log('Notificação de pagamento recebida:', latestNotification);
+      
+      // Se tiver URL de redirecionamento
+      if (latestNotification.redirectUrl) {
+        console.log('Redirecionando para página de sucesso:', latestNotification.redirectUrl);
+        
+        // Salvar detalhes do pedido no localStorage para uso na página de sucesso
+        if (latestNotification.orderDetails) {
+          localStorage.setItem('orderDetails', JSON.stringify(latestNotification.orderDetails));
+        }
+        
+        // Redirecionar para a página de sucesso
+        router.push(`/campanhas/${campanhaId}/checkout/success`);
+      }
+    }
+  }, [paymentNotifications, router]);
 
   // 📋 Função para copiar código PIX
   const handleCopyPixCode = async () => {
@@ -1865,7 +1912,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <Layout hideHeader={true} hideFooter={true}>
+    <>
       <CheckoutContainer>
         <TopSecurityBar>
           <TopSecurityContent>
@@ -2341,6 +2388,26 @@ export default function CheckoutPage() {
         isOpen={isSecurityModalOpen}
         onClose={() => setIsSecurityModalOpen(false)}
       />
+      
+      {/* Indicador de status da conexão WebSocket (opcional para debug) */}
+      <div className="text-xs text-gray-500 mt-4 text-center">
+        Status da conexão: {isConnected ? 
+          <span className="text-green-500">Conectado</span> : 
+          <span className="text-red-500">Desconectado</span>
+        }
+        {userCode && <span className="ml-2">| Usuário: {userCode}</span>}
+      </div>
+    </>
+  );
+}
+
+// Componente principal que envolve o conteúdo com o SocketProvider
+export default function CheckoutPage() {
+  return (
+    <Layout hideHeader={true} hideFooter={true}>
+      <SocketProvider>
+        <CheckoutContent />
+      </SocketProvider>
       
       <ToastContainer 
         position="top-right"

@@ -8,6 +8,15 @@ import {
   authenticatedOnlyMiddleware
 } from './socketMiddleware/roleAccessMiddleware';
 
+// Interface estendida para Socket com identificação não autenticada
+export interface IdentifiedSocket extends AuthenticatedSocket {
+  userIdentity?: {
+    userCode: string;
+    isAuthenticated: boolean;
+    userType?: string;
+  };
+}
+
 // Interface estendida para Server com tipos mais específicos
 export interface SocketIOServer extends Server {
   // Adicione funções ou propriedades adicionais específicas se necessário
@@ -34,11 +43,65 @@ export const initSocketServer = (httpServer: HTTPServer): SocketIOServer => {
     path: '/api/socket/io'
   }) as SocketIOServer;
 
-  // Aplicar middleware de autenticação global
-  io.use(socketAuthMiddleware as any);
+  // Configurar eventos gerais no namespace principal
+  io.on('connection', (socket: IdentifiedSocket) => {
+    console.log(`Socket conectado: ${socket.id}`);
+    
+    // Evento para identificação do usuário (autenticado ou não)
+    socket.on('identify', (data: { userCode: string, isAuthenticated: boolean, userType?: string }) => {
+      if (data.userCode) {
+        // Armazenar identificação no objeto do socket
+        socket.userIdentity = {
+          userCode: data.userCode,
+          isAuthenticated: data.isAuthenticated,
+          userType: data.userType
+        };
+        
+        console.log(`Usuário identificado: ${data.userCode} (autenticado: ${data.isAuthenticated})`);
+        socket.emit('identified', { success: true });
+      } else {
+        console.log(`Falha na identificação: userCode não fornecido`);
+        socket.emit('identified', { success: false, error: 'userCode não fornecido' });
+      }
+    });
+    
+    // Evento para entrar em uma room específica
+    socket.on('joinRoom', (roomName: string) => {
+      // Verificar se o usuário está tentando entrar em sua própria room
+      if (socket.userIdentity && roomName === `user:${socket.userIdentity.userCode}`) {
+        socket.join(roomName);
+        console.log(`Usuário ${socket.userIdentity.userCode} entrou na room ${roomName}`);
+        socket.emit('roomJoined', { room: roomName, success: true });
+      } else if (socket.user && socket.user.role === 'admin') {
+        // Admins podem entrar em qualquer room
+        socket.join(roomName);
+        console.log(`Admin ${socket.user.userId} entrou na room ${roomName}`);
+        socket.emit('roomJoined', { room: roomName, success: true });
+      } else {
+        console.log(`Acesso negado: Socket ${socket.id} tentou entrar na room ${roomName} sem identificação adequada`);
+        socket.emit('roomJoined', { success: false, error: 'Acesso negado a esta room' });
+      }
+    });
+    
+    // Evento para inscrição em atualizações de pagamento específico
+    socket.on('subscribePayment', (paymentId: string) => {
+      const roomName = `payment:${paymentId}`;
+      
+      // Verificar se o usuário está identificado
+      if (socket.userIdentity || socket.user) {
+        socket.join(roomName);
+        console.log(`Usuário ${socket.userIdentity?.userCode || socket.user?.userId} inscrito nas atualizações do pagamento ${paymentId}`);
+      } else {
+        console.log(`Tentativa de inscrição em pagamento sem identificação: ${socket.id}`);
+      }
+    });
+    
+    // Evento de desconexão
+    socket.on('disconnect', () => {
+      console.log(`Socket desconectado: ${socket.id}`);
+    });
+  });
 
-  // Configurar namespaces diferentes para diferentes tipos de dados
-  
   // Namespace para estatísticas gerais (requer apenas autenticação)
   const statsNamespace = io.of('/stats');
   statsNamespace.use(socketAuthMiddleware as any);

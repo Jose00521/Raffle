@@ -1,7 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
-import { IPayment, IPaymentGhostResponse, IPaymentPattern, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import Payment from "@/models/Payment";
 import Campaign from "@/models/Campaign";
@@ -9,6 +9,8 @@ import { User } from "@/models/User";
 import { CampaignStatusEnum } from "@/models/interfaces/ICampaignInterfaces";
 import { generateEntityCode } from "@/models/utils/idGenerator";
 import { v4 as uuidv4 } from 'uuid';
+import { SocketService } from "../lib/socket/SocketService";
+import { container } from "tsyringe";
 
 export interface IPaymentRepository {
     createInitialPixPaymentAttempt(data: {
@@ -31,7 +33,7 @@ export interface IPaymentRepository {
         gatewayResponse: Partial<IPaymentGhostResponse>;
     }): Promise<ApiResponse<null>>;
 
-
+    confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 }
 
 
@@ -171,6 +173,76 @@ export class PaymentRepository implements IPaymentRepository {
             throw new ApiError({
                 success: false,
                 message: 'Erro ao criar pagamento',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
+        try {
+            const { externalId, paymentMethod, status, approvedAt } = data;
+
+            this.db.connect();
+
+            const payment = await Payment!.findOne({
+                $or: [
+                    { paymentMethod: paymentMethod },
+                    { paymentCode: externalId },
+                    { processorTransactionId: externalId }
+                ]
+            }).populate('userId', 'name email userCode')
+            .populate('campaignId', 'title campaignCode');
+
+            if(!payment){
+                return createErrorResponse('Pagamento não encontrado', 404);
+            }
+
+            if(status === 'APPROVED'){
+                payment.status = PaymentStatusEnum.APPROVED;
+                payment.approvedAt = new Date(approvedAt);
+                
+                await payment.save();
+
+                // Obter dados necessários para a notificação
+                const campaign = payment.campaignId as any;
+                const user = payment.userId as any;
+                
+                // Enviar notificação via WebSocket
+                try {
+                    const socketService = container.resolve(SocketService);
+                    
+                    if (socketService && user?.userCode) {
+                        // Preparar dados enriquecidos para o evento
+                        const paymentData = {
+                            paymentCode: payment.paymentCode,
+                            amount: payment.amount,
+                            campaignCode: campaign?.campaignCode,
+                            campaignTitle: campaign?.title,
+                            // Não temos números específicos no modelo de pagamento
+                            numbersQuantity: payment.numbersQuantity || 0,
+                            paymentMethod: payment.paymentMethod,
+                            approvedAt: payment.approvedAt
+                        };
+                        
+                        // Notificar o usuário via WebSocket usando userCode
+                        socketService.notifyPaymentApproved(user.userCode, paymentData);
+                        console.log(`[WEBSOCKET] Notificação de pagamento enviada para usuário ${user.userCode}`);
+                    }
+                } catch (socketError) {
+                    console.error('[WEBSOCKET_ERROR] Erro ao enviar notificação via WebSocket:', socketError);
+                    // Não interromper o fluxo principal se houver erro no WebSocket
+                }
+
+                return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
+            }
+
+            return createErrorResponse('Status de pagamento não suportado', 400);
+        } catch (error) {
+            console.error('[PAYMENT_CONFIRM_ERROR]', error);
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao confirmar pagamento',
                 statusCode: 500,
                 cause: error as Error
             });

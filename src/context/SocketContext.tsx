@@ -15,13 +15,26 @@ interface CampaignNotification {
   activatedAt?: string;
 }
 
+// Tipo para notificações de pagamento
+interface PaymentNotification {
+  paymentId: string;
+  status: string;
+  message: string;
+  redirectUrl?: string;
+  orderDetails?: any;
+  timestamp: string;
+}
+
 // Interface do contexto
 interface SocketContextProps {
   socket: Socket | null;
   isConnected: boolean;
   error: string | null;
   subscribeToCampaign: (campaignId: string) => void;
+  subscribeToPayment: (paymentId: string) => void;
+  joinPaymentRoom: () => void;
   notifications: CampaignNotification[];
+  paymentNotifications: PaymentNotification[];
   clearNotifications: () => void;
 }
 
@@ -43,11 +56,38 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<CampaignNotification[]>([]);
+  const [paymentNotifications, setPaymentNotifications] = useState<PaymentNotification[]>([]);
 
-  // Inicializar a conexão Socket.IO quando o usuário estiver autenticado
+  // Função para obter o userCode (da sessão ou do localStorage)
+  const getUserCode = useCallback(() => {
+    // Primeiro, tentar obter da sessão autenticada
+    if (session?.user?.id) {
+      return session.user.id;
+    }
+    
+    // Se não estiver autenticado, tentar obter do localStorage
+    try {
+      // Verificar se há dados de checkout no localStorage
+      const checkoutDataStr = localStorage.getItem('checkoutData');
+      if (checkoutDataStr) {
+        const checkoutData = JSON.parse(checkoutDataStr);
+        if (checkoutData.foundUser?.userCode) {
+          return checkoutData.foundUser.userCode;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao obter userCode do localStorage:', error);
+    }
+    
+    return null;
+  }, [session?.user?.id]);
+
+  // Inicializar a conexão Socket.IO quando o usuário estiver identificado
   useEffect(() => {
-    // Se não há usuário autenticado, não faz nada
-    if (!session?.user?.id) return;
+    const userCode = getUserCode();
+    
+    // Se não há identificação de usuário, não faz nada
+    if (!userCode) return;
     
     // Criar socket apenas se ainda não existe
     if (!socketRef.current) {
@@ -62,11 +102,16 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
         setError(null);
         console.log('Conectado ao servidor Socket.IO');
         
-        // Autenticar o socket com o ID do usuário
-        socketInstance.emit('authenticate', { 
-          userId: session.user.id,
-          userType: session.user.role === 'creator' ? 'creator' : 'participant'
+        // Enviar identificação do usuário - autenticado ou não
+        socketInstance.emit('identify', { 
+          userCode: userCode,
+          isAuthenticated: !!session?.user?.id,
+          userType: session?.user?.role === 'creator' ? 'creator' : 'participant'
         });
+
+        // Entrar automaticamente na room específica do usuário
+        socketInstance.emit('joinRoom', `user:${userCode}`);
+        console.log(`Entrando na room user:${userCode}`);
       });
       
       socketInstance.on('authenticated', (response) => {
@@ -102,6 +147,21 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
           });
         }
       });
+
+      // Ouvir eventos de pagamento aprovado
+      socketInstance.on('payment:approved', (notification: PaymentNotification) => {
+        console.log('Pagamento aprovado recebido:', notification);
+        setPaymentNotifications(prev => [notification, ...prev]);
+        
+        // Mostrar toast se autoToast está ativado
+        if (autoToast) {
+          toast.success(`Pagamento aprovado! ${notification.message}`, {
+            position: "top-center",
+            autoClose: 5000,
+            theme: "colored"
+          });
+        }
+      });
     }
 
     // Limpar ao desmontar
@@ -112,7 +172,20 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
         socketRef.current = null;
       }
     };
-  }, [session?.user?.id, autoToast]); // Remova a dependência de session e use apenas session?.user?.id
+  }, [getUserCode, session?.user?.role, autoToast]);
+
+  // Função para entrar na room específica do usuário para pagamentos
+  const joinPaymentRoom = useCallback(() => {
+    const userCode = getUserCode();
+    
+    if (socketRef.current && isConnected && userCode) {
+      const roomName = `user:${userCode}`;
+      console.log(`Entrando na room de pagamento: ${roomName}`);
+      socketRef.current.emit('joinRoom', roomName);
+    } else {
+      console.warn('Não é possível entrar na room de pagamento: Socket não conectado ou usuário não identificado');
+    }
+  }, [isConnected, getUserCode]);
 
   // Função para subscrever a atualizações de uma campanha específica
   const subscribeToCampaign = useCallback((campaignId: string) => {
@@ -124,9 +197,20 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
     }
   }, [isConnected]);
 
+  // Função para subscrever a atualizações de um pagamento específico
+  const subscribeToPayment = useCallback((paymentId: string) => {
+    if (socketRef.current && isConnected) {
+      console.log(`Inscrevendo-se para atualizações do pagamento ${paymentId}`);
+      socketRef.current.emit('subscribePayment', paymentId);
+    } else {
+      console.warn(`Não é possível se inscrever no pagamento ${paymentId}: Socket não conectado`);
+    }
+  }, [isConnected]);
+
   // Função para limpar notificações
   const clearNotifications = useCallback(() => {
     setNotifications([]);
+    setPaymentNotifications([]);
   }, []);
 
   // Valor do contexto
@@ -135,7 +219,10 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
     isConnected,
     error,
     subscribeToCampaign,
+    subscribeToPayment,
+    joinPaymentRoom,
     notifications,
+    paymentNotifications,
     clearNotifications
   };
 

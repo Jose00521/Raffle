@@ -2,7 +2,7 @@ import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse } from "../utils/errorHandler/api";
 import type { IPaymentRepository } from "../repositories/PaymentRepository";
-import { IPayment, IPaymentGhostResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
 
 export interface IPaymentService {
     createInitialPixPaymentAttempt(data: {
@@ -24,6 +24,8 @@ export interface IPaymentService {
         paymentCode: string;
         gatewayResponse: Partial<IPaymentGhostResponse>;
     }): Promise<ApiResponse<null>>;
+
+    confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 }
 
 
@@ -43,6 +45,10 @@ export class PaymentService implements IPaymentService {
         idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
         return this.paymentRepository.createInitialPixPaymentAttempt(data);
+    }
+
+    async confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
+        return this.paymentRepository.confirmPixPayment(data);
     }
 
     async updatePixPaymentToPending(data: {

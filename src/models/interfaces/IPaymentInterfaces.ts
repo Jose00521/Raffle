@@ -175,6 +175,63 @@ export enum PaymentStatusEnum {
       postbackUrl: string
     }
 
+
+    //GhostPay Payment Webhook POST
+      export interface IPaymentGhostWebhookPost {
+        paymentId: string
+        externalId: string
+        checkoutUrl: string
+        referrerUrl: string
+        customId: string
+        status: string
+        paymentMethod: string
+        deliveryStatus: string
+        totalValue: number
+        netValue: number
+        pixQrCode: string
+        pixCode: string
+        billetUrl: string
+        billetCode: string
+        expiresAt: string
+        dueAt: string
+        installments: number
+        utm: string
+        items: Item[]
+        customer: Customer
+        createdAt: string
+        updatedAt: string
+        approvedAt: string
+        refundedAt: any
+        chargebackAt: any
+        rejectedAt: any
+      }
+      
+      export interface Item {
+        id: string
+        name: string
+        quantity: number
+        price: number
+      }
+      
+      export interface Customer {
+        id: string
+        name: string
+        email: string
+        cpf: string
+        cep: string
+        phone: string
+        complement: string
+        number: string
+        street: string
+        city: string
+        state: string
+        district: string
+        createdAt: string
+        updatedAt: string
+      }
+      
+
+
     //Ghostspay Error Response
     export interface IPaymentGhostErrorResponse {
       message: string;

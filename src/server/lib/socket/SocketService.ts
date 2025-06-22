@@ -145,6 +145,50 @@ export class SocketService {
       // Não propagar o erro para não interromper o fluxo
     }
   }
+
+  /**
+   * Envia notificação sobre pagamento aprovado para um usuário específico
+   */
+  public notifyPaymentApproved(userCode: string, paymentData: any): void {
+    if (!this.io) {
+      logger.error('SocketService não inicializado');
+      return;
+    }
+
+    try {
+      // Sala específica do usuário
+      const roomName = `user:${userCode}`;
+      logger.info(`Emitindo evento payment:approved para sala ${roomName}`);
+      
+      // Verificar se a sala existe e tem sockets conectados
+      const sockets = this.io.sockets.adapter.rooms.get(roomName);
+      const socketCount = sockets ? sockets.size : 0;
+      logger.info(`Sala ${roomName} tem ${socketCount} sockets conectados`);
+      
+      // Preparar dados para o evento
+      const eventData = {
+        paymentId: paymentData._id || paymentData.id,
+        status: 'approved',
+        message: 'Seu pagamento foi aprovado com sucesso!',
+        redirectUrl: `/campanhas/${paymentData.campaignCode}/checkout/success`,
+        orderDetails: {
+          amount: paymentData.amount,
+          campaignTitle: paymentData.campaignTitle,
+          numbersQuantity: paymentData.numbersQuantity || 0,
+          paymentMethod: paymentData.paymentMethod,
+          paymentDate: paymentData.approvedAt || new Date().toISOString()
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Emitir o evento para a sala do usuário
+      this.io.to(roomName).emit('payment:approved', eventData);
+      
+      logger.info(`Notificação de pagamento aprovado enviada para usuário ${userCode}`);
+    } catch (error) {
+      logger.error(`Erro ao enviar notificação de pagamento para usuário ${userCode}:`, error);
+    }
+  }
 }
 
 // Exportar instância singleton
