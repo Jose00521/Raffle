@@ -52,7 +52,7 @@ export const raffleUpdateFormSchema = z.object({
       description: z.string().optional(),
       quantity: z.number().min(2, 'Quantidade mínima de 2 números'),
       price: z.number().min(1, 'Preço mínimo de 1 real'),
-      discount: z.number().min(1, 'Desconto mínimo de 1%').max(50, 'Desconto máximo de 50%'),
+      discount: z.number().min(1, 'Desconto mínimo de 1%').max(100, 'Desconto máximo de 50%'),
       isActive: z.boolean().optional().default(true),
       highlight: z.boolean().optional().default(false),
       order: z.number().min(1, 'Ordem mínima de 1'),
