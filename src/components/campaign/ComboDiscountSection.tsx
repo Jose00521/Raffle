@@ -898,10 +898,13 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                             onPointerUp={() => {
                               // Atualizar o estado real apenas quando o usuário terminar
                               const finalValue = tempSliderValues[index];
+                              console.log("[COMBO DISCOUNT SECTION] - FINAL VALUE", finalValue);
                               if (finalValue !== undefined && finalValue !== combo.discount) {
                                 const newCombos = [...field.value];
                                 newCombos[index].discount = finalValue;
                                 newCombos[index].price = calculateDiscountedPrice(combo.quantity, finalValue);
+
+                                console.log("[COMBO DISCOUNT SECTION] - NEW COMBOS", newCombos);
 
                                 field.onChange(newCombos);
                               }
