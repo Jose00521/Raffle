@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -10,6 +10,23 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: string;
 }
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+const gradientMove = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -21,6 +38,7 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  animation: ${css`${fadeIn} 0.3s ease`};
   z-index: 1000;
   overflow-y: auto;
   padding: 0.5rem;
