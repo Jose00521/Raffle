@@ -555,8 +555,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
       const savedData = localStorage.getItem('checkoutData');
       console.log('[QUICK_SIGNUP] Dados salvos verificação:', savedData?.substring(0, 200) + '...');
       
-      // Adicionar um pequeno delay para mostrar a animação de loading
-      await new Promise(resolve => setTimeout(resolve, 800));
       
       console.log('[QUICK_SIGNUP] Navegando para:', `/campanhas/${campaignSelection.campaignCode}/checkout`);
       router.push(`/campanhas/${campaignSelection.campaignCode}/checkout`);
@@ -973,31 +971,6 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
           ) : currentStep === 4 ? (
             <div key="summary-step">
               <StepTitle>Resumo da Compra</StepTitle>
-              
-              <DataGroup>
-                <DataHeader>
-                  <FaUser />
-                  <h3>Dados Pessoais</h3>
-                </DataHeader>
-                <DataContent>
-                  <DataRow>
-                    <DataLabel>Nome</DataLabel>
-                    <DataValue>{watch('nome')}</DataValue>
-                  </DataRow>
-                  <DataRow>
-                    <DataLabel>CPF</DataLabel>
-                    <DataValue>{watch('cpf')}</DataValue>
-                  </DataRow>
-                  <DataRow>
-                    <DataLabel>Email</DataLabel>
-                    <DataValue>{watch('email')}</DataValue>
-                  </DataRow>
-                  <DataRow>
-                    <DataLabel>Telefone</DataLabel>
-                    <DataValue>{watch('telefone')}</DataValue>
-                  </DataRow>
-                </DataContent>
-              </DataGroup>
 
               <DataSection>
                     <DataHeader>
@@ -1016,7 +989,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                         <FaEnvelope />
                         <DataContent>
                           <DataLabel>Email</DataLabel>
-                          <DataValue>{foundUser.email}</DataValue>
+                          <DataValue>{watch('email')}</DataValue>
                         </DataContent>
                       </DataItem>
                       <DataItem>
@@ -1030,18 +1003,18 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                         <FaIdCard />
                         <DataContent>
                           <DataLabel>CPF</DataLabel>
-                          <DataValue>{foundUser.cpf}</DataValue>
+                          <DataValue>{watch('cpf')}</DataValue>
                         </DataContent>
                       </DataItem>
-                      {foundUser.address && (
+                      {hasAddress && (
                         <>
                           <DataItem>
                             <FaMapMarkerAlt />
                             <DataContent>
                               <DataLabel>Endereço</DataLabel>
                               <DataValue>
-                                {foundUser.address.street_display}, {foundUser.address.number_display}
-                                {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
+                                {watch('logradouro')}, {watch('numero')}
+                                {watch('complemento') && `, ${watch('complemento')}`}
                               </DataValue>
                             </DataContent>
                           </DataItem>
@@ -1050,7 +1023,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                             <DataContent>
                               <DataLabel>Cidade</DataLabel>
                               <DataValue>
-                                {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
+                                {watch('cidade')}, {watch('uf')} - CEP: {watch('cep')}
                               </DataValue>
                             </DataContent>
                           </DataItem>
@@ -1059,43 +1032,8 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                     </DataGrid>
                   </DataSection>
 
-              {hasAddress && (
-                <DataGroup>
-                  <DataHeader>
-                    <FaMapMarkerAlt />
-                    <h3>Endereço de Entrega</h3>
-                  </DataHeader>
-                  <DataContent>
-                    <DataRow>
-                      <DataLabel>Endereço</DataLabel>
-                      <DataValue>
-                        {watch('logradouro')}, {watch('numero')}
-                        {watch('complemento') && `, ${watch('complemento')}`}
-                      </DataValue>
-                    </DataRow>
-                    <DataRow>
-                      <DataLabel>Bairro</DataLabel>
-                      <DataValue>{watch('bairro')}</DataValue>
-                    </DataRow>
-                    <DataRow>
-                      <DataLabel>Cidade/UF</DataLabel>
-                      <DataValue>
-                        {watch('cidade')}/{watch('uf')}
-                      </DataValue>
-                    </DataRow>
-                    <DataRow>
-                      <DataLabel>CEP</DataLabel>
-                      <DataValue>{watch('cep')}</DataValue>
-                    </DataRow>
-                  </DataContent>
-                </DataGroup>
-              )}
 
               <DataGroup>
-                <DataHeader>
-                  <FaShoppingCart />
-                  <h3>Detalhes da Compra</h3>
-                </DataHeader>
                 <DataContent>
                   <PurchaseSummary selection={campaignSelection} />
                 </DataContent>
