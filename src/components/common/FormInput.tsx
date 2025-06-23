@@ -67,16 +67,16 @@ const LabelContainer = styled.div`
 `;
 
 const InputLabel = styled.label`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
   
   @media (max-height: 800px) {
-    font-size: 0.85rem;
+    font-size: 0.6rem;
   }
   
-  @media (max-height: 700px) {
-    font-size: 0.8rem;
+  @media (max-height: 768px) {
+    font-size: 0.6rem;
   }
 `;
 

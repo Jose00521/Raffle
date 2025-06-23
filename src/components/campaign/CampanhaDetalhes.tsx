@@ -7,20 +7,20 @@ import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInte
 import SecurityModal from '../auth/SecurityModal';
 import ImageModal from '../ui/ImageModal';
 import PremioCategory from './PremioCategory';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { INumberPackageCampaign, useCampaignSelection } from '@/hooks/useCampaignSelection';
 import { toast } from 'react-toastify';
 import QuickSignupModal from '@/components/campaign/QuickSignupModal';
 import { formatCurrency } from '@/utils/formatNumber';
 import { CertificationSectionCompact } from '../ui/CertificationSection';
-
+import { useSession } from 'next-auth/react';
+import LoginModal from '../auth/LoginModal';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
   campanhaDetalhes: ICampaign
 }
-
 
 // Componente principal
 /*
@@ -65,6 +65,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   const initialized = useRef(false);
 
   const router = useRouter();
+  const pathname = usePathname();
+  const { data: session } = useSession();
   const numeroMinimo = Math.max(12, Math.ceil(12 / (campanhaDetalhes?.individualNumberPrice || 0)));
   const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(numeroMinimo);
   const [activeTab, setActiveTab] = useState('titulos');
@@ -83,12 +85,13 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   // Estado para guardar o pacote promocional ativo
   const [activePacote, setActivePacote] = useState<number | null>(null);
   
+  // Novo estado para o menu lateral
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  
   // Pacotes promocionais disponíveis
   const { selection, selectPackage, selectPackageFunction, clearSelection, updateQuantity } = useCampaignSelection(campanhaDetalhes as ICampaign);
 
-  // Novo estado para o modal de cadastro rápido
-  const [showSignupModal, setShowSignupModal] = useState(false);
-  
   const handleParticipate = useCallback(() => {
     // Validar quantidade mínima
     if (selection?.quantity && selection?.quantity < campanhaDetalhes?.minNumbersPerUser) {
@@ -100,7 +103,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     const isLoggedIn = false; // Aqui você deve verificar se o usuário está logado de verdade
     
     if (!isLoggedIn) {
-      setShowSignupModal(true);
+      setLoginModalOpen(true);
       return;
     }
     
@@ -458,13 +461,107 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     handleQuantitySubmit();
   };
   
+  // Função para verificar se um caminho está ativo
+  const isActive = (path: string) => pathname === path;
+  
+  // Função para abrir o modal de login
+  const openLoginModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setLoginModalOpen(true);
+    setMenuOpen(false);
+  };
+
+  // Função para alternar o menu lateral
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  // Fechar o menu quando clicar em um link
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Evitar scroll quando o menu estiver aberto
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   return (
     <Container>
+
+      
+      {/* Menu lateral */}
+      <SideMenu $isOpen={menuOpen}>
+        <SideMenuHeader>
+          <SideMenuLogo>
+            <LogoIcon>R</LogoIcon>
+            Rifa.com
+          </SideMenuLogo>
+          <CloseButton onClick={toggleMenu}>×</CloseButton>
+        </SideMenuHeader>
+        
+        <SideMenuNav>
+          <SideMenuLink $active={isActive('/')}>
+            <Link href="/">Início</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/campanhas')}>
+            <Link href="/campanhas">Campanhas</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/como-funciona')}>
+            <Link href="/como-funciona">Comunicados</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/cadastro-tipo') || isActive('/cadastro') || isActive('/cadastro-criador')}>
+            <Link href="/cadastro-tipo">Cadastrar</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/meus-titulos')}>
+            <Link href="/meus-titulos">Meus títulos</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/ganhadores')}>
+            <Link href="/ganhadores">Ganhadores</Link>
+          </SideMenuLink>
+          <SideMenuLink $active={isActive('/contato')}>
+            <Link href="/contato">Contato</Link>
+          </SideMenuLink>
+        </SideMenuNav>
+        
+        <SideMenuFooter>
+          {session?.user ? (
+            <SideMenuButton onClick={() => router.push('/dashboard')}>
+              Minha Conta
+            </SideMenuButton>
+          ) : (
+            <SideMenuButton onClick={() => router.push('/login')}>
+              Entrar na conta
+            </SideMenuButton>
+          )}
+        </SideMenuFooter>
+      </SideMenu>
+      
+      {/* Overlay para fechar o menu quando clicar fora */}
+      {menuOpen && <Overlay onClick={toggleMenu} />}
+      
       {/* Banner da campanha */}
       <Banner style={{ backgroundImage: `url(${campanhaDetalhes?.coverImage || ''})` }}>
 
         
                 <BannerOverlay>
+                      {/* Botão do menu hamburger */}
+      <MenuButton onClick={toggleMenu} $isOpen={menuOpen}>
+        <span></span>
+        <span></span>
+        <span></span>
+      </MenuButton>
+
+      <MeusTitulosButton onClick={handleMeusNumerosClick}>
+            <i className="fas fa-ticket-alt"></i> Meus Números
+          </MeusTitulosButton>
           {/* Título principal posicionado no canto inferior esquerdo */}
           <TituloContainer>
             {/* Header pequeno com botão verde e código acima do título */}
@@ -530,9 +627,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             <SorteioData>{dataSorteio}</SorteioData>
           </SorteioInfo>
           
-          <MeusTitulosButton onClick={handleMeusNumerosClick}>
-            <i className="fas fa-ticket-alt"></i> Meus Números
-          </MeusTitulosButton>
+
           
           <SorteioInfo $position="right">
             <SorteioTexto>Por apenas</SorteioTexto>
@@ -1265,8 +1360,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       
       {/* Modal de cadastro rápido */}
       <QuickSignupModal 
-        isOpen={showSignupModal}
-        onClose={() => setShowSignupModal(false)}
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
         campanha={campanhaDetalhes}
         campaignSelection={selection as INumberPackageCampaign}
         onSuccess={proceedWithPurchase}
@@ -1367,6 +1462,9 @@ const BannerOverlay = styled.div`
 `;
 
 const MeusTitulosButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
   background: rgba(255, 255, 255, 0.95);
   color: #2d3748;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -1496,12 +1594,14 @@ const Titulo = styled.h1`
 const SubTitulo = styled.h2`
   font-size: 0.9rem;
   font-weight: 500;
+  margin-bottom: 1rem;
   opacity: 0.9;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   line-height: 1.3;
   
   @media (min-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 0.9rem !important;
+    margin-bottom: 1rem;
   }
 `;
 
@@ -1569,71 +1669,120 @@ const ValorNumero = styled.div`
 `;
 
 const SorteioContainer = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  position: relative;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   padding: 0.75rem 1rem;
-  height: 3.5rem;
-  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   
   @media (min-width: 768px) {
-    padding: 1rem 1.5rem;
-    height: 4rem;
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    min-width: 320px;
+    max-width: 90%;
+    border: none;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    display: flex;
+    background: rgba(255, 255, 255, 0.95);
   }
 `;
 
-const SorteioInfo = styled.div<{ $position?: 'left' | 'right' }>`
+const SorteioInfo = styled.div<{ $position: 'left' | 'right' }>`
   display: flex;
   flex-direction: column;
-  align-items: ${({ $position }) => 
-    $position === 'left' ? 'flex-start' : 
-    $position === 'right' ? 'flex-end' : 
-    'center'
-  };
-  justify-self: ${({ $position }) => 
-    $position === 'left' ? 'start' : 
-    $position === 'right' ? 'end' : 
-    'center'
-  };
+  align-items: ${({ $position }) => $position === 'left' ? 'flex-start' : 'flex-end'};
+  padding: 0.5rem;
+  
+  @media (min-width: 768px) {
+    padding: 1.25rem 2rem;
+    position: relative;
+    
+    &:first-child::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 20%;
+      height: 60%;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1), transparent);
+    }
+  }
 `;
 
-const SorteioTexto = styled.div`
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #666;
+const SorteioTexto = styled.span`
+  font-size: 0.7rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
   margin-bottom: 0.2rem;
   
   @media (min-width: 768px) {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
   }
 `;
 
-const SorteioData = styled.div`
-  font-size: 1rem;
+const SorteioData = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
   font-weight: 700;
-  color: #2d3748;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
   
   @media (min-width: 768px) {
     font-size: 1.1rem;
   }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, transparent);
+    border-radius: 2px;
+    opacity: 0.5;
+  }
 `;
 
-const SorteioValor = styled.div`
+const SorteioValor = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 800;
   font-size: 1rem;
-  font-weight: 700;
-  color: #2d3748;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
   
   @media (min-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.secondary});
+    border-radius: 2px;
+    opacity: 0.5;
   }
 `;
 
@@ -3161,10 +3310,17 @@ const OpcaoLote = styled.div<{ $popular?: boolean, $disabled?: boolean }>`
     transform: translateY(-1px) ${({ $popular }) => $popular ? 'scale(1.05)' : ''};
   }
 
-  @media (max-width: 576px) {
+  @media (max-width: 768px) {
     padding: 0.6rem 0.3rem;
     font-size: 1rem;
     border-radius: 8px;
+
+      &:hover {
+    transform: none!important;
+    box-shadow: none !important;
+    border-color: none !important;
+    background-color: none !important;
+  }
   }
 `;
 
@@ -4366,6 +4522,200 @@ const InfoValue = styled.div`
   
   @media (max-width: 576px) {
     font-size: 0.9rem;
+  }
+`;
+
+// Botão do menu hamburger
+const MenuButton = styled.button<{ $isOpen: boolean }>`
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 101;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  padding: 0;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
+  }
+  
+  span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background-color: white;
+    transition: all 0.3s ease;
+    
+    &:nth-child(1) {
+      transform: ${({ $isOpen }) => $isOpen ? 'rotate(45deg) translate(5px, 5px)' : 'rotate(0)'};
+    }
+    
+    &:nth-child(2) {
+      opacity: ${({ $isOpen }) => $isOpen ? '0' : '1'};
+    }
+    
+    &:nth-child(3) {
+      transform: ${({ $isOpen }) => $isOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'rotate(0)'};
+    }
+  }
+`;
+
+// Overlay para fechar o menu quando clicar fora
+const Overlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  backdrop-filter: blur(3px);
+`;
+
+// Menu lateral
+const SideMenu = styled.div<{ $isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
+  z-index: 100;
+  transform: translateX(${({ $isOpen }) => $isOpen ? '0' : '-100%'});
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+`;
+
+// Cabeçalho do menu lateral
+const SideMenuHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+// Logo no menu lateral
+const SideMenuLogo = styled.div`
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+// Ícone do logo
+const LogoIcon = styled.div`
+  background: white;
+  color: ${({ theme }) => theme.colors.primary};
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+// Botão para fechar o menu
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+// Navegação no menu lateral
+const SideMenuNav = styled.nav`
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 0;
+`;
+
+// Links no menu lateral
+const SideMenuLink = styled.div<{ $active?: boolean }>`
+  a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 12px 20px;
+    display: block;
+    transition: all 0.2s ease;
+    background: ${({ $active }) => $active ? 'rgba(255, 255, 255, 0.15)' : 'transparent'};
+    font-weight: ${({ $active }) => $active ? '600' : '400'};
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: white;
+      opacity: ${({ $active }) => $active ? '1' : '0'};
+      transition: opacity 0.2s ease;
+    }
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      padding-left: 25px;
+      
+      &::before {
+        opacity: 0.5;
+      }
+    }
+  }
+`;
+
+// Rodapé do menu lateral
+const SideMenuFooter = styled.div`
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+// Botão no rodapé do menu lateral
+const SideMenuButton = styled.button`
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: ${({ theme }) => theme.colors.primary};
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   }
 `;
 

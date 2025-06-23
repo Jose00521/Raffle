@@ -101,7 +101,7 @@ export const initSocketServer = (httpServer: HTTPServer): SocketIOServer => {
       console.log(`Socket desconectado: ${socket.id}`);
     });
   });
-
+  
   // Namespace para estatísticas gerais (requer apenas autenticação)
   const statsNamespace = io.of('/stats');
   statsNamespace.use(socketAuthMiddleware as any);

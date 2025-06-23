@@ -135,7 +135,7 @@ class StatisticsRepository {
       // Buscar o snapshot atualizado para atualizar a lista de top campanhas
       const updatedSnapshot = await CreatorStatsHistory.findById(snapshot._id);
       if (updatedSnapshot) {
-        // Atualizar lista de top campanhas
+      // Atualizar lista de top campanhas
         await this.updateTopCampaigns(updatedSnapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
         await updatedSnapshot.save();
       }
@@ -201,11 +201,11 @@ class StatisticsRepository {
       if (updatedSnapshot) {
         // Recalcular valor médio do ticket
         updatedSnapshot.avgTicketValue = updatedSnapshot.totalSpent / updatedSnapshot.participationCount;
-        
-        // Atualizar lista de top campanhas
+      
+      // Atualizar lista de top campanhas
         await this.updateParticipantTopCampaigns(updatedSnapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
-        
-        // Salvar alterações
+      
+      // Salvar alterações
         await updatedSnapshot.save();
       }
       

@@ -232,7 +232,7 @@ const ContentWrapper = styled.div`
   margin: 0 auto;
   
   @media (max-width: 768px) {
-    padding: 1.25rem 0rem;
+    padding: 1.25rem 5px;
   }
 `;
 

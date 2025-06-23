@@ -187,6 +187,7 @@ const CheckoutText = styled.div`
   color: #2c3e50;
   letter-spacing: -0.025em;
   display: flex;
+  justify-content: center;
   align-items: center;
   white-space: nowrap;
   overflow: hidden;
@@ -200,7 +201,7 @@ const CheckoutText = styled.div`
   
   @media (max-width: 576px) {
     font-size: 12px;
-    margin-left: 12px;
+    
     white-space: normal;
     line-height: 1.2;
   }
@@ -697,7 +698,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       }
       
       if (window.innerWidth <= 480) {
-        setResponsiveText(children === "Prosseguir para Pagamento" ? "Prosseguir" : children);
+        setResponsiveText(children === "Prosseguir para Pagamento" ? "Prosseguir para Pagamento" : children);
       } else if (window.innerWidth <= 576) {
         setResponsiveText(children === "Prosseguir para Pagamento" ? "Prosseguir para Pagamento" : children);
       } else {
