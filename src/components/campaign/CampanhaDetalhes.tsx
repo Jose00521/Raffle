@@ -620,16 +620,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           </TituloContainer>
         </BannerOverlay>
         
-        {/* Seção da data do sorteio na parte inferior */}
+        {/* Seção da data do sorteio */}
         <SorteioContainer>
-          <SorteioInfo $position="left">
+          <SorteioInfo>
             <SorteioTexto>Sorteio</SorteioTexto>
             <SorteioData>{dataSorteio}</SorteioData>
           </SorteioInfo>
           
-
-          
-          <SorteioInfo $position="right">
+          <SorteioInfo>
             <SorteioTexto>Por apenas</SorteioTexto>
             <SorteioValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice || 0)}</SorteioValor>
           </SorteioInfo>
@@ -1668,121 +1666,93 @@ const ValorNumero = styled.div`
   }
 `;
 
+// Seção de data do sorteio e preço - estilo atualizado
 const SorteioContainer = styled.div`
-  position: relative;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  width: fit-content;
+  position: relative;
+  z-index: 2;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  gap: 2rem;
   
-  @media (min-width: 768px) {
-    position: absolute;
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    min-width: 320px;
-    max-width: 90%;
-    border: none;
-    border-radius: 16px;
-    padding: 0;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    display: flex;
-    background: rgba(255, 255, 255, 0.95);
+  @media (max-width: 576px) {
+    padding: 0.6rem 1rem;
+    gap: 1.5rem;
+    transform: translateY(-40%);
+    border-radius: 10px;
   }
 `;
 
-const SorteioInfo = styled.div<{ $position: 'left' | 'right' }>`
+const SorteioInfo = styled.div<{ $position?: 'left' | 'right' }>`
   display: flex;
   flex-direction: column;
-  align-items: ${({ $position }) => $position === 'left' ? 'flex-start' : 'flex-end'};
-  padding: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   
-  @media (min-width: 768px) {
-    padding: 1.25rem 2rem;
-    position: relative;
+  &:first-child::after {
+    content: '';
+    position: absolute;
+    right: -1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 70%;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.1);
     
-    &:first-child::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 20%;
-      height: 60%;
-      width: 1px;
-      background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1), transparent);
+    @media (max-width: 576px) {
+      right: -0.75rem;
     }
   }
 `;
 
-const SorteioTexto = styled.span`
+const SorteioTexto = styled.div`
   font-size: 0.7rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 0.2rem;
   
   @media (min-width: 768px) {
-    font-size: 0.8rem;
-    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
   }
 `;
 
-const SorteioData = styled.span`
-  color: ${({ theme }) => theme.colors.primary};
+const SorteioData = styled.div`
+  font-size: 1.1rem;
   font-weight: 700;
-  font-size: 0.9rem;
+  color: #2d3748;
   background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-  
-  @media (min-width: 768px) {
-    font-size: 1.1rem;
-  }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, transparent);
-    border-radius: 2px;
-    opacity: 0.5;
-  }
-`;
-
-const SorteioValor = styled.span`
-  color: ${({ theme }) => theme.colors.primary};
-  font-weight: 800;
-  font-size: 1rem;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
   
   @media (min-width: 768px) {
     font-size: 1.2rem;
   }
+`;
+
+const SorteioValor = styled.div`
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, ${({ theme }) => theme.colors.secondary});
-    border-radius: 2px;
-    opacity: 0.5;
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
   }
 `;
 
