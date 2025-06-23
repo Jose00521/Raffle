@@ -62,6 +62,7 @@ const CheckoutContainer = styled.button<{ $disabled?: boolean; $isLoading?: bool
   overflow: hidden;
   opacity: ${({ $disabled }) => $disabled ? 0.7 : 1};
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 0;
   
   ${({ $isLoading }) => $isLoading && css`
     animation: ${subtleGlow} 2s ease-in-out infinite;
@@ -88,6 +89,14 @@ const CheckoutContainer = styled.button<{ $disabled?: boolean; $isLoading?: bool
     animation: ${fadeInFwd} 0.3s 1s backwards;
   }
   
+  -webkit-appearance: none;
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  
   @media (max-width: 768px) {
     min-width: 260px;
     height: 50px;
@@ -101,10 +110,10 @@ const CheckoutContainer = styled.button<{ $disabled?: boolean; $isLoading?: bool
   
   @media (max-width: 480px) {
     height: 45px;
-    transform: scale(0.98);
+    transform: scale(0.98) translateZ(0);
     
     &:hover:not(:disabled) {
-      transform: ${({ $isLoading }) => $isLoading ? 'scale(0.98)' : 'scale(1.01)'};
+      transform: ${({ $isLoading }) => $isLoading ? 'scale(0.98) translateZ(0)' : 'scale(1.01) translateZ(0)'};
     }
   }
 `;
@@ -116,7 +125,7 @@ const LeftSide = styled.div<{ $isLoading?: boolean }>`
   };
   background-size: ${({ $isLoading }) => $isLoading ? '300% 300%' : '100% 100%'};
   width: 110px;
-  height: 55px;
+  height: 100%;
   border-radius: 6px;
   position: relative;
   display: flex;
@@ -127,23 +136,25 @@ const LeftSide = styled.div<{ $isLoading?: boolean }>`
   flex-shrink: 0;
   overflow: hidden;
   
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
   ${({ $isLoading }) => $isLoading && css`
     opacity: 0.9;
   `}
   
   @media (max-width: 768px) {
     width: 100px;
-    height: 50px;
   }
   
   @media (max-width: 576px) {
     width: 90px;
-    height: 48px;
   }
   
   @media (max-width: 480px) {
     width: 85px;
-    height: 45px;
   }
 `;
 
@@ -157,6 +168,7 @@ const RightSide = styled.div<{ $isLoading?: boolean }>`
   transition: 0.3s;
   flex: 1;
   position: relative;
+  height: 100%;
   
   ${({ $isLoading }) => $isLoading && css`
     background-color: rgba(248, 255, 254, 0.5);
@@ -169,7 +181,7 @@ const RightSide = styled.div<{ $isLoading?: boolean }>`
 
 const CheckoutText = styled.div`
   font-size: 14px;
-  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-family: "Inter", "Lexend Deca", -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 600;
   margin-left: 16px;
   color: #2c3e50;
@@ -179,6 +191,7 @@ const CheckoutText = styled.div`
   white-space: nowrap;
   overflow: hidden;
   flex: 1;
+  height: 100%;
   
   @media (max-width: 768px) {
     font-size: 13px;
@@ -210,6 +223,10 @@ const Card = styled.div`
   align-items: center;
   box-shadow: 
     6px 6px 8px -1px rgba(77, 200, 143, 0.6);
+  
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
   
   @media (max-width: 768px) {
     width: 45px;
@@ -300,6 +317,10 @@ const Post = styled.div`
   top: 55px;
   border-radius: 4px;
   overflow: hidden;
+  
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
   
   @media (max-width: 768px) {
     width: 40px;
@@ -500,7 +521,7 @@ const NumbersLine2 = styled.div`
 const Dollar = styled.div`
   position: absolute;
   font-size: 12px;
-  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-family: "Inter", "Lexend Deca", -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 700;
   width: 100%;
   left: 0;
@@ -511,6 +532,9 @@ const Dollar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
   
   @media (max-width: 768px) {
     font-size: 11px;
@@ -570,6 +594,9 @@ const LoadingContainer = styled.div`
   margin-right: 12px;
   animation: ${fadeIn} 0.3s ease-out;
   
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  
   @media (max-width: 480px) {
     margin-right: 10px;
   }
@@ -584,6 +611,10 @@ const LoadingSpinner = styled.div`
   animation: ${spin} 1s linear infinite;
   margin-right: 8px;
   
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  
   @media (max-width: 480px) {
     width: 14px;
     height: 14px;
@@ -592,7 +623,7 @@ const LoadingSpinner = styled.div`
 `;
 
 const LoadingText = styled.span`
-  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-family: "Inter", "Lexend Deca", -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 500;
   font-size: 14px;
   color: #2c3e50;
@@ -604,7 +635,7 @@ const LoadingText = styled.span`
 `;
 
 const LoadingDots = styled.span`
-  font-family: "Inter", "Lexend Deca", sans-serif;
+  font-family: "Inter", "Lexend Deca", -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 500;
   font-size: 14px;
   color: #2ecc71;
@@ -627,6 +658,9 @@ const ArrowIcon = styled.span`
   font-weight: bold;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
   
   @media (max-width: 768px) {
     font-size: 14px;
@@ -647,25 +681,35 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   type = 'button'
 }) => {
   // Texto responsivo para telas pequenas
-  const getResponsiveText = () => {
-    if (isLoading) {
-      if (typeof window !== 'undefined' && window.innerWidth <= 480) {
-        return "Processando";
+  const [responsiveText, setResponsiveText] = React.useState(children);
+  
+  React.useEffect(() => {
+    const updateText = () => {
+      if (isLoading) {
+        if (window.innerWidth <= 480) {
+          setResponsiveText("Processando");
+        } else if (window.innerWidth <= 576) {
+          setResponsiveText("Processando");
+        } else {
+          setResponsiveText("Processando");
+        }
+        return;
       }
-      if (typeof window !== 'undefined' && window.innerWidth <= 576) {
-        return "Processando";
+      
+      if (window.innerWidth <= 480) {
+        setResponsiveText(children === "Prosseguir para Pagamento" ? "Prosseguir" : children);
+      } else if (window.innerWidth <= 576) {
+        setResponsiveText(children === "Prosseguir para Pagamento" ? "Prosseguir para Pagamento" : children);
+      } else {
+        setResponsiveText(children);
       }
-      return "Processando";
-    }
+    };
     
-    if (typeof window !== 'undefined' && window.innerWidth <= 480) {
-      return children === "Prosseguir para Pagamento" ? "Prosseguir" : children;
-    }
-    if (typeof window !== 'undefined' && window.innerWidth <= 576) {
-      return children === "Prosseguir para Pagamento" ? "Prosseguir para Pagamento" : children;
-    }
-    return children;
-  };
+    updateText();
+    
+    window.addEventListener('resize', updateText);
+    return () => window.removeEventListener('resize', updateText);
+  }, [children, isLoading]);
 
   return (
     <CheckoutContainer 
@@ -699,11 +743,11 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
           )}
           {isLoading ? (
             <>
-              <LoadingText>{getResponsiveText()}</LoadingText>
+              <LoadingText>{responsiveText}</LoadingText>
               <LoadingDots />
             </>
           ) : (
-            getResponsiveText()
+            responsiveText
           )}
         </CheckoutText>
         {!isLoading && (
