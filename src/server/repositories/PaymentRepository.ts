@@ -199,6 +199,9 @@ export class PaymentRepository implements IPaymentRepository {
                 return createErrorResponse('Pagamento não encontrado', 404);
             }
 
+
+            
+
             if(status === 'APPROVED'){
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
@@ -211,9 +214,9 @@ export class PaymentRepository implements IPaymentRepository {
                 
                 // Enviar notificação via WebSocket
                 try {
-                    const socketService = container.resolve(SocketService);
+                    const socketService = container.resolve<SocketService>('socketService');
                     
-                    if (socketService && user?.userCode) {
+                    if (socketService.isInitialized() && user?.userCode) {
                         // Preparar dados enriquecidos para o evento
                         const paymentData = {
                             paymentCode: payment.paymentCode,
