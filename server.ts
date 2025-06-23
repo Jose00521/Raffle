@@ -93,8 +93,19 @@ app.prepare().then(async () => {
     if (!servicesInitialized) {
     // Inicializar o serviço de Socket.IO
       socketService = container.resolve<SocketService>('socketService');
-    socketService.initialize(io);
-    logger.info('✅ Socket.IO Service inicializado com sucesso!');
+      socketService.initialize(io);
+      logger.info('✅ Socket.IO Service inicializado com sucesso!');
+      
+      // Verificar se a instância no container está correta
+      const socketServiceCheck = container.resolve<SocketService>('socketService');
+      if (socketServiceCheck.isInitialized()) {
+        logger.info('✅ Socket.IO Service no container está corretamente inicializado!');
+      } else {
+        logger.error('❌ Socket.IO Service no container NÃO está inicializado!');
+        // Tentar reinicializar
+        socketServiceCheck.initialize(io);
+        logger.info('🔄 Tentativa de reinicialização do Socket.IO Service no container');
+      }
       
       // Inicializar serviços passando a instância do Socket.io
       const statsService = new StatsService(io);

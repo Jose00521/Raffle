@@ -12,6 +12,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { SocketService } from "../lib/socket/SocketService";
 import { container } from "tsyringe";
 import { maskAddress, maskCPF, maskEmail, maskPhone, maskCEP} from "@/utils/maskUtils";
+import { getSocketServer } from "../socketio";
+import SocketServiceDefault from "../lib/socket/SocketService";
 
 export interface IPaymentRepository {
     createInitialPixPaymentAttempt(data: {
@@ -214,8 +216,56 @@ export class PaymentRepository implements IPaymentRepository {
                 
                 // Enviar notificação via WebSocket
                 try {
-                    const socketService = container.resolve<SocketService>('socketService');
+                    // Tentar diferentes abordagens para obter o SocketService
                     
+                    // 1. Via container
+                    const socketService = container.resolve<SocketService>('socketService');
+                    console.log('[WEBSOCKET_DEBUG] socketService do container isInitialized():', socketService.isInitialized());
+                    
+                    // 2. Via import direto do singleton
+                    const socketServiceDefault = SocketServiceDefault;
+                    console.log('[WEBSOCKET_DEBUG] socketServiceDefault:', socketServiceDefault ? 'disponível' : 'null/undefined');
+                    
+                    // 3. Via getSocketServer
+                    try {
+                        const io = getSocketServer();
+                        console.log('[WEBSOCKET_DEBUG] io obtido do getSocketServer():', io ? 'disponível' : 'null/undefined');
+                        
+                        if (io && user?.userCode) {
+                            // Usar io diretamente para enviar a notificação
+                            const roomName = `user:${user.userCode}`;
+                            console.log(`[WEBSOCKET_DEBUG] Tentando enviar diretamente para a sala ${roomName}`);
+                            
+                            // Preparar dados enriquecidos para o evento
+                            const paymentData = {
+                                paymentId: payment.paymentCode,
+                                status: 'APPROVED',
+                                message: 'Seu pagamento foi aprovado com sucesso!',
+                                redirectUrl: `/campanhas/${campaign?.campaignCode}/checkout/success`,
+                                orderDetails: {
+                                  amount: payment.amount,
+                                  campaignTitle: campaign?.title,
+                                  numbersQuantity: payment.numbersQuantity || 0,
+                                  paymentMethod: payment.paymentMethod,
+                                  paymentDate: payment.approvedAt || new Date().toISOString()
+                                },
+                                timestamp: new Date().toISOString()
+                            };
+                            
+                            // Verificar se a sala existe
+                            const sockets = io.sockets.adapter.rooms.get(roomName);
+                            const socketCount = sockets ? sockets.size : 0;
+                            console.log(`[WEBSOCKET_DEBUG] Sala ${roomName} tem ${socketCount} sockets conectados`);
+                            
+                            // Emitir o evento diretamente
+                            io.to(roomName).emit('payment:approved', paymentData);
+                            console.log(`[WEBSOCKET] Notificação de pagamento enviada diretamente para sala ${roomName}`);
+                        }
+                    } catch (directError) {
+                        console.error('[WEBSOCKET_ERROR] Erro ao usar io diretamente:', directError);
+                    }
+                    
+                    // Usar o socketService do container se estiver inicializado
                     if (socketService.isInitialized() && user?.userCode) {
                         // Preparar dados enriquecidos para o evento
                         const paymentData = {

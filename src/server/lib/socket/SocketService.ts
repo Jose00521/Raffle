@@ -14,8 +14,11 @@ export class SocketService {
   constructor() {
     // Garantir que só exista uma instância
     if (SocketService.instance) {
+      console.log('[SOCKETSERVICE_DEBUG] Retornando instância existente do SocketService');
       return SocketService.instance;
     }
+    
+    console.log('[SOCKETSERVICE_DEBUG] Criando nova instância do SocketService');
     SocketService.instance = this;
   }
 
@@ -36,6 +39,7 @@ export class SocketService {
    * Verifica se o serviço foi inicializado
    */
   public isInitialized(): boolean {
+    console.log('[SOCKETSERVICE_DEBUG] Verificando se está inicializado. io:', this.io ? 'disponível' : 'null');
     return this.io !== null;
   }
 
