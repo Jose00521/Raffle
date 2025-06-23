@@ -142,9 +142,7 @@ CreatorStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(crea
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  let snapshot = await this.findOne({ creatorId, dateKey: today });
-  
-  if (!snapshot) {
+  try {
     // Buscar o snapshot mais recente para inicializar os valores
     const previousSnapshot = await this.findOne(
       { creatorId },
@@ -152,8 +150,8 @@ CreatorStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(crea
       { sort: { dateKey: -1 } }
     );
     
-    // Criar novo snapshot baseado no anterior ou com valores iniciais
-    snapshot = new this({
+    // Preparar os valores iniciais baseados no snapshot anterior ou com valores default
+    const initialValues = {
       creatorId,
       dateKey: today,
       lastUpdated: new Date(),
@@ -184,12 +182,24 @@ CreatorStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(crea
       revenueByDayOfWeek: previousSnapshot ? previousSnapshot.revenueByDayOfWeek : {
         monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0
       }
-    });
+    };
     
-    await snapshot.save();
+    // Usar findOneAndUpdate com upsert para evitar erros de chave duplicada
+    const result = await this.findOneAndUpdate(
+      { creatorId, dateKey: today },
+      { $setOnInsert: initialValues },
+      { 
+        new: true, 
+        upsert: true,
+        runValidators: true
+      }
+    );
+    
+    return result;
+  } catch (error) {
+    console.error('Erro ao obter/criar snapshot de estatísticas do criador:', error);
+    throw error;
   }
-  
-  return snapshot;
 };
 
 const CreatorStatsHistory = (mongoose.models.CreatorStatsHistory || 

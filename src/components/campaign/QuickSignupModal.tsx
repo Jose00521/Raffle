@@ -784,19 +784,31 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                             <FaMapMarkerAlt />
                             <DataContent>
                               <DataLabel>Endereço</DataLabel>
-                              <DataValue>
-                                {foundUser.address.street_display}, {foundUser.address.number_display}
-                                {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
-                              </DataValue>
+                              {
+                                foundUser.address.street_display && foundUser.address.number_display ? (
+                                  <DataValue>
+                                    {foundUser.address.street_display}, {foundUser.address.number_display}
+                                    {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
+                                  </DataValue>
+                                ) : (
+                                  <></>
+                                )
+                              }
                             </DataContent>
                           </DataItem>
                           <DataItem>
                             <FaCity />
                             <DataContent>
                               <DataLabel>Cidade</DataLabel>
-                              <DataValue>
-                                {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
-                              </DataValue>
+                              {
+                                foundUser.address.city && foundUser.address.state && foundUser.address.zipCode_display ? (
+                                  <DataValue>
+                                    {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
+                                  </DataValue>
+                                ) : (
+                                  <></>
+                                )
+                              }
                             </DataContent>
                           </DataItem>
                         </>

@@ -115,9 +115,7 @@ ParticipantStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  let snapshot = await this.findOne({ participantId, dateKey: today });
-  
-  if (!snapshot) {
+  try {
     // Buscar o snapshot mais recente para inicializar os valores
     const previousSnapshot = await this.findOne(
       { participantId },
@@ -125,8 +123,8 @@ ParticipantStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(
       { sort: { dateKey: -1 } }
     );
     
-    // Criar novo snapshot baseado no anterior ou com valores iniciais
-    snapshot = new this({
+    // Preparar os valores iniciais baseados no snapshot anterior ou com valores default
+    const initialValues = {
       participantId,
       dateKey: today,
       lastUpdated: new Date(),
@@ -153,12 +151,24 @@ ParticipantStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(
       // Dados da participação mais recente e top campanhas
       lastParticipation: previousSnapshot ? previousSnapshot.lastParticipation : null,
       topCampaigns: previousSnapshot ? previousSnapshot.topCampaigns : []
-    });
+    };
     
-    await snapshot.save();
+    // Usar findOneAndUpdate com upsert para evitar erros de chave duplicada
+    const result = await this.findOneAndUpdate(
+      { participantId, dateKey: today },
+      { $setOnInsert: initialValues },
+      { 
+        new: true, 
+        upsert: true,
+        runValidators: true
+      }
+    );
+    
+    return result;
+  } catch (error) {
+    console.error('Erro ao obter/criar snapshot de estatísticas do participante:', error);
+    throw error;
   }
-  
-  return snapshot;
 };
 
 const ParticipantStatsHistory = (mongoose.models.ParticipantStatsHistory || 

@@ -86,9 +86,7 @@ CampaignStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(cam
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  let snapshot = await this.findOne({ campaignId, dateKey: today });
-  
-  if (!snapshot) {
+  try {
     // Buscar o snapshot mais recente para inicializar os valores
     const previousSnapshot = await this.findOne(
       { campaignId },
@@ -96,8 +94,8 @@ CampaignStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(cam
       { sort: { dateKey: -1 } }
     );
     
-    // Criar novo snapshot baseado no anterior ou com valores iniciais
-    snapshot = new this({
+    // Preparar os valores iniciais baseados no snapshot anterior ou com valores default
+    const initialValues = {
       campaignId,
       creatorId,
       dateKey: today,
@@ -121,12 +119,24 @@ CampaignStatsHistorySchema.statics.getOrCreateTodaySnapshot = async function(cam
       status,
       daysRemaining: previousSnapshot ? previousSnapshot.daysRemaining : 0,
       isExpired: previousSnapshot ? previousSnapshot.isExpired : false
-    });
+    };
     
-    await snapshot.save();
+    // Usar findOneAndUpdate com upsert para evitar erros de chave duplicada
+    const result = await this.findOneAndUpdate(
+      { campaignId, dateKey: today },
+      { $setOnInsert: initialValues },
+      { 
+        new: true, 
+        upsert: true,
+        runValidators: true
+      }
+    );
+    
+    return result;
+  } catch (error) {
+    console.error('Erro ao obter/criar snapshot de estatísticas:', error);
+    throw error;
   }
-  
-  return snapshot;
 };
 
 const CampaignStatsHistory = (mongoose.models.CampaignStatsHistory || 

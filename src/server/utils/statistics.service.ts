@@ -24,36 +24,62 @@ class StatisticsRepository {
         campaign.totalNumbers
       );
       
-      // Atualizar total de números vendidos e receita
-      snapshot.soldNumbers += payment.numbersCount;
-      snapshot.totalRevenue += payment.amount;
-      
-      // Atualizar contadores do período
-      snapshot.periodNumbersSold += payment.numbersCount;
-      snapshot.periodRevenue += payment.amount;
-      
-      // Calcular porcentagem completa
-      snapshot.percentComplete = (snapshot.soldNumbers / snapshot.totalNumbers) * 100;
-      
-      // Verificar se é um novo participante
+      // Verificar se este é um novo participante
       const isNewParticipant = await this.isNewParticipant(campaignId, payment.userId);
-      if (isNewParticipant) {
-        snapshot.uniqueParticipants += 1;
-        snapshot.periodNewParticipants += 1;
+      
+      // Usar updateOne com operadores atômicos para evitar condições de corrida
+      const result = await CampaignStatsHistory.updateOne(
+        { _id: snapshot._id },
+        {
+          $inc: {
+            // Incrementar contadores
+            soldNumbers: payment.numbersCount,
+            totalRevenue: payment.amount,
+            periodNumbersSold: payment.numbersCount,
+            periodRevenue: payment.amount,
+            uniqueParticipants: isNewParticipant ? 1 : 0,
+            periodNewParticipants: isNewParticipant ? 1 : 0
+          },
+          $set: {
+            // Atualizar timestamp
+            lastUpdated: new Date()
+          },
+          $setOnInsert: {
+            // Garantir que esses campos existam caso seja uma inserção
+            campaignId: campaignId,
+            creatorId: campaign.createdBy,
+            totalNumbers: campaign.totalNumbers,
+            status: campaign.status
+          }
+        },
+        { upsert: true }
+      );
+      
+      // Recalcular campos derivados (percentComplete e availableNumbers)
+      const updatedSnapshot = await CampaignStatsHistory.findByIdAndUpdate(
+        snapshot._id,
+        [
+          {
+            $set: {
+              percentComplete: { $multiply: [{ $divide: ["$soldNumbers", "$totalNumbers"] }, 100] },
+              availableNumbers: { $subtract: ["$totalNumbers", { $add: ["$soldNumbers", "$reservedNumbers"] }] }
+            }
+          }
+        ],
+        { new: true }
+      );
+      
+      return updatedSnapshot;
+    } catch (error: any) {
+      console.error('Erro ao atualizar estatísticas da campanha:', error);
+      
+      // Se for erro de chave duplicada, tentar novamente após um pequeno delay
+      if (error.name === 'MongoServerError' && error.code === 11000) {
+        console.log('Erro de chave duplicada, tentando novamente após delay...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return this.updateCampaignStats(campaignId, payment);
       }
       
-      // Recalcular números disponíveis
-      snapshot.availableNumbers = snapshot.totalNumbers - snapshot.soldNumbers - snapshot.reservedNumbers;
-      
-      // Atualizar timestamp da última atualização
-      snapshot.lastUpdated = new Date();
-      
-      // Salvar alterações
-      await snapshot.save();
-      
-      return snapshot;
-    } catch (error) {
-      console.error('Erro ao atualizar estatísticas da campanha:', error);
       throw error;
     }
   }
@@ -66,39 +92,65 @@ class StatisticsRepository {
       // Obter ou criar o snapshot do dia atual
       const snapshot = await CreatorStatsHistory.getOrCreateTodaySnapshot(creatorId);
       
-      // Atualizar totais
-      snapshot.totalRevenue += payment.amount;
-      snapshot.totalNumbersSold += payment.numbersCount;
-      
-      // Atualizar contadores do período
-      snapshot.periodRevenue += payment.amount;
-      snapshot.periodNumbersSold += payment.numbersCount;
-      
       // Verificar se é um novo participante
       const isNewParticipant = await this.isNewParticipant(payment.campaignId, payment.userId);
-      if (isNewParticipant) {
-        snapshot.totalParticipants += 1;
-        snapshot.periodNewParticipants += 1;
-      }
       
-      // Atualizar timestamp da última atualização
-      snapshot.lastUpdated = new Date();
-      
-      // Atualizar distribuição de receita por dia da semana
+      // Obter o dia da semana para atualização da distribuição de receita
       const dayOfWeek = new Date().getDay();
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const day = dayNames[dayOfWeek] as keyof typeof snapshot.revenueByDayOfWeek;
-      snapshot.revenueByDayOfWeek[day] += payment.amount;
+      const day = dayNames[dayOfWeek];
       
-      // Atualizar lista de top campanhas
-      await this.updateTopCampaigns(snapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
+      // Construir o campo para atualização de receita por dia da semana
+      const revenueByDayField = `revenueByDayOfWeek.${day}`;
+      const updateObj: any = {
+        $inc: {
+          // Incrementar totais
+          totalRevenue: payment.amount,
+          totalNumbersSold: payment.numbersCount,
+          
+          // Incrementar contadores do período
+          periodRevenue: payment.amount,
+          periodNumbersSold: payment.numbersCount,
+          
+          // Incrementar novos participantes se aplicável
+          totalParticipants: isNewParticipant ? 1 : 0,
+          periodNewParticipants: isNewParticipant ? 1 : 0
+        },
+        $set: {
+          // Atualizar timestamp
+          lastUpdated: new Date()
+        }
+      };
       
-      // Salvar alterações
-      await snapshot.save();
+      // Adicionar incremento para o dia da semana específico
+      updateObj.$inc[revenueByDayField] = payment.amount;
       
-      return snapshot;
-    } catch (error) {
+      // Usar updateOne com operadores atômicos para evitar condições de corrida
+      await CreatorStatsHistory.updateOne(
+        { _id: snapshot._id },
+        updateObj,
+        { upsert: true }
+      );
+      
+      // Buscar o snapshot atualizado para atualizar a lista de top campanhas
+      const updatedSnapshot = await CreatorStatsHistory.findById(snapshot._id);
+      if (updatedSnapshot) {
+        // Atualizar lista de top campanhas
+        await this.updateTopCampaigns(updatedSnapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
+        await updatedSnapshot.save();
+      }
+      
+      return updatedSnapshot;
+    } catch (error: any) {
       console.error('Erro ao atualizar estatísticas do criador:', error);
+      
+      // Se for erro de chave duplicada, tentar novamente após um pequeno delay
+      if (error.name === 'MongoServerError' && error.code === 11000) {
+        console.log('Erro de chave duplicada, tentando novamente após delay...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return this.updateCreatorStats(creatorId, payment, campaignTitle);
+      }
+      
       throw error;
     }
   }
@@ -111,21 +163,8 @@ class StatisticsRepository {
       // Obter ou criar o snapshot do dia atual
       const snapshot = await ParticipantStatsHistory.getOrCreateTodaySnapshot(userId);
       
-      // Atualizar totais
-      snapshot.participationCount += 1;
-      snapshot.totalSpent += payment.amount;
-      snapshot.totalNumbersOwned += payment.numbersCount;
-      
-      // Atualizar contadores do período
-      snapshot.periodParticipations += 1;
-      snapshot.periodSpent += payment.amount;
-      snapshot.periodNumbersPurchased += payment.numbersCount;
-      
-      // Calcular valor médio do ticket
-      snapshot.avgTicketValue = snapshot.totalSpent / snapshot.participationCount;
-      
-      // Atualizar dados da participação mais recente
-      snapshot.lastParticipation = {
+      // Dados da participação mais recente
+      const lastParticipation = {
         campaignId: new mongoose.Types.ObjectId(payment.campaignId),
         campaignTitle,
         amount: payment.amount,
@@ -133,18 +172,54 @@ class StatisticsRepository {
         date: new Date()
       };
       
-      // Atualizar timestamp da última atualização
-      snapshot.lastUpdated = new Date();
+      // Usar updateOne com operadores atômicos para evitar condições de corrida
+      await ParticipantStatsHistory.updateOne(
+        { _id: snapshot._id },
+        {
+          $inc: {
+            // Atualizar totais
+            participationCount: 1,
+            totalSpent: payment.amount,
+            totalNumbersOwned: payment.numbersCount,
+            
+            // Atualizar contadores do período
+            periodParticipations: 1,
+            periodSpent: payment.amount,
+            periodNumbersPurchased: payment.numbersCount
+          },
+          $set: {
+            // Atualizar timestamp e dados da participação mais recente
+            lastUpdated: new Date(),
+            lastParticipation: lastParticipation
+          }
+        },
+        { upsert: true }
+      );
       
-      // Atualizar lista de top campanhas
-      await this.updateParticipantTopCampaigns(snapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
+      // Buscar o snapshot atualizado para recalcular campos derivados e atualizar top campanhas
+      const updatedSnapshot = await ParticipantStatsHistory.findById(snapshot._id);
+      if (updatedSnapshot) {
+        // Recalcular valor médio do ticket
+        updatedSnapshot.avgTicketValue = updatedSnapshot.totalSpent / updatedSnapshot.participationCount;
+        
+        // Atualizar lista de top campanhas
+        await this.updateParticipantTopCampaigns(updatedSnapshot, payment.campaignId, campaignTitle, payment.amount, payment.numbersCount);
+        
+        // Salvar alterações
+        await updatedSnapshot.save();
+      }
       
-      // Salvar alterações
-      await snapshot.save();
-      
-      return snapshot;
-    } catch (error) {
+      return updatedSnapshot;
+    } catch (error: any) {
       console.error('Erro ao atualizar estatísticas do participante:', error);
+      
+      // Se for erro de chave duplicada, tentar novamente após um pequeno delay
+      if (error.name === 'MongoServerError' && error.code === 11000) {
+        console.log('Erro de chave duplicada, tentando novamente após delay...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return this.updateParticipantStats(userId, payment, campaignTitle);
+      }
+      
       throw error;
     }
   }

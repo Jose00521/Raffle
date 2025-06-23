@@ -11,6 +11,7 @@ import { generateEntityCode } from "@/models/utils/idGenerator";
 import { v4 as uuidv4 } from 'uuid';
 import { SocketService } from "../lib/socket/SocketService";
 import { container } from "tsyringe";
+import { maskAddress, maskCPF, maskEmail, maskPhone, maskCEP} from "@/utils/maskUtils";
 
 export interface IPaymentRepository {
     createInitialPixPaymentAttempt(data: {
@@ -120,15 +121,15 @@ export class PaymentRepository implements IPaymentRepository {
                 paymentProcessor: gateway,
                 customerInfo: {
                     name: body.name,
-                    email: body.email,
-                    document: body.cpf,
-                    phone: body.phone,
+                    email: maskEmail(body.email),
+                    document: maskCPF(body.cpf),
+                    phone: maskPhone(body.phone),
                 },
                 billingInfo: {
-                    address: body.address.street,
+                    address: body.address.street && maskAddress(body.address.street),
                     city: body.address.city,
                     state: body.address.state,
-                    zipCode: body.address.zipCode,
+                    zipCode: body.address.zipCode && maskCEP(body.address.zipCode),
                 },
                 installments: body.creditCard?.installments,
                 // 🔑 Adiciona chave de idempotência se fornecida
@@ -140,7 +141,7 @@ export class PaymentRepository implements IPaymentRepository {
             payment.paymentCode = generateEntityCode(payment._id, 'PG');
             await payment.save();
 
-            console.log(`[PAYMENT_CREATED] ID: ${payment._id}, Key: ${idempotencyKey || 'N/A'}`);
+            console.log(`[PAYMENT_CREATED] ID: ${payment.paymentCode}, Key: ${idempotencyKey || 'N/A'}`);
 
             return createSuccessResponse(payment as IPayment, 'Pagamento criado com sucesso no banco de dados', 200);
 
@@ -183,7 +184,7 @@ export class PaymentRepository implements IPaymentRepository {
         try {
             const { externalId, paymentMethod, status, approvedAt } = data;
 
-            this.db.connect();
+            await this.db.connect();
 
             const payment = await Payment!.findOne({
                 $or: [
