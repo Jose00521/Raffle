@@ -1781,17 +1781,16 @@ const PremioItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: linear-gradient(to bottom, rgba(40, 48, 70, 0.85), rgba(30, 38, 60, 0.95));
+  background: white;
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(4px);
+  border-left: 3px solid #6a11cb;
+  box-shadow: 0 2px 6px rgba(106, 17, 203, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(106, 17, 203, 0.12);
   }
   
   @media (min-width: 768px) {
@@ -1803,17 +1802,16 @@ const PremioItem = styled.div`
 
 const PosicaoNumero = styled.div<{ $isExtra?: boolean }>`
   background: ${({ $isExtra }) => $isExtra ? 
-    'linear-gradient(135deg, #64748b, #475569)' : 
-    'linear-gradient(135deg, #f59e0b, #d97706)'
+    '#6a11cb' : 
+    '#6a11cb'
   };
   color: white;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.2rem 0.4rem;
   border-radius: 6px;
   min-width: 1.4rem;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   
   @media (min-width: 768px) {
     font-size: 0.7rem;
@@ -1825,8 +1823,7 @@ const PosicaoNumero = styled.div<{ $isExtra?: boolean }>`
 const PremioValor = styled.div`
   font-size: 0.7rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: #6a11cb;
   display: flex;
   flex-direction: column;
   
@@ -1838,7 +1835,7 @@ const PremioValor = styled.div`
 const PremioNome = styled.div`
   font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
   margin-top: 0.1rem;
   
   @media (min-width: 768px) {
@@ -1849,7 +1846,7 @@ const PremioNome = styled.div`
 const PremioTexto = styled.div`
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #666666;
   
   @media (min-width: 768px) {
     font-size: 0.7rem;
@@ -1858,15 +1855,12 @@ const PremioTexto = styled.div`
 
 // Componentes para a seção de prêmios com imagens
 const PremiosSecaoWrapper = styled.div`
-  background: linear-gradient(145deg, #1e293b 0%, #334155 50%, #475569 100%);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: white;
+  border: 1px solid rgba(106, 17, 203, 0.1);
   border-radius: 16px;
   padding: 1.25rem;
   margin: 1rem 0;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow: 0 4px 20px rgba(106, 17, 203, 0.08);
   position: relative;
   overflow: hidden;
   
@@ -1875,9 +1869,9 @@ const PremiosSecaoWrapper = styled.div`
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
   }
   
   @media (min-width: 768px) {
@@ -1892,7 +1886,7 @@ const PremiosSecaoHeader = styled.div`
   justify-content: space-between;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid rgba(106, 17, 203, 0.1);
   
   @media (max-width: 768px) {
     flex-direction: column;
@@ -1910,13 +1904,13 @@ const PremiosSecaoHeaderLeft = styled.div`
 const PremiosSecaoIcone = styled.div`
   width: 2.5rem;
   height: 2.5rem;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: rgba(106, 17, 203, 0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+  color: #6a11cb;
   
   @media (max-width: 768px) {
     width: 2rem;
@@ -1936,7 +1930,7 @@ const PremiosSecaoTitulo = styled.h3`
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
-  color: #f8fafc;
+  color: #333333;
   letter-spacing: -0.025em;
   line-height: 1.2;
 
@@ -1947,7 +1941,7 @@ const PremiosSecaoTitulo = styled.h3`
 
 const PremiosSecaoSubtitulo = styled.p`
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: #666666;
   margin: 0;
   font-weight: 500;
   
@@ -1975,11 +1969,11 @@ const PremiosImagensContainer = styled.div`
 const PremioImagemItem = styled.div`
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: white;
+  border: 1px solid rgba(106, 17, 203, 0.08);
   border-radius: 12px;
   padding: 1rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   gap: 1rem;
   position: relative;
   overflow: hidden;
@@ -1987,18 +1981,19 @@ const PremioImagemItem = styled.div`
   &::before {
     content: '';
     position: absolute;
-    top: 0;
     left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(to bottom, #6a11cb, #2575fc);
+    border-radius: 4px 0 0 4px;
   }
   
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(148, 163, 184, 0.2);
+    background: white;
+    border-color: rgba(106, 17, 203, 0.15);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px -5px rgba(106, 17, 203, 0.08);
   }
   
   @media (max-width: 640px) {
@@ -2013,20 +2008,14 @@ const PremioImagemWrapper = styled.div`
   height: 3.5rem;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 2px solid rgba(148, 163, 184, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.05);
+  background: #f0f2f5;
   
   &:hover {
     transform: scale(1.05);
-    box-shadow: 
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-color: rgba(148, 163, 184, 0.3);
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.1);
   }
   
   @media (min-width: 768px) {
@@ -2046,22 +2035,18 @@ const PosicaoBadge = styled.div`
   position: absolute;
   top: -6px;
   right: -6px;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #6a11cb;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 8px;
-  box-shadow: 
-    0 4px 6px -1px rgba(245, 158, 11, 0.4),
-    0 2px 4px -1px rgba(245, 158, 11, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(106, 17, 203, 0.2);
   min-width: 24px;
   text-align: center;
   z-index: 2;
   letter-spacing: -0.025em;
   line-height: 1;
-  backdrop-filter: blur(4px);
   
   @media (max-width: 640px) {
     font-size: 0.7rem;
@@ -2081,7 +2066,7 @@ const PremioImagemInfo = styled.div`
 const PremioImagemNome = styled.div`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: #333333;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2096,18 +2081,14 @@ const PremioImagemNome = styled.div`
 const PremioImagemValor = styled.div`
   font-size: 0.875rem;
   font-weight: 700;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-  padding: 0.375rem 0.75rem;
-  border-radius: 8px;
+  color: #6a11cb;
+  padding: 0.25rem 0;
   align-self: flex-start;
-  border: 1px solid rgba(245, 158, 11, 0.2);
   letter-spacing: -0.025em;
   line-height: 1;
   
   @media (max-width: 640px) {
     font-size: 0.8rem;
-    padding: 0.3rem 0.6rem;
   }
 `;
 
@@ -2115,7 +2096,7 @@ const PremioMaisItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(106, 17, 203, 0.03);
   border: 2px dashed rgba(148, 163, 184, 0.2);
   border-radius: 12px;
   padding: 1.5rem 1rem;
