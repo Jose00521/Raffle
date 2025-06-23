@@ -10,9 +10,10 @@ const DesktopContainer = styled.div`
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
   border: 1px solid rgba(16, 185, 129, 0.15);
   border-radius: 16px;
-  padding: 2rem;
-  margin: 1.5rem 0;
+  padding: 2.25rem 2rem;
+  margin: 1.75rem 0;
   text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   
   @media (max-width: 768px) {
     display: none;
@@ -20,21 +21,22 @@ const DesktopContainer = styled.div`
 `;
 
 const DesktopTitle = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #059669;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
   line-height: 1.2;
 
   i {
     color: #059669;
     flex-shrink: 0;
+    font-size: 1.1em;
   }
 `;
 
@@ -42,42 +44,54 @@ const DesktopLogos = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3rem;
-  margin-bottom: 1.5rem;
+  gap: 4rem;
+  margin-bottom: 2rem;
 `;
 
 const DesktopLogoItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
   min-width: 0;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
 
   img {
-    width: 75px;
-    height: 75px;
+    width: 80px;
+    height: 80px;
     flex-shrink: 0;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1));
   }
   
   /* Caixa um pouco maior */
   &:nth-child(2) img {
-    width: 85px;
-    height: 85px;
+    width: 90px;
+    height: 90px;
   }
 `;
 
 const DesktopSSLIcon = styled.div`
-  width: 75px;
-  height: 75px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.6rem;
+  font-size: 1.75rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35);
+  }
 
   i {
     color: white;
@@ -85,7 +99,7 @@ const DesktopSSLIcon = styled.div`
 `;
 
 const DesktopLogoLabel = styled.div`
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #1e293b;
   text-align: center;
@@ -95,12 +109,13 @@ const DesktopLogoLabel = styled.div`
     display: block;
     line-height: 1.2;
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.03em;
   }
 
   .sub-text {
     color: #059669;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     display: block;
     line-height: 1.2;
     font-weight: 500;
@@ -108,19 +123,19 @@ const DesktopLogoLabel = styled.div`
 `;
 
 const DesktopDetails = styled.div`
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #475569;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 500;
   max-width: 800px;
-  margin: 0 auto;
+  margin: 0 auto 1.5rem;
 
   .detail-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
 
     &:last-child {
       margin-bottom: 0;
@@ -128,11 +143,12 @@ const DesktopDetails = styled.div`
 
     strong {
       color: #1e293b;
+      font-weight: 600;
     }
     
     .check-icon {
       color: #059669;
-      font-size: 0.8em;
+      font-size: 0.9em;
       margin-top: 0.125rem;
       flex-shrink: 0;
     }
@@ -142,18 +158,26 @@ const DesktopDetails = styled.div`
 const DesktopTrustBadge = styled.div`
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.5rem;
   background: rgba(5, 150, 105, 0.1);
   color: #059669;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.7rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   border: 1px solid rgba(5, 150, 105, 0.2);
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.15);
+  }
   
   i {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
+    color: #10b981;
   }
 `;
 
@@ -161,10 +185,11 @@ const DesktopTrustBadge = styled.div`
 const MobileContainer = styled.div`
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
   border: 1px solid rgba(16, 185, 129, 0.15);
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 1rem 0;
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  margin: 1.25rem 0;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   
   @media (min-width: 769px) {
     display: none;
@@ -172,21 +197,22 @@ const MobileContainer = styled.div`
 `;
 
 const MobileTitle = styled.div`
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #059669;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
+  gap: 0.5rem;
   line-height: 1.3;
 
   i {
     color: #059669;
     flex-shrink: 0;
+    font-size: 1.1em;
   }
 `;
 
@@ -194,8 +220,8 @@ const MobileLogos = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-around;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
   padding: 0 0.25rem;
 `;
 
@@ -203,36 +229,37 @@ const MobileLogoItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.375rem;
   min-width: 0;
   flex: 1;
-  max-width: 65px;
+  max-width: 70px;
 
   img {
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
   
   /* Caixa um pouco maior no mobile */
   &:nth-child(2) img {
-    width: 50px;
-    height: 50px;
+    width: 54px;
+    height: 54px;
   }
 `;
 
 const MobileSSLIcon = styled.div`
-  width: 45px;
-  height: 45px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
 
   i {
     color: white;
@@ -240,7 +267,7 @@ const MobileSSLIcon = styled.div`
 `;
 
 const MobileLogoLabel = styled.div`
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: #1e293b;
   text-align: center;
@@ -249,31 +276,33 @@ const MobileLogoLabel = styled.div`
 
   .main-text {
     display: block;
-    line-height: 1;
+    line-height: 1.1;
     font-weight: 700;
     margin-bottom: 0.125rem;
+    letter-spacing: 0.02em;
   }
 
   .sub-text {
     color: #059669;
-    font-size: 0.45rem;
+    font-size: 0.5rem;
     display: block;
-    line-height: 1;
+    line-height: 1.1;
     font-weight: 500;
   }
 `;
 
 const MobileDetails = styled.div`
-  font-size: 0.575rem;
+  font-size: 0.6rem;
   color: #475569;
   line-height: 1.6;
   font-weight: 500;
+  margin-bottom: 0.75rem;
 
   .detail-item {
-    margin-bottom: 0.4375rem;
+    margin-bottom: 0.5rem;
     display: flex;
     align-items: flex-start;
-    gap: 0.1875rem;
+    gap: 0.25rem;
 
     &:last-child {
       margin-bottom: 0;
@@ -281,11 +310,12 @@ const MobileDetails = styled.div`
 
     strong {
       color: #1e293b;
+      font-weight: 600;
     }
     
     .check-icon {
       color: #059669;
-      font-size: 0.75em;
+      font-size: 0.8em;
       margin-top: 0.0625rem;
       flex-shrink: 0;
     }
@@ -295,18 +325,20 @@ const MobileDetails = styled.div`
 const MobileTrustBadge = styled.div`
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   background: rgba(5, 150, 105, 0.1);
   color: #059669;
-  padding: 0.1875rem 0.375rem;
-  border-radius: 6px;
-  font-size: 0.55rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.575rem;
   font-weight: 600;
-  margin-top: 0.375rem;
+  margin-top: 0.5rem;
   border: 1px solid rgba(5, 150, 105, 0.2);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
   
   i {
-    font-size: 0.45rem;
+    font-size: 0.5rem;
+    color: #10b981;
   }
 `;
 

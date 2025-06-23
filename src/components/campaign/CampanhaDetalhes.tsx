@@ -13,6 +13,7 @@ import { INumberPackageCampaign, useCampaignSelection } from '@/hooks/useCampaig
 import { toast } from 'react-toastify';
 import QuickSignupModal from '@/components/campaign/QuickSignupModal';
 import { formatCurrency } from '@/utils/formatNumber';
+import { CertificationSectionCompact } from '../ui/CertificationSection';
 
 
 // Atualizando a interface IRifa para incluir as propriedades extras
@@ -825,6 +826,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               Participar agora
               <i className="fas fa-chevron-right"></i>
             </BotaoParticipar>
+            <CertificationSectionCompact />
             
             {/* Informação de segurança */}
             <SegurancaInfo onClick={() => setShowSecurityModal(true)}>
@@ -1108,6 +1110,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 Participar agora
                 <i className="fas fa-chevron-right"></i>
               </BotaoParticipar>
+              <CertificationSectionCompact />
               
               {/* Informação de segurança */}
               <SegurancaInfo onClick={() => setShowSecurityModal(true)}>

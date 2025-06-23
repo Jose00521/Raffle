@@ -1079,6 +1079,9 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                 height={80}
                 className="logo-image"
               />
+
+
+              
               {/* <div className="logo-text">Autorizado<br/>Loteria Federal</div> */}
             </LogoItem>
             

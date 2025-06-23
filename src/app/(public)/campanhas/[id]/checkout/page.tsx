@@ -110,7 +110,7 @@ const TopSecurityBar = styled.div`
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(120%);
   border-bottom: 1px solid rgba(226, 232, 240, 0.3);
-  padding: 2rem 0;
+  padding: 1.5rem 0;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -130,18 +130,39 @@ const TopSecurityBar = styled.div`
     background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.4) 50%, transparent 100%);
     border-radius: 1px;
   }
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem 0;
+    
+    &::after {
+      width: 50px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem 0;
+    
+    &::after {
+      width: 40px;
+      height: 1.5px;
+    }
+  }
 `;
 
 const TopSecurityContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   
   @media (max-width: 768px) {
-    padding: 0 1rem;
+    padding: 0 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 0.5rem;
   }
 `;
 
@@ -179,20 +200,39 @@ const TopSecurityBadge = styled.div`
   
   @media (max-width: 768px) {
     font-size: 0.8rem;
-    padding: 0.625rem 1.25rem;
+    padding: 0.625rem 1rem;
     gap: 0.5rem;
+    
+    i {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
+    border-radius: 10px;
+    
+    i {
+      font-size: 0.9rem;
+    }
+    
+    &::before {
+      border-radius: 10px;
+    }
   }
 `;
 
 const ContentWrapper = styled.div`
   position: relative;
   z-index: 2;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
   
   @media (max-width: 768px) {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0rem;
   }
 `;
 
@@ -207,7 +247,7 @@ const CheckoutHeader = styled.div`
 `;
 
 const HeaderTitle = styled.h1`
-  font-size: 2.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 1.25rem;
@@ -229,7 +269,7 @@ const HeaderTitle = styled.h1`
   }
   
   @media (max-width: 768px) {
-    font-size: 2.25rem;
+    font-size: 1.8rem;
     
     &::after {
       width: 50px;
@@ -238,7 +278,9 @@ const HeaderTitle = styled.h1`
   }
   
   @media (max-width: 480px) {
-    font-size: 1.875rem;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
     
     &::after {
       width: 40px;
@@ -260,7 +302,9 @@ const HeaderSubtitle = styled.p`
   }
   
   @media (max-width: 480px) {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    padding: 0 0.75rem;
+    line-height: 1.5;
   }
 `;
 
@@ -283,12 +327,14 @@ const ProgressSteps = styled.div`
   
   @media (max-width: 768px) {
     margin-bottom: 2rem;
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem 1rem;
     border-radius: 12px;
   }
   
   @media (max-width: 480px) {
-    padding: 1rem;
+    padding: 1rem 0.5rem;
+    margin: 0 0.5rem 1.75rem 0.5rem;
+    border-radius: 10px;
   }
 `;
 
@@ -299,7 +345,7 @@ const ProgressStep = styled.div<{ $active?: boolean; $completed?: boolean }>`
     $completed ? '#10b981' : $active ? '#3b82f6' : '#64748b'
   };
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   
   &:not(:last-child)::after {
     content: '';
@@ -312,11 +358,20 @@ const ProgressStep = styled.div<{ $active?: boolean; $completed?: boolean }>`
   }
   
   @media (max-width: 768px) {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     
     &:not(:last-child)::after {
-      width: 40px;
+      width: 30px;
       margin: 0 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.65rem;
+    
+    &:not(:last-child)::after {
+      width: 20px;
+      margin: 0 0.25rem;
     }
   }
 `;
@@ -360,13 +415,13 @@ const MainContent = styled.div`
   align-items: start;
   
   @media (max-width: 1200px) {
-    grid-template-columns: 1fr 500px;
-    gap: 2.5rem;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
   }
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 `;
 
@@ -374,7 +429,7 @@ const PaymentSection = styled.div`
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px) saturate(120%);
   border-radius: 20px;
-  padding: 3rem;
+  padding: 2.5rem;
   box-shadow: 
     0 24px 48px rgba(0, 0, 0, 0.08),
     0 8px 16px rgba(0, 0, 0, 0.04),
@@ -427,7 +482,7 @@ const PaymentSection = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 2.5rem;
+    padding: 1.5rem 0.8rem;
     border-radius: 16px;
     
     &::before {
@@ -441,8 +496,9 @@ const PaymentSection = styled.div`
   }
   
   @media (max-width: 480px) {
-    padding: 2rem;
+    padding: 1.5rem 1rem;
     border-radius: 12px;
+    margin: 0 0.5rem;
     
     &::before {
       border-radius: 12px 12px 0 0;
@@ -611,7 +667,7 @@ const SecurityButton = styled.button`
 const PixContainer = styled.div`
   background: #fafbfc;
   border-radius: 16px;
-  padding: 2.5rem 2rem;
+  padding: 1.75rem 1.5rem;
   text-align: center;
   margin-bottom: 2rem;
   border: 2px solid #f1f5f9;
@@ -623,21 +679,26 @@ const PixContainer = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
     border-radius: 12px;
   }
   
   @media (max-width: 480px) {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.75rem;
+    margin-bottom: 1.5rem;
   }
 `;
 
 const QRSection = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   align-items: center;
   justify-content: center;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const QRCodeWrapper = styled.div`
@@ -645,9 +706,9 @@ const QRCodeWrapper = styled.div`
   backdrop-filter: blur(15px) saturate(120%);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 16px;
-  padding: 2.5rem;
+  padding: 2rem;
   display: inline-block;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   transition: all 0.3s ease;
   box-shadow: 
     0 16px 32px rgba(0, 0, 0, 0.06),
@@ -686,8 +747,9 @@ const QRCodeWrapper = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 2rem;
+    padding: 1.75rem;
     border-radius: 14px;
+    margin-bottom: 1.25rem;
     
     &::before {
       border-radius: 14px;
@@ -695,8 +757,9 @@ const QRCodeWrapper = styled.div`
   }
   
   @media (max-width: 480px) {
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 12px;
+    margin-bottom: 1rem;
     
     &::before {
       border-radius: 12px;
@@ -741,7 +804,11 @@ const QRPlaceholder = styled.div`
       font-size: 0.8rem;
       bottom: 0.8rem;
       letter-spacing: 1px;
-    }
+    }s
+  }
+
+  span {
+    font-size: 0.5rem;
   }
   
   @media (max-width: 480px) {
@@ -804,6 +871,11 @@ const PixCodeLabel = styled.p`
     font-size: 1rem;
     margin-bottom: 0.75rem;
   }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    margin-bottom: 0.625rem;
+  }
 `;
 
 const PixCodeContainer = styled.div`
@@ -820,7 +892,13 @@ const PixCodeContainer = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 1rem 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem 0.625rem;
+    border-radius: 10px;
   }
 `;
 
@@ -855,7 +933,12 @@ const PixCode = styled.div`
   @media (max-width: 768px) {
     font-size: 0.75rem;
     max-height: 80px;
-    padding: 0.75rem;
+    padding: 0.75rem 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+    padding: 0.625rem 0.5rem;
   }
 `;
 
@@ -867,7 +950,7 @@ const CopyButton = styled.button<{ $copied?: boolean }>`
   };
   color: white;
   border: none;
-  padding: 1.25rem 2rem;
+  padding: 1.125rem 1.75rem;
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -947,13 +1030,20 @@ const CopyButton = styled.button<{ $copied?: boolean }>`
   }
   
   @media (max-width: 768px) {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     font-size: 0.9rem;
+    border-radius: 10px;
     
     .copy-icon, .success-icon {
       width: 1rem;
       height: 1rem;
     }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.875rem 1rem;
+    font-size: 0.85rem;
+    gap: 0.5rem;
   }
 `;
 
@@ -965,10 +1055,17 @@ const HowToPaySection = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   margin-top: 2rem;
+  overflow: hidden; /* Evita que o conteúdo ultrapasse os limites */
   
   @media (max-width: 768px) {
-    padding: 1.25rem;
+    padding: 1.25rem 1rem;
     margin-top: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem 0.75rem;
+    margin-top: 1.25rem;
+    border-radius: 10px;
   }
 `;
 
@@ -999,6 +1096,8 @@ const StepItem = styled.div`
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
   
   &:hover {
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
@@ -1007,8 +1106,14 @@ const StepItem = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 0.75rem;
-    gap: 0.6rem;
+    padding: 0.75rem 0.625rem;
+    gap: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.625rem 0.5rem;
+    border-radius: 6px;
+    gap: 0.375rem;
   }
 `;
 
@@ -1037,6 +1142,17 @@ const StepIconWrapper = styled.div`
       height: 0.75rem;
     }
   }
+  
+  @media (max-width: 480px) {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 5px;
+    
+    svg {
+      width: 0.7rem;
+      height: 0.7rem;
+    }
+  }
 `;
 
 const StepContent = styled.div`
@@ -1044,6 +1160,7 @@ const StepContent = styled.div`
   flex-direction: column;
   flex: 1;
   text-align: left;
+  min-width: 0; /* Importante para permitir que o conteúdo seja reduzido */
 `;
 
 const StepNumber = styled.div`
@@ -1083,9 +1200,18 @@ const StepDescription = styled.div`
   font-size: 0.8rem;
   color: #64748b;
   line-height: 1.45;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
   
   @media (max-width: 768px) {
     font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+    line-height: 1.35;
   }
 `;
 
@@ -1098,115 +1224,187 @@ const StepHeader = styled.div`
 
 const OrderSummary = styled.div`
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  height: fit-content;
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 2rem;
   position: sticky;
   top: 2rem;
+  animation: ${slideInRight} 0.8s ease-out;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    border-radius: 20px 20px 0 0;
+  }
   
   @media (max-width: 1024px) {
-    position: static;
+    position: relative;
+    top: 0;
+    margin-bottom: 2rem;
   }
   
   @media (max-width: 768px) {
-    padding: 1.25rem;
-    border-radius: 8px;
+    padding: 1.5rem 0.8rem;
+    border-radius: 16px;
+    
+    &::before {
+      border-radius: 16px 16px 0 0;
+      height: 3px;
+    }
   }
 `;
 
 const SummaryTitle = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin-bottom: 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
+  position: relative;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
   
   i {
-    color: #64748b;
-    font-size: 1rem;
+    color: #059669;
+    font-size: 1.125rem;
   }
   
   @media (max-width: 768px) {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.625rem;
+    
+    i {
+      font-size: 1rem;
+    }
   }
 `;
 
 // Seção de informações do usuário
 const UserInfoSection = styled.div`
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 12px;
+  padding: 1.25rem;
   margin-bottom: 1.5rem;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: 10px;
+  }
 `;
 
 const UserInfoTitle = styled.h4`
-  color: #475569;
   font-size: 0.875rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const UserInfoGrid = styled.div`
-  display: grid;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 `;
 
 const UserInfoItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
+  gap: 0.625rem;
+  font-size: 0.9rem;
+  color: #334155;
   
   i {
-    color: #94a3b8;
-    width: 14px;
+    color: #059669;
+    font-size: 0.875rem;
+    width: 1rem;
     text-align: center;
-    font-size: 0.75rem;
   }
   
   strong {
-    font-weight: 500;
+    font-weight: 600;
     color: #1e293b;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    gap: 0.5rem;
+    
+    i {
+      font-size: 0.8rem;
+    }
   }
 `;
 
 // Seção de informações da campanha melhorada
 const CampaignInfo = styled.div`
   margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.25rem;
+    border-radius: 10px;
+  }
 `;
 
 const CampaignInfoHeader = styled.div`
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
   
   @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 1rem;
+    padding: 0.875rem;
+    gap: 0.75rem;
   }
 `;
 
 const CampaignImageContainer = styled.div`
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
+  width: 70px;
+  height: 70px;
   border-radius: 8px;
   overflow: hidden;
+  flex-shrink: 0;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
   
   @media (max-width: 480px) {
-    align-self: flex-start;
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
   }
 `;
 
@@ -1224,7 +1422,7 @@ const CampaignImagePlaceholder = styled.div`
   align-items: center;
   justify-content: center;
   color: #94a3b8;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 `;
 
 const CampaignDetails = styled.div`
@@ -1233,322 +1431,84 @@ const CampaignDetails = styled.div`
 `;
 
 const CampaignTitle = styled.h4`
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.25rem 0;
-  line-height: 1.4;
-  
-  @media (max-width: 768px) {
-    font-size: 0.95rem;
-  }
-`;
-
-const CampaignMeta = styled.div`
-  color: #64748b;
-    font-size: 0.8rem;
+  color: #1e293b;
+  margin-bottom: 0.375rem;
   line-height: 1.3;
-  margin-bottom: 0.75rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+`;
+
+const CampaignMeta = styled.div`
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+    -webkit-line-clamp: 1;
+  }
 `;
 
 const CampaignStats = styled.div`
   display: flex;
-  gap: 1rem;
-  
-  @media (max-width: 480px) {
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 `;
 
 const CampaignStat = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.375rem;
   font-size: 0.75rem;
   color: #64748b;
-  white-space: nowrap;
   
   i {
-    color: #94a3b8;
+    color: #059669;
     font-size: 0.7rem;
   }
   
   strong {
-    color: #1e293b;
-    font-weight: 500;
+    font-weight: 600;
+    color: #334155;
   }
 `;
 
 const PurchaseDetails = styled.div`
-  margin-bottom: 2rem;
-`;
-
-const ComboCard = styled.div`
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-  border: 1px solid #bbf7d0;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #22c55e, transparent);
-    opacity: 0.6;
-  }
-`;
-
-const ComboHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-`;
-
-const ComboTitle = styled.h4`
-  color: #166534;
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const ComboBadges = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const ComboBadge = styled.span`
-  background: #22c55e;
-  color: white;
-  padding: 0.375rem 0.875rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-`;
-
-const DiscountBadge = styled.span`
-  background: #f59e0b;
-  color: white;
-  padding: 0.375rem 0.875rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
-`;
-
-const ComboMainInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1.25rem;
-  padding: 1rem;
   background: white;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
   
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+  @media (max-width: 768px) {
+    margin-bottom: 1.25rem;
   }
-`;
-
-const ComboInfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  flex: 1;
-  
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    width: 100%;
-  }
-`;
-
-const ComboDetailItem = styled.div`
-  text-align: center;
-`;
-
-const ComboDetailLabel = styled.div`
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 500;
-  margin-bottom: 0.375rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const ComboDetailValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  
-  @media (max-width: 480px) {
-    font-size: 1.25rem;
-  }
-`;
-
-const ComboSavings = styled.div`
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-  border: 1px solid #22c55e;
-  border-radius: 12px;
-  padding: 1rem;
-  text-align: center;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
-  
-  &::before {
-    content: '💰';
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    border: 2px solid #22c55e;
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
-  }
-`;
-
-const ComboSavingsText = styled.div`
-  font-size: 0.875rem;
-  color: #166534;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  margin-top: 0.5rem;
-`;
-
-const ComboSavingsValue = styled.div`
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #15803d;
 `;
 
 const RegularDetails = styled.div`
-  /* Estilos para compra regular (não combo) */
-`;
-
-const ComboBenefits = styled.div`
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-`;
-
-const BenefitsTitle = styled.h5`
-  color: #166534;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem 0;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const BenefitsList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const BenefitItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: #166534;
-  font-weight: 500;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
   
-  &::before {
-    content: '✨';
-    font-size: 1rem;
-  }
-`;
-
-const ComboComparison = styled.div`
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.1);
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: center;
-  }
-`;
-
-const ComparisonItem = styled.div<{ $strikethrough?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-`;
-
-const ComparisonLabel = styled.div`
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const ComparisonValue = styled.div<{ $strikethrough?: boolean }>`
-  font-size: 1rem;
-  font-weight: 700;
-  color: ${({ $strikethrough }) => $strikethrough ? '#ef4444' : '#059669'};
-  text-decoration: ${({ $strikethrough }) => $strikethrough ? 'line-through' : 'none'};
-  opacity: ${({ $strikethrough }) => $strikethrough ? '0.7' : '1'};
-`;
-
-const ComparisonArrow = styled.div`
-  color: #059669;
-  font-size: 1.5rem;
-  font-weight: 700;
-  
-  @media (max-width: 480px) {
-    transform: rotate(90deg);
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 0.625rem;
+    border-radius: 10px;
   }
 `;
 
@@ -1556,79 +1516,322 @@ const DetailRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #334155;
+  padding: 0.5rem 0;
+  
+  &:not(:last-child) {
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 0.75rem;
+  }
   
   &:last-child {
-    border-bottom: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: #1e293b;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 2px solid #3b82f6;
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    
+    &:not(:last-child) {
+      padding-bottom: 0.625rem;
+    }
+    
+    &:last-child {
+      padding-top: 0.625rem;
+    }
   }
 `;
 
-const DetailLabel = styled.span`
-  color: #7f8c8d;
+const DetailLabel = styled.div`
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const DetailValue = styled.div`
+  font-weight: 600;
+  color: #1e293b;
+`;
+
+const TotalValue = styled.div`
+  font-weight: 700;
+  color: #059669;
+  font-size: 1.1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const ComboCard = styled.div`
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  
+  @media (max-width: 768px) {
+    border-radius: 10px;
+  }
+`;
+
+const ComboHeader = styled.div`
+  background: #10b981;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.875rem;
+  }
+`;
+
+const ComboTitle = styled.h4`
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+`;
+
+const ComboBadges = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const ComboBadge = styled.span`
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+`;
+
+const ComboMainInfo = styled.div`
+  padding: 1rem;
+  border-bottom: 1px dashed #d1fae5;
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+  }
+`;
+
+const ComboInfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
+`;
+
+const ComboDetailItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const ComboDetailLabel = styled.div`
+  font-size: 0.75rem;
+  color: #059669;
   font-weight: 500;
   
   @media (max-width: 768px) {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
   }
 `;
 
-const DetailValue = styled.span`
-  color: #2c3e50;
+const ComboDetailValue = styled.div`
+  font-size: 0.95rem;
   font-weight: 600;
+  color: #1e293b;
   
   @media (max-width: 768px) {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 `;
 
-const TotalValue = styled.span`
+const ComboComparison = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #ecfdf5;
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.875rem;
+    gap: 0.75rem;
+  }
+`;
+
+const ComparisonItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const ComparisonLabel = styled.div`
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+  
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+  }
+`;
+
+const ComparisonValue = styled.div<{ $strikethrough?: boolean }>`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: ${props => props.$strikethrough ? '#94a3b8' : '#059669'};
+  text-decoration: ${props => props.$strikethrough ? 'line-through' : 'none'};
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const ComparisonArrow = styled.div`
   color: #059669;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 300;
   
   @media (max-width: 768px) {
-    font-size: 1.1rem;
+    font-size: 1.125rem;
+  }
+`;
+
+const ComboSavings = styled.div`
+  background: #dcfce7;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.875rem;
+  }
+`;
+
+const ComboSavingsText = styled.div`
+  font-size: 0.75rem;
+  color: #059669;
+  font-weight: 500;
+  
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+  }
+`;
+
+const ComboSavingsValue = styled.div`
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #059669;
+  
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+`;
+
+const ComboBenefits = styled.div`
+  padding: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+  }
+`;
+
+const BenefitsTitle = styled.h5`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    margin-bottom: 0.625rem;
+  }
+`;
+
+const BenefitsList = styled.ul`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.375rem;
+    padding-left: 1rem;
+  }
+`;
+
+const BenefitItem = styled.li`
+  font-size: 0.8rem;
+  color: #334155;
+  position: relative;
+  
+  &::before {
+    content: '✓';
+    color: #059669;
+    position: absolute;
+    left: -1.25rem;
+    font-weight: 600;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+    
+    &::before {
+      left: -1rem;
+    }
   }
 `;
 
 const SupportSection = styled.div`
-  background: rgba(248, 250, 252, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  padding: 2rem;
-  text-align: center !important;
-  justify-content: center !important;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-      rgba(16, 185, 129, 0.02) 0%, 
-      rgba(59, 130, 246, 0.02) 100%
-    );
-    pointer-events: none;
-  }
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
   
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 
-      0 8px 25px rgba(31, 38, 135, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: 10px;
   }
 `;
 
@@ -1712,47 +1915,70 @@ const SupportButton = styled.button`
   }
 `;
 
-const QRToggleButton = styled.button<{ $expanded?: boolean }>`
+const QRToggleButton = styled.button<{ $expanded: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.1);
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
+  padding: 1.25rem 1.5rem;
   font-weight: 600;
   color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1.5rem;
+  margin-bottom: ${({ $expanded }) => ($expanded ? '1.5rem' : '0')};
   
   &:hover {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
     transform: translateY(-1px);
   }
   
   .toggle-icon {
-    transition: transform 0.3s ease;
-    transform: ${({ $expanded }) => 
-      $expanded ? 'rotate(180deg)' : 'rotate(0deg)'
-    };
+    transition: transform 0.2s ease;
+    transform: ${({ $expanded }) => ($expanded ? 'rotate(180deg)' : 'rotate(0)')};
+    font-size: 0.875rem;
   }
   
   @media (max-width: 768px) {
-    padding: 0.875rem 1.25rem;
-    font-size: 0.85rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    margin-top: 1.25rem;
+    margin-bottom: ${({ $expanded }) => ($expanded ? '1.25rem' : '0')};
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.875rem 1rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    margin-bottom: ${({ $expanded }) => ($expanded ? '1rem' : '0')};
+    
+    i {
+      font-size: 0.875rem;
+    }
   }
 `;
 
 const QRCollapseContent = styled.div<{ $expanded: boolean }>`
+  max-height: ${({ $expanded }) => ($expanded ? '1000px' : '0')};
+  opacity: ${({ $expanded }) => ($expanded ? '1' : '0')};
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: ${({ $expanded }) => $expanded ? '800px' : '0'};
-  opacity: ${({ $expanded }) => $expanded ? '1' : '0'};
-  margin-bottom: ${({ $expanded }) => $expanded ? '1.5rem' : '0'};
+  transition: all 0.3s ease;
+  transform: ${({ $expanded }) => ($expanded ? 'translateY(0)' : 'translateY(-20px)')};
+  margin-bottom: ${({ $expanded }) => ($expanded ? '1.5rem' : '0')};
+  
+  @media (max-width: 768px) {
+    margin-bottom: ${({ $expanded }) => ($expanded ? '1.25rem' : '0')};
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: ${({ $expanded }) => ($expanded ? '1rem' : '0')};
+  }
 `;
 
 const LoadingOverlay = styled.div`
@@ -2092,7 +2318,6 @@ function CheckoutContent() {
                     </StepIconWrapper>
                     <StepContent>
                       <StepHeader>
-                        <StepNumber>1</StepNumber>
                         <StepTitle>Acesse o aplicativo do seu banco</StepTitle>
                       </StepHeader>
                       <StepDescription>
@@ -2110,7 +2335,6 @@ function CheckoutContent() {
                     </StepIconWrapper>
                     <StepContent>
                       <StepHeader>
-                        <StepNumber>2</StepNumber>
                         <StepTitle>Localize a opção PIX</StepTitle>
                       </StepHeader>
                       <StepDescription>
@@ -2128,7 +2352,6 @@ function CheckoutContent() {
                     </StepIconWrapper>
                     <StepContent>
                       <StepHeader>
-                        <StepNumber>3</StepNumber>
                         <StepTitle>Escaneie o QR Code ou cole o código PIX</StepTitle>
                       </StepHeader>
                       <StepDescription>
@@ -2147,7 +2370,6 @@ function CheckoutContent() {
                     </StepIconWrapper>
                     <StepContent>
                       <StepHeader>
-                        <StepNumber>4</StepNumber>
                         <StepTitle>Confirme os dados e finalize o pagamento</StepTitle>
                       </StepHeader>
                       <StepDescription>
@@ -2166,12 +2388,12 @@ function CheckoutContent() {
                     </StepIconWrapper>
                     <StepContent>
                       <StepHeader>
-                        <StepNumber>5</StepNumber>
                         <StepTitle>Aguarde a confirmação e seus números</StepTitle>
                       </StepHeader>
                       <StepDescription>
                         Após o pagamento, você receberá um e-mail de confirmação com seus números da sorte em até 5 minutos. 
                         Você também pode acompanhar sua participação na área "Meus Números" do site.
+                        <br />
                         <strong>Boa sorte! 🍀</strong>
                       </StepDescription>
                     </StepContent>
@@ -2225,10 +2447,10 @@ function CheckoutContent() {
                     </CampaignImageContainer>
                     
                     <CampaignDetails>
-                  <CampaignTitle>{campanha.title}</CampaignTitle>
-                  <CampaignMeta>
+                      <CampaignTitle>{campanha.title}</CampaignTitle>
+                      <CampaignMeta>
                         {campanha.description}
-                  </CampaignMeta>
+                      </CampaignMeta>
                       <CampaignStats>
                         {/* <CampaignStat>
                           <i className="fas fa-ticket-alt" />
@@ -2263,67 +2485,67 @@ function CheckoutContent() {
                         </ComboBadges>
                       </ComboHeader>
                       
-                                             <ComboMainInfo>
-                         <ComboInfoGrid>
-                           <ComboDetailItem>
-                             <ComboDetailLabel>Números</ComboDetailLabel>
-                             <ComboDetailValue>{checkoutData.campaignSelection.quantity}</ComboDetailValue>
-                           </ComboDetailItem>
-                           <ComboDetailItem>
-                             <ComboDetailLabel>Valor por Número</ComboDetailLabel>
-                             <ComboDetailValue>
-                               {formatCurrency(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity)}
-                             </ComboDetailValue>
-                           </ComboDetailItem>
-                         </ComboInfoGrid>
-                       </ComboMainInfo>
+                      <ComboMainInfo>
+                        <ComboInfoGrid>
+                          <ComboDetailItem>
+                            <ComboDetailLabel>Números</ComboDetailLabel>
+                            <ComboDetailValue>{checkoutData.campaignSelection.quantity}</ComboDetailValue>
+                          </ComboDetailItem>
+                          <ComboDetailItem>
+                            <ComboDetailLabel>Valor por Número</ComboDetailLabel>
+                            <ComboDetailValue>
+                              {formatCurrency(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity)}
+                            </ComboDetailValue>
+                          </ComboDetailItem>
+                        </ComboInfoGrid>
+                      </ComboMainInfo>
                       
-                                             {(() => {
-                         const regularPrice = (checkoutData.campaignSelection.individualNumberPrice || 0) * checkoutData.campaignSelection.quantity;
-                         const comboPrice = checkoutData.campaignSelection.totalPrice || 0;
-                         const savings = regularPrice - comboPrice;
-                         const savingsPercentage = regularPrice > 0 ? Math.round((savings / regularPrice) * 100) : 0;
-                         
-                         return savings > 0 && (
-                           <>
-                             <ComboComparison>
-                               <ComparisonItem>
-                                 <ComparisonLabel>Preço Normal</ComparisonLabel>
-                                 <ComparisonValue $strikethrough>
-                                   {formatCurrency(regularPrice)}
-                                 </ComparisonValue>
-                               </ComparisonItem>
-                               <ComparisonArrow>→</ComparisonArrow>
-                               <ComparisonItem>
-                                 <ComparisonLabel>Preço do Combo</ComparisonLabel>
-                                 <ComparisonValue>
-                                   {formatCurrency(comboPrice)}
-                                 </ComparisonValue>
-                               </ComparisonItem>
-                             </ComboComparison>
-                             
-                             <ComboSavings>
-                               <ComboSavingsText>Você está economizando</ComboSavingsText>
-                               <ComboSavingsValue>
-                                 {formatCurrency(savings)} ({savingsPercentage}% OFF)
-                               </ComboSavingsValue>
-                             </ComboSavings>
-                           </>
-                         );
-                       })()}
-                       
-                       <ComboBenefits>
-                         <BenefitsTitle>🎁 Vantagens do Combo</BenefitsTitle>
-                         <BenefitsList>
-                           <BenefitItem>Preço especial por número</BenefitItem>
-                           <BenefitItem>Mais chances de ganhar</BenefitItem>
-                           <BenefitItem>Melhor custo-benefício</BenefitItem>
-                           {checkoutData.campaignSelection.quantity >= 10 && (
-                             <BenefitItem>Desconto exclusivo para combos grandes</BenefitItem>
-                           )}
-                         </BenefitsList>
-                       </ComboBenefits>
-                     </ComboCard>
+                      {(() => {
+                        const regularPrice = (checkoutData.campaignSelection.individualNumberPrice || 0) * checkoutData.campaignSelection.quantity;
+                        const comboPrice = checkoutData.campaignSelection.totalPrice || 0;
+                        const savings = regularPrice - comboPrice;
+                        const savingsPercentage = regularPrice > 0 ? Math.round((savings / regularPrice) * 100) : 0;
+                        
+                        return savings > 0 && (
+                          <>
+                            <ComboComparison>
+                              <ComparisonItem>
+                                <ComparisonLabel>Preço Normal</ComparisonLabel>
+                                <ComparisonValue $strikethrough>
+                                  {formatCurrency(regularPrice)}
+                                </ComparisonValue>
+                              </ComparisonItem>
+                              <ComparisonArrow>→</ComparisonArrow>
+                              <ComparisonItem>
+                                <ComparisonLabel>Preço do Combo</ComparisonLabel>
+                                <ComparisonValue>
+                                  {formatCurrency(comboPrice)}
+                                </ComparisonValue>
+                              </ComparisonItem>
+                            </ComboComparison>
+                            
+                            <ComboSavings>
+                              <ComboSavingsText>Você está economizando</ComboSavingsText>
+                              <ComboSavingsValue>
+                                {formatCurrency(savings)} ({savingsPercentage}% OFF)
+                              </ComboSavingsValue>
+                            </ComboSavings>
+                          </>
+                        );
+                      })()}
+                      
+                      <ComboBenefits>
+                        <BenefitsTitle>🎁 Vantagens do Combo</BenefitsTitle>
+                        <BenefitsList>
+                          <BenefitItem>Preço especial por número</BenefitItem>
+                          <BenefitItem>Mais chances de ganhar</BenefitItem>
+                          <BenefitItem>Melhor custo-benefício</BenefitItem>
+                          {checkoutData.campaignSelection.quantity >= 10 && (
+                            <BenefitItem>Desconto exclusivo para combos grandes</BenefitItem>
+                          )}
+                        </BenefitsList>
+                      </ComboBenefits>
+                    </ComboCard>
                     
                     <DetailRow>
                       <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
@@ -2389,14 +2611,22 @@ function CheckoutContent() {
         onClose={() => setIsSecurityModalOpen(false)}
       />
       
-      {/* Indicador de status da conexão WebSocket (opcional para debug) */}
-      <div className="text-xs text-gray-500 mt-4 text-center">
-        Status da conexão: {isConnected ? 
-          <span className="text-green-500">Conectado</span> : 
-          <span className="text-red-500">Desconectado</span>
-        }
-        {userCode && <span className="ml-2">| Usuário: {userCode}</span>}
-      </div>
+      {/* Indicador de status da conexão WebSocket */}
+      {/* <div className="fixed bottom-4 left-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 text-xs backdrop-blur-sm border border-slate-700/50 hover:scale-105 transition-all duration-300 z-10">
+        <div className="relative">
+          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+          {isConnected && (
+            <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+          )}
+        </div>
+        <span className="font-medium">{isConnected ? 'Conectado' : 'Reconectando...'}</span>
+        {userCode && (
+          <>
+            <div className="w-px h-3.5 bg-gradient-to-b from-transparent via-slate-500 to-transparent mx-0.5"></div>
+            <span className="text-slate-300 font-light tracking-wide">ID: <span className="font-mono text-emerald-300">{userCode}</span></span>
+          </>
+        )}
+      </div> */}
     </>
   );
 }
