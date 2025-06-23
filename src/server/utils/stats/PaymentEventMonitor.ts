@@ -96,19 +96,20 @@ export class PaymentEventMonitor {
    * Configura handlers para eventos do ChangeStream
    */
   private setupEventHandlers(): void {
-    // Handler para novos eventos
-    this.changeStream.on('change', (change: any) => {
-      this.handleChangeEvent(change);
-    });
+    console.log('setupEventHandlers PAGAMENTO');
+    // // Handler para novos eventos
+    // this.changeStream.on('change', (change: any) => {
+    //   this.handleChangeEvent(change);
+    // });
     
-    // Handler para erros
-    this.changeStream.on('error', (error: any) => {
-      logger.error('Erro no ChangeStream:', error);
-      this.isRunning = false;
+    // // Handler para erros
+    // this.changeStream.on('error', (error: any) => {
+    //   logger.error('Erro no ChangeStream:', error);
+    //   this.isRunning = false;
       
-      // Tentar reiniciar após erro
-      setTimeout(() => this.start(), 5000);
-    });
+    //   // Tentar reiniciar após erro
+    //   setTimeout(() => this.start(), 5000);
+    // });
   }
   
   /**
