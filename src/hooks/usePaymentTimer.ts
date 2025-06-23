@@ -17,7 +17,6 @@ export const usePaymentTimer = (campanhaId: string) => {
   const calculateTimeLeft = useCallback((expiresAt: string | null): number => {
     // Se expiresAt for null, undefined ou string vazia, usa tempo padrão de 10 minutos
     if (!expiresAt || expiresAt === 'null' || expiresAt.trim() === '') {
-      console.log('[PAYMENT_TIMER] expiresAt é null/vazio, usando tempo padrão de 10 minutos');
       return 600; // 10 minutos
     }
     
@@ -25,21 +24,10 @@ export const usePaymentTimer = (campanhaId: string) => {
       const expirationTime = new Date(expiresAt).getTime();
       const currentTime = new Date().getTime();
       const difference = expirationTime - currentTime;
-      
-      console.log('[PAYMENT_TIMER] Calculando tempo restante:', {
-        expiresAt,
-        expirationTime: new Date(expirationTime).toISOString(),
-        currentTime: new Date(currentTime).toISOString(),
-        difference,
-        differenceInSeconds: Math.floor(difference / 1000),
-        differenceInMinutes: Math.floor(difference / 1000 / 60),
-        isExpired: difference <= 0,
-        isValidDate: !isNaN(expirationTime)
-      });
+
       
       // Verifica se a data é válida
       if (isNaN(expirationTime)) {
-        console.log('[PAYMENT_TIMER] ⚠️ Data inválida, usando tempo padrão de 10 minutos');
         return 600; // 10 minutos
       }
       
@@ -53,8 +41,7 @@ export const usePaymentTimer = (campanhaId: string) => {
       return Math.max(0, Math.floor(difference / 1000));
       
     } catch (error) {
-      console.error('[PAYMENT_TIMER] Erro ao processar expiresAt:', error);
-      console.log('[PAYMENT_TIMER] Usando tempo padrão de 10 minutos devido ao erro');
+
       return 600; // 10 minutos
     }
   }, []);
@@ -64,30 +51,23 @@ export const usePaymentTimer = (campanhaId: string) => {
     const remainingTime = calculateTimeLeft(pix.expiresAt);
     setTimeLeft(remainingTime);
     
-    console.log('[PAYMENT_TIMER] Timer inicializado:', {
-      expiresAt: pix.expiresAt,
-      remainingSeconds: remainingTime,
-      remainingMinutes: Math.floor(remainingTime / 60)
-    });
   }, [calculateTimeLeft]);
 
   // 🧹 Função removida - lógica movida para o useEffect para evitar dependência circular
 
   // ⏰ Efeito para gerenciar countdown
   useEffect(() => {
-    console.log('[PAYMENT_TIMER] useEffect - timeLeft:', timeLeft);
     
     if (timeLeft > 0) {
       const timer = setTimeout(() => {
         setTimeLeft(prev => {
-          console.log('[PAYMENT_TIMER] Decrementando timer:', prev, '->', prev - 1);
           return prev - 1;
         });
       }, 1000);
       
       return () => clearTimeout(timer);
     } else if (timeLeft === 0) {
-      console.log('[PAYMENT_TIMER] ⚠️ Timer expirou, executando limpeza');
+        
       
       // Executa a limpeza diretamente aqui para evitar dependência circular
       toast.error('Tempo para pagamento expirado');
