@@ -1,7 +1,5 @@
 import { NextRequest } from 'next/server';
 import Payment from '@/models/Payment';
-import { SSEvents } from '@/server/repositories/events/SSEvents';
-import { container } from '@/server/container/container';
 
 //export const runtime = 'edge'; // Usar Edge Runtime para conexões de longa duração
 
