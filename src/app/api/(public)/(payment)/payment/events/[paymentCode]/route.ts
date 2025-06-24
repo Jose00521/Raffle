@@ -23,7 +23,7 @@ export async function GET(
       // Verificar status inicial do pagamento
       let currentStatus: string | null = null;
       try {
-        const payment = await Payment!.findOne({ paymentCode })
+        const payment = await Payment!.findOne({ paymentCode },'-_id')
         .populate('campaignId','-_id')
         .populate('userId', '-_id')
         .lean();
@@ -65,7 +65,7 @@ export async function GET(
         try {
           console.log('Verificando status do pagamento');
           // Buscar status atual do pagamento (sempre verifica o banco)
-          const updatedPayment = await Payment!.findOne({ paymentCode })
+          const updatedPayment = await Payment!.findOne({ paymentCode },'-_id')
           .populate('campaignId','-_id')
           .populate('userId', '-_id')
           .lean();

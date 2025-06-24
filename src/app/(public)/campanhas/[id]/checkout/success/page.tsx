@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styled, { keyframes, css } from 'styled-components';
 import Layout from '../../../../../../components/layout/Layout';
@@ -8,6 +8,9 @@ import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInte
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
 import { IUser } from '@/models/interfaces/IUserInterfaces';
 import mongoose from 'mongoose';
+import { IPayment } from '@/models/interfaces/IPaymentInterfaces';
+import { formatCurrency } from '@/utils/formatters';
+import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 
 // Interfaces
 interface CheckoutData {
@@ -27,6 +30,30 @@ const fadeInUp = keyframes`
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+`;
+
+// Animação de confete mais fluida e otimizada para mobile
+const confettiFall = keyframes`
+  0% {
+    transform: translateY(-10px) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(calc(25vh)) rotate(90deg) scale(0.9);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(calc(50vh)) rotate(180deg) scale(0.8);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(calc(75vh)) rotate(270deg) scale(0.7);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg) scale(0.6);
+    opacity: 0;
   }
 `;
 
@@ -85,17 +112,6 @@ const sparkle = keyframes`
   50% {
     opacity: 1;
     transform: scale(1) rotate(180deg);
-  }
-`;
-
-const confetti = keyframes`
-  0% {
-    transform: translateY(-10px) rotateZ(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotateZ(720deg);
-    opacity: 0;
   }
 `;
 
@@ -189,6 +205,7 @@ const SuccessContainer = styled.div`
   }
 `;
 
+// Componente de confete melhorado
 const ConfettiContainer = styled.div`
   position: fixed;
   top: 0;
@@ -197,18 +214,29 @@ const ConfettiContainer = styled.div`
   height: 100%;
   pointer-events: none;
   z-index: 1000;
+  overflow: hidden;
 `;
 
-const ConfettiPiece = styled.div<{ $delay: number; $color: string; $left: number }>`
+const ConfettiPiece = styled.div<{ 
+  $delay: number; 
+  $color: string; 
+  $left: number;
+  $size: number;
+  $duration: number;
+  $rotation: number;
+}>`
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: ${({ $size }) => $size}px;
+  height: ${({ $size }) => $size * 0.4}px;
   background: ${({ $color }) => $color};
-  top: -10px;
+  top: -20px;
   left: ${({ $left }) => $left}%;
-  animation: ${confetti} 3s linear infinite;
+  animation: ${confettiFall} ${({ $duration }) => $duration}s ease-in-out infinite;
   animation-delay: ${({ $delay }) => $delay}s;
-  border-radius: 2px;
+  border-radius: ${({ $size }) => $size > 8 ? '2px' : '50%'};
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  transform: rotate(${({ $rotation }) => $rotation}deg);
+  will-change: transform, opacity;
 `;
 
 const ContentWrapper = styled.div`
@@ -757,99 +785,76 @@ export default function SuccessPage() {
   const params = useParams();
   const router = useRouter();
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const [paymentData, setPaymentData] = useState<IPayment | null>(null);
   const [showConfetti, setShowConfetti] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
+  const confettiContainerRef = useRef<HTMLDivElement>(null);
+
+  const prizeValue = ()=>{
+
+    const sumPerPosition: number[] = []	;
+    checkoutData?.campanha.prizeDistribution?.forEach(prize => {
+      const value = prize.prizes?.reduce((acc, curr) => {
+        return acc + Number((curr as IPrize).value);
+      }, 0);
+      sumPerPosition.push(value);
+    });
+    return sumPerPosition.reduce((acc, curr) => acc + curr, 0);
+  };
 
   useEffect(() => {
-    // Sequência de animações
+    // Sequência de animações aprimorada
     const timer1 = setTimeout(() => {
       setIsLoading(false);
-    }, 2500); // Loading por 2.5 segundos
+    }, 2000); // Reduzido para 2 segundos para melhorar a experiência
     
     const timer2 = setTimeout(() => {
       setShowContent(true);
-    }, 3000); // Mostrar conteúdo após 3 segundos
-    
-    // Simular dados do checkout (normalmente viria de localStorage ou API)
-    const mockData: CheckoutData = {
-      campanha: {
-        _id: '1',
-        title: "Sorteio iPhone 15 Pro Max",
-        description: "Concorra ao mais novo iPhone da Apple",
-        createdBy: new mongoose.Types.ObjectId('507f1f77bcf86cd799439011'),
-        coverImage: "https://via.placeholder.com/150",
-        images: ["https://via.placeholder.com/150"],
-        individualNumberPrice: 1.00,
-        minNumbersPerUser: 1,
-        maxNumbersPerUser: 10,
-        prizes: [],
-        totalNumbers: 1000,
-        status: CampaignStatusEnum.ACTIVE,
-        drawDate: new Date(),
-        canceled: false,
-        numberPackages: [],
-        createdAt: new Date(),
-        winnerPositions: 1,
-        updatedAt: new Date(),
+    }, 2500); // Mostrar conteúdo mais cedo
 
-        winners: [{
-          _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439012'),
-          campaignId: new mongoose.Types.ObjectId('507f1f77bcf86cd799439013'),
-          position: 1,
-          number: "123456",
-          prizes: [new mongoose.Types.ObjectId('507f1f77bcf86cd799439014')],
-          userId: new mongoose.Types.ObjectId('507f1f77bcf86cd799439015'),
-          prizesClaimed: false,
-          awardedAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }],
-        activatedAt: new Date(),
-        winnerNumber: "123456",
-        scheduledActivationDate: new Date(),
-        campaignCode: params?.id as string,
-        prizeDistribution: [],
-        regulation: "Regulamento do sorteio",
-        returnExpected: "0.00",
-        stats: {
-          available: 900,
-          reserved: 100,
-          sold: 100,
-          percentComplete: 10,
-          totalRevenue: 10000,
-          totalParticipants: 50,
-          totalWins: 0,
-          totalPrizes: 1,
-        },
-      } as ICampaign,
-      campaignSelection: {
-        campaignCode: params?.id as string,
-        quantity: 10,
-        totalPrice: 200.00,
-        isCombo: true,
-        name: "Combo Especial"
-      } as INumberPackageCampaign,
-      userFound: {
-        name: "João Silva",
-        email: "joao@email.com",
-        phone: "(11) 99999-9999"
+    const checkoutData = localStorage.getItem('checkoutData');
+    if (checkoutData) {
+      setCheckoutData(JSON.parse(checkoutData));
+    }
+
+    const payment = localStorage.getItem('paymentData');
+    if (payment) {
+      setPaymentData(JSON.parse(payment));
+    }
+    
+    // Manter o confete por mais tempo, mas reduzir gradualmente a quantidade
+    const timer3 = setTimeout(() => {
+      // Não removemos completamente, apenas reduzimos a quantidade
+      const confettiElements = confettiContainerRef.current?.querySelectorAll('div');
+      if (confettiElements) {
+        confettiElements.forEach((el, i) => {
+          if (i % 2 === 0) {
+            (el as HTMLElement).style.opacity = '0';
+            (el as HTMLElement).style.transition = 'opacity 1s ease-out';
+          }
+        });
       }
-    };
+    }, 6000);
     
-    setCheckoutData(mockData);
-    
-    // Remover confetti após 5 segundos (a partir de quando o conteúdo aparece)
-    const timer3 = setTimeout(() => setShowConfetti(false), 8000);
+    // Remover completamente após 10 segundos
+    const timer4 = setTimeout(() => setShowConfetti(false), 10000);
     
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
+      clearTimeout(timer4);
     };
   }, [params?.id]);
 
-  const confettiColors = ['#22c55e', '#16a34a', '#059669', '#fbbf24', '#f59e0b'];
+  // Cores mais vibrantes para o confete
+  const confettiColors = [
+    '#22c55e', '#16a34a', '#059669', // Verdes
+    '#fbbf24', '#f59e0b', '#d97706', // Amarelos/Laranjas
+    '#06b6d4', '#0ea5e9', '#3b82f6', // Azuis
+    '#8b5cf6', '#a855f7', '#d946ef'  // Roxos/Rosas
+  ];
 
   return (
     <>
@@ -874,141 +879,150 @@ export default function SuccessPage() {
       <Layout hideHeader={true} hideFooter={true}>
         <SuccessContentWrapper $showContent={showContent}>
           <SuccessContainer>
-        {showConfetti && showContent && (
-          <ConfettiContainer>
-            {Array.from({ length: 50 }).map((_, i) => (
-              <ConfettiPiece
-                key={i}
-                $delay={i * 0.1}
-                $color={confettiColors[i % confettiColors.length]}
-                $left={Math.random() * 100}
-              />
-            ))}
-          </ConfettiContainer>
-        )}
+            {showConfetti && showContent && (
+              <ConfettiContainer ref={confettiContainerRef}>
+                {Array.from({ length: 100 }).map((_, i) => {
+                  const size = Math.random() * 10 + 5; // Tamanhos variados
+                  const duration = Math.random() * 4 + 3; // Durações variadas
+                  const rotation = Math.random() * 360; // Rotação aleatória
+                  
+                  return (
+                    <ConfettiPiece
+                      key={i}
+                      $delay={i * 0.05} // Delay mais curto para uma animação mais fluida
+                      $color={confettiColors[i % confettiColors.length]}
+                      $left={Math.random() * 100}
+                      $size={size}
+                      $duration={duration}
+                      $rotation={rotation}
+                    />
+                  );
+                })}
+              </ConfettiContainer>
+            )}
         
-        <ContentWrapper>
-          <SuccessHeader>
-            <IconContainer>
-              <SuccessIcon>
-                <svg viewBox="0 0 24 24">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
+            <ContentWrapper>
+              <SuccessHeader>
+                <IconContainer>
+                  <SuccessIcon>
+                    <svg viewBox="0 0 24 24">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    
+                    {/* Sparkle effects */}
+                    <SparkleEffect $delay={0.5} $size={8} $top="10%" $left="80%" />
+                    <SparkleEffect $delay={1} $size={6} $top="20%" $left="20%" />
+                    <SparkleEffect $delay={1.5} $size={10} $top="70%" $left="85%" />
+                    <SparkleEffect $delay={2} $size={7} $top="80%" $left="15%" />
+                  </SuccessIcon>
+                </IconContainer>
                 
-                {/* Sparkle effects */}
-                <SparkleEffect $delay={0.5} $size={8} $top="10%" $left="80%" />
-                <SparkleEffect $delay={1} $size={6} $top="20%" $left="20%" />
-                <SparkleEffect $delay={1.5} $size={10} $top="70%" $left="85%" />
-                <SparkleEffect $delay={2} $size={7} $top="80%" $left="15%" />
-              </SuccessIcon>
-            </IconContainer>
-            
-            <SuccessTitle>Pagamento Realizado!</SuccessTitle>
-            <SuccessSubtitle>
-              Parabéns! Sua participação foi confirmada com sucesso. 
-              Seus números da sorte já estão reservados!
-            </SuccessSubtitle>
-          </SuccessHeader>
+                <SuccessTitle>Pagamento Realizado!</SuccessTitle>
+                <SuccessSubtitle>
+                  Parabéns! Sua participação foi confirmada com sucesso. 
+                  Seus números da sorte já estão reservados!
+                </SuccessSubtitle>
+              </SuccessHeader>
 
-          <MainContent>
-            <PurchaseDetails>
-              <SectionTitle>📋 Detalhes da Compra</SectionTitle>
+              <MainContent>
+                <PurchaseDetails>
+                  <SectionTitle>📋 Detalhes da Compra</SectionTitle>
+                  
+                  {checkoutData && (
+                    <>
+                      <Timeline>
+                        <TimelineItem $delay={0.1}>
+                          <TimelineContent>
+                            <TimelineTitle>Campanha Selecionada</TimelineTitle>
+                            <TimelineDescription>
+                              {checkoutData.campanha.title}
+                            </TimelineDescription>
+                            <TimelineTime>Hoje, {new Date(paymentData?.createdAt || '').toLocaleTimeString()}</TimelineTime>
+                          </TimelineContent>
+                        </TimelineItem>
+                        
+                        <TimelineItem $delay={0.2}>
+                          <TimelineContent>
+                            <TimelineTitle>Quantidade de Números</TimelineTitle>
+                            <TimelineDescription>
+                              {checkoutData.campaignSelection.quantity} números da sorte
+                              {checkoutData.campaignSelection.isCombo && ` (${checkoutData.campaignSelection.name})`}
+                            </TimelineDescription>
+                            <TimelineTime>Processado</TimelineTime>
+                          </TimelineContent>
+                        </TimelineItem>
+                        
+                        <TimelineItem $delay={0.3}>
+                          <TimelineContent>
+                            <TimelineTitle>Pagamento Confirmado</TimelineTitle>
+                            <TimelineDescription>
+                              {formatCurrency(paymentData?.amount || 0)} via PIX
+                            </TimelineDescription>
+                            <TimelineTime>Confirmado às {new Date(paymentData?.approvedAt || '').toLocaleTimeString()}</TimelineTime>
+                          </TimelineContent>
+                        </TimelineItem>
+                        
+                        <TimelineItem $delay={0.4}>
+                          <TimelineContent>
+                            <TimelineTitle>Números Reservados</TimelineTitle>
+                            <TimelineDescription>
+                              Seus números foram automaticamente reservados no sistema
+                            </TimelineDescription>
+                            <TimelineTime>Concluído</TimelineTime>
+                          </TimelineContent>
+                        </TimelineItem>
+                      </Timeline>
+                    </>
+                  )}
+                </PurchaseDetails>
+                
+                <QuickActions>
+                  <SectionTitle>⚡ Ações Rápidas</SectionTitle>
+                  
+                  {/* <ActionButton $variant="primary">
+                    <i className="fas fa-list" />
+                    Ver Meus Números
+                  </ActionButton> */}
+                  
+                  <ActionButton $variant="secondary">
+                    <i className="fas fa-share" />
+                    Compartilhar
+                  </ActionButton>
+  {/*               
+                  <ActionButton $variant="secondary">
+                    <i className="fas fa-download" />
+                    Baixar Comprovante
+                  </ActionButton> */}
+                  
+                  <ActionButton 
+                    $variant="secondary"
+                    onClick={() => router.push('/')}
+                  >
+                    <i className="fas fa-home" />
+                    Voltar ao Início
+                  </ActionButton>
+                </QuickActions>
+              </MainContent>
               
-              {checkoutData && (
-                <>
-                  <Timeline>
-                    <TimelineItem $delay={0.1}>
-                      <TimelineContent>
-                        <TimelineTitle>Campanha Selecionada</TimelineTitle>
-                        <TimelineDescription>
-                          {checkoutData.campanha.title}
-                        </TimelineDescription>
-                        <TimelineTime>Hoje, {new Date().toLocaleTimeString()}</TimelineTime>
-                      </TimelineContent>
-                    </TimelineItem>
-                    
-                    <TimelineItem $delay={0.2}>
-                      <TimelineContent>
-                        <TimelineTitle>Quantidade de Números</TimelineTitle>
-                        <TimelineDescription>
-                          {checkoutData.campaignSelection.quantity} números da sorte
-                          {checkoutData.campaignSelection.isCombo && ` (${checkoutData.campaignSelection.name})`}
-                        </TimelineDescription>
-                        <TimelineTime>Processado</TimelineTime>
-                      </TimelineContent>
-                    </TimelineItem>
-                    
-                    <TimelineItem $delay={0.3}>
-                      <TimelineContent>
-                        <TimelineTitle>Pagamento Confirmado</TimelineTitle>
-                        <TimelineDescription>
-                          R$ {checkoutData.campaignSelection.totalPrice?.toFixed(2)} via PIX
-                        </TimelineDescription>
-                        <TimelineTime>Confirmado às {new Date().toLocaleTimeString()}</TimelineTime>
-                      </TimelineContent>
-                    </TimelineItem>
-                    
-                    <TimelineItem $delay={0.4}>
-                      <TimelineContent>
-                        <TimelineTitle>Números Reservados</TimelineTitle>
-                        <TimelineDescription>
-                          Seus números foram automaticamente reservados no sistema
-                        </TimelineDescription>
-                        <TimelineTime>Concluído</TimelineTime>
-                      </TimelineContent>
-                    </TimelineItem>
-                  </Timeline>
-                </>
-              )}
-            </PurchaseDetails>
-            
-            <QuickActions>
-              <SectionTitle>⚡ Ações Rápidas</SectionTitle>
-              
-              <ActionButton $variant="primary">
-                <i className="fas fa-list" />
-                Ver Meus Números
-              </ActionButton>
-              
-              <ActionButton $variant="secondary">
-                <i className="fas fa-share" />
-                Compartilhar
-              </ActionButton>
-              
-              <ActionButton $variant="secondary">
-                <i className="fas fa-download" />
-                Baixar Comprovante
-              </ActionButton>
-              
-              <ActionButton 
-                $variant="secondary"
-                onClick={() => router.push('/')}
-              >
-                <i className="fas fa-home" />
-                Voltar ao Início
-              </ActionButton>
-            </QuickActions>
-          </MainContent>
-          
-          <FloatingStats>
-            
-            <StatItem>
-              <StatIcon>🏆</StatIcon>
-              <StatInfo>
-                <StatLabel>Prêmio Total</StatLabel>
-                <StatValue>R$ 8.000,00</StatValue>
-              </StatInfo>
-            </StatItem>
-            
-            <StatItem>
-              <StatIcon>📅</StatIcon>
-              <StatInfo>
-                <StatLabel>Sorteio Em</StatLabel>
-                <StatValue>15 dias</StatValue>
-              </StatInfo>
-            </StatItem>
-          </FloatingStats>
-        </ContentWrapper>
+              <FloatingStats>
+                
+                <StatItem>
+                  <StatIcon>🏆</StatIcon>
+                  <StatInfo>
+                    <StatLabel>Prêmio Total</StatLabel>
+                    <StatValue>{formatCurrency(prizeValue() || 0)}</StatValue>
+                  </StatInfo>
+                </StatItem>
+                
+                <StatItem>
+                  <StatIcon>📅</StatIcon>
+                  <StatInfo>
+                    <StatLabel>Sorteio Em</StatLabel>
+                    <StatValue>{checkoutData?.campanha.drawDate ? `${Math.ceil((new Date(checkoutData.campanha.drawDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} dias` : 'N/A'}</StatValue>
+                  </StatInfo>
+                </StatItem>
+              </FloatingStats>
+            </ContentWrapper>
           </SuccessContainer>
         </SuccessContentWrapper>
       </Layout>

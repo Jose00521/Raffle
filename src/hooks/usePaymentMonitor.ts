@@ -19,7 +19,7 @@ export function usePaymentMonitor(paymentCode: string) {
       console.log('Iniciando monitoramento para pagamento:', paymentCode);
       
       // Criar conexão SSE
-      const eventSource = new EventSource(`${process.env.NEXTAUTH_URL}/api/payment/events/${paymentCode}`);
+      const eventSource = new EventSource(`/api/payment/events/${paymentCode}`);
       
       eventSource.onopen = () => {
         setIsConnected(true);
