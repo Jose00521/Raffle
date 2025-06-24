@@ -3,7 +3,7 @@ import Payment from '@/models/Payment';
 import { SSEvents } from '@/server/repositories/events/SSEvents';
 import { container } from '@/server/container/container';
 
-// export const runtime = 'edge'; // Usar Edge Runtime para conexões de longa duração
+//export const runtime = 'edge'; // Usar Edge Runtime para conexões de longa duração
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +27,8 @@ export async function GET(
       try {
         const payment = await Payment!.findOne({ paymentCode })
         .populate('campaignId','-_id')
-        .populate('userId', '-_id');
+        .populate('userId', '-_id')
+        .lean();
         
         if (!payment) {
           sendEvent({ type: 'error', message: 'Pagamento não encontrado' });
@@ -68,7 +69,8 @@ export async function GET(
           // Buscar status atual do pagamento (sempre verifica o banco)
           const updatedPayment = await Payment!.findOne({ paymentCode })
           .populate('campaignId','-_id')
-          .populate('userId', '-_id');;
+          .populate('userId', '-_id')
+          .lean();
           
           if (!updatedPayment) {
             sendEvent({ type: 'error', message: 'Pagamento não encontrado' });

@@ -154,7 +154,7 @@ const CardShine = styled.div`
 
 const CardNumber = styled.div`
   grid-area: number;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0;
   color: ${({ theme }) => theme.colors.text.primary};
@@ -178,7 +178,7 @@ const CardEmoji = styled.span`
 
 const CardPrize = styled.div<{ $category: string }>`
   grid-area: prize;
-  font-size: 1.2rem;
+  font-size: 0.8rem;
   font-weight: 800;
   transition: transform 0.3s ease;
   letter-spacing: -0.02em;
@@ -481,7 +481,7 @@ const FoundBadge = styled.div<{ $category: string }>`
     
     @media (max-width: 768px) {
       margin-bottom: 0.15rem;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
     }
   }
   
@@ -493,7 +493,7 @@ const FoundBadge = styled.div<{ $category: string }>`
     
     @media (max-width: 768px) {
       gap: 0.2rem;
-      font-size: 0.9rem;
+      font-size: 0.7rem;
     }
     
     i {
@@ -522,7 +522,7 @@ const FoundBadgeHeader = styled.div`
 `;
 
 const FoundLabel = styled.div`
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 800;
   color: #e74c3c;
   background: rgba(231, 76, 60, 0.1);
@@ -531,7 +531,7 @@ const FoundLabel = styled.div`
   letter-spacing: 0.05em;
   
   @media (max-width: 768px) {
-    font-size: 0.6rem;
+    font-size: 0.5rem !important;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
   }
@@ -543,7 +543,7 @@ const FoundValue = styled.div`
   color: #2ecc71;
   
   @media (max-width: 768px) {
-    font-size: 0.7rem;
+    font-size: 0.6rem !important;
   }
 `;
 
@@ -560,7 +560,7 @@ const FoundDetails = styled.div`
 
 const FoundNumber = styled.span<{ $category: string }>`
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.6rem !important;
   color: ${({ $category }) => {
     switch($category) {
       case 'diamante':

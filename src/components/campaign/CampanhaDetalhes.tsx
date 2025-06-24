@@ -2160,33 +2160,6 @@ const PremioMaisTexto = styled.div`
   }
 `;
 
-  // Create styled component for a more subtle "ver mais" button
-  const VerMaisButton = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    padding: 0.5rem 1rem;
-    margin: 0.75rem auto;
-    background: transparent;
-    color: ${({ theme }) => theme.colors.primary};
-    border: 1px dashed ${({ theme }) => `${theme.colors.primary}30`};
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      background: ${({ theme }) => `${theme.colors.primary}08`};
-      border: 1px dashed ${({ theme }) => `${theme.colors.primary}60`};
-    }
-    
-    i {
-      margin-left: 0.5rem;
-      font-size: 0.8rem;
-    }
-  `;
 
 const BotaoFavorito = styled.button`
   width: 40px;
@@ -3541,6 +3514,11 @@ const TabButton = styled.button<{ $ativo: boolean }>`
     font-size: 1rem;
     padding: 1.25rem 1.5rem;
   }
+
+    @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 1.25rem 1.5rem;
+  }
 `;
 
 const TabContent = styled.div<{ $visivel: boolean }>`
@@ -3637,47 +3615,47 @@ const PremiadosValor = styled.div`
 // Adjust the ListaPremiosGrid for a smaller, tighter layout with 2 columns on mobile
 const ListaPremiosGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.4rem;
-    margin-bottom: 1rem;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
   }
   
   @media (min-width: 769px) and (max-width: 1200px) {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.65rem;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.3rem;
   }
 `;
 
 // Make the prize cards more compact
 const PremioCard = styled.div<{ $category: string; $found?: boolean }>`
   position: relative;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   background: ${({ $found }) => $found ? '#f9f9f9' : 'white'};
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   
   // More subtle shadow for a cleaner look
   box-shadow: ${({ $category, $found }) => {
-    const baseStyle = $found ? '0 2px 8px rgba(0, 0, 0, 0.05)' : '';
+    const baseStyle = $found ? '0 1px 4px rgba(0, 0, 0, 0.03)' : '';
     
     switch($category) {
       case 'diamante':
         return $found 
-          ? `${baseStyle}, inset 0 0 0 1px rgba(153, 33, 232, 0.2)`
-          : '0 4px 12px rgba(153, 33, 232, 0.08), 0 2px 6px rgba(153, 33, 232, 0.04)';
+          ? `${baseStyle}, inset 0 0 0 1px rgba(153, 33, 232, 0.1)`
+          : '0 1px 6px rgba(153, 33, 232, 0.04), 0 1px 3px rgba(153, 33, 232, 0.01)';
       case 'master':
         return $found 
-          ? `${baseStyle}, inset 0 0 0 1px rgba(244, 107, 69, 0.2)`
-          : '0 4px 12px rgba(244, 107, 69, 0.08), 0 2px 6px rgba(244, 107, 69, 0.04)';
+          ? `${baseStyle}, inset 0 0 0 1px rgba(244, 107, 69, 0.1)`
+          : '0 1px 6px rgba(244, 107, 69, 0.04), 0 1px 3px rgba(244, 107, 69, 0.01)';
       default:
         return $found 
-          ? `${baseStyle}, inset 0 0 0 1px rgba(17, 153, 142, 0.2)`
-          : '0 4px 12px rgba(17, 153, 142, 0.08), 0 2px 6px rgba(17, 153, 142, 0.04)';
+          ? `${baseStyle}, inset 0 0 0 1px rgba(17, 153, 142, 0.1)`
+          : '0 1px 6px rgba(17, 153, 142, 0.04), 0 1px 3px rgba(17, 153, 142, 0.01)';
     }
   }};
   
@@ -3685,33 +3663,33 @@ const PremioCard = styled.div<{ $category: string; $found?: boolean }>`
   transform-style: preserve-3d;
   
   &:hover {
-    transform: ${({ $found }) => $found ? 'none' : 'perspective(800px) rotateX(1deg) rotateY(-2deg) translateY(-2px)'};
+    transform: ${({ $found }) => $found ? 'none' : 'perspective(800px) rotateX(0.3deg) rotateY(-0.5deg) translateY(-1px)'};
     box-shadow: ${({ $category, $found }) => {
       if ($found) return; // No hover effect for found titles
       
       switch($category) {
         case 'diamante':
-          return '0 10px 20px rgba(153, 33, 232, 0.12), 0 6px 10px rgba(153, 33, 232, 0.08)';
+          return '0 4px 10px rgba(153, 33, 232, 0.08), 0 2px 4px rgba(153, 33, 232, 0.04)';
         case 'master':
-          return '0 10px 20px rgba(244, 107, 69, 0.12), 0 6px 10px rgba(244, 107, 69, 0.08)';
+          return '0 4px 10px rgba(244, 107, 69, 0.08), 0 2px 4px rgba(244, 107, 69, 0.04)';
         default:
-          return '0 10px 20px rgba(17, 153, 142, 0.12), 0 6px 10px rgba(17, 153, 142, 0.08)';
+          return '0 4px 10px rgba(17, 153, 142, 0.08), 0 2px 4px rgba(17, 153, 142, 0.04)';
       }
     }};
     
     .card-shine {
-      opacity: ${({ $found }) => $found ? 0 : 0.6};
+      opacity: ${({ $found }) => $found ? 0 : 0.3};
     }
     
     .card-prize {
-      transform: ${({ $found }) => $found ? 'none' : 'translateZ(12px)'};
+      transform: ${({ $found }) => $found ? 'none' : 'translateZ(6px)'};
     }
   }
 `;
 
 // Thinner top bar
 const CardTopBar = styled.div<{ $category: string }>`
-  height: 3px;
+  height: 1.5px;
   background: ${({ $category }) => {
     switch($category) {
       case 'diamante':
@@ -3724,13 +3702,13 @@ const CardTopBar = styled.div<{ $category: string }>`
   }};
   
   @media (max-width: 768px) {
-    height: 1.5px;
+    height: 1px;
   }
 `;
 
 // More compact content layout
 const CardContent = styled.div`
-  padding: 0.6rem;
+  padding: 0.3rem;
   display: grid;
   grid-template-areas: 
     "number tag"
@@ -3738,12 +3716,12 @@ const CardContent = styled.div`
     "status status";
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.1rem;
   position: relative;
   
   @media (max-width: 768px) {
-    padding: 0.25rem;
-    gap: 0.1rem;
+    padding: 0.15rem;
+    gap: 0.05rem;
   }
 `;
 
@@ -3760,7 +3738,7 @@ const CardShine = styled.div`
   bottom: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.15) 0%,
     rgba(255, 255, 255, 0) 60%
   );
   opacity: 0;
@@ -3771,7 +3749,7 @@ const CardShine = styled.div`
 // Smaller number text
 const CardNumber = styled.div`
   grid-area: number;
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0;
   color: ${({ theme }) => theme.colors.text.primary};
@@ -3781,46 +3759,46 @@ const CardNumber = styled.div`
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  padding: 0.25rem 0.4rem;
+  padding: 0.1rem 0.2rem;
   background: #f7f7ff;
-  border-radius: 6px;
-  border: 1px dashed rgba(106, 17, 203, 0.2);
+  border-radius: 3px;
+  border: 1px dashed rgba(106, 17, 203, 0.1);
   
   @media (max-width: 768px) {
-    font-size: 0.5rem;
-    padding: 0.1rem 0.2rem;
-    border-radius: 3px;
+    font-size: 0.4rem;
+    padding: 0.05rem 0.1rem;
+    border-radius: 2px;
   }
 `;
 
 // Smaller emoji
 const CardEmoji = styled.span`
-  font-size: 0.9rem;
-  margin-right: 0.3rem;
+  font-size: 0.6rem;
+  margin-right: 0.15rem;
   flex-shrink: 0;
   
   @media (max-width: 768px) {
-    font-size: 0.6rem;
-    margin-right: 0.15rem;
+    font-size: 0.4rem;
+    margin-right: 0.05rem;
   }
 `;
 
 // Smaller prize amount text
 const CardPrize = styled.div<{ $category: string }>`
   grid-area: prize;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
   font-weight: 800;
   transition: transform 0.3s ease;
   letter-spacing: -0.02em;
-  margin: 0.1rem 0;
+  margin: 0.03rem 0;
   
   @media (max-width: 768px) {
-    font-size: 0.65rem;
-    margin: 0.02rem 0;
+    font-size: 0.5rem;
+    margin: 0.01rem 0;
   }
   
   @media (min-width: 769px) and (max-width: 1200px) {
-    font-size: 1.1rem;
+    font-size: 0.75rem;
   }
   
   background: ${({ $category }) => {
@@ -3845,35 +3823,35 @@ const CardStatus = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   font-weight: 600;
   color: #2ecc71;
   
   @media (max-width: 768px) {
-    font-size: 0.45rem;
+    font-size: 0.35rem;
   }
   
   i {
-    font-size: 0.8rem;
-    margin-right: 0.2rem;
+    font-size: 0.55rem;
+    margin-right: 0.1rem;
     
     @media (max-width: 768px) {
-      font-size: 0.5rem;
-      margin-right: 0.1rem;
+      font-size: 0.35rem;
+      margin-right: 0.05rem;
     }
   }
   
   span {
     color: ${({ theme }) => theme.colors.text.secondary};
     background: ${({ theme }) => theme.colors.background};
-    padding: 0.15rem 0.4rem;
-    border-radius: 10px;
-    font-size: 0.65rem;
+    padding: 0.08rem 0.2rem;
+    border-radius: 6px;
+    font-size: 0.45rem;
     
     @media (max-width: 768px) {
-      font-size: 0.4rem;
-      padding: 0.05rem 0.15rem;
-      border-radius: 4px;
+      font-size: 0.3rem;
+      padding: 0.03rem 0.08rem;
+      border-radius: 2px;
     }
   }
 `;
@@ -3882,18 +3860,18 @@ const CardStatus = styled.div`
 const CardTag = styled.div<{ $category: string }>`
   grid-area: tag;
   position: relative;
-  padding: 0.15rem 0.35rem;
-  font-size: 0.6rem;
+  padding: 0.08rem 0.2rem;
+  font-size: 0.4rem;
   font-weight: 700;
   color: white;
   z-index: 2;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
   
   @media (max-width: 768px) {
-    padding: 0.05rem 0.15rem;
-    font-size: 0.35rem;
-    border-radius: 2px;
+    padding: 0.03rem 0.08rem;
+    font-size: 0.25rem;
+    border-radius: 1px;
   }
   
   background: ${({ $category }) => {
@@ -3912,7 +3890,7 @@ const CardTag = styled.div<{ $category: string }>`
 const CategoryHeader = styled.div<{ $category: string }>`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.4rem;
   position: relative;
   
   ${({ $category }) => {
@@ -3932,23 +3910,23 @@ const CategoryHeader = styled.div<{ $category: string }>`
     }
   }}
   
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.01);
   
   @media (max-width: 768px) {
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.5rem;
-    gap: 0.5rem;
-    border-radius: 8px;
+    padding: 0.3rem 0.4rem;
+    margin-bottom: 0.3rem;
+    gap: 0.3rem;
+    border-radius: 4px;
   }
 `;
 
 const CategoryIconWrapper = styled.div<{ $category: string }>`
-  width: 38px;
-  height: 38px;
-  border-radius: 19px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3956,24 +3934,24 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
   overflow: hidden;
   
   @media (max-width: 768px) {
-    width: 28px;
-    height: 28px;
-    border-radius: 14px;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
   }
   
   // Glass effect
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   
   // Inner glow effect
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 19px;
-    padding: 1.5px;
+    border-radius: 12px;
+    padding: 0.5px;
     background: ${({ $category }) => {
       switch($category) {
         case 'diamante':
@@ -3990,13 +3968,13 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
     mask-composite: exclude;
     
     @media (max-width: 768px) {
-      border-radius: 14px;
-      padding: 1px;
+      border-radius: 9px;
+      padding: 0.25px;
     }
   }
   
   i {
-    font-size: 1.1rem;
+    font-size: 0.75rem;
     z-index: 2;
     background: ${({ $category }) => {
       switch($category) {
@@ -4013,7 +3991,7 @@ const CategoryIconWrapper = styled.div<{ $category: string }>`
     background-clip: text;
     
     @media (max-width: 768px) {
-      font-size: 0.85rem;
+      font-size: 0.6rem;
     }
   }
 `;
@@ -4024,7 +4002,7 @@ const CategoryInfo = styled.div`
 `;
 
 const CategoryName = styled.div<{ $category: string }>`
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   font-weight: 800;
   background: ${({ $category }) => {
     switch($category) {
@@ -4042,64 +4020,64 @@ const CategoryName = styled.div<{ $category: string }>`
   letter-spacing: -0.01em;
   
   @media (max-width: 768px) {
-    font-size: 0.85rem;
+    font-size: 0.6rem;
   }
 `;
 
 const CategoryMeta = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
   
   @media (max-width: 768px) {
-    gap: 0.5rem;
-    margin-top: 0.15rem;
+    gap: 0.3rem;
+    margin-top: 0.05rem;
   }
 `;
 
 const CategoryMetaItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.7rem;
+  gap: 0.15rem;
+  font-size: 0.5rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text.secondary};
   
   @media (max-width: 768px) {
-    font-size: 0.6rem;
-    gap: 0.2rem;
+    font-size: 0.4rem;
+    gap: 0.1rem;
   }
   
   i {
-    font-size: 0.75rem;
+    font-size: 0.55rem;
     opacity: 0.7;
     
     @media (max-width: 768px) {
-      font-size: 0.6rem;
+      font-size: 0.45rem;
     }
   }
 `;
 
 const PremiosCategoryTitle = styled.div`
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 800;
-  margin: 1.5rem 0 1rem;
+  margin: 1rem 0 0.6rem;
   letter-spacing: -0.02em;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
   position: relative;
   
   @media (max-width: 768px) {
-    font-size: 0.9rem;
-    margin: 1rem 0 0.75rem;
-    padding-bottom: 0.5rem;
+    font-size: 0.7rem;
+    margin: 0.6rem 0 0.4rem;
+    padding-bottom: 0.3rem;
   }
   
   &:first-of-type {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
     
     @media (max-width: 768px) {
-      margin-top: 0.35rem;
+      margin-top: 0.2rem;
     }
   }
   
@@ -4109,23 +4087,23 @@ const PremiosCategoryTitle = styled.div`
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 60px;
-    height: 3px;
-    border-radius: 1.5px;
+    width: 40px;
+    height: 1.5px;
+    border-radius: 0.75px;
     background: ${({ theme }) => theme.colors.primary};
     transition: width 0.3s ease;
     
     @media (max-width: 768px) {
-      width: 40px;
-      height: 2px;
+      width: 30px;
+      height: 1px;
     }
   }
   
   &:hover::after {
-    width: 100px;
+    width: 60px;
     
     @media (max-width: 768px) {
-      width: 60px;
+      width: 40px;
     }
   }
 `;
@@ -4134,31 +4112,36 @@ const BotaoVerMais = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  padding: 1rem;
-  margin-top: 1.5rem;
-  background: ${({ theme }) => theme.colors.background};
+  width: auto;
+  padding: 0.3rem 0.5rem;
+  margin: 0.4rem auto;
+  background: transparent;
   color: ${({ theme }) => theme.colors.primary};
-  border: 2px solid ${({ theme }) => theme.colors.gray.light};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  border: 1px dashed ${({ theme }) => `${theme.colors.primary}30`};
+  border-radius: 4px;
   font-weight: 600;
+  font-size: 0.6rem;
   cursor: pointer;
   transition: all 0.2s ease;
   
-  span {
-    font-size: 0.8rem;
-    color: ${({ theme }) => theme.colors.text.secondary};
-    margin-left: 0.5rem;
-    font-weight: normal;
-  }
-  
   &:hover {
-    background: ${({ theme }) => theme.colors.gray.light};
-    transform: translateY(-2px);
+    background: ${({ theme }) => `${theme.colors.primary}08`};
+    border: 1px dashed ${({ theme }) => `${theme.colors.primary}60`};
   }
   
-  &:active {
-    transform: translateY(0);
+  i {
+    margin-left: 0.3rem;
+    font-size: 0.55rem;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.4rem;
+    
+    i {
+      font-size: 0.45rem;
+      margin-left: 0.25rem;
+    }
   }
 `;
 
