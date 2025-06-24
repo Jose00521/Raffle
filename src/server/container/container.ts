@@ -68,5 +68,13 @@ container.register<IPaymentService>('paymentService', { useClass: PaymentService
 container.register<IPaymentController>('paymentController', { useClass: PaymentController });
 container.register<SSEvents>('sseEvents', { useClass: SSEvents });
 
+// Registrar o serviço SSEvents
+container.register('SSEvents', {
+  useFactory: (dependencyContainer) => {
+    const db = dependencyContainer.resolve<IDBConnection>('db');
+    return new SSEvents(db);
+  }
+});
+
 // Export configured container
 export { container };       

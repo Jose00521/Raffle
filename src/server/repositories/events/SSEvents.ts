@@ -2,12 +2,11 @@ import { IDBConnection } from "@/server/lib/dbConnect";
 import Payment from "@/models/Payment";
 import { IPayment } from "@/models/interfaces/IPaymentInterfaces";
 
-export interface SSEvent {
+export interface ISSEvent {
     checkPayment(paymentCode: string): Promise<IPayment | null>;
 }
 
-
-export class SSEvents {
+export class SSEvents implements ISSEvent {
     private db: IDBConnection;
 
     constructor(db: IDBConnection) {
@@ -21,7 +20,7 @@ export class SSEvents {
             const payment = await Payment!.findOne({ paymentCode })
             .populate('campaignId')
             .populate('userId');
-
+            
             if(!payment){
                 return null;
             }
@@ -32,7 +31,4 @@ export class SSEvents {
             return null;
         }
     }
-    
-    
-    
 }

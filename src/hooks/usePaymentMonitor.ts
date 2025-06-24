@@ -48,7 +48,7 @@ export function usePaymentMonitor(paymentCode: string) {
             ...data
           }));
 
-          router.push(`/campanhas/${data.campaignCode}/checkout/success`);
+          router.replace(`/campanhas/${data.campaignCode}/checkout/success`);
         } else if (data.type === 'payment:failed' || data.type === 'payment:expired') {
           toast.error(`Seu pagamento foi ${data.status === 'FAILED' ? 'recusado' : 'expirado'}.`);
         }

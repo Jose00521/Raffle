@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import Payment from '@/models/Payment';
+import { SSEvents } from '@/server/repositories/events/SSEvents';
+import { container } from '@/server/container/container';
 
 // export const runtime = 'edge'; // Usar Edge Runtime para conexões de longa duração
 
@@ -9,6 +11,7 @@ export async function GET(
 ) {
   console.log('Recebendo requisição para verificar status do pagamento');
   const { paymentCode } = await params;
+
   
   // Configurar headers para SSE
   const encoder = new TextEncoder();
@@ -22,7 +25,9 @@ export async function GET(
       // Verificar status inicial do pagamento
       let currentStatus: string | null = null;
       try {
-        const payment = await Payment!.findOne({ paymentCode });
+        const payment = await Payment!.findOne({ paymentCode })
+        .populate('campaignId','-_id')
+        .populate('userId', '-_id');
         
         if (!payment) {
           sendEvent({ type: 'error', message: 'Pagamento não encontrado' });
@@ -46,10 +51,8 @@ export async function GET(
         if (payment.status === 'APPROVED') {
           sendEvent({
             type: 'payment:approved',
-            status: 'APPROVED',
-            paymentId: payment.paymentCode,
+            ...payment,
             campaignCode: (payment.campaignId as any)?.campaignCode,
-            amount: payment.amount,
             message: 'Pagamento já aprovado'
           });
         }
@@ -63,7 +66,9 @@ export async function GET(
         try {
           console.log('Verificando status do pagamento');
           // Buscar status atual do pagamento (sempre verifica o banco)
-          const updatedPayment = await Payment!.findOne({ paymentCode });
+          const updatedPayment = await Payment!.findOne({ paymentCode })
+          .populate('campaignId','-_id')
+          .populate('userId', '-_id');;
           
           if (!updatedPayment) {
             sendEvent({ type: 'error', message: 'Pagamento não encontrado' });
@@ -82,10 +87,9 @@ export async function GET(
             
             sendEvent({
               type: `payment:${updatedPayment.status.toLowerCase()}`,
-              status: updatedPayment.status,
-              paymentId: updatedPayment.paymentCode,
+              ...updatedPayment,
+              paymentCode: updatedPayment.paymentCode || paymentCode,
               campaignCode: (updatedPayment.campaignId as any)?.campaignCode,
-              amount: updatedPayment.amount
             });
             
             // Se o pagamento foi finalizado, encerrar a conexão

@@ -15,9 +15,10 @@ export interface IPaymentService {
         paymentCode: string;
         gatewayResponse: IPaymentGhostResponse;
     }): Promise<ApiResponse<{
+        paymentCode: string;
         pixCode: string;
         pixQrCode: string;
-        expiresAt: string;
+        expiresAt: string | Date | undefined;
     }> | ApiResponse<null>>;
 
     updatePixPaymentToFailed(data: {
@@ -55,9 +56,10 @@ export class PaymentService implements IPaymentService {
         paymentCode: string;
         gatewayResponse: IPaymentGhostResponse;
     }): Promise<ApiResponse<{
+        paymentCode: string;
         pixCode: string;
         pixQrCode: string;
-        expiresAt: string;
+        expiresAt: string | Date | undefined;
     }> | ApiResponse<null>> {
         return this.paymentRepository.updatePixPaymentToPending(data);
     }
