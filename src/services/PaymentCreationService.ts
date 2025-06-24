@@ -17,6 +17,7 @@ interface Pix {
   pixCode: string;
   pixQrCode: string;
   expiresAt: string | null;
+  paymentCode: string;
 }
 
 interface PaymentCreationParams {
@@ -142,6 +143,7 @@ export class PaymentCreationService {
           hasData: !!response.data,
           pixCode: response.data?.pixCode,
           pixQrCode: response.data?.pixQrCode,
+          paymentCode: response.data?.paymentCode,
           expiresAt: response.data?.expiresAt
         });
         

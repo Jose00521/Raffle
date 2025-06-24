@@ -12,7 +12,7 @@ import Timer from '@/components/ui/Timer';
 import { formatCurrency } from '@/utils/formatNumber';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
-import { SocketProvider, useSocket } from '@/context/SocketContext';
+import { usePaymentMonitor } from '@/hooks/usePaymentMonitor';
 
 // Interfaces
 // Interface removida - usando a interface CheckoutData mais abaixo que é compatível com INumberPackageCampaign
@@ -2026,6 +2026,7 @@ interface Pix {
   pixCode: string;
   pixQrCode: string;
   expiresAt: string;
+  paymentCode: string;
 }
 
 // Componente interno que usa o contexto do Socket
@@ -2033,7 +2034,6 @@ function CheckoutContent() {
   const params = useParams();
   const campanhaId = params?.id as string;
   const router = useRouter();
-  const { isConnected, joinPaymentRoom, paymentNotifications } = useSocket();
   const [userCode, setUserCode] = useState<string | null>(null);
   
   // 🚀 Hook principal que gerencia todo o fluxo
@@ -2047,6 +2047,14 @@ function CheckoutContent() {
     paymentAttemptRef,
     formatTimeLeft
   } = useCheckoutFlow(campanhaId);
+
+  // Adicionando logs para depuração
+  console.log('[CHECKOUT] Dados do PIX:', pix);
+  console.log('[CHECKOUT] Payment Code:', pix?.paymentCode);
+
+  const { status, isConnected, lastEvent } = usePaymentMonitor(
+    pix?.paymentCode && pix.paymentCode !== '' ? pix.paymentCode : ''
+  );
   
   // 🎨 Estados locais da UI
   const [copied, setCopied] = useState(false);
@@ -2068,37 +2076,6 @@ function CheckoutContent() {
       console.error('Erro ao obter dados do localStorage:', error);
     }
   }, []);
-  
-  // Efeito para entrar na room específica do usuário para pagamentos
-  useEffect(() => {
-    if (isConnected && userCode) {
-      joinPaymentRoom();
-      console.log('Entrando na room de pagamento para o usuário:', userCode);
-    }
-  }, [isConnected, joinPaymentRoom, userCode]);
-  
-  // Efeito para ouvir notificações de pagamento aprovado
-  useEffect(() => {
-    if (paymentNotifications.length > 0) {
-      // Pegar a notificação mais recente
-      const latestNotification = paymentNotifications[0];
-      
-      console.log('Notificação de pagamento recebida:', latestNotification);
-      
-      // Se tiver URL de redirecionamento
-      if (latestNotification.redirectUrl) {
-        console.log('Redirecionando para página de sucesso:', latestNotification.redirectUrl);
-        
-        // Salvar detalhes do pedido no localStorage para uso na página de sucesso
-        if (latestNotification.orderDetails) {
-          localStorage.setItem('orderDetails', JSON.stringify(latestNotification.orderDetails));
-        }
-        
-        // Redirecionar para a página de sucesso
-        router.push(`/campanhas/${campanhaId}/checkout/success`);
-      }
-    }
-  }, [paymentNotifications, router]);
 
   // 📋 Função para copiar código PIX
   const handleCopyPixCode = async () => {
@@ -2196,6 +2173,12 @@ function CheckoutContent() {
                   Verificado
                 </SecurityBadge>
               </SecurityBadges>
+
+              {status === 'PENDING' && (
+                <div>
+                  <p>Aguardando pagamento...</p>
+                </div>
+              )}
 
               <SecurityButtonContainerMobile>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
@@ -2635,9 +2618,9 @@ function CheckoutContent() {
 export default function CheckoutPage() {
   return (
     <Layout hideHeader={true} hideFooter={true}>
-      <SocketProvider>
+
         <CheckoutContent />
-      </SocketProvider>
+
       
       <ToastContainer 
         position="top-right"

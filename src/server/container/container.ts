@@ -38,6 +38,7 @@ import { SocketService } from '../lib/socket/SocketService';
 import { IPaymentRepository, PaymentRepository } from '../repositories/PaymentRepository';
 import { IPaymentService, PaymentService } from '../services/PaymentService';
 import { IPaymentController, PaymentController } from '../controllers/PaymentController';
+import { SSEvents } from '../repositories/events/SSEvents';
 
 
 // Register dependencies
@@ -65,7 +66,7 @@ container.register<SocketService>('socketService', { useClass: SocketService });
 container.register<IPaymentRepository>('paymentRepository', { useClass: PaymentRepository });
 container.register<IPaymentService>('paymentService', { useClass: PaymentService });
 container.register<IPaymentController>('paymentController', { useClass: PaymentController });
-
+container.register<SSEvents>('sseEvents', { useClass: SSEvents });
 
 // Export configured container
 export { container };       

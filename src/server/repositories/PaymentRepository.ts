@@ -28,7 +28,8 @@ export interface IPaymentRepository {
     }): Promise<ApiResponse<{
         pixCode: string;
         pixQrCode: string;
-        expiresAt: string;
+        expiresAt: string | Date | undefined;
+        paymentCode: string;
     }> | ApiResponse<null>>;
 
     updatePixPaymentToFailed(data: {
@@ -210,84 +211,6 @@ export class PaymentRepository implements IPaymentRepository {
                 
                 await payment.save();
 
-                // Obter dados necessários para a notificação
-                const campaign = payment.campaignId as any;
-                const user = payment.userId as any;
-                
-                // Enviar notificação via WebSocket
-                try {
-                    // Tentar diferentes abordagens para obter o SocketService
-                    
-                    // 1. Via container
-                    const socketService = container.resolve<SocketService>('socketService');
-                    console.log('[WEBSOCKET_DEBUG] socketService do container isInitialized():', socketService.isInitialized());
-                    
-                    // 2. Via import direto do singleton
-                    const socketServiceDefault = SocketServiceDefault;
-                    console.log('[WEBSOCKET_DEBUG] socketServiceDefault:', socketServiceDefault ? 'disponível' : 'null/undefined');
-                    
-                    // 3. Via getSocketServer
-                    try {
-                        const io = getSocketServer();
-                        console.log('[WEBSOCKET_DEBUG] io obtido do getSocketServer():', io ? 'disponível' : 'null/undefined');
-                        
-                        if (io && user?.userCode) {
-                            // Usar io diretamente para enviar a notificação
-                            const roomName = `user:${user.userCode}`;
-                            console.log(`[WEBSOCKET_DEBUG] Tentando enviar diretamente para a sala ${roomName}`);
-                            
-                            // Preparar dados enriquecidos para o evento
-                            const paymentData = {
-                                paymentId: payment.paymentCode,
-                                status: 'APPROVED',
-                                message: 'Seu pagamento foi aprovado com sucesso!',
-                                redirectUrl: `/campanhas/${campaign?.campaignCode}/checkout/success`,
-                                orderDetails: {
-                                  amount: payment.amount,
-                                  campaignTitle: campaign?.title,
-                                  numbersQuantity: payment.numbersQuantity || 0,
-                                  paymentMethod: payment.paymentMethod,
-                                  paymentDate: payment.approvedAt || new Date().toISOString()
-                                },
-                                timestamp: new Date().toISOString()
-                            };
-                            
-                            // Verificar se a sala existe
-                            const sockets = io.sockets.adapter.rooms.get(roomName);
-                            const socketCount = sockets ? sockets.size : 0;
-                            console.log(`[WEBSOCKET_DEBUG] Sala ${roomName} tem ${socketCount} sockets conectados`);
-                            
-                            // Emitir o evento diretamente
-                            io.to(roomName).emit('payment:approved', paymentData);
-                            console.log(`[WEBSOCKET] Notificação de pagamento enviada diretamente para sala ${roomName}`);
-                        }
-                    } catch (directError) {
-                        console.error('[WEBSOCKET_ERROR] Erro ao usar io diretamente:', directError);
-                    }
-                    
-                    // Usar o socketService do container se estiver inicializado
-                    if (socketService.isInitialized() && user?.userCode) {
-                        // Preparar dados enriquecidos para o evento
-                        const paymentData = {
-                            paymentCode: payment.paymentCode,
-                            amount: payment.amount,
-                            campaignCode: campaign?.campaignCode,
-                            campaignTitle: campaign?.title,
-                            // Não temos números específicos no modelo de pagamento
-                            numbersQuantity: payment.numbersQuantity || 0,
-                            paymentMethod: payment.paymentMethod,
-                            approvedAt: payment.approvedAt
-                        };
-                        
-                        // Notificar o usuário via WebSocket usando userCode
-                        socketService.notifyPaymentApproved(user.userCode, paymentData);
-                        console.log(`[WEBSOCKET] Notificação de pagamento enviada para usuário ${user.userCode}`);
-                    }
-                } catch (socketError) {
-                    console.error('[WEBSOCKET_ERROR] Erro ao enviar notificação via WebSocket:', socketError);
-                    // Não interromper o fluxo principal se houver erro no WebSocket
-                }
-
                 return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
             }
 
@@ -309,8 +232,9 @@ export class PaymentRepository implements IPaymentRepository {
         gatewayResponse: IPaymentGhostResponse;
     }): Promise<ApiResponse<{
         pixCode: string;
+        paymentCode: string;
         pixQrCode: string;
-        expiresAt: string;
+        expiresAt: string | Date | undefined;
     }> | ApiResponse<null>> {
         try {
             const { gatewayResponse, paymentCode } = data;
@@ -332,8 +256,9 @@ export class PaymentRepository implements IPaymentRepository {
                 console.log(`[IDEMPOTENCY_SUCCESS] Pagamento já processado: ${paymentCode}`);
                 return createSuccessResponse({
                     pixCode: payment.pixCode || gatewayResponse.pixCode,
+                    paymentCode: payment.paymentCode || paymentCode,
                     pixQrCode: gatewayResponse.pixQrCode,
-                    expiresAt: gatewayResponse.expiresAt,
+                    expiresAt: payment.expiresAt,
                 }, 'Pagamento já processado (idempotência)', 200);
             }
 
@@ -371,6 +296,7 @@ export class PaymentRepository implements IPaymentRepository {
         return createSuccessResponse({
             pixCode: gatewayResponse.pixCode,
             pixQrCode: gatewayResponse.pixQrCode,
+            paymentCode: updatedPayment.paymentCode || paymentCode,
             expiresAt: updatedPayment.expiresAt?.toISOString() || '',
         }, 'Pagamento atualizado com sucesso', 200);
 

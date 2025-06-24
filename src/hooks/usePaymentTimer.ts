@@ -6,6 +6,7 @@ interface Pix {
   pixCode: string;
   pixQrCode: string;
   expiresAt: string | null;
+  paymentCode: string;
 }
 
 // 🔧 Hook para gerenciar timer de expiração do PIX

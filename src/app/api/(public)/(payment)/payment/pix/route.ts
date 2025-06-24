@@ -53,6 +53,13 @@ export async function POST(request: NextRequest) {
 
         if(updateResult.success && updateResult.data){
 
+          console.log('[PAYMENT_RESPONSE] Dados retornados:', {
+            pixCode: updateResult.data.pixCode,
+            pixQrCode: updateResult.data.pixQrCode,
+            paymentCode: updateResult.data.paymentCode,
+            expiresAt: updateResult.data.expiresAt
+          });
+
           // 🔑 Cria resposta com header de idempotência
           const response = NextResponse.json(createSuccessResponse({
             ...updateResult.data,

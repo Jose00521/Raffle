@@ -17,6 +17,7 @@ interface Pix {
   pixCode: string;
   pixQrCode: string;
   expiresAt: string | null;
+  paymentCode: string;
 }
 
 interface PaymentValidation {
