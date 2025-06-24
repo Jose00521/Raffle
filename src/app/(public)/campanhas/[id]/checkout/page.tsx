@@ -2089,6 +2089,24 @@ function CheckoutContent() {
     }
   };
 
+  // Rastrear evento de visualização de checkout no Facebook Pixel
+  useEffect(() => {
+    // Verificar se o fbq existe (Facebook Pixel)
+    if (typeof window !== 'undefined' && window.fbq) {
+      // Rastrear evento de visualização de página de checkout
+      window.fbq('track', 'InitiateCheckout', {
+        content_type: 'product',
+        content_ids: [checkoutData?.campanha?.campaignCode || ''],
+        content_name: checkoutData?.campanha?.title || 'Campanha',
+        value: checkoutData?.campaignSelection?.totalPrice || 0,
+        currency: 'BRL',
+        num_items: checkoutData?.campaignSelection?.quantity || 1,
+      });
+      
+      console.log('Facebook Pixel: Evento InitiateCheckout rastreado');
+    }
+  }, [checkoutData]);
+
   // 🔄 Loading state
   if (isLoading || isCreatingPayment) {
     return (
@@ -2636,4 +2654,11 @@ export default function CheckoutPage() {
       />
     </Layout>
   );
+}
+
+// Adicionar declaração de tipo para o objeto window
+declare global {
+  interface Window {
+    fbq?: any;
+  }
 }
