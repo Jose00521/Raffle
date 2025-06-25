@@ -815,19 +815,21 @@ export default function SuccessPage() {
       setShowContent(true);
     }, 2500); // Mostrar conteúdo mais cedo
 
-    const checkout = localStorage.getItem('checkoutData');
-    if (checkout) {
-      setCheckoutData(JSON.parse(checkout));
+    const checkoutItem = localStorage.getItem('checkoutData');
+    const checkout = JSON.parse(checkoutItem || '{}');
+    if (checkoutItem) {
+      setCheckoutData(checkout);
     }
 
-    const payment = localStorage.getItem('paymentData');
-    if (payment) {
-      setPaymentData(JSON.parse(payment));
+    const paymentItem = localStorage.getItem('paymentData');
+    const payment = JSON.parse(paymentItem || '{}');
+    if (paymentItem) {
+      setPaymentData(payment);
     }
 
-    console.log(paymentData, checkoutData);
+    console.log(payment, checkout);
 
-    if (paymentData && checkoutData) {
+    if (payment && checkout) {
     sendGTMEvent({
       event: 'purchase',
       page: {
@@ -837,16 +839,16 @@ export default function SuccessPage() {
       category: 'purchase',
       action: 'success',
       label: 'success_page',
-      value: paymentData?.amount || 0,
+      value: payment?.amount || 0,
       currency: 'BRL',
-      transaction_id: paymentData.paymentCode,
+      transaction_id: payment.paymentCode,
       items: [
         {
-          item_id: paymentData.paymentCode,
-          item_name: checkoutData.campanha.title,
+          item_id: payment.paymentCode,
+          item_name: checkout.campanha.title,
           item_category: 'purchase',
-          item_price: paymentData.amount,
-          item_quantity: checkoutData.campaignSelection.quantity,
+          item_price: payment.amount,
+          item_quantity: checkout.campaignSelection.quantity,
           },
         ],
       });
