@@ -31,7 +31,7 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
-        <Script id="google-tag-manager" strategy="beforeInteractive">
+        <Script id="google-tag-manager-head" strategy="beforeInteractive">
           {`
           <!-- Google Tag Manager -->
             <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -44,7 +44,7 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={poppins.className} suppressHydrationWarning>
-      <Script id="google-tag-manager" strategy="beforeInteractive">
+      <Script id="google-tag-manager-body" strategy="afterInteractive">
           {`
             <!-- Google Tag Manager (noscript) -->
             <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WDG4RH3C"
