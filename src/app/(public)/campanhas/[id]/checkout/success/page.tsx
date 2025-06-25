@@ -865,7 +865,7 @@ export default function SuccessPage() {
             st: checkout.foundUser?.fb?.st || '', // Estado
             zp: checkout.foundUser?.fb?.zp || '', // CEP
           }
-      });
+      },'dataLayer');
     }
     
     // Manter o confete por mais tempo, mas reduzir gradualmente a quantidade
