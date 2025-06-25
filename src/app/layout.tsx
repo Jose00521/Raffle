@@ -1,12 +1,9 @@
-'use client';
-
 import 'reflect-metadata';
 import type { Metadata } from "next";
-import StyledComponentsRegistry from '../lib/registry';
-import { SessionProvider } from 'next-auth/react';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import { GoogleTagManager } from '@next/third-parties/google'
+import ClientProviders from '@/components/common/ClientProviders';
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -14,10 +11,10 @@ const poppins = Poppins({
   display: 'swap',
 });
 
-// export const metadata: Metadata = {
-//   title: "RifaApp - Concorra a prêmios incríveis",
-//   description: "Compre rifas online e concorra a prêmios como carros, motos, eletrônicos e dinheiro. Sorteios 100% auditados e transparentes.",
-// };
+export const metadata: Metadata = {
+  title: "RifaApp - Concorra a prêmios incríveis",
+  description: "Compre rifas online e concorra a prêmios como carros, motos, eletrônicos e dinheiro. Sorteios 100% auditados e transparentes.",
+};
 
 export default function RootLayout({
   children,
@@ -33,17 +30,11 @@ export default function RootLayout({
         />
       </head>
       <body className={poppins.className} suppressHydrationWarning>
-        <SessionProvider>
-          <StyledComponentsRegistry>
-            {children}
-          </StyledComponentsRegistry>
-          <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
-        </SessionProvider>
-        {/* <StyledComponentsRegistry>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </StyledComponentsRegistry> */}
+        <ClientProviders>
+          {children}
+        </ClientProviders>
+        
+        <GoogleTagManager gtmId="GTM-WDG4RH3C" />
       </body>
     </html>
   );
