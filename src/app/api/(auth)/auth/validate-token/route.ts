@@ -35,6 +35,8 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve));
 /**
  * Adiciona headers de segurança à resposta
  */
+
+
 function addSecurityHeaders(response: NextResponse): NextResponse {
   // Previne clickjacking
   response.headers.set('X-Frame-Options', 'DENY');
