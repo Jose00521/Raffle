@@ -11,6 +11,7 @@ import { jwtDecode } from 'jwt-decode';
 import { SocketProvider, useSocket } from '@/context/SocketContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 // Tipos para o token e sessão
 interface JwtPayload {
@@ -53,6 +54,21 @@ export default function PrivateLayout({
     },
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (session) {
+      sendGTMEvent({
+        event: 'page_view',
+        page: {
+          page_path: pathname,
+          page_title: document.title,
+        },
+        category: 'user',
+        action: 'login',
+        label: session.user.email,
+      });
+    }
+  }, [session]);
 
 
   // Monitora atividade do usuário
