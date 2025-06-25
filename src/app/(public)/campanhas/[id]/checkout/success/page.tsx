@@ -825,6 +825,8 @@ export default function SuccessPage() {
       setPaymentData(JSON.parse(payment));
     }
 
+    console.log(paymentData, checkoutData);
+
     if (paymentData && checkoutData) {
     sendGTMEvent({
       event: 'purchase',
