@@ -832,6 +832,7 @@ export default function SuccessPage() {
     if (payment && checkout) {
     sendGTMEvent({
       event: 'purchase',
+      event_id: payment.paymentCode,
       page: {
         page_path: pathname,
         page_title: document.title,
@@ -851,6 +852,19 @@ export default function SuccessPage() {
           item_quantity: checkout.campaignSelection.quantity,
           },
         ],
+
+          // Dados para Advanced Matching do Facebook
+          user_data: {
+            em: checkout.foundUser?.fb?.em || '', // Email (hash recomendado)
+            ph: checkout.foundUser?.fb?.ph || '', // Telefone (hash recomendado)
+            fn: checkout.foundUser?.fb?.fn || '', // Primeiro nome
+            ln: checkout.foundUser?.fb?.ln || '', // Sobrenome
+            external_id: checkout.foundUser?.fb?.external_id || '', // ID do usuário no seu sistema
+            country: checkout.foundUser?.fb?.country || '', // País
+            ct: checkout.foundUser?.fb?.ct || '', // Cidade
+            st: checkout.foundUser?.fb?.st || '', // Estado
+            zp: checkout.foundUser?.fb?.zp || '', // CEP
+          }
       });
     }
     

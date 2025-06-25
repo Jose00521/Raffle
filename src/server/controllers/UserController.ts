@@ -8,8 +8,8 @@ import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface IUserController {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
+    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
     quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<IUser>>;
 }
 
@@ -38,7 +38,7 @@ export class UserController implements IUserController {
         }
     }
 
-    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         try {
             return await this.userService.quickCheckUser(phone);
         } catch (error) {
@@ -51,7 +51,7 @@ export class UserController implements IUserController {
         }
     }
 
-    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         try {
             return await this.userService.quickUserCreate(user);
         } catch (error) {

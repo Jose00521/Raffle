@@ -6,13 +6,14 @@ import { generateEntityCode } from "@/models/utils/idGenerator";
 import { ApiError } from "@/server/utils/errorHandler/ApiError";
 import { ApiResponse, createConflictResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
 import { maskCPF, maskEmail, maskPhone } from "@/utils/maskUtils";
-import { SecureDataUtils } from "@/utils/encryption";
+import { EncryptionService, SecureDataUtils } from "@/utils/encryption";
+import crypto from 'crypto';
 
 
 export interface IUserRepository {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
+    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
     quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<any>>;
 }
 
@@ -101,7 +102,7 @@ export class UserRepository implements IUserRepository {
         }
     }
 
-    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         try {
             
             await this.db.connect();
@@ -114,6 +115,9 @@ export class UserRepository implements IUserRepository {
                 email_display: 1,
                 cpf_display: 1,
                 phone_display: 1,
+                email_encrypted: 1,
+                phone_encrypted: 1,
+
             });
 
             if(!user){
@@ -129,7 +133,18 @@ export class UserRepository implements IUserRepository {
                 cpf: user.cpf_display,
                 phone: user.phone_display,
                 email: user.email_display,
-            } as IUser, 'Usuário encontrado', 200);
+                fb:{
+                    em: crypto.createHash('sha256').update(EncryptionService.decrypt(user.email_encrypted)).digest('hex'),
+                    ph: crypto.createHash('sha256').update(EncryptionService.decrypt(user.phone_encrypted)).digest('hex'),
+                    fn: user.name,
+                    ln: user.name,
+                    external_id: user.userCode,
+                    country: 'br',
+                    ct: user.address?.city,
+                    st: user.address?.state,
+                    zp: crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(user.address?.zipCode_encrypted)).digest('hex'),
+                }
+            } as Partial<IUser>, 'Usuário encontrado', 200);
 
 
         } catch (error) {
@@ -195,7 +210,7 @@ export class UserRepository implements IUserRepository {
         }
     }
 
-    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         try {
             await this.db.connect();
             const userExists = await this.checkIfUserExists(user);
@@ -220,7 +235,18 @@ export class UserRepository implements IUserRepository {
                 cpf: newUser.cpf_display,
                 phone: newUser.phone_display,
                 email: newUser.email_display,
-            } as IUser, 'Usuário criado com sucesso', 200);
+                fb:{
+                    em: crypto.createHash('sha256').update(EncryptionService.decrypt(newUser.email_encrypted)).digest('hex'),
+                    ph: crypto.createHash('sha256').update(EncryptionService.decrypt(newUser.phone_encrypted)).digest('hex'),
+                    fn: newUser.name,
+                    ln: newUser.name,
+                    external_id: newUser.userCode,
+                    country: 'br',
+                    ct: newUser.address?.city,
+                    st: newUser.address?.state,
+                    zp: crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(newUser.address?.zipCode_encrypted)).digest('hex'),
+                }
+            } as Partial<IUser>, 'Usuário criado com sucesso', 200);
         } catch (error) {
             throw new ApiError({
                 success: false,

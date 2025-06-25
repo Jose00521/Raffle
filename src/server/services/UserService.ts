@@ -5,8 +5,8 @@ import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface IUserService {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>>;
-    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>>;
+    quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
+    quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>>;
     quickCheckMainData(data: {cpf: string, email: string, phone: string}): Promise<ApiResponse<null> | ApiResponse<any>>;
 }
 
@@ -24,11 +24,11 @@ export class UserService implements IUserService {
         return await this.userRepository.createUser(user);
     }
 
-    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickCheckUser(phone: string): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         return await this.userRepository.quickCheckUser(phone);
     }
 
-    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<IUser>> {
+    async quickUserCreate(user: Partial<IUser>): Promise<ApiResponse<null> | ApiResponse<Partial<IUser>>> {
         return await this.userRepository.quickUserCreate(user);
     }
 
