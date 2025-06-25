@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { Metadata } from "next";
 import { Poppins } from 'next/font/google';
 import './globals.css';
-import { GoogleTagManager } from '@next/third-parties/google'
+import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google'
 import ClientProviders from '@/components/common/ClientProviders';
 
 const poppins = Poppins({
@@ -35,6 +35,7 @@ export default function RootLayout({
         </ClientProviders>
         
         <GoogleTagManager gtmId="GTM-WDG4RH3C" />
+        <GoogleAnalytics gaId="G-TTFVSFY1ZH" />
       </body>
     </html>
   );
