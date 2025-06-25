@@ -12,7 +12,6 @@ import { IPayment } from '@/models/interfaces/IPaymentInterfaces';
 import { formatCurrency } from '@/utils/formatters';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { sendGTMEvent } from '@next/third-parties/google';
-import { validateEntityCode } from '@/models/utils/idGenerator';
 
 // Interfaces
 interface CheckoutData {
@@ -854,7 +853,6 @@ export default function SuccessPage() {
 
   useEffect(() => {
     console.log(checkoutData?.campanha.campaignCode, paymentData?.paymentCode);
-    console.log(validateEntityCode(checkoutData?.campanha.campaignCode || ''), validateEntityCode(paymentData?.paymentCode || ''));
     if (paymentData && checkoutData) {
       sendGTMEvent({
         event: 'purchase',
