@@ -55,22 +55,6 @@ export default function PrivateLayout({
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (session) {
-      sendGTMEvent({
-        event: 'page_view',
-        page: {
-          page_path: pathname,
-          page_title: document.title,
-        },
-        category: 'user',
-        action: 'login',
-        label: session.user.email,
-      });
-    }
-  }, [session]);
-
-
   // Monitora atividade do usuário
   useEffect(() => {
     // Adiciona listeners para registrar atividade

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import styled, { keyframes, css } from 'styled-components';
 import Layout from '../../../../../../components/layout/Layout';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
@@ -11,6 +11,8 @@ import mongoose from 'mongoose';
 import { IPayment } from '@/models/interfaces/IPaymentInterfaces';
 import { formatCurrency } from '@/utils/formatters';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
+import { sendGTMEvent } from '@next/third-parties/google';
+import { validateEntityCode } from '@/models/utils/idGenerator';
 
 // Interfaces
 interface CheckoutData {
@@ -784,6 +786,7 @@ const SuccessContentWrapper = styled.div<{ $showContent: boolean }>`
 export default function SuccessPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
   const [paymentData, setPaymentData] = useState<IPayment | null>(null);
   const [showConfetti, setShowConfetti] = useState(true);
@@ -847,6 +850,37 @@ export default function SuccessPage() {
       clearTimeout(timer4);
     };
   }, [params?.id]);
+
+
+  useEffect(() => {
+    console.log(checkoutData?.campanha.campaignCode, paymentData?.paymentCode);
+    console.log(validateEntityCode(checkoutData?.campanha.campaignCode || ''), validateEntityCode(paymentData?.paymentCode || ''));
+    if (validateEntityCode(checkoutData?.campanha.campaignCode || '') && 
+    validateEntityCode(paymentData?.paymentCode || '') && paymentData && checkoutData) {
+      sendGTMEvent({
+        event: 'purchase',
+        page: {
+          page_path: pathname,
+          page_title: document.title,
+        },
+        category: 'purchase',
+        action: 'success',
+        label: 'success_page',
+        value: paymentData.amount,
+        currency: 'BRL',
+        transaction_id: paymentData.paymentCode,
+        items: [
+          {
+            item_id: paymentData.paymentCode,
+            item_name: checkoutData.campanha.title,
+            item_category: 'purchase',
+            item_price: paymentData.amount,
+            item_quantity: checkoutData.campaignSelection.quantity,
+          },
+        ],
+      });
+    }
+  }, [checkoutData, paymentData]);
 
   // Cores mais vibrantes para o confete
   const confettiColors = [
