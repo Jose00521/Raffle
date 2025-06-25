@@ -852,35 +852,35 @@ export default function SuccessPage() {
   }, [params?.id]);
 
 
-  useEffect(() => {
-    console.log(checkoutData?.campanha.campaignCode, paymentData?.paymentCode);
-    console.log(validateEntityCode(checkoutData?.campanha.campaignCode || ''), validateEntityCode(paymentData?.paymentCode || ''));
-    if (validateEntityCode(checkoutData?.campanha.campaignCode || '') && 
-    validateEntityCode(paymentData?.paymentCode || '') && paymentData && checkoutData) {
-      sendGTMEvent({
-        event: 'purchase',
-        page: {
-          page_path: pathname,
-          page_title: document.title,
-        },
-        category: 'purchase',
-        action: 'success',
-        label: 'success_page',
-        value: paymentData.amount,
-        currency: 'BRL',
-        transaction_id: paymentData.paymentCode,
-        items: [
-          {
-            item_id: paymentData.paymentCode,
-            item_name: checkoutData.campanha.title,
-            item_category: 'purchase',
-            item_price: paymentData.amount,
-            item_quantity: checkoutData.campaignSelection.quantity,
-          },
-        ],
-      });
-    }
-  }, [checkoutData, paymentData]);
+  // useEffect(() => {
+  //   console.log(checkoutData?.campanha.campaignCode, paymentData?.paymentCode);
+  //   console.log(validateEntityCode(checkoutData?.campanha.campaignCode || ''), validateEntityCode(paymentData?.paymentCode || ''));
+  //   if (validateEntityCode(checkoutData?.campanha.campaignCode || '') && 
+  //   validateEntityCode(paymentData?.paymentCode || '') && paymentData && checkoutData) {
+  //     sendGTMEvent({
+  //       event: 'purchase',
+  //       page: {
+  //         page_path: pathname,
+  //         page_title: document.title,
+  //       },
+  //       category: 'purchase',
+  //       action: 'success',
+  //       label: 'success_page',
+  //       value: paymentData.amount,
+  //       currency: 'BRL',
+  //       transaction_id: paymentData.paymentCode,
+  //       items: [
+  //         {
+  //           item_id: paymentData.paymentCode,
+  //           item_name: checkoutData.campanha.title,
+  //           item_category: 'purchase',
+  //           item_price: paymentData.amount,
+  //           item_quantity: checkoutData.campaignSelection.quantity,
+  //         },
+  //       ],
+  //     });
+  //   }
+  // }, [checkoutData, paymentData]);
 
   // Cores mais vibrantes para o confete
   const confettiColors = [
