@@ -805,7 +805,7 @@ const QRPlaceholder = styled.div`
       bottom: 0.8rem;
       letter-spacing: 1px;
     }s
-  }
+    }
 
   span {
     font-size: 0.5rem;
@@ -1287,7 +1287,7 @@ const SummaryTitle = styled.h3`
     padding-bottom: 0.625rem;
     
     i {
-      font-size: 1rem;
+    font-size: 1rem;
     }
   }
 `;
@@ -1342,7 +1342,7 @@ const UserInfoItem = styled.div`
   
   i {
     color: #059669;
-    font-size: 0.875rem;
+  font-size: 0.875rem;
     width: 1rem;
     text-align: center;
   }
@@ -1447,7 +1447,7 @@ const CampaignTitle = styled.h4`
 `;
 
 const CampaignMeta = styled.div`
-  font-size: 0.8rem;
+    font-size: 0.8rem;
   color: #64748b;
   line-height: 1.4;
   display: -webkit-box;
@@ -1463,7 +1463,7 @@ const CampaignMeta = styled.div`
 
 const CampaignStats = styled.div`
   display: flex;
-  flex-wrap: wrap;
+    flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.5rem;
 `;
@@ -1639,7 +1639,7 @@ const ComboMainInfo = styled.div`
 const ComboInfoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+    gap: 1rem;
   
   @media (max-width: 768px) {
     gap: 0.75rem;
@@ -1673,9 +1673,9 @@ const ComboDetailValue = styled.div`
 `;
 
 const ComboComparison = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: #ecfdf5;
@@ -1710,7 +1710,7 @@ const ComparisonValue = styled.div<{ $strikethrough?: boolean }>`
   text-decoration: ${props => props.$strikethrough ? 'line-through' : 'none'};
   
   @media (max-width: 768px) {
-    font-size: 0.8rem;
+  font-size: 0.8rem;
   }
 `;
 
@@ -1799,7 +1799,7 @@ const BenefitItem = styled.li`
   
   &::before {
     content: '✓';
-    color: #059669;
+  color: #059669;
     position: absolute;
     left: -1.25rem;
     font-weight: 600;
@@ -2060,7 +2060,7 @@ function CheckoutContent() {
   const [copied, setCopied] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-  
+
   // Efeito para obter o userCode do localStorage
   useEffect(() => {
     try {
@@ -2088,24 +2088,6 @@ function CheckoutContent() {
       toast.error('Erro ao copiar código');
     }
   };
-
-  // Rastrear evento de visualização de checkout no Facebook Pixel
-  useEffect(() => {
-    // Verificar se o fbq existe (Facebook Pixel)
-    if (typeof window !== 'undefined' && window.fbq) {
-      // Rastrear evento de visualização de página de checkout
-      window.fbq('track', 'InitiateCheckout', {
-        content_type: 'product',
-        content_ids: [checkoutData?.campanha?.campaignCode || ''],
-        content_name: checkoutData?.campanha?.title || 'Campanha',
-        value: checkoutData?.campaignSelection?.totalPrice || 0,
-        currency: 'BRL',
-        num_items: checkoutData?.campaignSelection?.quantity || 1,
-      });
-      
-      console.log('Facebook Pixel: Evento InitiateCheckout rastreado');
-    }
-  }, [checkoutData]);
 
   // 🔄 Loading state
   if (isLoading || isCreatingPayment) {
@@ -2448,10 +2430,10 @@ function CheckoutContent() {
                     </CampaignImageContainer>
                     
                     <CampaignDetails>
-                      <CampaignTitle>{campanha.title}</CampaignTitle>
-                      <CampaignMeta>
+                  <CampaignTitle>{campanha.title}</CampaignTitle>
+                  <CampaignMeta>
                         {campanha.description}
-                      </CampaignMeta>
+                  </CampaignMeta>
                       <CampaignStats>
                         {/* <CampaignStat>
                           <i className="fas fa-ticket-alt" />
@@ -2486,67 +2468,67 @@ function CheckoutContent() {
                         </ComboBadges>
                       </ComboHeader>
                       
-                      <ComboMainInfo>
-                        <ComboInfoGrid>
-                          <ComboDetailItem>
-                            <ComboDetailLabel>Números</ComboDetailLabel>
-                            <ComboDetailValue>{checkoutData.campaignSelection.quantity}</ComboDetailValue>
-                          </ComboDetailItem>
-                          <ComboDetailItem>
-                            <ComboDetailLabel>Valor por Número</ComboDetailLabel>
-                            <ComboDetailValue>
-                              {formatCurrency(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity)}
-                            </ComboDetailValue>
-                          </ComboDetailItem>
-                        </ComboInfoGrid>
-                      </ComboMainInfo>
+                                             <ComboMainInfo>
+                         <ComboInfoGrid>
+                           <ComboDetailItem>
+                             <ComboDetailLabel>Números</ComboDetailLabel>
+                             <ComboDetailValue>{checkoutData.campaignSelection.quantity}</ComboDetailValue>
+                           </ComboDetailItem>
+                           <ComboDetailItem>
+                             <ComboDetailLabel>Valor por Número</ComboDetailLabel>
+                             <ComboDetailValue>
+                               {formatCurrency(checkoutData.campaignSelection.totalPrice! / checkoutData.campaignSelection.quantity)}
+                             </ComboDetailValue>
+                           </ComboDetailItem>
+                         </ComboInfoGrid>
+                       </ComboMainInfo>
                       
-                      {(() => {
-                        const regularPrice = (checkoutData.campaignSelection.individualNumberPrice || 0) * checkoutData.campaignSelection.quantity;
-                        const comboPrice = checkoutData.campaignSelection.totalPrice || 0;
-                        const savings = regularPrice - comboPrice;
-                        const savingsPercentage = regularPrice > 0 ? Math.round((savings / regularPrice) * 100) : 0;
-                        
-                        return savings > 0 && (
-                          <>
-                            <ComboComparison>
-                              <ComparisonItem>
-                                <ComparisonLabel>Preço Normal</ComparisonLabel>
-                                <ComparisonValue $strikethrough>
-                                  {formatCurrency(regularPrice)}
-                                </ComparisonValue>
-                              </ComparisonItem>
-                              <ComparisonArrow>→</ComparisonArrow>
-                              <ComparisonItem>
-                                <ComparisonLabel>Preço do Combo</ComparisonLabel>
-                                <ComparisonValue>
-                                  {formatCurrency(comboPrice)}
-                                </ComparisonValue>
-                              </ComparisonItem>
-                            </ComboComparison>
-                            
-                            <ComboSavings>
-                              <ComboSavingsText>Você está economizando</ComboSavingsText>
-                              <ComboSavingsValue>
-                                {formatCurrency(savings)} ({savingsPercentage}% OFF)
-                              </ComboSavingsValue>
-                            </ComboSavings>
-                          </>
-                        );
-                      })()}
-                      
-                      <ComboBenefits>
-                        <BenefitsTitle>🎁 Vantagens do Combo</BenefitsTitle>
-                        <BenefitsList>
-                          <BenefitItem>Preço especial por número</BenefitItem>
-                          <BenefitItem>Mais chances de ganhar</BenefitItem>
-                          <BenefitItem>Melhor custo-benefício</BenefitItem>
-                          {checkoutData.campaignSelection.quantity >= 10 && (
-                            <BenefitItem>Desconto exclusivo para combos grandes</BenefitItem>
-                          )}
-                        </BenefitsList>
-                      </ComboBenefits>
-                    </ComboCard>
+                                             {(() => {
+                         const regularPrice = (checkoutData.campaignSelection.individualNumberPrice || 0) * checkoutData.campaignSelection.quantity;
+                         const comboPrice = checkoutData.campaignSelection.totalPrice || 0;
+                         const savings = regularPrice - comboPrice;
+                         const savingsPercentage = regularPrice > 0 ? Math.round((savings / regularPrice) * 100) : 0;
+                         
+                         return savings > 0 && (
+                           <>
+                             <ComboComparison>
+                               <ComparisonItem>
+                                 <ComparisonLabel>Preço Normal</ComparisonLabel>
+                                 <ComparisonValue $strikethrough>
+                                   {formatCurrency(regularPrice)}
+                                 </ComparisonValue>
+                               </ComparisonItem>
+                               <ComparisonArrow>→</ComparisonArrow>
+                               <ComparisonItem>
+                                 <ComparisonLabel>Preço do Combo</ComparisonLabel>
+                                 <ComparisonValue>
+                                   {formatCurrency(comboPrice)}
+                                 </ComparisonValue>
+                               </ComparisonItem>
+                             </ComboComparison>
+                             
+                             <ComboSavings>
+                               <ComboSavingsText>Você está economizando</ComboSavingsText>
+                               <ComboSavingsValue>
+                                 {formatCurrency(savings)} ({savingsPercentage}% OFF)
+                               </ComboSavingsValue>
+                             </ComboSavings>
+                           </>
+                         );
+                       })()}
+                       
+                       <ComboBenefits>
+                         <BenefitsTitle>🎁 Vantagens do Combo</BenefitsTitle>
+                         <BenefitsList>
+                           <BenefitItem>Preço especial por número</BenefitItem>
+                           <BenefitItem>Mais chances de ganhar</BenefitItem>
+                           <BenefitItem>Melhor custo-benefício</BenefitItem>
+                           {checkoutData.campaignSelection.quantity >= 10 && (
+                             <BenefitItem>Desconto exclusivo para combos grandes</BenefitItem>
+                           )}
+                         </BenefitsList>
+                       </ComboBenefits>
+                     </ComboCard>
                     
                     <DetailRow>
                       <DetailLabel>🔥 TOTAL A PAGAR</DetailLabel>
@@ -2654,11 +2636,4 @@ export default function CheckoutPage() {
       />
     </Layout>
   );
-}
-
-// Adicionar declaração de tipo para o objeto window
-declare global {
-  interface Window {
-    fbq?: any;
-  }
 }

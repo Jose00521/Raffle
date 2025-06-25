@@ -856,25 +856,6 @@ export default function SuccessPage() {
     '#8b5cf6', '#a855f7', '#d946ef'  // Roxos/Rosas
   ];
 
-  // Rastrear evento de compra concluída no Facebook Pixel
-  useEffect(() => {
-    // Verificar se o fbq existe e se temos os dados necessários
-    if (typeof window !== 'undefined' && window.fbq && checkoutData && paymentData) {
-      // Rastrear evento de compra concluída
-      window.fbq('track', 'Purchase', {
-        content_type: 'product',
-        content_ids: [checkoutData.campanha?.campaignCode || ''],
-        content_name: checkoutData.campanha?.title || 'Campanha',
-        value: paymentData.amount || checkoutData.campaignSelection?.totalPrice || 0,
-        currency: 'BRL',
-        num_items: checkoutData.campaignSelection?.quantity || 1,
-        transaction_id: paymentData.paymentCode || '',
-      });
-      
-      console.log('Facebook Pixel: Evento Purchase rastreado');
-    }
-  }, [checkoutData, paymentData]);
-
   return (
     <>
       {/* Loading Screen */}
@@ -1047,11 +1028,4 @@ export default function SuccessPage() {
       </Layout>
     </>
   );
-}
-
-// Adicionar declaração de tipo para o objeto window
-declare global {
-  interface Window {
-    fbq?: any;
-  }
 } 
