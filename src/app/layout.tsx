@@ -6,7 +6,7 @@ import StyledComponentsRegistry from '../lib/registry';
 import { SessionProvider } from 'next-auth/react';
 import { Poppins } from 'next/font/google';
 import './globals.css';
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { GoogleTagManager } from '@next/third-parties/google'
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -33,7 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body className={poppins.className} suppressHydrationWarning>
-        <GoogleAnalytics gaId="GTM-WDG4RH3C" />
+        <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
         <SessionProvider>
           <StyledComponentsRegistry>
             {children}
