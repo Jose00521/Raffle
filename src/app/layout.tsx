@@ -37,6 +37,7 @@ export default function RootLayout({
           <StyledComponentsRegistry>
             {children}
           </StyledComponentsRegistry>
+          <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
         </SessionProvider>
         {/* <StyledComponentsRegistry>
           <AuthProvider>
@@ -44,7 +45,6 @@ export default function RootLayout({
           </AuthProvider>
         </StyledComponentsRegistry> */}
       </body>
-      <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
     </html>
   );
 }
