@@ -33,7 +33,6 @@ export default function RootLayout({
         />
       </head>
       <body className={poppins.className} suppressHydrationWarning>
-        <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
         <SessionProvider>
           <StyledComponentsRegistry>
             {children}
@@ -45,6 +44,7 @@ export default function RootLayout({
           </AuthProvider>
         </StyledComponentsRegistry> */}
       </body>
+      <GoogleTagManager  gtmId="GTM-WDG4RH3C" />
     </html>
   );
 }
