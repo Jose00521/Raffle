@@ -815,14 +815,39 @@ export default function SuccessPage() {
       setShowContent(true);
     }, 2500); // Mostrar conteúdo mais cedo
 
-    const checkoutData = localStorage.getItem('checkoutData');
-    if (checkoutData) {
-      setCheckoutData(JSON.parse(checkoutData));
+    const checkout = localStorage.getItem('checkoutData');
+    if (checkout) {
+      setCheckoutData(JSON.parse(checkout));
     }
 
     const payment = localStorage.getItem('paymentData');
     if (payment) {
       setPaymentData(JSON.parse(payment));
+    }
+
+    if (paymentData && checkoutData) {
+    sendGTMEvent({
+      event: 'purchase',
+      page: {
+        page_path: pathname,
+        page_title: document.title,
+      },
+      category: 'purchase',
+      action: 'success',
+      label: 'success_page',
+      value: paymentData?.amount || 0,
+      currency: 'BRL',
+      transaction_id: paymentData.paymentCode,
+      items: [
+        {
+          item_id: paymentData.paymentCode,
+          item_name: checkoutData.campanha.title,
+          item_category: 'purchase',
+          item_price: paymentData.amount,
+          item_quantity: checkoutData.campaignSelection.quantity,
+          },
+        ],
+      });
     }
     
     // Manter o confete por mais tempo, mas reduzir gradualmente a quantidade
@@ -850,34 +875,6 @@ export default function SuccessPage() {
     };
   }, [params?.id]);
 
-
-  useEffect(() => {
-    console.log(checkoutData?.campanha.campaignCode, paymentData?.paymentCode);
-    if (paymentData && checkoutData) {
-      sendGTMEvent({
-        event: 'purchase',
-        page: {
-          page_path: pathname,
-          page_title: document.title,
-        },
-        category: 'purchase',
-        action: 'success',
-        label: 'success_page',
-        value: paymentData.amount,
-        currency: 'BRL',
-        transaction_id: paymentData.paymentCode,
-        items: [
-          {
-            item_id: paymentData.paymentCode,
-            item_name: checkoutData.campanha.title,
-            item_category: 'purchase',
-            item_price: paymentData.amount,
-            item_quantity: checkoutData.campaignSelection.quantity,
-          },
-        ],
-      });
-    }
-  }, [checkoutData, paymentData]);
 
   // Cores mais vibrantes para o confete
   const confettiColors = [
