@@ -2377,7 +2377,7 @@ const CarrosselImagem = styled.img<{ $isVertical?: boolean }>`
   object-fit: ${props => props.$isVertical ? 'cover' : 'cover'};
   
   @media (max-width: 768px) {
-    object-fit: contain;
+    object-fit: cover;
     max-height: 70vh;
   }
 `;
