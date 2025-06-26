@@ -31,7 +31,7 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
                 logger.info(`- ${key}: ${formData.get(key)}`);
             } else {
                 const value = formData.get(key);
-                logger.info(`- ${key}: ${value instanceof File ? `File: ${value.name}, type: ${value.type}, size: ${value.size}` : value}`);
+                logger.info(`- ${key}: ${typeof value !== 'string' ? `File: ${value?.name}, type: ${value?.type}, size: ${value?.size}` : value}`);
             }
         }
         
@@ -39,7 +39,7 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
         const images = formData.getAll('images');
         logger.info(`Total de imagens recebidas: ${images.length}`);
         images.forEach((img, i) => {
-            if (img instanceof File) {
+            if (typeof img !== 'string') {
                 logger.info(`Imagem ${i}: ${img.name}, tipo: ${img.type}, tamanho: ${img.size}`);
             } else {
                 logger.info(`Imagem ${i}: não é um arquivo, é ${typeof img}`);
@@ -48,11 +48,11 @@ export const POST = withAuth(async (request: NextRequest, { params, session }: {
         
         const prizeText  = JSON.parse(formData.get('data') as string);
         
-        const image = formData.get('image') as File;
+        const image = formData.get('image') as any;
         const prize = {
             ...prizeText,
             image: image,
-            images: images as File[]
+            images: images as any[]
         }
 
         logger.info("Dados do prêmio montados:", {
