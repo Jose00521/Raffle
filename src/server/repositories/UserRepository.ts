@@ -228,7 +228,7 @@ export class UserRepository implements IUserRepository {
 
             newUser.userCode = generateEntityCode(newUser._id, 'US');
             await newUser.save();
-
+            
             return createSuccessResponse({
                 name: newUser.name,
                 userCode: newUser.userCode,

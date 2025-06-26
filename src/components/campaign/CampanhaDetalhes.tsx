@@ -73,6 +73,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   // Estado para o carrossel de imagens
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(true);
+  // Estado para controlar se a imagem atual é vertical
+  const [isCurrentImageVertical, setIsCurrentImageVertical] = useState(false);
 
   // Estados para controle de swipe/deslize
   const [touchStartX, setTouchStartX] = useState(0);
@@ -182,14 +184,33 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   // Imagens do carrossel (usando a imagem principal como primeira e adicionando imagens extras se disponíveis)
   const carouselImages = [campanhaDetalhes?.coverImage, ...(campanhaDetalhes?.images || [])];
   
+  // Função para verificar a orientação da imagem atual
+  const checkImageOrientation = (index: number) => {
+    // Criar uma imagem temporária para verificar as dimensões reais
+    const img = new Image();
+    img.onload = () => {
+      const isVertical = img.naturalHeight > img.naturalWidth;
+      setIsCurrentImageVertical(isVertical);
+    };
+    
+    // Definir a URL da imagem para carregar
+    if (typeof carouselImages[index] === 'string') {
+      img.src = carouselImages[index] as string;
+    }
+  };
+  
   // Função para trocar para a próxima imagem
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
+    const newIndex = (currentImageIndex + 1) % carouselImages.length;
+    setCurrentImageIndex(newIndex);
+    checkImageOrientation(newIndex);
   };
 
   // Função para trocar para a imagem anterior
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+    const newIndex = (currentImageIndex - 1 + carouselImages.length) % carouselImages.length;
+    setCurrentImageIndex(newIndex);
+    checkImageOrientation(newIndex);
   };
 
   // Troca de imagem automática se autoplay estiver ativo
@@ -661,6 +682,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           <PainelImagem>
             {/* Novo componente de carrossel de imagens com suporte a swipe */}
             <CarrosselContainer 
+              $isVertical={isCurrentImageVertical}
               onClick={handleUserInteraction}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove as any}
@@ -682,6 +704,15 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       src={img} 
                       alt={`${campanhaDetalhes?.title} - imagem ${index+1}`}
                       draggable={false}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        const isVertical = target.naturalHeight > target.naturalWidth;
+                        
+                        // Atualizar o estado apenas se for a imagem atual
+                        if (index === currentImageIndex) {
+                          setIsCurrentImageVertical(isVertical);
+                        }
+                      }}
                     />
                     {!isMobile && <ZoomIndicator><i className="fas fa-search-plus"></i></ZoomIndicator>}
                   </CarrosselSlide>
@@ -959,6 +990,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           <PainelImagem>
             {/* New carousel de imagens with swipe support */}
             <CarrosselContainer 
+              $isVertical={isCurrentImageVertical}
               onClick={handleUserInteraction}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove as any}
@@ -980,6 +1012,15 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       src={img} 
                       alt={`${campanhaDetalhes?.title} - imagem ${index+1}`}
                       draggable={false}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        const isVertical = target.naturalHeight > target.naturalWidth;
+                        
+                        // Atualizar o estado apenas se for a imagem atual
+                        if (index === currentImageIndex) {
+                          setIsCurrentImageVertical(isVertical);
+                        }
+                      }}
                     />
                     {!isMobile && <ZoomIndicator><i className="fas fa-search-plus"></i></ZoomIndicator>}
                   </CarrosselSlide>
@@ -2292,14 +2333,20 @@ const PainelImagem = styled.div`
   }
 `;
 
-const CarrosselContainer = styled.div`
+const CarrosselContainer = styled.div<{ $isVertical?: boolean }>`
   position: relative;
   width: 100%;
-  aspect-ratio: 16/9;
+  aspect-ratio: ${props => props.$isVertical ? '3/4' : '16/9'};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.md};
   cursor: pointer;
+  
+  @media (max-width: 768px) {
+    aspect-ratio: ${props => props.$isVertical ? '3/4' : '16/9'};
+    max-height: ${props => props.$isVertical ? '80vh' : 'auto'};
+    min-height: 300px;
+  }
 `;
 
 const CarrosselWrapper = styled.div`
@@ -2315,16 +2362,24 @@ const CarrosselSlide = styled.div`
   height: 100%;
   cursor: pointer; /* Indicar que é clicável */
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   @media (max-width: 767px) {
     cursor: default;
   }
 `;
 
-const CarrosselImagem = styled.img`
+const CarrosselImagem = styled.img<{ $isVertical?: boolean }>`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: ${props => props.$isVertical ? 'cover' : 'cover'};
+  
+  @media (max-width: 768px) {
+    object-fit: contain;
+    max-height: 70vh;
+  }
 `;
 
 const CarrosselOverlay = styled.div`
@@ -2407,6 +2462,8 @@ const MiniaturasContainer = styled.div`
   padding-bottom: 0.5rem;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  width: 100%;
+  position: relative;
   
   /* Esconde a scrollbar mas mantém a funcionalidade */
   &::-webkit-scrollbar {
@@ -2423,11 +2480,23 @@ const MiniaturasContainer = styled.div`
     border-radius: 10px;
   }
   
-  /* Para desktop, volta para grid em vez de scroll horizontal */
+  /* Efeito de sombra para indicar que há mais conteúdo */
+  mask-image: linear-gradient(to right, black 0%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0%, black 95%, transparent 100%);
+  
+  /* Para desktop, mostra até 5 miniaturas com scroll suave */
   @media (min-width: 768px) {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    overflow-x: visible;
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0.5rem 0;
+    
+    /* Mostra 2 miniaturas completas e parte da terceira */
+    &::after {
+      content: '';
+      flex: 0 0 20px;
+    }
   }
 `;
 
@@ -2441,15 +2510,15 @@ const MiniaturaBotao = styled.button<{ $ativo: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   aspect-ratio: 16/9;
-  min-width: 140px ; /* Tamanho reduzido para manter como miniatura */
-  max-width: 140px; /* Tamanho máximo fixo */
-  width: 20%; /* Aproximadamente 5 itens visíveis */
+  min-width: 120px; /* Tamanho reduzido para manter como miniatura */
+  max-width: 120px; /* Tamanho máximo fixo */
+  width: 30%; /* Aproximadamente 3 itens visíveis */
   flex-shrink: 0;
   
   @media (min-width: 768px) {
-    min-width: unset;
-    max-width: unset;
-    width: auto;
+    min-width: 150px;
+    max-width: 150px;
+    width: 20%;
   }
   
   &:hover {
