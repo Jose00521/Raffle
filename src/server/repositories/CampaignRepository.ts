@@ -202,7 +202,7 @@ export class CampaignRepository implements ICampaignRepository {
     
       // Adicionar imagens adicionais (se existirem)
       if (campaign.images && Array.isArray(campaign.images)) {
-          campaign.images.forEach((img: string | File) => {
+          campaign.images.forEach((img: string | any) => {
             if (typeof img === 'string') {
                 imagesToDelete.push(img);
             }

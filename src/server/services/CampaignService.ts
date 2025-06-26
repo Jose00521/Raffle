@@ -23,6 +23,12 @@ interface InstantPrizeData {
   image?: string;         // Para item prizes
 }
 
+interface IFile {
+  type: string
+  name:string
+  size:number
+}
+
 // Interface para o formato de entrada do frontend
 interface InstantPrizesPayload {
   prizes: InstantPrizeData[];
@@ -198,12 +204,12 @@ export class CampaignService implements ICampaignService {
 
     logger.info("Processando imagens");
     const processedImages = await Promise.all(
-        [campaignData.coverImage, ...campaignData.images].map(async (image: File | string, index: number) => {
+        [campaignData.coverImage, ...campaignData.images].map(async (image: any | string, index: number) => {
             logger.info(`Processando imagem ${index}`, {
-                type: image instanceof File ? image.type : 'string',
-                size: image instanceof File ? image.size : 0
+                type: image && typeof image !== 'string'  ? image.type : 'string',
+                size: image && typeof image !== 'string'? image.size : 0
             });
-            return processImage(image as File);
+            return processImage(image as any);
         })
     );
 
@@ -384,7 +390,7 @@ export class CampaignService implements ICampaignService {
                         try {
                             const processedImages = await Promise.all(
                                 imagesToProcess.map(async (image) => {
-                                    return await processImage(image as File);
+                                    return await processImage(image as any);
                                 })
                             );
                             
