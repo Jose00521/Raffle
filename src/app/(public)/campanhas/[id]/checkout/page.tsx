@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 import Layout from '@/components/layout/Layout';
 import { ICampaign, INumberPackageCampaign } from '@/models/interfaces/ICampaignInterfaces';
@@ -13,6 +13,7 @@ import { formatCurrency } from '@/utils/formatNumber';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
 import { usePaymentMonitor } from '@/hooks/usePaymentMonitor';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 // Interfaces
 // Interface removida - usando a interface CheckoutData mais abaixo que é compatível com INumberPackageCampaign
@@ -2032,6 +2033,7 @@ interface Pix {
 // Componente interno que usa o contexto do Socket
 function CheckoutContent() {
   const params = useParams();
+  const pathname = usePathname();
   const campanhaId = params?.id as string;
   const router = useRouter();
   const [userCode, setUserCode] = useState<string | null>(null);
@@ -2065,11 +2067,50 @@ function CheckoutContent() {
   useEffect(() => {
     try {
       const checkoutDataStr = localStorage.getItem('checkoutData');
+      const paymentIdempotencyKey = sessionStorage.getItem('paymentIdempotencyKey')
+      console.log(paymentIdempotencyKey)
       if (checkoutDataStr) {
         const data = JSON.parse(checkoutDataStr);
         if (data.foundUser?.userCode) {
           setUserCode(data.foundUser.userCode);
           console.log('UserCode encontrado no localStorage:', data.foundUser.userCode);
+
+          console.log('Enviando evento de begin_checkout para o GTM')
+          sendGTMEvent({
+            event: 'begin_checkout',
+            event_id: paymentIdempotencyKey,
+            page: {
+              page_path: pathname,
+              page_title: document.title,
+            },
+            category: 'begin_checkout',
+            action: 'payment',
+            label: 'checkout_page',
+            value: data.campaignSelection.totalPrice || 0,
+            currency: 'BRL',
+            items: [
+              {
+                item_id: paymentIdempotencyKey,
+                item_name: data.campanha.title,
+                item_category: 'begin_checkout',
+                item_price: data.campaignSelection.totalPrice,
+                item_quantity: data.campaignSelection.quantity,
+                },
+              ],
+      
+                // Dados para Advanced Matching do Facebook
+                user_data: {
+                  em: data.foundUser?.fb?.em || '', // Email (hash recomendado)
+                  ph: data.foundUser?.fb?.ph || '', // Telefone (hash recomendado)
+                  fn: data.foundUser?.fb?.fn || '', // Primeiro nome
+                  ln: data.foundUser?.fb?.ln || '', // Sobrenome
+                  external_id: data.foundUser?.fb?.external_id || '', // ID do usuário no seu sistema
+                  country: data.foundUser?.fb?.country || '', // País
+                  ct: data.foundUser?.fb?.ct || '', // Cidade
+                  st: data.foundUser?.fb?.st || '', // Estado
+                  zp: data.foundUser?.fb?.zp || '', // CEP
+                }
+            },'dataLayer');
         }
       }
     } catch (error) {
