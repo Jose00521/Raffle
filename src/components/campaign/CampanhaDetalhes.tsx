@@ -834,7 +834,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             </MensagemIncentivo>
             
             {/* Pacotes Promocionais - Nova seção */}
-            <PacotesPromocionaisContainer>
+            {
+              campanhaDetalhes.enablePackages ? (
+                <PacotesPromocionaisContainer>
               <PacotesPromocionaisTitulo>
                 <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
               </PacotesPromocionaisTitulo>
@@ -851,11 +853,15 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
                     <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
                     <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
-                    <PacoteEconomia>Economia de {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
+                    <PacoteEconomia>Economize {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
                   </PacotePromocional>
                 ))}
               </PacotesPromocionaisGrid>
             </PacotesPromocionaisContainer>
+              ):(
+                <></>
+              )
+            }
             
             {/* Seletor de quantidade estilo moderno */}
             <QuantidadeSelector>
@@ -1107,34 +1113,34 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 <SelectionRowContainer>
             {/* Left side - Promotional packages */}
               
-            <PacotesPromocionaisContainer >
-                  <PacotesPromocionaisTitulo>
-                    <i className="fas fa-tags"></i> Pacotes promocionais
-                  </PacotesPromocionaisTitulo>
-                  <PacotesPromocionaisGrid>
-                {campanhaDetalhes?.numberPackages ?(
-                  campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
-                    
-                    <PacotePromocional 
-                      key={pacote.quantity} 
-                      $melhorOferta={pacote.highlight}
-                      $ativo={selection?.quantity === pacote.quantity}
-                      onClick={() => selectPackage(pacote)}
-                    >
-                      {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
-                      <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
-                      <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
-                      <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
-                      <PacoteEconomia>Economia de {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
-                    </PacotePromocional>
-                  ))
-                ):(
-                  <PacotePromocional>
-                    <PacoteQuantidade>Nenhum pacote promocional disponível</PacoteQuantidade>
+            {
+              campanhaDetalhes.enablePackages ? (
+                <PacotesPromocionaisContainer>
+              <PacotesPromocionaisTitulo>
+                <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
+              </PacotesPromocionaisTitulo>
+              
+              <PacotesPromocionaisGrid>
+                {campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
+                  <PacotePromocional 
+                    key={pacote.quantity} 
+                    $melhorOferta={pacote.highlight}
+                    $ativo={selection?.quantity === pacote.quantity}
+                    onClick={() => selectPackage(pacote)}
+                  >
+                    {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
+                    <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
+                    <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
+                    <PacoteEconomia>Economize {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
                   </PacotePromocional>
-                )}
+                ))}
               </PacotesPromocionaisGrid>
             </PacotesPromocionaisContainer>
+              ):(
+                <></>
+              )
+            }
             
             {/* Right side - Quantity selector */}
             <CompraDesktop>

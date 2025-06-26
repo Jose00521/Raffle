@@ -67,8 +67,8 @@ export class PrizeService implements IPrizeService {
         name: string;
         description: string;
         value: string;
-        image: File;
-        images: File[];
+        image: any;
+        images: any[];
         categoryId: string;
     }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {
@@ -287,7 +287,7 @@ export class PrizeService implements IPrizeService {
                     try {
                         const processedImages = await Promise.all(
                             imagesToProcess.map(async (image) => {
-                                return await processImage(image as File);
+                                return await processImage(image as any);
                             })
                         );
                         

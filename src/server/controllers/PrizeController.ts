@@ -15,8 +15,8 @@ export interface IPrizeController {
         name: string;
         description: string;
         value: string;
-        image: File;
-        images: File[];
+        image: any;
+        images: any[];
     }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>>;
     getPrizeById(id: string, session: Session): Promise<ApiResponse<IPrize | null>>;
     deletePrize(id: string, session: Session): Promise<ApiResponse<null>>;  
@@ -62,8 +62,8 @@ export class PrizeController implements IPrizeController {
         name: string;
         description: string;
         value: string;
-        image: File;
-        images: File[];
+        image: any;
+        images: any[];
         categoryId: string;
     }, session: Session): Promise<ApiResponse<null> | ApiResponse<IPrize>> {
         try {

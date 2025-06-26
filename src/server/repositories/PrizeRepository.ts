@@ -58,7 +58,7 @@ export class PrizeRepository implements IPrizeRepository {
                 .populate({
                     path: 'createdBy',
                     model: 'User',
-                    select: 'name email userCode profileImage -_id' // Selecionar apenas os campos necessários
+                    select: 'name email userCode proanyImage -_id' // Selecionar apenas os campos necessários
                 })
                 .populate({
                     path: 'categoryId',
