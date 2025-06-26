@@ -15,6 +15,8 @@ import CertificationSection, { CertificationSectionCompact } from '@/components/
 import { usePaymentMonitor } from '@/hooks/usePaymentMonitor';
 import { sendGTMEvent } from '@next/third-parties/google';
 
+import { v4 as uuidv4 } from 'uuid';
+
 // Interfaces
 // Interface removida - usando a interface CheckoutData mais abaixo que é compatível com INumberPackageCampaign
 
@@ -2037,6 +2039,7 @@ function CheckoutContent() {
   const campanhaId = params?.id as string;
   const router = useRouter();
   const [userCode, setUserCode] = useState<string | null>(null);
+  const [eventId, setEventId] = useState<string | null>(uuidv4())
   
   // 🚀 Hook principal que gerencia todo o fluxo
   const {
@@ -2067,8 +2070,7 @@ function CheckoutContent() {
   useEffect(() => {
     try {
       const checkoutDataStr = localStorage.getItem('checkoutData');
-      const paymentIdempotencyKey = sessionStorage.getItem('paymentIdempotencyKey')
-      console.log(paymentIdempotencyKey)
+
       if (checkoutDataStr) {
         const data = JSON.parse(checkoutDataStr);
         if (data.foundUser?.userCode) {
@@ -2078,7 +2080,7 @@ function CheckoutContent() {
           console.log('Enviando evento de begin_checkout para o GTM')
           sendGTMEvent({
             event: 'begin_checkout',
-            event_id: paymentIdempotencyKey,
+            event_id: eventId,
             page: {
               page_path: pathname,
               page_title: document.title,
@@ -2090,7 +2092,6 @@ function CheckoutContent() {
             currency: 'BRL',
             items: [
               {
-                item_id: paymentIdempotencyKey,
                 item_name: data.campanha.title,
                 item_category: 'begin_checkout',
                 item_price: data.campaignSelection.totalPrice,
