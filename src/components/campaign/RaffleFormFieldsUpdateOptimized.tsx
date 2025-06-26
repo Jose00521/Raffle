@@ -237,12 +237,15 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
 
   // Calcular total de números quando o preço ou retorno esperado mudar
   useEffect(() => {
+    console.log(price, returnExpected)
     if (price > 0 && returnExpected) {
       try {
-        const returnValue = extractNumericValue(returnExpected.toString());
-        if (returnValue > 0) {
-          const calculatedTotalNumbers = Math.ceil(returnValue / price);
-          setValue('totalNumbers', calculatedTotalNumbers);
+        if (returnExpected > 0) {
+          const calculatedTotalNumbers = Math.ceil(returnExpected / price);
+          console.log(calculatedTotalNumbers)
+          setValue('totalNumbers', calculatedTotalNumbers,{
+            shouldDirty:true
+          });
         }
       } catch (error) {
         // Ignorar erros de conversão
