@@ -337,7 +337,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     } else if (diff < -threshold) {
       // Swipe para esquerda - próximo slide
       nextImage();
-    } else if (isClickedRef.current && !isMobile) {
+    } else if (isClickedRef.current) {
       // Foi um clique genuíno e não estamos em mobile
       setShowImageModal(true);
     }
