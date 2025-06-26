@@ -245,7 +245,7 @@ export class UserRepository implements IUserRepository {
                     country: 'br',
                     ct: newUser.address?.city,
                     st: newUser.address?.state,
-                    zp: crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(newUser.address?.zipCode_encrypted)).digest('hex'),
+                    zp: newUser.address?.zipCode_encrypted && crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(newUser.address?.zipCode_encrypted)).digest('hex'),
                 }
             } as Partial<IUser>, 'Usuário criado com sucesso', 200);
         } catch (error) {
