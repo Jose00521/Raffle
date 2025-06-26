@@ -850,6 +850,17 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     onClick={() => selectPackage(pacote)}
                   >
                     {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    
+                    {/* Adicionar tag de desconto */}
+                    {(() => {
+                      const valorOriginal = campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0;
+                      const valorComDesconto = pacote.price || 0;
+                      const descontoPercentual = Math.round(((valorOriginal - valorComDesconto) / valorOriginal) * 100);
+                      return descontoPercentual > 0 ? (
+                        <DescontoTag>{descontoPercentual}% OFF</DescontoTag>
+                      ) : null;
+                    })()}
+                    
                     <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
                     <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
                     <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
@@ -1129,6 +1140,17 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     onClick={() => selectPackage(pacote)}
                   >
                     {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    
+                    {/* Adicionar tag de desconto */}
+                    {(() => {
+                      const valorOriginal = campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0;
+                      const valorComDesconto = pacote.price || 0;
+                      const descontoPercentual = Math.round(((valorOriginal - valorComDesconto) / valorOriginal) * 100);
+                      return descontoPercentual > 0 ? (
+                        <DescontoTag>{descontoPercentual}% OFF</DescontoTag>
+                      ) : null;
+                    })()}
+                    
                     <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
                     <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
                     <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
@@ -4686,6 +4708,25 @@ const SideMenuButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+// Adicionar o componente de tag de desconto
+const DescontoTag = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #4CAF50;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px 0 8px 0;
+  z-index: 2;
+  
+  @media (max-width: 576px) {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.4rem;
   }
 `;
 
