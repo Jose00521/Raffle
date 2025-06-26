@@ -5,6 +5,7 @@ import { IUser } from "@/models/interfaces/IUserInterfaces";
 import bcrypt from "bcrypt";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import { ApiResponse } from "../utils/errorHandler/api";
+import logger from '@/lib/logger/logger';
 
 export interface IUserController {
     createUser(user: IUser): Promise<ApiResponse<null> | ApiResponse<IUser>>;
@@ -42,6 +43,10 @@ export class UserController implements IUserController {
         try {
             return await this.userService.quickCheckUser(phone);
         } catch (error) {
+            logger.info({
+                message:'Erro interno do servidor',
+                cause: error as Error
+            })
             throw new ApiError({
                 success: false,
                 message: 'Erro interno do servidor',

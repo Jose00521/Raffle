@@ -780,37 +780,40 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
                       </DataItem>
                       {foundUser.address && (
                         <>
+                        {foundUser.address.street_display && foundUser.address.number_display ?
+                        (
                           <DataItem>
-                            <FaMapMarkerAlt />
-                            <DataContent>
-                              <DataLabel>Endereço</DataLabel>
-                              {
-                                foundUser.address.street_display && foundUser.address.number_display ? (
-                                  <DataValue>
-                                    {foundUser.address.street_display}, {foundUser.address.number_display}
-                                    {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
-                                  </DataValue>
-                                ) : (
+                          <FaMapMarkerAlt />
+                          <DataContent>
+
+                                <DataValue>
+                                  {foundUser.address.street_display}, {foundUser.address.number_display}
+                                  {foundUser.address.complement_display && `, ${foundUser.address.complement_display}`}
+                                </DataValue>
+
+                          </DataContent>
+                        </DataItem>
+                        ):(
+                          <></>
+                        )}
+                          {
+                                foundUser.address.city && foundUser.address.state && foundUser.address.zipCode_display?(
+                                  <DataItem>
+                                  <FaCity />
+                                  <DataContent>
+                                    <DataLabel>Cidade</DataLabel>
+      
+                                        <DataValue>
+                                          {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
+                                        </DataValue>
+           
+                                  </DataContent>
+                                </DataItem>
+                                ):(
                                   <></>
                                 )
-                              }
-                            </DataContent>
-                          </DataItem>
-                          <DataItem>
-                            <FaCity />
-                            <DataContent>
-                              <DataLabel>Cidade</DataLabel>
-                              {
-                                foundUser.address.city && foundUser.address.state && foundUser.address.zipCode_display ? (
-                                  <DataValue>
-                                    {foundUser.address.city}, {foundUser.address.state} - CEP: {foundUser.address.zipCode_display}
-                                  </DataValue>
-                                ) : (
-                                  <></>
-                                )
-                              }
-                            </DataContent>
-                          </DataItem>
+                          }
+
                         </>
                       )}
                     </DataGrid>

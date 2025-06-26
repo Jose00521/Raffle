@@ -107,6 +107,8 @@ export class UserRepository implements IUserRepository {
             
             await this.db.connect();
 
+            console.log('repository phone',phone)
+
             const user = await User.findOne({ phone_hash: SecureDataUtils.hashPhone(phone) }, {
                 _id: 0,
                 userCode: 1,
@@ -117,11 +119,10 @@ export class UserRepository implements IUserRepository {
                 phone_display: 1,
                 email_encrypted: 1,
                 phone_encrypted: 1,
-
             });
 
             if(!user){
-                return createSuccessResponse(null, 'Usuário não encontrado', 404);
+                return createErrorResponse('Usuário não encontrado', 404);
             }
 
             console.log('user', user);
@@ -142,7 +143,7 @@ export class UserRepository implements IUserRepository {
                     country: 'br',
                     ct: user.address?.city,
                     st: user.address?.state,
-                    zp: crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(user.address?.zipCode_encrypted)).digest('hex'),
+                    zp: user.address?.zipCode_encrypted && crypto.createHash('sha256').update(SecureDataUtils.decryptZipCode(user.address?.zipCode_encrypted)).digest('hex'),
                 }
             } as Partial<IUser>, 'Usuário encontrado', 200);
 

@@ -13,6 +13,8 @@ export async function GET(request: NextRequest, { params }: { params: { phone: s
 
         const { phone } = await params;
 
+        console.log('verify phone',phone)
+
         const validate = validator({ telefone: phone });
 
         if (!validate.success) {
