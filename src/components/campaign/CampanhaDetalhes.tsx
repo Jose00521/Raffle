@@ -2441,8 +2441,8 @@ const MiniaturaBotao = styled.button<{ $ativo: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   aspect-ratio: 16/9;
-  min-width: 200px ; /* Tamanho reduzido para manter como miniatura */
-  max-width: 200px; /* Tamanho máximo fixo */
+  min-width: 140px ; /* Tamanho reduzido para manter como miniatura */
+  max-width: 140px; /* Tamanho máximo fixo */
   width: 20%; /* Aproximadamente 5 itens visíveis */
   flex-shrink: 0;
   
@@ -2676,7 +2676,7 @@ const PacotesPromocionaisGrid = styled.div`
 
 // Create premium package style with perfect alignment
 const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: boolean }>`
-  padding: ${({ $melhorOferta }) => $melhorOferta ? '2rem 1.25rem 1.5rem' : '1.5rem 1.25rem'};
+  padding: ${({ $melhorOferta }) => $melhorOferta ? '2rem 1.25rem 1.5rem' : '2rem 1.25rem 1.5rem'};
   border-radius: 12px;
   overflow: visible;
   background: ${({ $melhorOferta, $ativo, theme }) => {
@@ -2708,7 +2708,7 @@ const PacotePromocional = styled.button<{ $melhorOferta?: boolean; $ativo?: bool
   }};
 
   @media (max-width: 576px) {
-    padding: ${({ $melhorOferta }) => $melhorOferta ? '1rem 0.5rem 0.6rem' : '0.6rem 0.5rem'};
+    padding: ${({ $melhorOferta }) => $melhorOferta ? '1rem 0.5rem 0.6rem' : '1rem 0.5rem 0.6rem'};
     border-radius: 8px;
     min-height: 150px;
     gap: 0.25rem;
