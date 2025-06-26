@@ -4721,11 +4721,11 @@ const DescontoTag = styled.div`
   font-size: 0.6rem;
   font-weight: 700;
   padding: 0.35rem 0.6rem;
-  border-radius: 8px 0 8px 0;
+  border-radius: 7px 0 7px 0;
   z-index: 2;
   
   @media (max-width: 576px) {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
     padding: 0.1rem 0.4rem;
   }
 `;
