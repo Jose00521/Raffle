@@ -641,7 +641,7 @@ const Footer: React.FC = () => {
                   
                   <div className="contact-item">
                     <i className="fab fa-whatsapp contact-icon"></i>
-                    <div className="contact-text">(00) 00000-0000</div>
+                    <div className="contact-text">(11) 95874-5236</div>
                   </div>
                   
                   <div className="contact-item">
@@ -681,7 +681,7 @@ const Footer: React.FC = () => {
           <SocialLink href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
             <i className="fab fa-youtube"></i>
           </SocialLink>
-          <SocialLink href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+          <SocialLink href="https://wa.me/5511958745236" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
             <i className="fab fa-whatsapp"></i>
           </SocialLink>
               </div>

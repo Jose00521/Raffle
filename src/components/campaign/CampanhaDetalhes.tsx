@@ -1425,8 +1425,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           </h4>
           <p>
             Título de Capitalização da Modalidade Filantropia Premiável de Contribuição Única, 
-            emitido pela VIACAP Capitalização S/A, CNPJ XX.XXX.XXX/0001-XX, aprovado pelo Processo SUSEP 
-            que consta no Título. É proibida a venda de título de capitalização a menores de dezesseis anos.
+            emitido pela VIACAP Capitalização S/A, CNPJ 88.076.302/0001-94, aprovado pelo Processo SUSEP que consta no Título
+            . É proibida a venda de título de capitalização a menores de dezesseis anos.
           </p>
         </InformacoesLegais>
       </Conteudo>
