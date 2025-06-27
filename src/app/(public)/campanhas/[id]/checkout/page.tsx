@@ -2216,12 +2216,6 @@ function CheckoutContent() {
                 </SecurityBadge>
               </SecurityBadges>
 
-              {status === 'PENDING' && (
-                <div>
-                  <p>Aguardando pagamento...</p>
-                </div>
-              )}
-
               <SecurityButtonContainerMobile>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
                   <img src="/icons/safe.svg" alt="Seguro" />

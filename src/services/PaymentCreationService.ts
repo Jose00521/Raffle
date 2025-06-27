@@ -148,7 +148,7 @@ export class PaymentCreationService {
         });
         
         this.savePaymentData(response.data, parsedData);
-        toast.success('Pagamento PIX gerado com sucesso!');
+        //toast.success('Pagamento PIX gerado com sucesso!');
         
         return { success: true, pix: response.data };
       } else {
