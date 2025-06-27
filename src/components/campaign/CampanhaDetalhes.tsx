@@ -2336,7 +2336,7 @@ const PainelImagem = styled.div`
 const CarrosselContainer = styled.div<{ $isVertical?: boolean }>`
   position: relative;
   width: 100%;
-  aspect-ratio: ${props => props.$isVertical ? '3/4' : '16/9'};
+  aspect-ratio: ${props => props.$isVertical ? '4/3' : '9/16'};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.md};
@@ -2454,8 +2454,6 @@ const PontoIndicador = styled.button<{ $ativo: boolean }>`
 `;
 
 const MiniaturasContainer = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
   gap: 0.5rem;
   margin-top: 0.75rem;
   overflow-x: auto;
@@ -2483,20 +2481,48 @@ const MiniaturasContainer = styled.div`
   /* Efeito de sombra para indicar que há mais conteúdo */
   mask-image: linear-gradient(to right, black 0%, black 95%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 0%, black 95%, transparent 100%);
+
+  @media (max-width: 768px){
+    display: flex;
+  flex-wrap: nowrap;
+  }
   
   /* Para desktop, mostra até 5 miniaturas com scroll suave */
   @media (min-width: 768px) {
-    display: flex;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
+  dis
+    flex-wrap:none;
+    gap:none;
+    grid-template-colums: repeat(8,1fr) !important;
+    scrollbar-width: none ;
+
+      overflow-x: none;
+    -webkit-overflow-scrolling: none;
     padding: 0.5rem 0;
+
+      &::-webkit-scrollbar {
+    height: none;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: none;
+    border-radius: none;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: none;
+    border-radius: none;
+  }
+  
+  /* Efeito de sombra para indicar que há mais conteúdo */
+  mask-image: none;
+  -webkit-mask-image: none;
     
     /* Mostra 2 miniaturas completas e parte da terceira */
     &::after {
       content: '';
       flex: 0 0 20px;
     }
+      
   }
 `;
 
