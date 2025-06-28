@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 interface TimerProps {
@@ -165,19 +165,77 @@ const Timer: React.FC<TimerProps> = ({
   variant = 'default'
 }) => {
   const [seconds, setSeconds] = useState(initialSeconds);
+  const startTimeRef = useRef<number>(Date.now());
+  const initialSecondsRef = useRef<number>(initialSeconds);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Atualiza quando initialSeconds muda
   useEffect(() => {
     setSeconds(initialSeconds);
+    startTimeRef.current = Date.now();
+    initialSecondsRef.current = initialSeconds;
   }, [initialSeconds]);
 
-  useEffect(() => {
-    if (seconds > 0) {
-      const timer = setTimeout(() => setSeconds(seconds - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (onTimeUp) {
+  // Função para calcular tempo baseado no tempo real
+  const updateTimeFromRealTime = useCallback(() => {
+    const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const newSeconds = Math.max(0, initialSecondsRef.current - elapsed);
+    
+    setSeconds(prevSeconds => {
+      // Só atualiza se houver diferença significativa
+      if (Math.abs(prevSeconds - newSeconds) >= 1) {
+        return newSeconds;
+      }
+      return prevSeconds;
+    });
+
+    if (newSeconds === 0 && onTimeUp) {
       onTimeUp();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
-  }, [seconds, onTimeUp]);
+  }, [onTimeUp]);
+
+  // Timer principal
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    if (seconds > 0) {
+      timerRef.current = setInterval(updateTimeFromRealTime, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [initialSeconds, updateTimeFromRealTime]);
+
+  // Detecta quando aba volta a ficar ativa
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        updateTimeFromRealTime();
+      }
+    };
+
+    const handleFocus = () => {
+      updateTimeFromRealTime();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [updateTimeFromRealTime]);
 
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);

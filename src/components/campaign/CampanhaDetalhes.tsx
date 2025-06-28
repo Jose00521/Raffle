@@ -4340,16 +4340,16 @@ const ZoomIndicator = styled.div`
 // Create mock data for found titles
 const foundTitles = [
   // Examples from Diamante category (using actual numbers from fixedPrizes)
-  { number: '001003', name: 'Maria Oliveira', value: 2000, date: '12/05/2023', category: 'diamante' },
-  { number: '001008', name: 'Pedro Santos', value: 2000, date: '15/05/2023', category: 'diamante' },
+  { number: '001003', name: 'Maria Oliveira', value: 2000, date: '12/06/2025', category: 'diamante' },
+  { number: '001008', name: 'Pedro Santos', value: 2000, date: '15/06/2025', category: 'diamante' },
   
   // Examples from Master category (using actual numbers from fixedPrizes)
-  { number: '001103', name: 'João Silva', value: 1000, date: '18/05/2023', category: 'master' },
-  { number: '001107', name: 'Ana Ferreira', value: 1000, date: '22/05/2023', category: 'master' },
+  { number: '001103', name: 'João Silva', value: 1000, date: '18/06/2025', category: 'master' },
+  { number: '001107', name: 'Ana Ferreira', value: 1000, date: '22/06/2025', category: 'master' },
   
   // Examples from Premiado category (using actual numbers from fixedPrizes)
-  { number: '001203', name: 'Carlos Souza', value: 500, date: '01/06/2023', category: 'premiado' },
-  { number: '001210', name: 'Fernanda Costa', value: 500, date: '05/06/2023', category: 'premiado' },
+  { number: '001203', name: 'Carlos Souza', value: 500, date: '01/06/2025', category: 'premiado' },
+  { number: '001210', name: 'Fernanda Costa', value: 500, date: '05/06/2025', category: 'premiado' },
 ];
 
 // Create styled components for the found titles section
