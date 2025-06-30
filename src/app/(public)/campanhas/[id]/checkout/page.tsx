@@ -689,11 +689,6 @@ const TransactionIdBadge = styled.div`
     opacity: 0.9;
   }
   
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
-  }
-  
   @media (max-width: 768px) {
     top: 1.25rem;
     right: 1rem;
