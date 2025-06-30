@@ -485,7 +485,7 @@ const PaymentSection = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 1.5rem 0.8rem;
+    padding: 3rem 0.8rem;
     border-radius: 16px;
     
     &::before {
@@ -499,7 +499,7 @@ const PaymentSection = styled.div`
   }
   
   @media (max-width: 480px) {
-    padding: 1.5rem 1rem;
+    padding: 3rem 1rem;
     border-radius: 12px;
     margin: 0 0.5rem;
     
@@ -663,6 +663,59 @@ const SecurityButton = styled.button`
     img {
       width: 12px;
       height: 12px;
+    }
+  }
+`;
+
+const TransactionIdBadge = styled.div`
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  color: #10b981;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  z-index: 10;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  letter-spacing: 0.025em;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  i {
+    font-size: 0.7rem;
+    opacity: 0.9;
+  }
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+  }
+  
+  @media (max-width: 768px) {
+    top: 1.25rem;
+    right: 1rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+    
+    i {
+      font-size: 0.65rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    top: 1rem;
+    right: 0.75rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.65rem;
+    gap: 0.25rem;
+    border-radius: 5px;
+    
+    i {
+      font-size: 0.6rem;
     }
   }
 `;
@@ -2196,6 +2249,12 @@ function CheckoutContent() {
               <PaymentTitle>
                 <i className="fas fa-qrcode" />
                 Pagamento via PIX
+                {pix?.paymentCode && (
+                <TransactionIdBadge>
+                  <i className="fas fa-lock" />
+                  ID: {pix.paymentCode}
+                </TransactionIdBadge>
+              )}
               </PaymentTitle>
               <PaymentSubtitle>
                 Copie o código PIX abaixo ou mostre o QR Code para escanear
@@ -2215,6 +2274,8 @@ function CheckoutContent() {
                   Verificado
                 </SecurityBadge>
               </SecurityBadges>
+
+              
 
               <SecurityButtonContainerMobile>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
