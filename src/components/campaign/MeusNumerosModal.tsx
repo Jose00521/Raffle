@@ -46,7 +46,12 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
   const [showNumbers, setShowNumbers] = useState<{ [key: number]: boolean }>({});
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<MyNumbersFormData>({
-    resolver: zodResolver(myNumbersSchema)
+    resolver: zodResolver(myNumbersSchema),
+    mode: 'all',
+    shouldFocusError: true,
+    defaultValues: {
+      cpf: ''
+    }
   });
 
   const registerWithMask = useHookFormMask(register);
