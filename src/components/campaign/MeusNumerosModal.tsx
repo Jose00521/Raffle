@@ -220,7 +220,10 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                     <NumbersHeader>
                       <NumbersCount>
                         {/* {purchase.numbers.length}  */}
-                        número(s) adquirido(s)
+                        Número adquiridos.
+                        <br />
+                        <br />
+                        Caso você ganhe, você receberá um e-mail com o número ganhador.
                       </NumbersCount>
                       <ToggleButton 
                         onClick={() => toggleShowNumbers(purchase.id)}
