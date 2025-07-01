@@ -16,6 +16,7 @@ import { formatCurrency } from '@/utils/formatNumber';
 import { CertificationSectionCompact } from '../ui/CertificationSection';
 import { useSession } from 'next-auth/react';
 import LoginModal from '../auth/LoginModal';
+import MeusNumerosModal from './MeusNumerosModal';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
@@ -90,6 +91,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   // Novo estado para o menu lateral
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [meusNumerosModalOpen, setMeusNumerosModalOpen] = useState(false);
   
   // Pacotes promocionais disponíveis
   const { selection, selectPackage, selectPackageFunction, clearSelection, updateQuantity } = useCampaignSelection(campanhaDetalhes as ICampaign);
@@ -426,8 +428,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
 
   // Handler para o botão "Meus Números"
   const handleMeusNumerosClick = () => {
-    // Implementar a lógica para mostrar os números do usuário
-    console.log("Meus Números clicado");
+    setMeusNumerosModalOpen(true);
   };
 
   // Funções para input editável de quantidade
@@ -1438,6 +1439,13 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
         campanha={campanhaDetalhes}
         campaignSelection={selection as INumberPackageCampaign}
         onSuccess={proceedWithPurchase}
+      />
+      
+      {/* Modal de consulta de números */}
+      <MeusNumerosModal 
+        isOpen={meusNumerosModalOpen}
+        onClose={() => setMeusNumerosModalOpen(false)}
+        campaignCode={campanhaDetalhes?.campaignCode}
       />
     </Container>
   );

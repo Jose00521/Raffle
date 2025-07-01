@@ -44,7 +44,9 @@ const ModalOverlay = styled.div`
   padding: 0.5rem;
 `;
 
-const ModalContainer = styled.div<{ maxWidth?: string }>`
+const ModalContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'maxWidth'
+})<{ maxWidth?: string }>`
   background: white;
   border-radius: 12px;
   padding: 1rem;
