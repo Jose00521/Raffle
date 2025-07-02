@@ -191,8 +191,17 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     // Criar uma imagem temporária para verificar as dimensões reais
     const img = new Image();
     img.onload = () => {
-      const isVertical = img.naturalHeight > img.naturalWidth;
+      // Considerar imagem como vertical apenas se a altura for significativamente maior que a largura
+      const aspectRatio = img.naturalHeight / img.naturalWidth;
+      const isVertical = aspectRatio > 1.2; // Proporção mais precisa para determinar orientação vertical
       setIsCurrentImageVertical(isVertical);
+      
+      // Precarregar a próxima imagem para melhorar a experiência
+      const nextIndex = (index + 1) % carouselImages.length;
+      if (typeof carouselImages[nextIndex] === 'string') {
+        const preloadImg = new Image();
+        preloadImg.src = carouselImages[nextIndex] as string;
+      }
     };
     
     // Definir a URL da imagem para carregar
@@ -226,6 +235,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
 
     return () => clearInterval(intervalId);
   }, [isAutoplay, currentImageIndex]);
+  
+  // Pré-carregamento de todas as imagens para melhorar a experiência
+  useEffect(() => {
+    if (carouselImages && carouselImages.length > 0) {
+      carouselImages.forEach((img: string | File) => {
+        if (typeof img === 'string') {
+          const preloadImg = new Image();
+          preloadImg.src = img;
+        }
+      });
+    }
+  }, [carouselImages]);
 
   // Pause no autoplay quando o usuário interagir com o carrossel
   const handleUserInteraction = () => {
@@ -707,7 +728,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       draggable={false}
                       onLoad={(e) => {
                         const target = e.target as HTMLImageElement;
-                        const isVertical = target.naturalHeight > target.naturalWidth;
+                        // Considerar imagem como vertical apenas se a altura for significativamente maior que a largura
+                        const aspectRatio = target.naturalHeight / target.naturalWidth;
+                        const isVertical = aspectRatio > 1.2; // Proporção mais precisa
                         
                         // Atualizar o estado apenas se for a imagem atual
                         if (index === currentImageIndex) {
@@ -1015,7 +1038,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       draggable={false}
                       onLoad={(e) => {
                         const target = e.target as HTMLImageElement;
-                        const isVertical = target.naturalHeight > target.naturalWidth;
+                        // Considerar imagem como vertical apenas se a altura for significativamente maior que a largura
+                        const aspectRatio = target.naturalHeight / target.naturalWidth;
+                        const isVertical = aspectRatio > 1.2; // Proporção mais precisa
                         
                         // Atualizar o estado apenas se for a imagem atual
                         if (index === currentImageIndex) {
@@ -2344,7 +2369,7 @@ const PainelImagem = styled.div`
 const CarrosselContainer = styled.div<{ $isVertical?: boolean }>`
   position: relative;
   width: 100%;
-  aspect-ratio: ${props => props.$isVertical ? '4/3' : '9/16'};
+  aspect-ratio: ${props => props.$isVertical ? '4/3' : '16/9'};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.md};
@@ -2352,8 +2377,12 @@ const CarrosselContainer = styled.div<{ $isVertical?: boolean }>`
   
   @media (max-width: 768px) {
     aspect-ratio: ${props => props.$isVertical ? '3/4' : '16/9'};
-    max-height: ${props => props.$isVertical ? '80vh' : 'auto'};
-    min-height: 300px;
+    max-height: ${props => props.$isVertical ? '80vh' : '60vh'};
+    min-height: 250px;
+  }
+  
+  @media (max-width: 480px) {
+    aspect-ratio: ${props => props.$isVertical ? '3/4' : '4/3'};
   }
 `;
 
@@ -2362,6 +2391,7 @@ const CarrosselWrapper = styled.div`
   width: 100%;
   height: 100%;
   transition: transform 0.5s ease;
+  will-change: transform; /* Otimização de performance para animações */
 `;
 
 const CarrosselSlide = styled.div`
@@ -2373,6 +2403,7 @@ const CarrosselSlide = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #f8f8f8;
   
   @media (max-width: 767px) {
     cursor: default;
@@ -2382,11 +2413,16 @@ const CarrosselSlide = styled.div`
 const CarrosselImagem = styled.img<{ $isVertical?: boolean }>`
   width: 100%;
   height: 100%;
-  object-fit: ${props => props.$isVertical ? 'cover' : 'cover'};
+  object-fit: cover;
+  object-position: center;
   
   @media (max-width: 768px) {
+    object-fit: contain;
+    background-color: #f8f8f8;
+  }
+  
+  @media (max-width: 480px) {
     object-fit: cover;
-    max-height: 70vh;
   }
 `;
 
@@ -2470,6 +2506,7 @@ const MiniaturasContainer = styled.div`
   -webkit-overflow-scrolling: touch;
   width: 100%;
   position: relative;
+  display: flex;
   
   /* Esconde a scrollbar mas mantém a funcionalidade */
   &::-webkit-scrollbar {
@@ -2492,45 +2529,17 @@ const MiniaturasContainer = styled.div`
 
   @media (max-width: 768px){
     display: flex;
-  flex-wrap: nowrap;
+    flex-wrap: nowrap;
   }
   
   /* Para desktop, mostra até 5 miniaturas com scroll suave */
   @media (min-width: 768px) {
-  dis
-    flex-wrap:none;
-    gap:none;
-    grid-template-colums: repeat(8,1fr) !important;
-    scrollbar-width: none ;
-
-      overflow-x: none;
-    -webkit-overflow-scrolling: none;
-    padding: 0.5rem 0;
-
-      &::-webkit-scrollbar {
-    height: none;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: none;
-    border-radius: none;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: none;
-    border-radius: none;
-  }
-  
-  /* Efeito de sombra para indicar que há mais conteúdo */
-  mask-image: none;
-  -webkit-mask-image: none;
-    
-    /* Mostra 2 miniaturas completas e parte da terceira */
-    &::after {
-      content: '';
-      flex: 0 0 20px;
-    }
-      
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
 `;
 
@@ -2544,20 +2553,32 @@ const MiniaturaBotao = styled.button<{ $ativo: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   aspect-ratio: 16/9;
-  min-width: 120px; /* Tamanho reduzido para manter como miniatura */
+  min-width: 100px; /* Tamanho reduzido para manter como miniatura */
   max-width: 120px; /* Tamanho máximo fixo */
-  width: 30%; /* Aproximadamente 3 itens visíveis */
+  width: 25%; /* Aproximadamente 4 itens visíveis */
   flex-shrink: 0;
+  margin-right: 0.5rem;
   
   @media (min-width: 768px) {
-    min-width: 150px;
+    min-width: 120px;
     max-width: 150px;
-    width: 20%;
+    width: calc(20% - 0.5rem);
+    margin-bottom: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 80px;
+    max-width: 100px;
+    width: 33.33%; /* 3 itens visíveis em telas muito pequenas */
   }
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows.md};
+  }
+  
+  &:last-child {
+    margin-right: 0;
   }
 `;
 
@@ -2565,6 +2586,12 @@ const MiniaturaImagem = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  transition: transform 0.2s ease-in-out;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
 const PrecoDestaque = styled.div`
