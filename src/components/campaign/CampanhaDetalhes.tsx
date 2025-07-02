@@ -68,8 +68,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
-  const numeroMinimo = Math.max(12, Math.ceil(12 / (campanhaDetalhes?.individualNumberPrice || 0)));
-  const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(numeroMinimo);
+  const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(campanhaDetalhes?.minNumbersPerUser || 0);
   const [activeTab, setActiveTab] = useState('titulos');
   // Estado para o carrossel de imagens
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -1449,7 +1448,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               
               <h4>COMO FUNCIONA:</h4>
               <p>
-                Você escolhe a quantidade de números que deseja adquirir (mínimo {numeroMinimo}). 
+                Você escolhe a quantidade de números que deseja adquirir (mínimo {campanhaDetalhes?.minNumbersPerUser}). 
                 O sistema irá gerar aleatoriamente os números para você entre os disponíveis para esta campanha.
                 Quanto mais números adquirir, maiores são suas chances de ganhar!
               </p>
@@ -4052,7 +4051,14 @@ const Regulamento = styled.div`
   }
   
   p {
-    font-size: 0.8rem;
+    font-size: 0.8rem !important;
+    line-height: 1.6;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    margin-bottom: 1rem;
+  }
+
+  span, strong , b {
+    font-size: 0.8rem !important;
     line-height: 1.6;
     color: ${({ theme }) => theme.colors.text.secondary};
     margin-bottom: 1rem;
