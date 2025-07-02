@@ -615,7 +615,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
 
   
             <Titulo>{campanhaDetalhes?.title}</Titulo>
-            <Descricao>{campanhaDetalhes?.description}</Descricao>
+            <Descricao>{campanhaDetalhes?.description}</Descricao>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
           
             
             <SubTitulo>
@@ -935,16 +935,23 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             
             {/* Seletor de quantidade estilo moderno */}
             <QuantidadeSelector>
-              <QuantidadeLabel>Quantidade de cotas:</QuantidadeLabel>
+              <QuantidadeLabel>
+                Quantidade de cotas:
+                <ValorPorCota>
+                  {selection?.quantity && campanhaDetalhes?.individualNumberPrice ? 
+                    `${formatCurrency(campanhaDetalhes.individualNumberPrice)} por cota` : 
+                    'Valor por cota'}
+                </ValorPorCota>
+              </QuantidadeLabel>
+              
               <QuantidadeControle>
-                <BotoesEsquerda>
-                  <BotaoReset onClick={() => clearSelection()} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
-                    <i className="fas fa-undo-alt"></i>
-                  </BotaoReset>
-                  <BotaoMenos onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
-                    <span>−</span>
-                  </BotaoMenos>
-                </BotoesEsquerda>
+                <BotaoMenos 
+                  onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} 
+                  disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
+                >
+                  <span>−</span>
+                </BotaoMenos>
+                
                 <QuantidadeNumero onClick={handleQuantityClick}>
                   <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
                     {selection?.quantity}
@@ -956,17 +963,44 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       onChange={handleQuantityChange}
                       onKeyDown={handleQuantityKeyDown}
                       onBlur={handleQuantityBlur}
-                                             autoFocus
-                       maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
-                       placeholder="Digite a quantidade"
-                     />
-                   )}
-                   
-                  </QuantidadeNumero>
-                  <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0) || false}>
+                      autoFocus
+                      maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                      placeholder="Digite a quantidade"
+                    />
+                  )}
+                </QuantidadeNumero>
+                
+                <BotaoMais 
+                  onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} 
+                  $disabled={!!selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}
+                >
                   <span>+</span>
                 </BotaoMais>
               </QuantidadeControle>
+              
+              <ChancesContainer>
+                <ChancesInfo>
+                  Suas chances: 
+                  <ChancesTexto 
+                    $level={
+                      selection?.quantity && selection.quantity < 100 ? 'basic' : 
+                      selection?.quantity && selection.quantity < 250 ? 'good' : 
+                      'excellent'
+                    }
+                  >
+                    {selection?.quantity && selection.quantity < 100 ? 'Boas' : 
+                     selection?.quantity && selection.quantity < 250 ? 'Ótimas' : 
+                     'Excelentes'}
+                  </ChancesTexto>
+                </ChancesInfo>
+                
+                <BotaoReset 
+                  onClick={() => clearSelection()} 
+                  disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
+                >
+                  <i className="fas fa-undo-alt"></i>
+                </BotaoReset>
+              </ChancesContainer>
               
               {/* Opções de lotes */}
               <SeletorLotes>
@@ -986,9 +1020,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               
               {/* Valor total */}
               <ValorTotalContainer>
-                <ValorTotalLabel>Total:</ValorTotalLabel>
+                <ValorTotalLabel>
+                  Total:
+                  {selection?.isCombo && (
+                    <ValorTotalEconomia>
+                      Economia: {formatCurrency((selection.quantity * (campanhaDetalhes?.individualNumberPrice || 0)) - (selection?.totalPrice || 0))}
+                    </ValorTotalEconomia>
+                  )}
+                </ValorTotalLabel>
                 <ValorTotal>
-                  {isEditingQuantity? formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)):formatCurrency(selection?.totalPrice || 0)}
+                  {isEditingQuantity? 
+                    formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)) : 
+                    formatCurrency(selection?.totalPrice || 0)}
                 </ValorTotal>
               </ValorTotalContainer>
             </QuantidadeSelector>
@@ -1242,16 +1285,23 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               </MensagemIncentivo>
               
               <QuantidadeSelector>
-                <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
+                <QuantidadeLabel>
+                  Quantidade de títulos:
+                  <ValorPorCota>
+                    {selection?.quantity && campanhaDetalhes?.individualNumberPrice ? 
+                      `${formatCurrency(campanhaDetalhes.individualNumberPrice)} por cota` : 
+                      'Valor por cota'}
+                  </ValorPorCota>
+                </QuantidadeLabel>
+                
                 <QuantidadeControle>
-                  <BotoesEsquerda>
-                    <BotaoReset onClick={() => clearSelection()} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
-                      <i className="fas fa-undo-alt"></i>
-                    </BotaoReset>
-                    <BotaoMenos onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
-                      <span>−</span>
-                    </BotaoMenos>
-                  </BotoesEsquerda>
+                  <BotaoMenos 
+                    onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} 
+                    disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
+                  >
+                    <span>−</span>
+                  </BotaoMenos>
+                  
                   <QuantidadeNumero onClick={handleQuantityClick}>
                     <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
                       {selection?.quantity}
@@ -1263,17 +1313,44 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                         onChange={handleQuantityChange}
                         onKeyDown={handleQuantityKeyDown}
                         onBlur={handleQuantityBlur}
-                                                  autoFocus
-                          maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
-                          placeholder="Digite a quantidade"
-                        />
-                      )}
-                   
-                    </QuantidadeNumero>
-                    <BotaoMais onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} $disabled={!!selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}>
+                        autoFocus
+                        maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                        placeholder="Digite a quantidade"
+                      />
+                    )}
+                  </QuantidadeNumero>
+                  
+                  <BotaoMais 
+                    onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} 
+                    $disabled={!!selection?.quantity && !!campanhaDetalhes?.maxNumbersPerUser && selection.quantity >= (campanhaDetalhes?.maxNumbersPerUser || 0)}
+                  >
                     <span>+</span>
                   </BotaoMais>
                 </QuantidadeControle>
+                
+                <ChancesContainer>
+                  <ChancesInfo>
+                    Suas chances: 
+                    <ChancesTexto 
+                      $level={
+                        selection?.quantity && selection.quantity < 100 ? 'basic' : 
+                        selection?.quantity && selection.quantity < 250 ? 'good' : 
+                        'excellent'
+                      }
+                    >
+                      {selection?.quantity && selection.quantity < 100 ? 'Boas' : 
+                       selection?.quantity && selection.quantity < 250 ? 'Ótimas' : 
+                       'Excelentes'}
+                    </ChancesTexto>
+                  </ChancesInfo>
+                  
+                  <BotaoReset 
+                    onClick={() => clearSelection()} 
+                    disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
+                  >
+                    <i className="fas fa-undo-alt"></i>
+                  </BotaoReset>
+                </ChancesContainer>
                 
                 {/* Opções de lotes */}
                 <SeletorLotes>
@@ -1293,9 +1370,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 
                 {/* Valor total */}
                 <ValorTotalContainer>
-                  <ValorTotalLabel>Total:</ValorTotalLabel>
+                  <ValorTotalLabel>
+                    Total:
+                                      {selection?.isCombo && (
+                    <ValorTotalEconomia>
+                      Economia: {formatCurrency((selection.quantity * (campanhaDetalhes?.individualNumberPrice || 0)) - (selection?.totalPrice || 0))}
+                    </ValorTotalEconomia>
+                  )}
+                  </ValorTotalLabel>
                   <ValorTotal>
-                    {isEditingQuantity? formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)):formatCurrency(selection?.totalPrice || 0)}
+                    {isEditingQuantity? 
+                      formatCurrency(Number(tempQuantity) * (campanhaDetalhes?.individualNumberPrice || 0)) : 
+                      formatCurrency(selection?.totalPrice || 0)}
                   </ValorTotal>
                 </ValorTotalContainer>
               </QuantidadeSelector>
@@ -3074,7 +3160,7 @@ const QuantidadeSelector = styled.div`
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, ${({ theme }) => theme.colors.secondary}, ${({ theme }) => theme.colors.accent || theme.colors.primary});
+    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
     border-radius: 14px 14px 0 0;
   }
 
@@ -3089,7 +3175,7 @@ const QuantidadeSelector = styled.div`
   }
 `;
 
-// More premium section label
+// Título mais refinado para o seletor de quantidade
 const QuantidadeLabel = styled.div`
   font-size: 1.15rem;
   font-weight: 700;
@@ -3098,6 +3184,9 @@ const QuantidadeLabel = styled.div`
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   letter-spacing: -0.01em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   @media (max-width: 576px) {
     font-size: 0.7rem;
@@ -3105,80 +3194,83 @@ const QuantidadeLabel = styled.div`
   }
 `;
 
-// Improved quantity control with better contrast
+// Informação de valor por cota
+const ValorPorCota = styled.div`
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  background: #f8f8f8;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+  }
+`;
+
+// Controle de quantidade melhorado
 const QuantidadeControle = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-radius: 12px;
-  background: #FBFBFD;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(106, 17, 203, 0.08);
-  transition: all 0.2s ease;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f8f9fe);
+  box-shadow: 0 6px 16px rgba(106, 17, 203, 0.08), 0 2px 4px rgba(106, 17, 203, 0.04);
+  border: 1px solid rgba(106, 17, 203, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  gap: 1.5rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      rgba(106, 17, 203, 0.03) 0%, 
+      rgba(106, 17, 203, 0.01) 50%, 
+      rgba(106, 17, 203, 0.03) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
   
   &:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.04);
-  }
-
-  @media (max-width: 576px) {
-    padding: 0.5rem 0.6rem;
-    border-radius: 6px;
-  }
-`;
-
-// Enhance the quantity number display
-const QuantidadeNumero = styled.div`
-  font-size: 2.5rem;
-  font-weight: 800;
-  min-width: 100px;
-  text-align: center;
-  color: ${({ theme }) => theme.colors.primary}; /* Fallback color */
-  position: relative;
-  padding: 0 1rem;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  
-  span {
-    position: relative;
-    display: inline-block;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text; /* Standard syntax */
-    width: 100% !important; 
-    text-align: center;
+    box-shadow: 0 10px 24px rgba(106, 17, 203, 0.12), 0 3px 6px rgba(106, 17, 203, 0.06);
+    transform: translateY(-1px);
     
     &::before {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      border-radius: 2px;
-      background: linear-gradient(90deg, 
-        ${({ theme }) => theme.colors.primary}88,
-        ${({ theme }) => theme.colors.secondary}88
-      );
+      opacity: 1;
     }
   }
 
   @media (max-width: 576px) {
-    font-size: 1.2rem;
-    min-width: 45px;
-    padding: 0 0.3rem;
-    
-    span::before {
-      bottom: -3px;
-      height: 1.5px;
-    }
+    padding: 0.75rem 0.5rem;
+    border-radius: 12px;
+    gap: 0.5rem;
   }
 `;
 
-// Make the control buttons more distinct
-const ControlButton = styled.button`
+const BotoesEsquerda = styled.div`
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  gap: 0.85rem;
+
+  @media (max-width: 576px) {
+    gap: 0.5rem;
+  }
+`;
+
+const BotaoReset = styled.button<{ disabled: boolean }>`
+  width: 42px;
+  height: 42px;
   border: none;
   border-radius: 50%;
   display: flex;
@@ -3187,115 +3279,10 @@ const ControlButton = styled.button`
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.1);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-  
-
-  
-  &:active {
-    transform: translateY(-1px);
-  }
-  
-  span {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    font-weight: 600;
-  }
-  
-  i {
-    position: relative;
-    z-index: 2;
-    font-size: 0.9rem;
-  }
-`;
-
-const BotaoMais = styled(ControlButton)<{ $disabled?: boolean }>`
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
-  color: white;
-  font-size: 1.8rem;
-  opacity: ${({ $disabled }) => $disabled ? 0.5 : 1};
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  border: 1px solid rgba(255,255,255,0.4);
-  
-
-  
-  &:active {
-    box-shadow: 0 4px 12px rgba(106, 17, 203, 0.25);
-  }
-
-  @media (max-width: 576px) {
-    width: 24px;
-    height: 24px;
-    font-size: 0.9rem;
-  }
-`;
-
-// Enhance BotaoMenos with better contrast
-const BotoesEsquerda = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-
-  @media (max-width: 576px) {
-    gap: 0.5rem;
-  }
-`;
-
-const BotaoMenos = styled(ControlButton)<{ disabled: boolean }>`
-  width: 42px;
-  height: 42px;
-  font-size: 1.8rem;
-  background: ${({ disabled }) => disabled ? 
-    'linear-gradient(135deg, #f0f0f0, #e2e2e2)' : 
-    'linear-gradient(135deg, #f8f8ff, #efefff)'
-  };
-  color: ${({ disabled, theme }) => disabled ? 
-    '#aaa' : 
-    theme.colors.primary
-  };
-
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
-  border: 1px solid ${({ disabled }) => disabled ? 
-    'rgba(0,0,0,0.05)' : 
-    'rgba(106, 17, 203, 0.2)'
-  };
-  
-
-
-  @media (max-width: 576px) {
-    width: 28px;
-    height: 28px;
-    font-size: 1.2rem;
-  }
-`;
-
-// Better contrast for reset button
-const BotaoReset = styled(ControlButton)<{ disabled: boolean }>`
-  width: 36px;
-  height: 36px;
   font-size: 0.95rem;
   background: ${({ disabled }) => disabled ? 
-    'linear-gradient(135deg, #f0f0f0, #e2e2e2)' : 
-    'linear-gradient(135deg, #fff0f0, #ffebeb)'
+    'linear-gradient(145deg, #f0f0f0, #e6e6e6)' : 
+    'linear-gradient(145deg, #fff5f5, #ffebeb)'
   };
   color: ${({ disabled }) => disabled ? 
     '#aaa' : 
@@ -3303,20 +3290,200 @@ const BotaoReset = styled(ControlButton)<{ disabled: boolean }>`
   };
   cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   opacity: ${({ disabled }) => disabled ? 0.7 : 1};
-  border: 1px solid ${({ disabled }) => disabled ? 
-    'rgba(0,0,0,0.05)' : 
-    'rgba(231, 76, 60, 0.2)'
+  box-shadow: ${({ disabled }) => disabled ?
+    '3px 3px 6px rgba(0, 0, 0, 0.1), -3px -3px 6px rgba(255, 255, 255, 0.8)' :
+    '4px 4px 8px rgba(231, 76, 60, 0.15), -2px -2px 6px rgba(255, 255, 255, 0.8)'
   };
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+    opacity: ${({ disabled }) => disabled ? 0.3 : 0.6};
+  }
 
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 6px 6px 12px rgba(231, 76, 60, 0.2), -3px -3px 8px rgba(255, 255, 255, 0.9);
+    
+    i {
+      transform: scale(1.1);
+    }
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 2px 2px 5px rgba(231, 76, 60, 0.15), inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+    
+    i {
+      transform: scale(0.95);
+    }
+  }
+  
+  i {
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 2;
+  }
 
   @media (max-width: 576px) {
-    width: 24px;
-    height: 24px;
-    font-size: 0.7rem;
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
   }
 `;
 
-// Input editável para quantidade
+const BotaoMenos = styled.button<{ disabled: boolean }>`
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  font-size: 1.5rem;
+  background: ${({ disabled }) => disabled ? 
+    'linear-gradient(145deg, #f0f0f0, #e6e6e6)' : 
+    'linear-gradient(145deg, #f8f8ff, #efefff)'
+  };
+  color: ${({ disabled, theme }) => disabled ? 
+    '#aaa' : 
+    theme.colors.primary
+  };
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
+  box-shadow: ${({ disabled, theme }) => disabled ?
+    '3px 3px 6px rgba(0, 0, 0, 0.1), -3px -3px 6px rgba(255, 255, 255, 0.8)' :
+    `3px 3px 6px rgba(106, 17, 203, 0.12), -2px -2px 4px rgba(255, 255, 255, 0.8)`
+  };
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+    opacity: ${({ disabled }) => disabled ? 0.3 : 0.6};
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 8px rgba(106, 17, 203, 0.15), -2px -2px 5px rgba(255, 255, 255, 0.9);
+    
+    span {
+      transform: scale(1.05);
+    }
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+    box-shadow: inset 2px 2px 3px rgba(106, 17, 203, 0.12), inset -1px -1px 3px rgba(255, 255, 255, 0.7);
+    
+    span {
+      transform: scale(0.95);
+    }
+  }
+
+  @media (max-width: 576px) {
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+  }
+  
+  span {
+    position: relative;
+    top: -1px;
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 2;
+    font-weight: 600;
+  }
+`;
+
+// Campo de quantidade com transições suaves
+const QuantidadeNumero = styled.div`
+  font-size: 2rem;
+  font-weight: 800;
+  min-width: 140px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.primary};
+  position: relative;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 1px 1px 3px rgba(106, 17, 203, 0.05), inset -1px -1px 3px rgba(255, 255, 255, 0.9);
+  z-index: 2;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right,
+      transparent,
+      rgba(106, 17, 203, 0.15) 30%,
+      rgba(106, 17, 203, 0.3) 50%,
+      rgba(106, 17, 203, 0.15) 70%,
+      transparent
+    );
+  }
+  
+  span {
+    position: relative;
+    display: inline-block;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.secondary});
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    width: 100% !important; 
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+  
+  &:hover {
+    background: white;
+    
+    &::after {
+      content: '✏️';
+      position: absolute;
+      top: 0;
+      right: 0;
+      font-size: 0.75rem;
+      background: rgba(106, 17, 203, 0.1);
+      padding: 0.15rem;
+      border-radius: 0 10px 0 5px;
+    }
+  }
+  
+  &:active {
+    background: rgba(106, 17, 203, 0.03);
+  }
+
+  @media (max-width: 576px) {
+    font-size: 1.5rem;
+    min-width: 120px;
+    padding: 0.2rem 0.3rem;
+    border-radius: 8px;
+  }
+`;
+
+// Input para edição direta de quantidade
 const QuantidadeInput = styled.input`
   position: absolute;
   top: 50%;
@@ -3337,19 +3504,18 @@ const QuantidadeInput = styled.input`
   background-clip: text;
   padding: 0.2rem;
   margin: 0;
-  min-width: 120px;
+  min-width: 90px;
   
   &::placeholder {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     opacity: 0.6;
     -webkit-text-fill-color: rgba(106, 17, 203, 0.6);
   }
 
   @media (max-width: 576px) {
-    font-size: 1.2rem;
-    width: 80%;
-    min-width: 80px;
+    font-size: 1.8rem;
+    min-width: 100px !important; 
     padding: 0.1rem;
     
     &::placeholder {
@@ -3358,30 +3524,163 @@ const QuantidadeInput = styled.input`
   }
 `;
 
-// Dica de edição
-const EditHint = styled.div`
-  position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.7rem;
-  color: rgba(106, 17, 203, 0.6);
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+// Botão de adicionar com efeito de pressão
+const BotaoMais = styled.button<{ $disabled?: boolean }>`
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.secondary} 100%);
+  color: white;
+  font-size: 1.6rem;
+  opacity: ${({ $disabled }) => $disabled ? 0.5 : 1};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 3px 3px 8px rgba(106, 17, 203, 0.2), -1px -1px 3px rgba(255, 255, 255, 0.7);
   
-  ${QuantidadeNumero}:hover & {
-    opacity: 1;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), transparent 70%);
+    opacity: 0.8;
+  }
+  
+  &:hover:not([disabled]) {
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 10px rgba(106, 17, 203, 0.25), -2px -2px 5px rgba(255, 255, 255, 0.8);
+    
+    span {
+      transform: scale(1.05);
+    }
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+  
+  &:active:not([disabled]) {
+    transform: scale(0.95);
+    box-shadow: 2px 2px 5px rgba(106, 17, 203, 0.15), inset 1px 1px 3px rgba(0, 0, 0, 0.1);
+    
+    span {
+      transform: scale(0.95);
+    }
+    
+    &::before {
+      opacity: 0.6;
+    }
   }
 
   @media (max-width: 576px) {
-    font-size: 0.6rem;
-    bottom: -15px;
+    width: 35px;
+    height: 35px;
+    font-size: 1.3rem;
+  }
+  
+  span {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 600;
+    transition: transform 0.2s ease;
   }
 `;
 
-// Enhanced lot options
+// Informação de chances
+const ChancesContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  
+  @media (max-width: 576px) {
+    margin-top: -0.25rem;
+    gap: 0.75rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+`;
+
+const ChancesInfo = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  background: linear-gradient(145deg, #ffffff, #f8f9fe);
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(106, 17, 203, 0.08);
+  border: 1px solid rgba(106, 17, 203, 0.05);
+  flex-grow: 1;
+  
+  @media (max-width: 576px) {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 10px;
+    flex-basis: 60%;
+  }
+`;
+
+const ChancesTexto = styled.span<{ $level: 'basic' | 'good' | 'excellent' }>`
+  font-weight: 700;
+  color: ${({ $level, theme }) => {
+    switch ($level) {
+      case 'basic': return '#f39c12';
+      case 'good': return '#27ae60';
+      case 'excellent': return theme.colors.primary;
+      default: return theme.colors.text.secondary;
+    }
+  }};
+  margin-left: 0.4rem;
+  background: ${({ $level }) => {
+    switch ($level) {
+      case 'basic': return 'rgba(243, 156, 18, 0.1)';
+      case 'good': return 'rgba(39, 174, 96, 0.1)';
+      case 'excellent': return 'rgba(106, 17, 203, 0.1)';
+      default: return 'transparent';
+    }
+  }};
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  position: relative;
+  
+  &::before {
+    content: '•';
+    margin-right: 0.3rem;
+    font-size: 1.2em;
+    position: relative;
+    top: 0.05em;
+  }
+  
+  @media (max-width: 576px) {
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    margin-left: 0.3rem;
+    
+    &::before {
+      margin-right: 0.2rem;
+    }
+  }
+`;
+
+// Grid refinada para os botões de lote
 const SeletorLotes = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3398,7 +3697,7 @@ const SeletorLotes = styled.div`
   }
 `;
 
-// Better contrast for lot options
+// Botões de lote com design mais refinado
 const OpcaoLote = styled.div<{ $popular?: boolean, $disabled?: boolean }>`
   display: flex;
   flex-direction: column;
@@ -3446,12 +3745,12 @@ const OpcaoLote = styled.div<{ $popular?: boolean, $disabled?: boolean }>`
     font-size: 1rem;
     border-radius: 8px;
 
-      &:hover {
-    transform: none!important;
-    box-shadow: none !important;
-    border-color: none !important;
-    background-color: none !important;
-  }
+    &:hover {
+      transform: none!important;
+      box-shadow: none !important;
+      border-color: none !important;
+      background-color: none !important;
+    }
   }
 `;
 
@@ -3471,7 +3770,9 @@ const TextoSelecionar = styled.span`
   }
 `;
 
-// Better contrast for total value display
+
+
+// Container de valor total com destaque
 const ValorTotalContainer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -3482,6 +3783,19 @@ const ValorTotalContainer = styled.div`
   border-left: 4px solid ${({ theme }) => theme.colors.primary};
   box-shadow: 0 4px 12px rgba(106, 17, 203, 0.12);
   margin-top: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(106, 17, 203, 0.03));
+    pointer-events: none;
+  }
 
   @media (max-width: 576px) {
     padding: 0.75rem 1rem;
@@ -3495,17 +3809,32 @@ const ValorTotalLabel = styled.div`
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 1.15rem;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 576px) {
     font-size: 0.85rem;
   }
 `;
 
+const ValorTotalEconomia = styled.div`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #27ae60;
+  margin-top: 0.3rem;
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    margin-top: 0.2rem;
+  }
+`;
+
+// Valor total com transição suave
 const ValorTotal = styled.div`
   font-size: 1.8rem;
   font-weight: 800;
   color: ${({ theme }) => theme.colors.primary};
-  transition: transform 0.15s ease;
+  transition: all 0.15s ease;
   text-shadow: 0 1px 1px rgba(106, 17, 203, 0.15);
   
   @media (max-width: 576px) {
@@ -4879,4 +5208,4 @@ const DescontoTag = styled.div`
   }
 `;
 
-export default CampanhaDetalhes; 
+export default CampanhaDetalhes;
