@@ -475,6 +475,10 @@ const SecurityInfo = styled.div`
   background: rgba(40, 167, 69, 0.1);
   border-radius: 8px;
   border: 1px solid rgba(40, 167, 69, 0.2);
+
+  @media (max-width: 780px) {
+    font-size: 0.6rem;
+  }
 `;
 
 const ResultsContainer = styled.div`

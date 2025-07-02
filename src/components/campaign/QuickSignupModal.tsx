@@ -47,6 +47,7 @@ const HeaderActions = styled.div`
 const CloseButton = styled.button`
   background: none;
   border: none;
+  font-size: 0.9rem;
   cursor: pointer;
   color: #64748b;
   padding: 0.5rem;
@@ -56,6 +57,10 @@ const CloseButton = styled.button`
   &:hover {
     background: #f1f5f9;
     color: #1e293b;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
   }
 `;
 
@@ -582,7 +587,7 @@ const QuickSignupModal: React.FC<QuickSignupModalProps> = ({ isOpen, onClose, on
         <Form onSubmit={handleSubmit(onSubmit)}>
           {currentStep === 0 ? (
             <>
-              <StepTitle>Checkout</StepTitle>
+              <StepTitle>Checkout rápido</StepTitle>
             
               <FormRow>
                 <FormInput
@@ -1702,6 +1707,10 @@ const StepTitle = styled.h2`
     height: 3px;
     background: linear-gradient(90deg, #6366f1, #4f46e5);
     border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
   }
 `;
 

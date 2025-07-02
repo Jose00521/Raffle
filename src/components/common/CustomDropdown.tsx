@@ -191,6 +191,14 @@ const FormLabel = styled.label`
   font-weight: 600;
   margin-bottom: 8px;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+
+    @media (max-height: 800px) {
+    font-size: 0.85rem;
+  }
+  
+  @media (max-height: 700px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const OptionItem = styled.li<{ $isSelected: boolean }>`
