@@ -1442,7 +1442,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
           <TabContent $visivel={activeTab === 'regulamento'}>
             <Regulamento>
               <h3>Descrição/Regulamento</h3>
-              <p>{campanhaDetalhes?.regulation || campanhaDetalhes?.description}</p>
+              <RegulamentoText dangerouslySetInnerHTML={{ __html: campanhaDetalhes?.regulation || campanhaDetalhes?.description || '' }} />
               
               <h4>PREMIAÇÃO:</h4>
               <p>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name} (SUGESTÃO DE USO DO PRÊMIO LÍQUIDO {(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.value})</p>
@@ -4052,7 +4052,30 @@ const Regulamento = styled.div`
   }
   
   p {
-    font-size: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    margin-bottom: 1rem;
+  }
+`;
+
+
+const RegulamentoText = styled.div`
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-bottom: 1rem;
+
+  
+  p {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    margin-bottom: 1rem;
+  }
+
+  span {
+    font-size: 0.8rem;
     line-height: 1.6;
     color: ${({ theme }) => theme.colors.text.secondary};
     margin-bottom: 1rem;
