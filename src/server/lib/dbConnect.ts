@@ -56,8 +56,8 @@ export class DBConnection implements IDBConnection {
     if (!cached.promise) {
       const opts = {
         bufferCommands: false,
-        maxPoolSize: process.env.NODE_ENV === 'production' ? 10 : 5,
-        minPoolSize: process.env.NODE_ENV === 'production' ? 2 : 1,
+        maxPoolSize: process.env.NODE_ENV === 'production' ? 30 : 5,
+        minPoolSize: process.env.NODE_ENV === 'production' ? 3 : 1,
         maxIdleTimeMS: 30000,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
