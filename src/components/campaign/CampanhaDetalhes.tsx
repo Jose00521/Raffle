@@ -612,8 +612,12 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <BotaoVerdePequeno>Adquira já!</BotaoVerdePequeno>
               <CodigoSorteioTitulo>{campanhaDetalhes?.campaignCode}</CodigoSorteioTitulo>
             </HeaderPequeno>
-            
+
+  
             <Titulo>{campanhaDetalhes?.title}</Titulo>
+            <Descricao>{campanhaDetalhes?.description}</Descricao>
+          
+            
             <SubTitulo>
               IMAGEM ILUSTRATIVA - VALOR DO PRÊMIO {formatCurrency(Number(prizeValue()) || 0)}
             </SubTitulo>
@@ -1698,19 +1702,34 @@ const Titulo = styled.h1`
   }
 `;
 
-const SubTitulo = styled.h2`
-  font-size: 0.7rem;
-  font-weight: 500;
+
+const Descricao = styled.h2`
+font-size: 0.7rem;
+font-weight: 500;
+margin-bottom: 1rem;
+opacity: 0.9;
+text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+line-height: 1.3;
+
+@media (min-width: 768px) {
+  font-size: 0.7rem !important;
   margin-bottom: 1rem;
-  opacity: 0.9;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  line-height: 1.3;
-  
-  @media (min-width: 768px) {
-    font-size: 0.7rem !important;
-    margin-bottom: 1rem;
-  }
+}
 `;
+
+  const SubTitulo = styled.h2`
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    line-height: 1.3;
+    
+    @media (min-width: 768px) {
+      font-size: 0.7rem !important;
+      margin-bottom: 1rem;
+    }
+  `;
 
 const ValoresContainer = styled.div`
   display: flex;
