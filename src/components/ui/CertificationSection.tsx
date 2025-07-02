@@ -42,7 +42,7 @@ const DesktopTitle = styled.div`
 
 const DesktopLogos = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 4rem;
   margin-bottom: 2rem;
@@ -55,35 +55,42 @@ const DesktopLogoItem = styled.div`
   gap: 0.875rem;
   min-width: 0;
   transition: transform 0.2s ease;
+  position: relative;
 
   &:hover {
     transform: translateY(-3px);
   }
 
   img {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1));
   }
   
-  /* Caixa um pouco maior */
-  &:nth-child(2) img {
-    width: 90px;
-    height: 90px;
+  /* Caixa muito maior */
+  &:nth-child(2) {
+    padding-top: 0;
+    
+    img {
+      width: 140px;
+      height: 140px;
+      margin-top: -25px;
+      margin-bottom: -25px;
+    }
   }
 `;
 
 const DesktopSSLIcon = styled.div`
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.75rem;
+  font-size: 2rem;
   flex-shrink: 0;
   box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -218,7 +225,7 @@ const MobileTitle = styled.div`
 
 const MobileLogos = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-around;
   gap: 0.75rem;
   margin-bottom: 1rem;
@@ -232,32 +239,40 @@ const MobileLogoItem = styled.div`
   gap: 0.375rem;
   min-width: 0;
   flex: 1;
-  max-width: 70px;
+  max-width: 80px;
+  position: relative;
 
   img {
-    width: 48px;
-    height: 48px;
+    width: 54px;
+    height: 54px;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
   
-  /* Caixa um pouco maior no mobile */
-  &:nth-child(2) img {
-    width: 54px;
-    height: 54px;
+  /* Caixa muito maior no mobile */
+  &:nth-child(2) {
+    padding-top: 0;
+    max-width: 100px;
+    
+    img {
+      width: 90px;
+      height: 90px;
+      margin-top: -18px;
+      margin-bottom: -18px;
+    }
   }
 `;
 
 const MobileSSLIcon = styled.div`
-  width: 48px;
-  height: 48px;
+  width: 54px;
+  height: 54px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   flex-shrink: 0;
   box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
 
@@ -377,7 +392,7 @@ const CompactDesktopTitle = styled.div`
 
 const CompactDesktopLogos = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 1.5rem;
 `;
@@ -388,30 +403,37 @@ const CompactDesktopLogoItem = styled.div`
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  position: relative;
 
   img {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     flex-shrink: 0;
   }
   
-  /* Caixa um pouco maior */
-  &:nth-child(2) img {
-    width: 55px;
-    height: 55px;
+  /* Caixa muito maior */
+  &:nth-child(2) {
+    padding-top: 0;
+    
+    img {
+      width: 100px;
+      height: 100px;
+      margin-top: -20px;
+      margin-bottom: -20px;
+    }
   }
 `;
 
 const CompactDesktopSSLIcon = styled.div`
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
 
@@ -426,6 +448,7 @@ const CompactDesktopLogoLabel = styled.div`
   color: #1e293b;
   text-align: center;
   min-width: 0;
+  position: relative;
 
   .main-text {
     display: block;
@@ -478,7 +501,7 @@ const CompactMobileTitle = styled.div`
 
 const CompactMobileLogos = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-around;
   gap: 0.375rem;
   padding: 0 0.125rem;
@@ -491,31 +514,39 @@ const CompactMobileLogoItem = styled.div`
   gap: 0.1875rem;
   min-width: 0;
   flex: 1;
-  max-width: 55px;
+  max-width: 65px;
+  position: relative;
 
   img {
-    width: 35px;
-    height: 35px;
+    width: 42px;
+    height: 42px;
     flex-shrink: 0;
   }
   
-  /* Caixa um pouco maior no mobile */
-  &:nth-child(2) img {
-    width: 40px;
-    height: 40px;
+  /* Caixa muito maior no mobile */
+  &:nth-child(2) {
+    padding-top: 0;
+    max-width: 85px;
+    
+    img {
+      width: 70px;
+      height: 70px;
+      margin-top: -15px;
+      margin-bottom: -15px;
+    }
   }
 `;
 
 const CompactMobileSSLIcon = styled.div`
-  width: 35px;
-  height: 35px;
+  width: 42px;
+  height: 42px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.8rem;
+  font-size: 1rem;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
 

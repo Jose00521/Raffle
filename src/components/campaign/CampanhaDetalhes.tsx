@@ -862,7 +862,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <CompraContainer>
             {/* Mensagem incentivo */}
             <MensagemIncentivo>
-              <i className="fas fa-trophy"></i> Quanto mais títulos, mais chances de ganhar!
+              <i className="fas fa-trophy"></i> Quanto mais cotas, mais chances de ganhar!
             </MensagemIncentivo>
             
             {/* Pacotes Promocionais - Nova seção */}
@@ -908,7 +908,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             
             {/* Seletor de quantidade estilo moderno */}
             <QuantidadeSelector>
-              <QuantidadeLabel>Quantidade de títulos:</QuantidadeLabel>
+              <QuantidadeLabel>Quantidade de cotas:</QuantidadeLabel>
               <QuantidadeControle>
                 <BotoesEsquerda>
                   <BotaoReset onClick={() => clearSelection()} disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}>
