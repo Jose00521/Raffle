@@ -1,5 +1,5 @@
 import { User } from "@/models/User";
-import { DBConnection } from "@/server/lib/dbConnect";
+import { dbInstance } from "@/server/lib/dbConnect";
 import { IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
 import { SecureDataUtils, EncryptionService } from "@/utils/encryption";
 import { ApiError } from "@/server/utils/errorHandler/ApiError";
@@ -8,9 +8,7 @@ export const unMaskUser = async (payment: IPaymentPattern) => {
     try {
         console.log('🔍 INÍCIO DO UNMASK - MESMA SESSÃO');
     
-        
-        const db = new DBConnection();
-        await db.connect();
+        await dbInstance.connect();
         
         const user = await User.findOne({ userCode: payment.userCode });
 

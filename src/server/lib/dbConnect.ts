@@ -1,58 +1,75 @@
-import mongoose, { Mongoose, Connection } from 'mongoose';
-import { injectable, inject } from 'tsyringe';
+import mongoose, { Connection } from 'mongoose';
+
+// Declaração global para cache
+declare global {
+  var mongoose: {
+    conn: Connection | null;
+    promise: Promise<Connection> | null;
+  } | undefined;
+}
 
 export interface IDBConnection {
-  connect(): Promise<Mongoose | Connection>;
-  getConnectionStats(): Promise<any>;
+  connect(): Promise<Connection>;
   disconnect(): Promise<void>;
+  getConnectionStats(): {
+    readyState: number;
+    activeConnections: number;
+    host: string;
+  };
 }
 
-// Singleton pattern para desenvolvimento
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
-}
+// Instância singleton global
+let globalDBConnection: DBConnection | null = null;
 
 export class DBConnection implements IDBConnection {
-  async connect(): Promise<Mongoose | Connection> {
+  private static instance: DBConnection;
+  
+  // Método para obter a instância singleton
+  public static getInstance(): DBConnection {
+    if (!DBConnection.instance) {
+      DBConnection.instance = new DBConnection();
+    }
+    return DBConnection.instance;
+  }
+
+  // Construtor privado para prevenir instanciação direta
+  private constructor() {}
+
+  async connect(): Promise<Connection> {
     const MONGODB_URI = process.env.MONGODB_URI;
     if (!MONGODB_URI) {
-      throw new Error('MONGODB_URI não está definido no ambiente');
+      throw new Error('Por favor, defina a variável MONGODB_URI no arquivo .env.local');
     }
 
-    // Se já temos uma conexão em cache, retorna ela
+    const cached = global.mongoose || { conn: null, promise: null };
+    global.mongoose = cached;
+
     if (cached.conn) {
       return cached.conn;
     }
 
-    // Se já estamos conectados via mongoose global, retorne a conexão existente
     if (mongoose.connection.readyState === 1) {
       cached.conn = mongoose.connection;
       return mongoose.connection;
     }
 
-    // Se não temos uma promise de conexão, cria uma
     if (!cached.promise) {
-      // Configurações otimizadas por ambiente
       const opts = {
         bufferCommands: false,
-        maxPoolSize: process.env.NODE_ENV === 'production' ? 10 : 5,   // Conservador para produção
-        minPoolSize: process.env.NODE_ENV === 'production' ? 2 : 1,    // Mínimo necessário
+        maxPoolSize: process.env.NODE_ENV === 'production' ? 10 : 5,
+        minPoolSize: process.env.NODE_ENV === 'production' ? 2 : 1,
+        maxIdleTimeMS: 30000,
+        serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000,
-        serverSelectionTimeoutMS: 10000,
-        maxIdleTimeMS: process.env.NODE_ENV === 'production' ? 30000 : 10000,
         heartbeatFrequencyMS: 10000,
+        retryWrites: true,
       };
 
+      console.log(`🔗 [${process.env.NODE_ENV}] Conectando ao MongoDB...`);
+      
       cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-        console.log('🟢 MongoDB conectado com sucesso');
-        
-        // Monitoramento de conexões
-        this.setupConnectionMonitoring();
-        
-        return mongoose;
+        console.log(`✅ [${process.env.NODE_ENV}] MongoDB conectado com sucesso`);
+        return mongoose.connection;
       });
     }
 
@@ -63,74 +80,72 @@ export class DBConnection implements IDBConnection {
       throw e;
     }
 
+    // Configurar listeners apenas uma vez
+    if (!mongoose.connection.listeners('connected').length) {
+      mongoose.connection.on('connected', () => {
+        console.log(`🔗 [${process.env.NODE_ENV}] MongoDB connected`);
+      });
+
+      mongoose.connection.on('error', (err) => {
+        console.error(`❌ [${process.env.NODE_ENV}] MongoDB connection error:`, err);
+      });
+
+      mongoose.connection.on('disconnected', () => {
+        console.log(`🔌 [${process.env.NODE_ENV}] MongoDB disconnected`);
+      });
+
+      // Monitoramento apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        const interval = setInterval(async () => {
+          const db = mongoose.connection.db;
+          if (db) {
+            try {
+              const status = await db.admin().serverStatus();
+              console.log(`📊 [DEV] Conexões ativas: ${status.connections?.current || 'N/A'}`);
+            } catch (err) {
+              // Ignore monitoring errors
+            }
+          }
+        }, 60000);
+
+        mongoose.connection.on('disconnected', () => {
+          clearInterval(interval);
+        });
+      }
+    }
+
+    const db = mongoose.connection.db;
+    if (db) {
+      const connectionStats = this.getConnectionStats();
+      console.log(`📊 [${process.env.NODE_ENV}] Pool status:`, connectionStats);
+    }
+
     return cached.conn;
   }
 
-  // Configurar monitoramento de conexões
-  private setupConnectionMonitoring(): void {
-    // Log de eventos críticos (sempre)
-    mongoose.connection.on('connected', () => {
-      console.log('🔗 Mongoose conectado ao MongoDB');
-    });
-
-    mongoose.connection.on('error', (err) => {
-      console.log('❌ Erro de conexão MongoDB:', err);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.log('🔌 Mongoose desconectado do MongoDB');
-    });
-
-    // Monitoramento detalhado apenas em desenvolvimento
-    if (process.env.NODE_ENV === 'development') {
-      // Log das estatísticas de conexão a cada 60 segundos (menos frequente)
-      const monitorInterval = setInterval(() => {
-        const db = mongoose.connection.db;
-        if (db) {
-          db.admin().serverStatus().then((status: any) => {
-            const connections = status.connections;
-            console.log(`📊 MongoDB Connections: ${connections.current}/${connections.available} (${Math.round((connections.current/connections.available)*100)}%)`);
-          }).catch((err: any) => {
-            console.log('❌ Erro ao obter status do servidor:', err.message);
-          });
-        }
-      }, 60000); // Mudado para 60 segundos
-
-      // Limpar interval se desconectar
-      mongoose.connection.on('disconnected', () => {
-        clearInterval(monitorInterval);
-      });
-    }
-  }
-
-  // Método para obter estatísticas de conexão
-  async getConnectionStats(): Promise<any> {
-    try {
-      const db = mongoose.connection.db;
-      if (!db) {
-        throw new Error('Não conectado ao MongoDB');
-      }
-      
-      const status = await db.admin().serverStatus();
-      return {
-        current: status.connections.current,
-        available: status.connections.available,
-        usage: Math.round((status.connections.current / status.connections.available) * 100),
-        totalCreated: status.connections.totalCreated
-      };
-    } catch (error) {
-      console.error('Erro ao obter estatísticas de conexão:', error);
-      return null;
-    }
-  }
-
-  // Método para fechar conexões (útil em testes)
   async disconnect(): Promise<void> {
-    if (cached.conn) {
+    if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
-      cached.conn = null;
-      cached.promise = null;
-      console.log('🔴 MongoDB desconectado');
+      global.mongoose = { conn: null, promise: null };
     }
+  }
+
+  getConnectionStats() {
+    return {
+      readyState: mongoose.connection.readyState,
+      activeConnections: 0, // Simplificado para evitar erros de tipo
+      host: mongoose.connection.host || 'unknown'
+    };
   }
 }
+
+// Função de conveniência para manter compatibilidade com código antigo
+export default async function dbConnect(): Promise<Connection> {
+  if (!globalDBConnection) {
+    globalDBConnection = DBConnection.getInstance();
+  }
+  return globalDBConnection.connect();
+}
+
+// Export da instância singleton para uso direto
+export const dbInstance = DBConnection.getInstance();

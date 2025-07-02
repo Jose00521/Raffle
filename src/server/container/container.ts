@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 // Add to your container setup (e.g., src/server/container.ts or similar)
-import { container } from 'tsyringe';
+import { container, Lifecycle } from 'tsyringe';
 import { IUserService, UserService } from '../services/UserService'; // adjust path
 import { IUserRepository, UserRepository } from '../repositories/UserRepository'; // adjust path
-import { DBConnection, IDBConnection } from '../lib/dbConnect';
+import { DBConnection, IDBConnection, dbInstance } from '../lib/dbConnect';
 import { UserController } from '../controllers/UserController';
 import { IUserController } from '../controllers/UserController';
 import { ICampaignService } from '../services/CampaignService';
@@ -42,7 +42,7 @@ import { SSEvents } from '../repositories/events/SSEvents';
 
 
 // Register dependencies
-container.register<IDBConnection>('db', { useClass: DBConnection })
+container.register<IDBConnection>('db', { useValue: dbInstance });
 container.register<Logger>('logger', { useValue: logger });
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
 container.register<IUserService>('userService', { useClass: UserService });;
