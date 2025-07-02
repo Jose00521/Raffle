@@ -14,6 +14,7 @@ import { container } from "tsyringe";
 import { maskAddress, maskCPF, maskEmail, maskPhone, maskCEP} from "@/utils/maskUtils";
 import { getSocketServer } from "../socketio";
 import SocketServiceDefault from "../lib/socket/SocketService";
+import { IUser } from "@/models/interfaces/IUserInterfaces";
 
 export interface IPaymentRepository {
     createInitialPixPaymentAttempt(data: {
@@ -59,7 +60,7 @@ export class PaymentRepository implements IPaymentRepository {
         const { gateway, body, idempotencyKey } = data;
 
         try {
-            this.db.connect();
+            await this.db.connect();
 
             // 🛡️ PROTEÇÃO 1: Verificação de idempotência (padrão da indústria)
             if (idempotencyKey) {
@@ -202,14 +203,26 @@ export class PaymentRepository implements IPaymentRepository {
                 return createErrorResponse('Pagamento não encontrado', 404);
             }
 
+            const user = await User.findOne({
+                userCode: (payment.userId as unknown as IUser).userCode
+            });
 
-            
+            if(!user){
+                return createErrorResponse('Usuário não encontrado', 404);
+            }
 
             if(status === 'APPROVED'){
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
-                
-                await payment.save();
+
+                if(user.role === 'user'){
+                    user.role = 'participant';
+                }
+
+                await Promise.all([
+                    payment.save(),
+                    user.save()
+                ]);
 
                 return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
             }
@@ -239,7 +252,7 @@ export class PaymentRepository implements IPaymentRepository {
         try {
             const { gatewayResponse, paymentCode } = data;
 
-            this.db.connect();
+            await this.db.connect();
 
             console.log('paymentCode vindo do updatePixPaymentToPending', paymentCode);
             
