@@ -149,7 +149,7 @@ const TimerDigits = styled.div`
   
   @media (max-width: 576px) {
     font-size: 1.1rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.3rem;
     text-align: left;
     margin: 0 0.3rem;
     width: 65px;

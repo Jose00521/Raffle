@@ -1033,13 +1033,9 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <ValorTotalContainer>
                 <ValorTotalLabel>
                   Total:
-                  {selection?.isCombo ? (
+                  {selection?.isCombo && (
                     <ValorTotalEconomia>
-                      Economia: {formatCurrency((selection.quantity * (campanhaDetalhes?.individualNumberPrice || 0)) - (selection?.totalPrice || 0))}
-                    </ValorTotalEconomia>
-                  ):(
-                    <ValorTotalEconomia>
-                       &nbsp;
+                      Economia de {formatCurrency((selection.quantity * (campanhaDetalhes?.individualNumberPrice || 0)) - (selection?.totalPrice || 0))}
                     </ValorTotalEconomia>
                   )}
                 </ValorTotalLabel>
@@ -3830,6 +3826,8 @@ const ValorTotalLabel = styled.div`
   font-size: 1.15rem;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  width: 100%;
 
   @media (max-width: 576px) {
     font-size: 0.85rem;
