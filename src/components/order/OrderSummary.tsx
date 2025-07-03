@@ -73,7 +73,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const [expanded, setExpanded] = useState(showFullDetails);
   const [copied, setCopied] = useState(false);
   
-  const StatusIcon = statusConfig[payment.status]?.icon || Clock;
+  const StatusIcon = statusConfig[payment.status as keyof typeof statusConfig]?.icon || Clock;
   const formattedAmount = new Intl.NumberFormat('pt-BR', { 
     style: 'currency', 
     currency: 'BRL' 
@@ -85,7 +85,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  }).format(new Date(payment.purchaseDate));
+  }).format(new Date(payment.purchaseAt));
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -96,8 +96,8 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   return (
     <div className={cn(
       'w-full rounded-xl overflow-hidden shadow-sm transition-all duration-300',
-      statusConfig[payment.status].borderColor,
-      statusConfig[payment.status].bgColor,
+      statusConfig[payment.status as keyof typeof statusConfig].borderColor,
+      statusConfig[payment.status as keyof typeof statusConfig].bgColor,
       'hover:shadow-md',
       className
     )}>
@@ -107,7 +107,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center",
-            statusConfig[payment.status].color,
+            statusConfig[payment.status as keyof typeof statusConfig].color,
             "bg-white"
           )}>
             <StatusIcon className="w-5 h-5" />
@@ -122,10 +122,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             <p className="font-semibold text-gray-900">{formattedAmount}</p>
             <span className={cn(
               "text-xs px-2 py-1 rounded-full",
-              statusConfig[payment.status].color,
-              statusConfig[payment.status].bgColor,
+              statusConfig[payment.status as keyof typeof statusConfig].color,
+              statusConfig[payment.status as keyof typeof statusConfig].bgColor,
             )}>
-              {statusConfig[payment.status].label}
+              {statusConfig[payment.status as keyof typeof statusConfig].label}
             </span>
           </div>
           <motion.div
@@ -171,7 +171,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <h4 className="text-sm font-medium text-gray-500 mb-2">Detalhes do Pagamento</h4>
                   <div className="space-y-2">
                     <p className="text-sm">
-                      <span className="font-medium">Método:</span> {paymentMethodLabels[payment.paymentMethod]}
+                      <span className="font-medium">Método:</span> {paymentMethodLabels[payment.paymentMethod as keyof typeof paymentMethodLabels]}
                     </p>
                     {payment.installments && (
                       <p className="text-sm">
@@ -204,30 +204,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               <div className="mt-4">
                 <h4 className="text-sm font-medium text-gray-500 mb-2">Números Adquiridos</h4>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {payment.numbers.length <= 10 ? (
-                    payment.numbers.map(number => (
-                      <span 
-                        key={number} 
-                        className="inline-flex items-center justify-center w-10 h-7 bg-white border border-gray-200 rounded text-sm font-medium"
-                      >
-                        {number}
-                      </span>
-                    ))
-                  ) : (
-                    <>
-                      {payment.numbers.slice(0, 8).map(number => (
-                        <span 
-                          key={number} 
-                          className="inline-flex items-center justify-center w-10 h-7 bg-white border border-gray-200 rounded text-sm font-medium"
-                        >
-                          {number}
-                        </span>
-                      ))}
-                      <span className="inline-flex items-center justify-center h-7 px-2 bg-gray-100 border border-gray-200 rounded text-sm font-medium">
-                        +{payment.numbers.length - 8} números
-                      </span>
-                    </>
-                  )}
+
                 </div>
               </div>
               
