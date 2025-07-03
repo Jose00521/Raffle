@@ -3045,7 +3045,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     handleSubmit, 
     watch, 
     setValue, 
-    formState: { errors }, 
+    formState: { errors, isValid }, 
     trigger,
     getValues
   } = useForm<RaffleFormData>({
@@ -4318,7 +4318,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         <ButtonContainer>
                 <SubmitButton 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isValid}
                 >
                   {isSubmitting ? (
                     <>
