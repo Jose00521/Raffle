@@ -209,6 +209,8 @@ export class PaymentRepository implements IPaymentRepository {
                 userCode: (payment.userId as unknown as IUser).userCode
             });
 
+            console.log('user', user);
+
             if(!user){
                 return createErrorResponse('Usuário não encontrado', 404);
             }
@@ -216,13 +218,16 @@ export class PaymentRepository implements IPaymentRepository {
             console.log('chegou aqui 2', status, approvedAt);
 
             if(status === 'APPROVED'){
+                console.log('chegou aqui 3', status, approvedAt);
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
 
                 if(user.role === 'user'){
+                    console.log('chegou aqui 4', status, approvedAt);
                     user.role = 'participant';
                 }
 
+                console.log('chegou aqui 5', status, approvedAt);
                 await Promise.all([
                     payment.save(),
                     user.save()
