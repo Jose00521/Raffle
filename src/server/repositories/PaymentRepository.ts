@@ -194,7 +194,6 @@ export class PaymentRepository implements IPaymentRepository {
 
             const payment = await Payment!.findOne({
                 $or: [
-                    { paymentMethod: paymentMethod },
                     { paymentCode: externalId },
                     { processorTransactionId: externalId }
                 ]
@@ -215,7 +214,14 @@ export class PaymentRepository implements IPaymentRepository {
 
                 await payment.save();
 
-                console.log('chegou aqui 5', status, approvedAt);
+                await User.findOneAndUpdate({
+                    userCode: (payment.userId as unknown as IUser).userCode,
+                    role: 'user'
+                }, {
+                    $set: {
+                        role: 'participant'
+                    }
+                });
 
                 return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
             }
