@@ -205,14 +205,6 @@ export class PaymentRepository implements IPaymentRepository {
                 return createErrorResponse('Pagamento não encontrado', 404);
             }
 
-            const user = await User.findOne({
-                userCode: (payment.userId as unknown as IUser).userCode
-            });
-            console.log('user', user);
-
-            if(!user){
-                return createErrorResponse('Usuário não encontrado', 404);
-            }
 
             console.log('chegou aqui 2', status, approvedAt);
 
@@ -221,16 +213,19 @@ export class PaymentRepository implements IPaymentRepository {
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
 
-                if(user.role === 'user'){
-                    console.log('chegou aqui 4', status, approvedAt);
-                    user.role = 'participant';
-                }
+                await payment.save();
 
                 console.log('chegou aqui 5', status, approvedAt);
-                await Promise.all([
-                    payment.save(),
-                    user.save()
-                ]);
+                await User.findOneAndUpdate({
+                    userCode: (payment.userId as unknown as IUser).userCode,
+                    role: 'user'
+                    },
+                    {
+                    $set: {
+                        role: 'participant'
+                    }
+                 }
+                );
 
                 return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
             }
