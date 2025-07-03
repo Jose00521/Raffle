@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
   try {
   const body = await request.json() as IPaymentGhostWebhookPost;
 
+  console.log("[GHOSTSPAY] - PAYMENT CONFIRMED", body);
 
   const paymentController = container.resolve(PaymentController);
 
@@ -17,7 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Payment not found" }, { status: 404 });
     }
 
-    console.log("[GHOSTSPAY] - PAYMENT CONFIRMED", body);
     return NextResponse.json({ message: "Payment confirmed" });
   } catch (error: any) {
     console.error("[GHOSTSPAY] - PAYMENT CONFIRMATION ERROR", error);

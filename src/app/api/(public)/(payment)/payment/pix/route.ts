@@ -12,14 +12,8 @@ export async function POST(request: NextRequest) {
 
       const bodyMasked = await request.json();
 
-      console.log('body masked', bodyMasked);
-
       const body = await unMaskUser(bodyMasked);
 
-      console.log('body unmasked', body);
-
-
-      console.log('body payment pix', body);
 
       // 🔑 Extrai chave de idempotência do header (padrão da indústria)
       const idempotencyKey = request.headers.get('Idempotency-Key') || 
@@ -42,8 +36,6 @@ export async function POST(request: NextRequest) {
         paymentCode: initialPayment.data?.paymentCode || '',
       });
 
-      console.log('data from ghostspay', data);
-      console.log('response from ghostspay', response);
     
       if(response.ok){
         const updateResult = await paymentController.updatePixPaymentToPending({

@@ -6,7 +6,7 @@ import { ApiError } from "@/server/utils/errorHandler/ApiError";
 
 export const unMaskUser = async (payment: IPaymentPattern) => {
     try {
-        console.log('🔍 INÍCIO DO UNMASK - MESMA SESSÃO');
+        // console.log('🔍 INÍCIO DO UNMASK - MESMA SESSÃO');
     
         await dbInstance.connect();
         
@@ -31,9 +31,9 @@ export const unMaskUser = async (payment: IPaymentPattern) => {
         const decryptedComplement = user.address?.complement_encrypted ? SecureDataUtils.decryptComplement(user.address.complement_encrypted) : '';
         const decryptedZipCode = user.address?.zipCode_encrypted ? SecureDataUtils.decryptZipCode(user.address.zipCode_encrypted) : '';
 
-        console.log('🔍 DECRYPTED CPF:', decryptedCpf);
-        console.log('🔍 DECRYPTED EMAIL:', decryptedEmail);
-        console.log('🔍 DECRYPTED PHONE:', decryptedPhone);
+        // console.log('🔍 DECRYPTED CPF:', decryptedCpf);
+        // console.log('🔍 DECRYPTED EMAIL:', decryptedEmail);
+        // console.log('🔍 DECRYPTED PHONE:', decryptedPhone);
 
         return {
             ...payment,

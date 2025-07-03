@@ -188,6 +188,8 @@ export class PaymentRepository implements IPaymentRepository {
         try {
             const { externalId, paymentMethod, status, approvedAt } = data;
 
+            console.log('chegou aqui 1', externalId, paymentMethod, status, approvedAt);
+
             await this.db.connect();
 
             const payment = await Payment!.findOne({
@@ -210,6 +212,8 @@ export class PaymentRepository implements IPaymentRepository {
             if(!user){
                 return createErrorResponse('Usuário não encontrado', 404);
             }
+
+            console.log('chegou aqui 2', status, approvedAt);
 
             if(status === 'APPROVED'){
                 payment.status = PaymentStatusEnum.APPROVED;
