@@ -537,7 +537,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   }, [menuOpen]);
 
   // Estado para o timer de oferta relâmpago
-  const [timerMinutes, setTimerMinutes] = useState(10); // Usa o valor da campanha ou padrão de 15 minutos
+  const [timerMinutes, setTimerMinutes] = useState(15); // Usa o valor da campanha ou padrão de 15 minutos
   const [showTimerExpiredMessage, setShowTimerExpiredMessage] = useState(false);
   
   // Função para lidar com a expiração do timer
