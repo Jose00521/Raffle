@@ -214,6 +214,8 @@ export class PaymentRepository implements IPaymentRepository {
 
                 await payment.save();
 
+                console.log('chegou aqui 4', (payment.userId as unknown as IUser).userCode);
+
                 await User.findOneAndUpdate({
                     userCode: (payment.userId as unknown as IUser).userCode,
                     role: 'user'
