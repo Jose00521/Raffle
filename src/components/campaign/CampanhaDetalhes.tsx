@@ -995,12 +995,12 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   <ChancesTexto 
                     $level={
                       selection?.quantity && selection.quantity < 100 ? 'basic' : 
-                      selection?.quantity && selection.quantity < 250 ? 'good' : 
+                      selection?.quantity && selection.quantity < Math.max(campanhaDetalhes?.numberPackages[0]?.quantity || 0, 500) ? 'good' : 
                       'excellent'
                     }
                   >
                     {selection?.quantity && selection.quantity < 100 ? 'Boas' : 
-                     selection?.quantity && selection.quantity < 250 ? 'Ótimas' : 
+                     selection?.quantity && selection.quantity < Math.max(campanhaDetalhes?.numberPackages[0]?.quantity || 0, 500) ? 'Ótimas' : 
                      'Excelentes'}
                   </ChancesTexto>
                 </ChancesInfo>
@@ -1033,9 +1033,13 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <ValorTotalContainer>
                 <ValorTotalLabel>
                   Total:
-                  {selection?.isCombo && (
+                  {selection?.isCombo ? (
                     <ValorTotalEconomia>
                       Economia: {formatCurrency((selection.quantity * (campanhaDetalhes?.individualNumberPrice || 0)) - (selection?.totalPrice || 0))}
+                    </ValorTotalEconomia>
+                  ):(
+                    <ValorTotalEconomia>
+                       &nbsp;
                     </ValorTotalEconomia>
                   )}
                 </ValorTotalLabel>
