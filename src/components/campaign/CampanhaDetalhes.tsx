@@ -685,18 +685,18 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       </Banner>
       
       {/* Progresso */}
-      {/*<ProgressoContainer>
+      <ProgressoContainer>
         <ProgressoInfo>
           <ProgressoTexto>
-            <span>{progresso}% vendido</span>
-            <span>Restam: {rifaStats.available} números</span>
+            <span>{80}% vendido</span>
+            {/* <span>Restam: {rifaStats.available} números</span> */}
           </ProgressoTexto>
-          <ProgressoValor>{dataSorteio}</ProgressoValor>
+  
         </ProgressoInfo>
         <ProgressoBar>
-          <ProgressoBarFill style={{ width: `${progresso}%` }} />
+          <ProgressoBarFill style={{ width: `${80}%` }} />
         </ProgressoBar>
-      </ProgressoContainer>*/}
+      </ProgressoContainer>
       
       {/* Conteúdo principal */}
       <Conteudo>
@@ -1903,6 +1903,7 @@ const SorteioContainer = styled.div`
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin: 0 auto;
+  margin-top: 1rem;
   width: 100%;
   position: relative;
   z-index: 2;
