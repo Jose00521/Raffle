@@ -15,11 +15,13 @@ import Modal from '../ui/Modal';
 
 // Schema de validação para o CPF
 import { MyNumbersFormData, myNumbersSchema } from '@/zod/mynumbers.schema';
+import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 
 interface MeusNumerosModalProps {
   isOpen: boolean;
   onClose: () => void;
   campaignCode?: string;
+  campaign?: ICampaign;
 }
 
 // Dados mockados para demonstração
@@ -40,7 +42,7 @@ const mockUserNumbers = [
   }
 ];
 
-const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, campaignCode }) => {
+const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, campaignCode, campaign }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [showNumbers, setShowNumbers] = useState<{ [key: number]: boolean }>({});
@@ -191,7 +193,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                 <PurchaseCard key={purchase.id}>
                   <PurchaseHeader>
                     <PurchaseInfo>
-                      <CampaignTitle>{purchase.campaignTitle}</CampaignTitle>
+                      <CampaignTitle>{campaign?.title}</CampaignTitle>
                       <PurchaseDetails>
                         {
                             purchase.purchaseDate && (

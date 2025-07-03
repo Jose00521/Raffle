@@ -1573,6 +1573,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       <MeusNumerosModal 
         isOpen={meusNumerosModalOpen}
         onClose={() => setMeusNumerosModalOpen(false)}
+        campaign={campanhaDetalhes}
         campaignCode={campanhaDetalhes?.campaignCode}
       />
     </Container>
