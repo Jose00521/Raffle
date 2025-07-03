@@ -208,7 +208,6 @@ export class PaymentRepository implements IPaymentRepository {
             const user = await User.findOne({
                 userCode: (payment.userId as unknown as IUser).userCode
             });
-
             console.log('user', user);
 
             if(!user){
