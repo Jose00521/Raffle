@@ -17,6 +17,7 @@ import { CertificationSectionCompact } from '../ui/CertificationSection';
 import { useSession } from 'next-auth/react';
 import LoginModal from '../auth/LoginModal';
 import MeusNumerosModal from './MeusNumerosModal';
+import FlashOfferTimer from './FlashOfferTimer';
 
 // Atualizando a interface IRifa para incluir as propriedades extras
 interface CampanhaDetalheProps {
@@ -535,6 +536,15 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
     };
   }, [menuOpen]);
 
+  // Estado para o timer de oferta relâmpago
+  const [timerMinutes, setTimerMinutes] = useState(10); // Usa o valor da campanha ou padrão de 15 minutos
+  const [showTimerExpiredMessage, setShowTimerExpiredMessage] = useState(false);
+  
+  // Função para lidar com a expiração do timer
+  const handleTimerExpire = useCallback(() => {
+    setShowTimerExpiredMessage(true);
+  }, []);
+
   return (
     <Container>
 
@@ -899,6 +909,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
               </PacotesPromocionaisTitulo>
               
+              <FlashOfferTimer initialMinutes={timerMinutes} onExpire={handleTimerExpire} />
+              
               <PacotesPromocionaisGrid>
                 {campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
                   <PacotePromocional 
@@ -1243,6 +1255,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <PacotesPromocionaisTitulo>
                 <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
               </PacotesPromocionaisTitulo>
+              
+              <FlashOfferTimer initialMinutes={timerMinutes} onExpire={handleTimerExpire} />
               
               <PacotesPromocionaisGrid>
                 {campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (

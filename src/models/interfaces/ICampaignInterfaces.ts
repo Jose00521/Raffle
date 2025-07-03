@@ -86,7 +86,7 @@ export enum CampaignStatusEnum {
       totalPrizes: number;
     };
     // Propriedades adicionais para a página de detalhes
-    
+    flashOfferTimer?: number; // Tempo em minutos para o timer de oferta relâmpago
     regulation?: string;
   }
 
