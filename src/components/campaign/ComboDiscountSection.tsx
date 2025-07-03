@@ -963,7 +963,10 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                           
                           <QuantityPicker>
                             <QuantityButton
-                              onClick={() => {
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 const newCombos = [...field.value];
                                 if (newCombos[index].quantity > 2) {
                                   newCombos[index].quantity -= 1;
@@ -974,7 +977,10 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                             >-</QuantityButton>
                             <span>{combo.quantity}</span>
                             <QuantityButton
-                              onClick={() => {
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 const newCombos = [...field.value];
                                 newCombos[index].quantity += 1;
                                 field.onChange(newCombos);
