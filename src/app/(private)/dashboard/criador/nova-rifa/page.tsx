@@ -550,22 +550,7 @@ export default function NovaRifaPage() {
                 isSubmitting={isSubmitting}
               />
               
-              <ButtonContainer>
-                <SubmitButton 
-                  onClick={() => document.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true }))} 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <LoadingSpinner /> Criando rifa...
-                    </>
-                  ) : (
-                    <>
-                      <FaSave /> Criar Rifa
-                    </>
-                  )}
-                </SubmitButton>
-              </ButtonContainer>
+
             </FormContainer>
             
             <SideTipsContainer>

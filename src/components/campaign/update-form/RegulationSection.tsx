@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { Controller } from 'react-hook-form';
-import { FaListOl } from 'react-icons/fa';
-import styled from 'styled-components';
+import { FaExclamationCircle, FaListOl } from 'react-icons/fa';
+import styled, { keyframes } from 'styled-components';
 import WysiwygEditor from '@/components/common/WysiwygEditor';
 import { RegulationSectionProps } from './types';
 
@@ -19,13 +19,21 @@ const HelpText = styled.p`
   }
 `;
 
+
+
 /**
  * Componente para a seção de regulamento do formulário
  */
 const RegulationSection: React.FC<RegulationSectionProps> = ({ 
   control, 
-  isSubmitting 
+  isSubmitting,
+  errors,
+  watch
 }) => {
+
+  const regulation = watch('regulation');
+
+
   return (
     <>
       <Controller
@@ -40,8 +48,10 @@ const RegulationSection: React.FC<RegulationSectionProps> = ({
             value={field.value}
             onChange={value => field.onChange(value)}
             disabled={isSubmitting}
+            required
             fullWidth
             minHeight="250px"
+            errors={errors}
           />
         )}
       />

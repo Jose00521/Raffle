@@ -2872,6 +2872,68 @@ const InsightsList = styled.div`
   gap: 12px;
 `;
 
+
+const ButtonContainer = styled.div`
+  margin-top: 48px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 16px;
+  
+  @media (max-width: 768px) {
+    justify-content: center;
+    margin-top: 40px;
+    padding: 0 8px 8px;
+  }
+`;
+
+const SubmitButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 18px 36px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.3);
+  }
+  
+  &:disabled {
+    background: #9ca3af;
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    padding: 16px 28px;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
 const InsightItem = styled.div<{ type: 'success' | 'info' | 'premium' }>`
   display: flex;
   align-items: flex-start;
@@ -2949,9 +3011,9 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
     enablePackages: initialData.enablePackages || false,
     numberPackages: initialData.numberPackages || [
       {
-        name: 'Pacote 1',
+        name: 'Combo 500',
         description: 'Descrição do pacote 1',
-        quantity: 5,
+        quantity: 500,
         price: 10,
         discount: 5,
         isActive: true,
@@ -2989,6 +3051,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   } = useForm<RaffleFormData>({
     defaultValues,
     mode: 'all',
+    reValidateMode: 'onChange',
     shouldFocusError: true,
     resolver: zodResolver(raffleFormSchema)
   });
@@ -3563,8 +3626,14 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
   // Filtrar prêmios com base na busca
   
   // Handler para envio do formulário
-  const onFormSubmit = (data: RaffleFormData) => {
+  const onFormSubmit = async (data: RaffleFormData) => {
     console.log('Formulário original:', data);
+
+    const validateForm = await trigger();
+    console.log('validateForm', validateForm);
+    if(!validateForm){
+      return;
+    }
     
     // Log para debug dos prêmios e seus IDs
     
@@ -3638,9 +3707,6 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
         {/* Basic Information Section */}
         <FormSection>
 
-
-          
-
           
           <SectionTitle>
             <FaInfo /> Informações Básicas
@@ -3659,6 +3725,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 onChange={e => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 error={errors.title?.message}
+                required
                 disabled={isSubmitting}
                 fullWidth
               />
@@ -3814,6 +3881,7 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                   }}
                   error={errors.returnExpected?.message}
                   disabled={isSubmitting}
+                  required
                   currency="BRL"
                   helpText="O valor total que você deseja arrecadar com esta rifa"
                 />
@@ -4102,6 +4170,8 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
                 value={field.value}
                 onChange={value => field.onChange(value)}
                 disabled={isSubmitting}
+                errors={errors}
+                required
                 fullWidth
                 minHeight="250px"
               />
@@ -4244,6 +4314,23 @@ const RaffleFormFields: React.FC<RaffleFormFieldsProps> = ({
             </ErrorText>
           )}
         </FormSection>
+
+        <ButtonContainer>
+                <SubmitButton 
+                  type="submit" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner /> Criando rifa...
+                    </>
+                  ) : (
+                    <>
+                      <FaSave /> Criar Rifa
+                    </>
+                  )}
+                </SubmitButton>
+              </ButtonContainer>
       </form>
       
       {/* Usar os modais modulares */}

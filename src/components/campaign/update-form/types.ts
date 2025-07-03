@@ -166,6 +166,7 @@ export interface ImagesSectionProps extends BaseSectionProps {
 
 // Props para RegulationSection
 export interface RegulationSectionProps extends BaseSectionProps {
+  watch: any;
 }
 
 // Props para SchedulingSection

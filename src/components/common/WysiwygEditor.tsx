@@ -14,7 +14,8 @@ import {
   FaExclamationTriangle,
   FaAlignLeft,
   FaAlignCenter,
-  FaAlignRight
+  FaAlignRight,
+  FaExclamationCircle
 } from 'react-icons/fa';
 
 interface WysiwygEditorProps {
@@ -25,7 +26,7 @@ interface WysiwygEditorProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
-  error?: string;
+  errors?: any;
   disabled?: boolean;
   required?: boolean;
   fullWidth?: boolean;
@@ -240,7 +241,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   value = '',
   onChange,
   onBlur,
-  error,
+  errors,
   disabled = false,
   required = false,
   fullWidth = false,
@@ -271,14 +272,22 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const handleContentChange = () => {
     if (contentRef.current) {
       const htmlContent = contentRef.current.innerHTML;
-      setHtml(htmlContent);
+      
+      // Verificar se o conteúdo está realmente vazio (apenas tags vazias)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      const isReallyEmpty = !tempDiv.textContent?.trim();
+      
+      // Se estiver vazio, enviar string vazia, caso contrário enviar o HTML
+      const valueToSend = isReallyEmpty ? '' : htmlContent;
+      setHtml(valueToSend);
       
       if (onChange) {
         // Create a synthetic event
         const syntheticEvent = {
           target: {
             name: id,
-            value: htmlContent
+            value: valueToSend
           }
         } as React.ChangeEvent<HTMLTextAreaElement>;
         
@@ -290,10 +299,20 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   // Handle blur events
   const handleBlur = () => {
     if (onBlur && contentRef.current) {
+      const htmlContent = contentRef.current.innerHTML;
+      
+      // Verificar se o conteúdo está realmente vazio (apenas tags vazias)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      const isReallyEmpty = !tempDiv.textContent?.trim();
+      
+      // Se estiver vazio, enviar string vazia, caso contrário enviar o HTML
+      const valueToSend = isReallyEmpty ? '' : htmlContent;
+      
       const syntheticEvent = {
         target: {
           name: id,
-          value: contentRef.current.innerHTML
+          value: valueToSend
         }
       } as React.FocusEvent<HTMLTextAreaElement>;
       
@@ -449,13 +468,14 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           id={id}
           name={id}
           value={html}
+          required
           readOnly
         />
       </EditorWrapper>
       
-      {error && (
+      {errors && errors.regulation && (
         <ErrorText>
-          <FaExclamationTriangle /> {error}
+          <FaExclamationCircle /> {errors.regulation.message}
         </ErrorText>
       )}
     </EditorContainer>

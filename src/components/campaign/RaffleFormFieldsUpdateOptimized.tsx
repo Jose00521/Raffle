@@ -429,6 +429,8 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
           >
             <RegulationSection 
               control={control}
+              errors={errors}
+              watch={watch}
               isSubmitting={isSubmitting}
             />
           </FormSection>
