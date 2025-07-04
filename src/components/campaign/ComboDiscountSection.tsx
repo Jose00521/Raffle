@@ -947,7 +947,7 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                             </SavingsValue>
                           </PriceRow>
                         </ComboPriceCalculation>
-                        
+
                         <ComboActions>
                           <ComboActionButton
                             type="button"
