@@ -1458,7 +1458,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <RegulamentoText dangerouslySetInnerHTML={{ __html: campanhaDetalhes?.regulation || campanhaDetalhes?.description || '' }} />
               
               <h4>PREMIAÇÃO:</h4>
-              <p>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name} (SUGESTÃO DE USO DO PRÊMIO LÍQUIDO {(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.value})</p>
+              <p>{(campanhaDetalhes?.prizeDistribution?.[0]?.prizes?.[0] as IPrize)?.name} (SUGESTÃO DE USO DO PRÊMIO LÍQUIDO {formatCurrency(Number(prizeValue()) || 0)})</p>
               
               <h4>COMO FUNCIONA:</h4>
               <p>
