@@ -593,6 +593,231 @@ const mockSales = [
     email: 'pedro.almeida@example.com',
     phone: '(51) 98765-4321',
     address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
+  },
+  {
+    id: '16',
+    date: new Date(2025, 5, 10, 15, 30),
+    customer: 'João Silva',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 5,
+    payment: {
+    amount: 100.0,
+      method: 'Cartão de Crédito',
+      status: 'success'
+    },
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    address: 'Av. Paulista, 1000 - São Paulo, SP'
+  },
+  {
+    id: '17',
+    date: new Date(2025, 5, 9, 10, 45),
+    customer: 'Maria Oliveira',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 3,
+    payment: {
+    amount: 75.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 98765-4321',
+    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
+  },
+  {
+    id: '18',
+    date: new Date(2025, 5, 8, 18, 12),
+    customer: 'Carlos Santos',
+    campaign: 'Playstation 5 + 2 Controles',
+    numbers: 10,
+    payment: {
+    amount: 150.0,
+      method: 'Boleto',
+      status: 'pending'
+    },
+    email: 'carlos.santos@example.com',
+    phone: '(31) 98765-4321',
+    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
+  },
+  {
+    id: '19',
+    date: new Date(2025, 5, 7, 9, 20),
+    customer: 'Ana Pereira',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 2,
+    payment: {
+    amount: 40.0,
+      method: 'Cartão de Crédito',
+      status: 'refunded'
+    },
+    email: 'ana.pereira@example.com',
+    phone: '(41) 98765-4321',
+    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
+  },
+  {
+    id: '20',
+    date: new Date(2025, 5, 6, 14, 55),
+    customer: 'Pedro Almeida',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 8,
+    payment: {
+    amount: 200.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'pedro.almeida@example.com',
+    phone: '(51) 98765-4321',
+    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
+  },
+  {
+    id: '21',
+    date: new Date(2025, 5, 10, 15, 30),
+    customer: 'João Silva',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 5,
+    payment: {
+    amount: 100.0,
+      method: 'Cartão de Crédito',
+      status: 'success'
+    },
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    address: 'Av. Paulista, 1000 - São Paulo, SP'
+  },
+  {
+    id: '22',
+    date: new Date(2025, 5, 9, 10, 45),
+    customer: 'Maria Oliveira',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 3,
+    payment: {
+    amount: 75.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 98765-4321',
+    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
+  },
+  {
+    id: '23',
+    date: new Date(2025, 5, 8, 18, 12),
+    customer: 'Carlos Santos',
+    campaign: 'Playstation 5 + 2 Controles',
+    numbers: 10,
+    payment: {
+    amount: 150.0,
+      method: 'Boleto',
+      status: 'pending'
+    },
+    email: 'carlos.santos@example.com',
+    phone: '(31) 98765-4321',
+    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
+  },
+  {
+    id: '24',
+    date: new Date(2025, 5, 7, 9, 20),
+    customer: 'Ana Pereira',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 2,
+    payment: {
+    amount: 40.0,
+      method: 'Cartão de Crédito',
+      status: 'refunded'
+    },
+    email: 'ana.pereira@example.com',
+    phone: '(41) 98765-4321',
+    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
+  },
+  {
+    id: '25',
+    date: new Date(2025, 5, 6, 14, 55),
+    customer: 'Pedro Almeida',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 8,
+    payment: {
+    amount: 200.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'pedro.almeida@example.com',
+    phone: '(51) 98765-4321',
+    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
+  },
+  {
+    id: '26',
+    date: new Date(2025, 5, 10, 15, 30),
+    customer: 'João Silva',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 5,
+    payment: {
+    amount: 100.0,
+      method: 'Cartão de Crédito',
+      status: 'success'
+    },
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    address: 'Av. Paulista, 1000 - São Paulo, SP'
+  },
+  {
+    id: '27',
+    date: new Date(2025, 5, 9, 10, 45),
+    customer: 'Maria Oliveira',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 3,
+    payment: {
+    amount: 75.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 98765-4321',
+    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
+  },
+  {
+    id: '28',
+    date: new Date(2025, 5, 8, 18, 12),
+    customer: 'Carlos Santos',
+    campaign: 'Playstation 5 + 2 Controles',
+    numbers: 10,
+    payment: {
+    amount: 150.0,
+      method: 'Boleto',
+      status: 'pending'
+    },
+    email: 'carlos.santos@example.com',
+    phone: '(31) 98765-4321',
+    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
+  },
+  {
+    id: '29',
+    date: new Date(2025, 5, 7, 9, 20),
+    customer: 'Ana Pereira',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 2,
+    payment: {
+    amount: 40.0,
+      method: 'Cartão de Crédito',
+      status: 'refunded'
+    },
+    email: 'ana.pereira@example.com',
+    phone: '(41) 98765-4321',
+    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
+  },
+  {
+    id: '30',
+    date: new Date(2025, 5, 6, 14, 55),
+    customer: 'Pedro Almeida',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 8,
+    payment: {
+    amount: 200.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'pedro.almeida@example.com',
+    phone: '(51) 98765-4321',
+    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
   }
 ];
 

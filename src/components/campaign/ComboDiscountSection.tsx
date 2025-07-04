@@ -950,8 +950,11 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                         
                         <ComboActions>
                           <ComboActionButton
+                            type="button"
                             $variant="danger"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               const newCombos = [...field.value];
                               newCombos.splice(index, 1);
                               field.onChange(newCombos);
@@ -993,7 +996,10 @@ const ComboDiscountSection: React.FC<ComboDiscountSectionProps> = ({
                     
                     {field.value.length < 5 && (
                       <AddComboButton
-                        onClick={() => {
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           const lastCombo = field.value[field.value.length - 1];
                           const newQuantity = lastCombo ? lastCombo.quantity * 2 : 5;
                           const newDiscount = lastCombo ? Math.min(lastCombo.discount + 5, 100) : 5;
