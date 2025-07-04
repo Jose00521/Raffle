@@ -7,9 +7,7 @@ import { validateWithSchema } from '@/utils/validation.schema';
 import { creatorFormSchema } from '@/zod/creator.schema';
 import { ICreator } from '@/models/interfaces/IUserInterfaces';
 import { convertCreatorFormToSchema } from '@/zod/utils/convertToSchema';
-/**
- * Endpoint GET: Obter detalhes de uma campanha específica por ID
- */
+
 
 const validator = validateWithSchema(creatorFormSchema);
 

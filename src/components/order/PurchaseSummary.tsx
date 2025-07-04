@@ -46,10 +46,10 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
             <SimpleInfoValue>{quantity} números</SimpleInfoValue>
             
             <SimpleInfoLabel>Preço unitário:</SimpleInfoLabel>
-            <SimpleInfoValue>R$ {formatCurrency(unitPrice)}</SimpleInfoValue>
+            <SimpleInfoValue>{formatCurrency(unitPrice)}</SimpleInfoValue>
             
             <SimpleTotalLabel>Total:</SimpleTotalLabel>
-            <SimpleTotalValue>R$ {formatCurrency(totalPrice!)}</SimpleTotalValue>
+            <SimpleTotalValue>{formatCurrency(totalPrice!)}</SimpleTotalValue>
           </SimpleInfoGrid>
         </SimpleContent>
         
@@ -113,17 +113,17 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
           <ComboInfoValue>{quantity} números</ComboInfoValue>
           
           <ComboInfoLabel>Preço unitário:</ComboInfoLabel>
-          <ComboInfoValue>R$ {formatCurrency(unitPrice)}</ComboInfoValue>
+          <ComboInfoValue>{formatCurrency(unitPrice)}</ComboInfoValue>
           
           {discount > 0 && (
             <>
               <ComboInfoLabel>Desconto:</ComboInfoLabel>
-              <ComboDiscountValue>-R$ {formatCurrency(discount)}</ComboDiscountValue>
+              <ComboDiscountValue>-{formatCurrency(discount)}</ComboDiscountValue>
             </>
           )}
           
           <ComboTotalLabel>Total:</ComboTotalLabel>
-          <ComboTotalValue>R$ {formatCurrency(totalPrice!)}</ComboTotalValue>
+          <ComboTotalValue>{formatCurrency(totalPrice!)}</ComboTotalValue>
         </ComboInfoGrid>
       </ComboValuesSection>
       

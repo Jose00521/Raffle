@@ -204,37 +204,7 @@ const UserSchema = new Schema<IUser>({
 UserSchema.pre('save', async function(this: any, next) {
 
   try {
-    console.log('🔧 PRE-SAVE MIDDLEWARE EXECUTANDO...');
-    console.log('📋 Dados recebidos:', {
-      cpf: this.cpf,
-      email: this.email, 
-      phone: this.phone,
-    });
 
-        // 🔍 DEBUG DETALHADO DAS CONDIÇÕES
-        console.log('🔍 DEBUGANDO CONDIÇÕES CPF:');
-        console.log('  - this.cpf:', this.cpf);
-        console.log('  - typeof this.cpf:', typeof this.cpf);
-        console.log('  - !!this.cpf:', !!this.cpf);
-        console.log('  - this.cpf_encrypted:', this.cpf_encrypted);
-        console.log('  - typeof this.cpf_encrypted:', typeof this.cpf_encrypted);
-        console.log('  - !!this.cpf_encrypted:', !!this.cpf_encrypted);
-        console.log('  - !this.cpf_encrypted:', !this.cpf_encrypted);
-        console.log('  - (this.cpf && !this.cpf_encrypted):', (this.cpf && !this.cpf_encrypted));
-        
-        console.log('🔍 DEBUGANDO CONDIÇÕES EMAIL:');
-        console.log('  - this.email:', this.email);
-        console.log('  - !!this.email:', !!this.email);
-        console.log('  - this.email_encrypted:', this.email_encrypted);
-        console.log('  - !this.email_encrypted:', !this.email_encrypted);
-        console.log('  - (this.email && !this.email_encrypted):', (this.email && !this.email_encrypted));
-        
-        console.log('🔍 DEBUGANDO CONDIÇÕES PHONE:');
-        console.log('  - this.phone:', this.phone);
-        console.log('  - !!this.phone:', !!this.phone);
-        console.log('  - this.phone_encrypted:', this.phone_encrypted);
-        console.log('  - !this.phone_encrypted:', !this.phone_encrypted);
-        console.log('  - (this.phone && !this.phone_encrypted):', (this.phone && !this.phone_encrypted));
     
     // CRIPTOGRAFAR CPF
     if (this.cpf && !this.cpf_encrypted) {
@@ -481,6 +451,7 @@ const CreatorSchema = new Schema<ICreator>({
   statistics: {
     rafflesCreated: { type: Number, default: 0 },
     activeRaffles: { type: Number, default: 0 },
+    campaignsCompleted: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },
     conversionRate: { type: Number, default: 0 },
     lastRaffleCreated: Date

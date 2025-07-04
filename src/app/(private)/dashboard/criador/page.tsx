@@ -7,6 +7,9 @@ import { FaTicketAlt, FaMoneyBillWave, FaUsers, FaTrophy, FaSearch, FaFilter, Fa
 import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
+import Pagination from '@/components/common/Pagination';
+import { usePagination } from '@/hooks/usePagination';
+import Link from 'next/link';
 
 // Styled Components for statistics cards
 const PageContent = styled.div`
@@ -139,7 +142,7 @@ const SectionTitle = styled.h2`
   }
 `;
 
-const SectionLink = styled.a`
+const SectionLink = styled(Link)`
   color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
   font-size: 0.75rem;
   font-weight: 500;
@@ -440,6 +443,156 @@ const mockSales = [
     email: 'pedro.almeida@example.com',
     phone: '(51) 98765-4321',
     address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
+  },
+  {
+    id: '6',
+    date: new Date(2025, 5, 10, 15, 30),
+    customer: 'João Silva',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 5,
+    payment: {
+    amount: 100.0,
+      method: 'Cartão de Crédito',
+      status: 'success'
+    },
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    address: 'Av. Paulista, 1000 - São Paulo, SP'
+  },
+  {
+    id: '7',
+    date: new Date(2025, 5, 9, 10, 45),
+    customer: 'Maria Oliveira',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 3,
+    payment: {
+    amount: 75.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 98765-4321',
+    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
+  },
+  {
+    id: '8',
+    date: new Date(2025, 5, 8, 18, 12),
+    customer: 'Carlos Santos',
+    campaign: 'Playstation 5 + 2 Controles',
+    numbers: 10,
+    payment: {
+    amount: 150.0,
+      method: 'Boleto',
+      status: 'pending'
+    },
+    email: 'carlos.santos@example.com',
+    phone: '(31) 98765-4321',
+    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
+  },
+  {
+    id: '9',
+    date: new Date(2025, 5, 7, 9, 20),
+    customer: 'Ana Pereira',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 2,
+    payment: {
+    amount: 40.0,
+      method: 'Cartão de Crédito',
+      status: 'refunded'
+    },
+    email: 'ana.pereira@example.com',
+    phone: '(41) 98765-4321',
+    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
+  },
+  {
+    id: '10',
+    date: new Date(2025, 5, 6, 14, 55),
+    customer: 'Pedro Almeida',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 8,
+    payment: {
+    amount: 200.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'pedro.almeida@example.com',
+    phone: '(51) 98765-4321',
+    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
+  },
+  {
+    id: '11',
+    date: new Date(2025, 5, 10, 15, 30),
+    customer: 'João Silva',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 5,
+    payment: {
+    amount: 100.0,
+      method: 'Cartão de Crédito',
+      status: 'success'
+    },
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    address: 'Av. Paulista, 1000 - São Paulo, SP'
+  },
+  {
+    id: '12',
+    date: new Date(2025, 5, 9, 10, 45),
+    customer: 'Maria Oliveira',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 3,
+    payment: {
+    amount: 75.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 98765-4321',
+    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
+  },
+  {
+    id: '13',
+    date: new Date(2025, 5, 8, 18, 12),
+    customer: 'Carlos Santos',
+    campaign: 'Playstation 5 + 2 Controles',
+    numbers: 10,
+    payment: {
+    amount: 150.0,
+      method: 'Boleto',
+      status: 'pending'
+    },
+    email: 'carlos.santos@example.com',
+    phone: '(31) 98765-4321',
+    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
+  },
+  {
+    id: '14',
+    date: new Date(2025, 5, 7, 9, 20),
+    customer: 'Ana Pereira',
+    campaign: 'iPhone 15 Pro Max - 256GB',
+    numbers: 2,
+    payment: {
+    amount: 40.0,
+      method: 'Cartão de Crédito',
+      status: 'refunded'
+    },
+    email: 'ana.pereira@example.com',
+    phone: '(41) 98765-4321',
+    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
+  },
+  {
+    id: '15',
+    date: new Date(2025, 5, 6, 14, 55),
+    customer: 'Pedro Almeida',
+    campaign: 'MacBook Pro 16" M3 Pro',
+    numbers: 8,
+    payment: {
+    amount: 200.0,
+      method: 'PIX',
+      status: 'success'
+    },
+    email: 'pedro.almeida@example.com',
+    phone: '(51) 98765-4321',
+    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
   }
 ];
 
@@ -452,6 +605,102 @@ const activeCampaigns = [
     progress: 67,
     sales: 3350.0,
     endDate: new Date(2025, 6, 15)
+  },
+  {
+    id: '2',
+    title: 'MacBook Pro 16" M3 Pro',
+    status: 'ativa',
+    progress: 42,
+    sales: 2100.0,
+    endDate: new Date(2025, 7, 20)
+  },
+  {
+    id: '3',
+    title: 'Playstation 5 + 2 Controles',
+    status: 'finalizada',
+    progress: 100,
+    sales: 5000.0,
+    endDate: new Date(2025, 4, 30)
+  },
+  {
+    id: '4',
+    title: 'Samsung S24 Ultra',
+    status: 'futura',
+    progress: 0,
+    sales: 0,
+    endDate: new Date(2025, 8, 10)
+  },,
+  {
+    id: '2',
+    title: 'MacBook Pro 16" M3 Pro',
+    status: 'ativa',
+    progress: 42,
+    sales: 2100.0,
+    endDate: new Date(2025, 7, 20)
+  },
+  {
+    id: '3',
+    title: 'Playstation 5 + 2 Controles',
+    status: 'finalizada',
+    progress: 100,
+    sales: 5000.0,
+    endDate: new Date(2025, 4, 30)
+  },
+  {
+    id: '4',
+    title: 'Samsung S24 Ultra',
+    status: 'futura',
+    progress: 0,
+    sales: 0,
+    endDate: new Date(2025, 8, 10)
+  },
+  {
+    id: '2',
+    title: 'MacBook Pro 16" M3 Pro',
+    status: 'ativa',
+    progress: 42,
+    sales: 2100.0,
+    endDate: new Date(2025, 7, 20)
+  },
+  {
+    id: '3',
+    title: 'Playstation 5 + 2 Controles',
+    status: 'finalizada',
+    progress: 100,
+    sales: 5000.0,
+    endDate: new Date(2025, 4, 30)
+  },
+  {
+    id: '4',
+    title: 'Samsung S24 Ultra',
+    status: 'futura',
+    progress: 0,
+    sales: 0,
+    endDate: new Date(2025, 8, 10)
+  },
+  {
+    id: '2',
+    title: 'MacBook Pro 16" M3 Pro',
+    status: 'ativa',
+    progress: 42,
+    sales: 2100.0,
+    endDate: new Date(2025, 7, 20)
+  },
+  {
+    id: '3',
+    title: 'Playstation 5 + 2 Controles',
+    status: 'finalizada',
+    progress: 100,
+    sales: 5000.0,
+    endDate: new Date(2025, 4, 30)
+  },
+  {
+    id: '4',
+    title: 'Samsung S24 Ultra',
+    status: 'futura',
+    progress: 0,
+    sales: 0,
+    endDate: new Date(2025, 8, 10)
   },
   {
     id: '2',
@@ -517,6 +766,19 @@ export default function CreatorDashboardHome() {
       if (viewMode === 'all') return true;
       return sale.payment.status === viewMode;
     });
+  
+  // Inicializa o hook de paginação
+  const pagination = usePagination({
+    totalItems: filteredSales.length,
+    initialPage: 1,
+    initialPageSize: 10,
+    pageSizeOptions: [5, 10, 25, 50]
+  });
+  
+  // Paginar os dados filtrados
+  const paginatedSales = pagination.paginateData(filteredSales);
+
+  console.log(paginatedSales);
   
   // Calculate statistics
   const totalSales = filteredSales.reduce((sum, sale) => sum + sale.payment.amount, 0);
@@ -741,6 +1003,7 @@ export default function CreatorDashboardHome() {
           
           <FilterGroup>
             <CustomDropdown
+              id="campaign-filter"
               options={campaignOptions}
               value={activeTab}
               onChange={setActiveTab}
@@ -749,47 +1012,52 @@ export default function CreatorDashboardHome() {
             />
             
             <CustomDropdown
+              id="status-filter"
               options={statusOptions}
               value={viewMode}
               onChange={setViewMode}
               placeholder="Todos os Status"
-              width="200px"
+              width="180px"
             />
           </FilterGroup>
         </FiltersContainer>
         
-        <ResponsiveTable
-          columns={columns}
-          data={filteredSales}
-          expandableContent={(sale) => (
-            <div>
-              <DetailRow>
-                <DetailLabel>Email:</DetailLabel>
-                <DetailValue>{sale.email}</DetailValue>
-              </DetailRow>
-              <DetailRow>
-                <DetailLabel>Números:</DetailLabel>
-                <DetailValue>{sale.numbers} números adquiridos</DetailValue>
-              </DetailRow>
-              <DetailRow>
-                <DetailLabel>Método:</DetailLabel>
-                <DetailValue>{sale.payment.method}</DetailValue>
-              </DetailRow>
-            </div>
-          )}
-          rowKeyField="id"
-          initialSortBy={{ id: 'date', desc: true }}
-          noDataMessage="Nenhuma venda encontrada"
-          stickyHeader
-          zebra
-        />
+        {isLoading ? (
+          <ChartContainer>
+            <div>Carregando dados...</div>
+          </ChartContainer>
+        ) : filteredSales.length > 0 ? (
+          <>
+            <ResponsiveTable
+              columns={columns}
+              data={paginatedSales}
+              rowKeyField="id"
+              noDataMessage="Nenhuma venda encontrada"
+              zebra={true}
+            />
+            
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageSize={pagination.pageSize}
+              totalItems={filteredSales.length}
+              pageSizeOptions={pagination.pageSizeOptions}
+              onPageChange={pagination.setCurrentPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          </>
+        ) : (
+          <EmptyState>
+            Nenhuma venda encontrada com os filtros selecionados.
+          </EmptyState>
+        )}
             </Section>
       
-      {isModalOpen && selectedBuyer && (
-        <BuyerDetailsModal 
+      {selectedBuyer && (
+        <BuyerDetailsModal
           isOpen={isModalOpen}
-          buyer={selectedBuyer} 
-          onClose={closeBuyerModal} 
+          onClose={closeBuyerModal}
+          buyer={selectedBuyer}
         />
       )}
     </CreatorDashboard>
