@@ -369,592 +369,6 @@ const DetailValue = styled.div`
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
 `;
 
-// Mock data for sales
-const mockSales = [
-  {
-    id: '1',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '2',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '3',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '4',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '5',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  },
-  {
-    id: '6',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '7',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '8',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '9',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '10',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  },
-  {
-    id: '11',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '12',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '13',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '14',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '15',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  },
-  {
-    id: '16',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '17',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '18',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '19',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '20',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  },
-  {
-    id: '21',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '22',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '23',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '24',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '25',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  },
-  {
-    id: '26',
-    date: new Date(2025, 5, 10, 15, 30),
-    customer: 'João Silva',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 5,
-    payment: {
-    amount: 100.0,
-      method: 'Cartão de Crédito',
-      status: 'success'
-    },
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    address: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: '27',
-    date: new Date(2025, 5, 9, 10, 45),
-    customer: 'Maria Oliveira',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 3,
-    payment: {
-    amount: 75.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 98765-4321',
-    address: 'Rua Copacabana, 500 - Rio de Janeiro, RJ'
-  },
-  {
-    id: '28',
-    date: new Date(2025, 5, 8, 18, 12),
-    customer: 'Carlos Santos',
-    campaign: 'Playstation 5 + 2 Controles',
-    numbers: 10,
-    payment: {
-    amount: 150.0,
-      method: 'Boleto',
-      status: 'pending'
-    },
-    email: 'carlos.santos@example.com',
-    phone: '(31) 98765-4321',
-    address: 'Av. do Contorno, 789 - Belo Horizonte, MG'
-  },
-  {
-    id: '29',
-    date: new Date(2025, 5, 7, 9, 20),
-    customer: 'Ana Pereira',
-    campaign: 'iPhone 15 Pro Max - 256GB',
-    numbers: 2,
-    payment: {
-    amount: 40.0,
-      method: 'Cartão de Crédito',
-      status: 'refunded'
-    },
-    email: 'ana.pereira@example.com',
-    phone: '(41) 98765-4321',
-    address: 'Rua XV de Novembro, 123 - Curitiba, PR'
-  },
-  {
-    id: '30',
-    date: new Date(2025, 5, 6, 14, 55),
-    customer: 'Pedro Almeida',
-    campaign: 'MacBook Pro 16" M3 Pro',
-    numbers: 8,
-    payment: {
-    amount: 200.0,
-      method: 'PIX',
-      status: 'success'
-    },
-    email: 'pedro.almeida@example.com',
-    phone: '(51) 98765-4321',
-    address: 'Av. Ipiranga, 456 - Porto Alegre, RS'
-  }
-];
-
-// Mock data for active campaigns
-const activeCampaigns = [
-  {
-    id: '1',
-    title: 'iPhone 15 Pro Max - 256GB',
-    status: 'ativa',
-    progress: 67,
-    sales: 3350.0,
-    endDate: new Date(2025, 6, 15)
-  },
-  {
-    id: '2',
-    title: 'MacBook Pro 16" M3 Pro',
-    status: 'ativa',
-    progress: 42,
-    sales: 2100.0,
-    endDate: new Date(2025, 7, 20)
-  },
-  {
-    id: '3',
-    title: 'Playstation 5 + 2 Controles',
-    status: 'finalizada',
-    progress: 100,
-    sales: 5000.0,
-    endDate: new Date(2025, 4, 30)
-  },
-  {
-    id: '4',
-    title: 'Samsung S24 Ultra',
-    status: 'futura',
-    progress: 0,
-    sales: 0,
-    endDate: new Date(2025, 8, 10)
-  },,
-  {
-    id: '2',
-    title: 'MacBook Pro 16" M3 Pro',
-    status: 'ativa',
-    progress: 42,
-    sales: 2100.0,
-    endDate: new Date(2025, 7, 20)
-  },
-  {
-    id: '3',
-    title: 'Playstation 5 + 2 Controles',
-    status: 'finalizada',
-    progress: 100,
-    sales: 5000.0,
-    endDate: new Date(2025, 4, 30)
-  },
-  {
-    id: '4',
-    title: 'Samsung S24 Ultra',
-    status: 'futura',
-    progress: 0,
-    sales: 0,
-    endDate: new Date(2025, 8, 10)
-  },
-  {
-    id: '2',
-    title: 'MacBook Pro 16" M3 Pro',
-    status: 'ativa',
-    progress: 42,
-    sales: 2100.0,
-    endDate: new Date(2025, 7, 20)
-  },
-  {
-    id: '3',
-    title: 'Playstation 5 + 2 Controles',
-    status: 'finalizada',
-    progress: 100,
-    sales: 5000.0,
-    endDate: new Date(2025, 4, 30)
-  },
-  {
-    id: '4',
-    title: 'Samsung S24 Ultra',
-    status: 'futura',
-    progress: 0,
-    sales: 0,
-    endDate: new Date(2025, 8, 10)
-  },
-  {
-    id: '2',
-    title: 'MacBook Pro 16" M3 Pro',
-    status: 'ativa',
-    progress: 42,
-    sales: 2100.0,
-    endDate: new Date(2025, 7, 20)
-  },
-  {
-    id: '3',
-    title: 'Playstation 5 + 2 Controles',
-    status: 'finalizada',
-    progress: 100,
-    sales: 5000.0,
-    endDate: new Date(2025, 4, 30)
-  },
-  {
-    id: '4',
-    title: 'Samsung S24 Ultra',
-    status: 'futura',
-    progress: 0,
-    sales: 0,
-    endDate: new Date(2025, 8, 10)
-  },
-  {
-    id: '2',
-    title: 'MacBook Pro 16" M3 Pro',
-    status: 'ativa',
-    progress: 42,
-    sales: 2100.0,
-    endDate: new Date(2025, 7, 20)
-  },
-  {
-    id: '3',
-    title: 'Playstation 5 + 2 Controles',
-    status: 'finalizada',
-    progress: 100,
-    sales: 5000.0,
-    endDate: new Date(2025, 4, 30)
-  },
-  {
-    id: '4',
-    title: 'Samsung S24 Ultra',
-    status: 'futura',
-    progress: 0,
-    sales: 0,
-    endDate: new Date(2025, 8, 10)
-  }
-];
-
 export default function CreatorDashboardHome() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -966,26 +380,6 @@ export default function CreatorDashboardHome() {
   const [sales, setSales] = useState<any[]>([]);
   const [paginationData, setPaginationData] = useState<any>(null);
   const { data: session } = useSession();
-    // Filter sales based on search and filters
-    const filteredSales = mockSales
-    .filter(sale => {
-      if (!searchTerm.trim()) return true;
-      
-      const lowerSearch = searchTerm.toLowerCase();
-      return (
-        sale.customer.toLowerCase().includes(lowerSearch) ||
-        sale.campaign.toLowerCase().includes(lowerSearch) ||
-        sale.email.toLowerCase().includes(lowerSearch)
-      );
-    })
-    .filter(sale => {
-      if (activeTab === 'all') return true;
-      return sale.campaign === activeTab;
-    })
-    .filter(sale => {
-      if (viewMode === 'all') return true;
-      return sale.payment.status === viewMode;
-    });
 
     // Inicializa o hook de paginação
     const pagination = usePagination({
@@ -996,7 +390,7 @@ export default function CreatorDashboardHome() {
     });
     
     // Paginar os dados filtrados
-    const paginatedSales = pagination.paginateData(sales);
+
     const { 
       currentPage, 
       totalPages, 
@@ -1026,26 +420,28 @@ export default function CreatorDashboardHome() {
 
   
   // Calculate statistics
-  const totalSales = filteredSales.reduce((sum, sale) => sum + sale.payment.amount, 0);
-  const totalNumbers = filteredSales.reduce((sum, sale) => sum + sale.numbers, 0);
-  const totalPayments = {
-    success: filteredSales.filter(sale => sale.payment.status === 'success').length,
-    pending: filteredSales.filter(sale => sale.payment.status === 'pending').length,
-    refunded: filteredSales.filter(sale => sale.payment.status === 'refunded').length
-  };
+  // const totalSales = filteredSales.reduce((sum, sale) => sum + sale.payment.amount, 0);
+  // const totalNumbers = filteredSales.reduce((sum, sale) => sum + sale.numbers, 0);
+  // const totalPayments = {
+  //   success: filteredSales.filter(sale => sale.payment.status === 'success').length,
+  //   pending: filteredSales.filter(sale => sale.payment.status === 'pending').length,
+  //   refunded: filteredSales.filter(sale => sale.payment.status === 'refunded').length
+  // };
   
   // Get unique campaigns for filter dropdown
   const campaignOptions = [
     { value: 'all', label: 'Todas as Campanhas' },
-    ...Array.from(new Set(mockSales.map(sale => sale.campaign)))
+    ...Array.from(new Set(sales.map(sale => sale.campaignId.title)))
       .map(campaign => ({ value: campaign, label: campaign }))
   ];
   
   const statusOptions = [
     { value: 'all', label: 'Todos os Status' },
-    { value: 'success', label: 'Pagos' },
-    { value: 'pending', label: 'Pendentes' },
-    { value: 'refunded', label: 'Estornados' }
+    { value: 'APPROVED', label: 'Pagos' },
+    { value: 'PENDING', label: 'Pendentes' },
+    { value: 'EXPIRED', label: 'Expirado' },  
+    { value: 'REFUNDED', label: 'Estornados' },
+    { value: 'FAILED', label: 'Falhou' },
   ];
   
   const openBuyerModal = (sale: any) => {
@@ -1274,11 +670,11 @@ export default function CreatorDashboardHome() {
           <ChartContainer>
             <div>Carregando dados...</div>
           </ChartContainer>
-        ) : filteredSales.length > 0 ? (
+        ) : sales.length > 0 ? (
           <>
             <ResponsiveTable
               columns={columns}
-              data={paginatedSales}
+              data={sales}
               rowKeyField="id"
               noDataMessage="Nenhuma venda encontrada"
               zebra={true}
@@ -1288,7 +684,7 @@ export default function CreatorDashboardHome() {
               currentPage={currentPage}
               totalPages={totalPages}
               pageSize={pageSize}
-              totalItems={filteredSales.length}
+              totalItems={paginationData?.totalItems || 0}
               pageSizeOptions={pageSizeOptions}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
