@@ -5,6 +5,22 @@ import type { IPaymentRepository } from "../repositories/PaymentRepository";
 import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
 
 export interface IPaymentService {
+    getPaymentsByCreatorId(pagination: {
+        userCode: string;
+        page: number;
+        limit: number;
+        skip: number;
+    }): Promise<ApiResponse<{   
+        paginationData: {
+            totalItems: number;
+            totalPages: number;
+            page: number;
+            limit: number;
+            skip: number;
+        };
+        sales: IPayment[];
+    }>>;
+
     createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
@@ -38,6 +54,24 @@ export class PaymentService implements IPaymentService {
         @inject("paymentRepository") paymentRepository: IPaymentRepository
     ) {
         this.paymentRepository = paymentRepository;
+    }
+
+    async getPaymentsByCreatorId(pagination: {
+        userCode: string;
+        page: number;
+        limit: number;
+        skip: number;
+    }): Promise<ApiResponse<{
+        paginationData: {
+            totalItems: number;
+            totalPages: number;
+            page: number;
+            limit: number;
+            skip: number;
+        };
+        sales: IPayment[];
+    }>> {
+        return this.paymentRepository.getPaymentsByCreatorId(pagination);
     }
 
     async createInitialPixPaymentAttempt(data: {

@@ -10,6 +10,8 @@ import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
 import Pagination from '@/components/common/Pagination';
 import { usePagination } from '@/hooks/usePagination';
 import Link from 'next/link';
+import creatorPaymentAPIClient from '@/API/creator/creatorPaymentAPIClient';
+import { useSession } from 'next-auth/react';
 
 // Styled Components for statistics cards
 const PageContent = styled.div`
@@ -961,18 +963,11 @@ export default function CreatorDashboardHome() {
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Filter sales based on search and filters
-  const filteredSales = mockSales
+  const [sales, setSales] = useState<any[]>([]);
+  const [paginationData, setPaginationData] = useState<any>(null);
+  const { data: session } = useSession();
+    // Filter sales based on search and filters
+    const filteredSales = mockSales
     .filter(sale => {
       if (!searchTerm.trim()) return true;
       
@@ -991,19 +986,41 @@ export default function CreatorDashboardHome() {
       if (viewMode === 'all') return true;
       return sale.payment.status === viewMode;
     });
-  
-  // Inicializa o hook de paginação
-  const pagination = usePagination({
-    totalItems: filteredSales.length,
-    initialPage: 1,
-    initialPageSize: 10,
-    pageSizeOptions: [5, 10, 25, 50]
-  });
-  
-  // Paginar os dados filtrados
-  const paginatedSales = pagination.paginateData(filteredSales);
 
-  console.log(paginatedSales);
+    // Inicializa o hook de paginação
+    const pagination = usePagination({
+      totalItems: paginationData?.totalItems || 0,
+      initialPage: 1,
+      initialPageSize: 10,
+      pageSizeOptions: [5, 10, 25, 50]
+    });
+    
+    // Paginar os dados filtrados
+    const paginatedSales = pagination.paginateData(sales);
+    const { 
+      currentPage, 
+      totalPages, 
+      pageSize, 
+      pageSizeOptions, 
+      setCurrentPage, 
+      setPageSize,
+      canGoToPrevPage,
+      canGoToNextPage } = pagination;
+  
+  useEffect(() => {
+    console.log(currentPage, pageSize, session?.user.id);
+    const fetchSales = async () => {
+      const response = await creatorPaymentAPIClient.getCreatorPaymentsById(session?.user.id as string, currentPage, pageSize);
+      const { paginationData, sales} = response.data || { paginationData: null, sales: [] };
+ 
+      setSales(sales);
+      setPaginationData(paginationData);
+    }
+    fetchSales();
+    // Simulate data loading
+  }, [currentPage, pageSize]);
+  
+
   
   // Calculate statistics
   const totalSales = filteredSales.reduce((sum, sale) => sum + sale.payment.amount, 0);
@@ -1044,10 +1061,10 @@ export default function CreatorDashboardHome() {
       header: 'Data',
       accessor: (row) => (
         <>
-          {row.date.toLocaleDateString('pt-BR')}
+          {new Date(row.approvedAt).toLocaleDateString('pt-BR')}
           <br />
           <span style={{ fontSize: '0.8rem', color: '#666' }}>
-            {row.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(row.approvedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </>
       ),
@@ -1061,7 +1078,7 @@ export default function CreatorDashboardHome() {
       header: 'Cliente',
       accessor: (row) => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <div>{row.customer}</div>
+          <div>{row.customerInfo.name}</div>
           <MobileViewButton onClick={() => openBuyerModal(row)}>
             <FaEye size={10} /> Ver detalhes
           </MobileViewButton>
@@ -1074,7 +1091,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'campaign',
       header: 'Campanha',
-      accessor: (row) => row.campaign,
+      accessor: (row) => row.campaignId.title,
       sortable: true,
       priority: 3,
       mobileLabel: 'Campanha'
@@ -1082,7 +1099,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'numbers',
       header: 'Números',
-      accessor: (row) => row.numbers,
+      accessor: (row) => row.numbersQuantity,
       sortable: true,
       align: 'center',
       width: '100px',
@@ -1092,7 +1109,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'amount',
       header: 'Valor',
-      accessor: (row) => `R$ ${row.payment.amount.toFixed(2)}`,
+      accessor: (row) => `R$ ${row.amount.toFixed(2)}`,
       sortable: true,
       align: 'right',
       width: '120px',
@@ -1102,7 +1119,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'method',
       header: 'Método',
-      accessor: (row) => row.payment.method,
+      accessor: (row) => row.paymentMethod,
       sortable: true,
       priority: 0,
       mobileLabel: 'Método'
@@ -1111,10 +1128,11 @@ export default function CreatorDashboardHome() {
       id: 'status',
       header: 'Status',
       accessor: (row) => (
-        <StatusTag $status={row.payment.status}>
-          {row.payment.status === 'success' && 'Pago'}
-          {row.payment.status === 'pending' && 'Pendente'}
-          {row.payment.status === 'refunded' && 'Estornado'}
+        <StatusTag $status={row.status}>
+          {row.status === 'APPROVED' && 'Pago'}
+          {row.status === 'PENDING' && 'Pendente'}
+          {row.status === 'REFUNDED' && 'Estornado'}
+          {row.status === 'FAILED' && 'Falhou'}
         </StatusTag>
       ),
       sortable: true,
@@ -1262,13 +1280,13 @@ export default function CreatorDashboardHome() {
             />
             
             <Pagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageSize={pagination.pageSize}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
               totalItems={filteredSales.length}
-              pageSizeOptions={pagination.pageSizeOptions}
-              onPageChange={pagination.setCurrentPage}
-              onPageSizeChange={pagination.setPageSize}
+              pageSizeOptions={pageSizeOptions}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
             />
           </>
         ) : (

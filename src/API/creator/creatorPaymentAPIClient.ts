@@ -1,7 +1,12 @@
 const creatorPaymentAPI = {
-    getCreatorPaymentsById: async (id: string) => {
-        const response = await fetch(`/api/creator/payments/${id}`);
-        return response.json();
+    getCreatorPaymentsById: async (id: string, page: number, limit: number) => {
+        try {
+            const response = await fetch(`/api/creator/${id}/payments?page=${page}&limit=${limit}`);
+            return response.json();
+        } catch (error) {
+            console.error('[GET PAGINATION] error', error);
+            throw error;
+        }
     }
 }
 

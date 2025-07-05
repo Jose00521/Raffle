@@ -21,7 +21,13 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       required: true,
       index: true
     },
-    userId: {
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true
+    },
+    creatorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,

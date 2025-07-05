@@ -31,7 +31,8 @@ export enum PaymentStatusEnum {
     paymentCode?: string; // Código único no nosso sistema (Snowflake ID)
     idempotencyKey?: string; // Chave para evitar duplicação de pagamentos
     campaignId: mongoose.Types.ObjectId | string;
-    userId: mongoose.Types.ObjectId | string;
+    customerId: mongoose.Types.ObjectId | string;
+    creatorId: mongoose.Types.ObjectId | string;
     processorTransactionId: string; // ID fornecido pelo processador de pagamento
     amount: number;
     taxSeller: number;

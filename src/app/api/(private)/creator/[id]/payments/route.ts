@@ -1,5 +1,6 @@
 import { withAuth } from "@/lib/auth/apiAuthHelper";
 import { container } from "@/server/container/container";
+import { PaymentController } from "@/server/controllers/PaymentController";
 import { createErrorResponse } from "@/server/utils/errorHandler/api";
 import { Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -7,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = withAuth(async (request: NextRequest, { params, session }: { params: { id: string }, session: Session }) => {
     try {
 
-        const { id } = params;
+        const { id } = await params;
 
         if(session.user.id !== id){
             return NextResponse.json(createErrorResponse('Você não tem permissão para acessar este recurso', 403), { status: 403 });
@@ -23,12 +24,13 @@ export const GET = withAuth(async (request: NextRequest, { params, session }: { 
             limit,
             skip: (page - 1) * limit,
         }
-        
 
-        
-        
-        // const result = await creatorController.getCreatorById(id);
-        return NextResponse.json('teste', { status: 200 });
+        console.log('[GET PAGINATION] pagination', pagination);
+
+        const controller =  container.resolve(PaymentController);
+        const result = await controller.getPaymentsByCreatorId(pagination);
+
+        return NextResponse.json(result, { status: 200 });
     } catch (error) {
         return NextResponse.json(createErrorResponse('Erro ao buscar pagamentos', 500), { status: 500 });
     }

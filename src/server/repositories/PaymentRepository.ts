@@ -17,6 +17,22 @@ import SocketServiceDefault from "../lib/socket/SocketService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 
 export interface IPaymentRepository {
+    getPaymentsByCreatorId(pagination: {
+        userCode: string;
+        page: number;
+        limit: number;
+        skip: number;
+    }): Promise<ApiResponse<{
+        paginationData: {   
+            totalItems: number;
+            totalPages: number;
+            page: number;
+            limit: number;
+            skip: number;
+        };
+        sales: IPayment[];
+    }>>;
+
     createInitialPixPaymentAttempt(data: {
         gateway: string;
         body: IPaymentPattern;
@@ -50,6 +66,61 @@ export class PaymentRepository implements IPaymentRepository {
         @inject("db") db: IDBConnection
     ) {
         this.db = db;
+    }
+
+    async getPaymentsByCreatorId(pagination: {
+        userCode: string;
+        page: number;
+        limit: number;
+        skip: number;
+    }): Promise<ApiResponse<{
+        paginationData: {   
+            totalItems: number;
+            totalPages: number;
+            page: number;
+            limit: number;
+            skip: number;
+        };
+        sales: IPayment[];
+    }>> {
+        try {
+            await this.db.connect();
+
+            const { userCode, page, limit, skip } = pagination;
+
+            const user = await User.findOne({ userCode, role: 'creator' });
+
+            const [payments, totalItems] = await Promise.all([
+                Payment!.find({ creatorId: user._id })
+                    .populate('campaignId', '-_id')
+                    .populate('customerId', '-_id')
+                    .skip(skip)
+                    .limit(limit)
+                    .sort({ createdAt: -1 }),
+                Payment!.countDocuments({ userId: user._id })
+            ]);
+
+            const totalPages = Math.ceil(totalItems / limit);
+            
+            return createSuccessResponse({
+                paginationData: {
+                    totalItems,
+                    totalPages,
+                    page,
+                    limit,
+                    skip
+                },
+                sales: payments
+            }, 'Pagamentos buscados com sucesso', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar pagamentos',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
     }
 
     async createInitialPixPaymentAttempt(data: {
@@ -99,7 +170,8 @@ export class PaymentRepository implements IPaymentRepository {
             // 🛡️ PROTEÇÃO 2: Verificação de duplicação por dados críticos
             const duplicateCheck = await Payment!.findOne({
                 campaignId: campaign._id,
-                userId: user._id,
+                customerId: user._id,
+                creatorId: campaign.createdBy,
                 amount: body.amount,
                 status: { $in: ['PENDING', 'INITIALIZED', 'APPROVED'] },
                 createdAt: { 
@@ -119,7 +191,8 @@ export class PaymentRepository implements IPaymentRepository {
                 amount: body.amount/100,
                 numbersQuantity: body.selectedPackage.quantity,
                 campaignId: campaign._id,
-                userId: user._id,
+                customerId: user._id,
+                creatorId: campaign.createdBy,
                 paymentMethod: body.paymentMethod,
                 status: PaymentStatusEnum.INITIALIZED,
                 paymentProcessor: gateway,
@@ -214,10 +287,9 @@ export class PaymentRepository implements IPaymentRepository {
 
                 await payment.save();
 
-                console.log('chegou aqui 4', (payment.userId as unknown as IUser).userCode);
 
                 await User.updateOne({
-                    userCode: (payment.userId as unknown as IUser).userCode,
+                    userCode: (payment.customerId as unknown as IUser).userCode,
                     role: 'user'
                 }, {
                     $set: {
