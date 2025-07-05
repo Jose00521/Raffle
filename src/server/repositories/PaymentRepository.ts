@@ -270,7 +270,7 @@ export class PaymentRepository implements IPaymentRepository {
                     { paymentCode: externalId },
                     { processorTransactionId: externalId }
                 ]
-            }).populate('userId', 'name email userCode')
+            }).populate('customerId', 'name email userCode')
             .populate('campaignId', 'title campaignCode');
 
             if(!payment){
