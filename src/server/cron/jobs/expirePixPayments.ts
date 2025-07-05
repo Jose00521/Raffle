@@ -42,7 +42,7 @@ export async function expirePixPayments() {
         
         const paymentCode = payment.paymentCode || '';
         const campaignCode = (payment.campaignId as any)?.campaignCode || '';
-        const userCode = (payment.userId as any)?.userCode || '';
+        const userCode = (payment.creatorId as any)?.userCode || '';
         
         logger.info(`PIX ${paymentCode} expirado com sucesso`, {
           paymentId: payment._id,

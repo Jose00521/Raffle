@@ -20,6 +20,7 @@ import { MdContentCopy } from 'react-icons/md';
 import { SiPix } from 'react-icons/si';
 import { IoMdOpen } from 'react-icons/io';
 import Link from 'next/link';
+import { formatCurrency } from '@/utils/formatNumber';
 
 interface BuyerDetailsModalProps {
   isOpen: boolean;
@@ -332,17 +333,17 @@ const StatusTag = styled.span<{ $status: string }>`
   gap: 6px;
   
   ${({ $status }) => {
-    if ($status === 'success') {
+    if ($status === 'APPROVED') {
       return `
         background-color: rgba(16, 185, 129, 0.1);
         color: #10b981;
       `;
-    } else if ($status === 'pending') {
+    } else if ($status === 'PENDING') {
       return `
         background-color: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
       `;
-    } else if ($status === 'refunded') {
+    } else if ($status === 'REFUNDED' || $status === 'FAILED' || $status === 'EXPIRED') {
       return `
         background-color: rgba(239, 68, 68, 0.1);
         color: #ef4444;
@@ -439,11 +440,11 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
   };
   
   const getStatusIcon = (status: string) => {
-    if (status === 'success') {
+    if (status === 'APPROVED') {
       return <FaCheckCircle size={16} />;
-    } else if (status === 'pending') {
+    } else if (status === 'PENDING') {
       return <FaExclamationCircle size={16} />;
-    } else if (status === 'refunded') {
+    } else if (status === 'REFUNDED' || status === 'FAILED' || status === 'EXPIRED') {
       return <FaTimesCircle size={16} />;
     }
     return null;
@@ -477,36 +478,36 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
         <ModalBody>
           <BuyerProfile>
             <BuyerAvatar>
-              {buyer.customer?.charAt(0)}
+              {buyer.customerInfo?.name?.charAt(0)}
             </BuyerAvatar>
             <BuyerInfo>
-              <BuyerName>{buyer.customer}</BuyerName>
+              <BuyerName>{buyer.customerInfo?.name}</BuyerName>
               <BuyerContact>
                 <FaEnvelope size={14} />
-                {buyer.email}
+                {buyer.customerInfo?.email}
                 <ActionButtonsContainer>
                   <TooltipWrapper>
-                    <ActionButton href={`mailto:${buyer.email}`} target="_blank" rel="noopener noreferrer">
+                    <ActionButton href={`mailto:${buyer.customerInfo?.email}`} target="_blank" rel="noopener noreferrer">
                       <FaRegEnvelope size={12} />
                       <Tooltip>Enviar email</Tooltip>
                     </ActionButton>
                   </TooltipWrapper>
                   <TooltipWrapper>
-                    <ActionButton onClick={() => copyToClipboard(buyer.email)}>
+                    <ActionButton onClick={() => copyToClipboard(buyer.customerInfo?.email || '')}>
                       <MdContentCopy size={12} />
                       <Tooltip>Copiar email</Tooltip>
                     </ActionButton>
                   </TooltipWrapper>
                 </ActionButtonsContainer>
               </BuyerContact>
-              {buyer.phone && (
+              {buyer.customerInfo?.phone && (
                 <BuyerContact>
                   <FaPhone size={14} />
-                  {buyer.phone}
+                  {buyer.customerInfo?.phone}
                   <ActionButtonsContainer>
                     <TooltipWrapper>
                       <ActionButton 
-                        href={`https://wa.me/${formatPhoneForWhatsApp(buyer.phone)}`} 
+                        href={`https://wa.me/${formatPhoneForWhatsApp(buyer.customerInfo?.phone || '')}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
@@ -515,7 +516,7 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
                       </ActionButton>
                     </TooltipWrapper>
                     <TooltipWrapper>
-                      <ActionButton href={`tel:${buyer.phone}`}>
+                      <ActionButton href={`tel:${buyer.customerInfo?.phone}`}>
                         <FaPhone size={12} />
                         <Tooltip>Ligar</Tooltip>
                       </ActionButton>
@@ -528,14 +529,14 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
           
           <DetailCard>
             <DetailCardTitle>Informações Pessoais</DetailCardTitle>
-            {buyer.address && (
+            {buyer.billingInfo?.address && (
               <DetailRow>
                 <DetailLabel><FaMapMarkerAlt size={14} /> Endereço:</DetailLabel>
                 <DetailValue>
-                  {buyer.address}
+                  {buyer.billingInfo?.address}, {buyer.billingInfo?.city}, {buyer.billingInfo?.zipCode} - {buyer.billingInfo?.state}
                   <TooltipWrapper>
                     <ActionButton 
-                      href={getMapUrl(buyer.address)} 
+                      href={getMapUrl(buyer.billingInfo || '')} 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >
@@ -552,39 +553,41 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
             <DetailCardTitle>Detalhes da Compra</DetailCardTitle>
             <DetailRow>
               <DetailLabel>Campanha:</DetailLabel>
-              <DetailValue>{buyer.campaign}</DetailValue>
+              <DetailValue>{buyer.campaignId.title}</DetailValue>
             </DetailRow>
             <DetailRow>
               <DetailLabel>Data:</DetailLabel>
               <DetailValue>
-                {buyer.date.toLocaleDateString('pt-BR')} às {' '}
-                {buyer.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(buyer.approvedAt || buyer.createdAt).toLocaleDateString('pt-BR')} às {' '}
+                {new Date(buyer.approvedAt || buyer.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </DetailValue>
             </DetailRow>
             <DetailRow>
               <DetailLabel>Números:</DetailLabel>
-              <DetailValue>{buyer.numbers} números adquiridos</DetailValue>
+              <DetailValue>{buyer.numbersQuantity} números adquiridos</DetailValue>
             </DetailRow>
             <DetailRow>
               <DetailLabel>Valor Total:</DetailLabel>
-              <DetailValue>R$ {buyer.payment.amount.toFixed(2)}</DetailValue>
+              <DetailValue>{formatCurrency(buyer.amount)}</DetailValue>
             </DetailRow>
             
             <PaymentInfoRow>
               <PaymentMethodContainer>
                 <PaymentMethodIcon>
-                  {getPaymentIcon(buyer.payment.method)}
+                  {getPaymentIcon(buyer.paymentMethod)}
                 </PaymentMethodIcon>
-                {buyer.payment.method}
+                {buyer.paymentMethod}
               </PaymentMethodContainer>
               
-              <StatusTag $status={buyer.payment.status}>
+              <StatusTag $status={buyer.status}>
                 <StatusIconWrapper>
-                  {getStatusIcon(buyer.payment.status)}
+                  {getStatusIcon(buyer.status)}
                 </StatusIconWrapper>
-                {buyer.payment.status === 'success' && 'Pago'}
-                {buyer.payment.status === 'pending' && 'Pendente'}
-                {buyer.payment.status === 'refunded' && 'Estornado'}
+                {buyer.status === 'APPROVED' && 'Pago'}
+                {buyer.status === 'PENDING' && 'Pendente'}
+                {buyer.status === 'REFUNDED' && 'Estornado'}
+                {buyer.status === 'FAILED' && 'Falhou'}
+                {buyer.status === 'EXPIRED' && 'Expirado'}
               </StatusTag>
             </PaymentInfoRow>
           </DetailCard>

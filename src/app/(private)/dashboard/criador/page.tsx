@@ -12,6 +12,7 @@ import { usePagination } from '@/hooks/usePagination';
 import Link from 'next/link';
 import creatorPaymentAPIClient from '@/API/creator/creatorPaymentAPIClient';
 import { useSession } from 'next-auth/react';
+import { formatCurrency } from '@/utils/formatNumber';
 
 // Styled Components for statistics cards
 const PageContent = styled.div`
@@ -508,7 +509,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'amount',
       header: 'Valor',
-      accessor: (row) => `R$ ${row.amount.toFixed(2)}`,
+      accessor: (row) => `R$ ${formatCurrency(row.amount)}`,
       sortable: true,
       align: 'right',
       width: '120px',
