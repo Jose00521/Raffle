@@ -88,16 +88,16 @@ export class PaymentRepository implements IPaymentRepository {
 
             const { userCode, page, limit, skip } = pagination;
 
-            const user = await User.findOne({ userCode, role: 'creator' });
+            const creator = await User.findOne({ userCode, role: 'creator' });
 
             const [payments, totalItems] = await Promise.all([
-                Payment!.find({ creatorId: user._id })
+                Payment!.find({ creatorId: creator._id })
                     .populate('campaignId', '-_id')
                     .populate('customerId', '-_id')
                     .skip(skip)
                     .limit(limit)
                     .sort({ createdAt: -1 }),
-                Payment!.countDocuments({ userId: user._id })
+                Payment!.countDocuments({ creatorId: creator._id })
             ]);
 
             const totalPages = Math.ceil(totalItems / limit);

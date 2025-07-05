@@ -325,17 +325,17 @@ const StatusTag = styled.span<{ $status: string }>`
   text-transform: uppercase;
   
   ${({ $status }) => {
-    if ($status === 'success') {
+    if ($status === 'APPROVED') {
       return `
         background-color: rgba(16, 185, 129, 0.1);
         color: #10b981;
       `;
-    } else if ($status === 'pending') {
+    } else if ($status === 'PENDING') {
       return `
         background-color: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
       `;
-    } else if ($status === 'refunded') {
+    } else if ($status === 'REFUNDED' || $status === 'FAILED' || $status === 'EXPIRED') {
       return `
         background-color: rgba(239, 68, 68, 0.1);
         color: #ef4444;
@@ -1012,6 +1012,9 @@ export default function CreatorDashboardHome() {
     const fetchSales = async () => {
       const response = await creatorPaymentAPIClient.getCreatorPaymentsById(session?.user.id as string, currentPage, pageSize);
       const { paginationData, sales} = response.data || { paginationData: null, sales: [] };
+
+      console.log('sales', sales);
+      console.log('paginationData', paginationData);
  
       setSales(sales);
       setPaginationData(paginationData);
@@ -1061,10 +1064,10 @@ export default function CreatorDashboardHome() {
       header: 'Data',
       accessor: (row) => (
         <>
-          {new Date(row.approvedAt).toLocaleDateString('pt-BR')}
+          {new Date(row.approvedAt || row.createdAt).toLocaleDateString('pt-BR')}
           <br />
           <span style={{ fontSize: '0.8rem', color: '#666' }}>
-            {new Date(row.approvedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(row.approvedAt || row.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </>
       ),
@@ -1130,6 +1133,8 @@ export default function CreatorDashboardHome() {
       accessor: (row) => (
         <StatusTag $status={row.status}>
           {row.status === 'APPROVED' && 'Pago'}
+          {row.status === 'INITIALIZED' && 'Iniciado'}
+          {row.status === 'EXPIRED' && 'Expirado'}
           {row.status === 'PENDING' && 'Pendente'}
           {row.status === 'REFUNDED' && 'Estornado'}
           {row.status === 'FAILED' && 'Falhou'}
