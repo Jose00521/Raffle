@@ -531,7 +531,6 @@ export default function CreatorDashboardHome() {
       header: 'Números',
       accessor: (row) => row.numbersQuantity,
       sortable: true,
-      align: 'center',
       width: '100px',
       priority: 3,
       mobileLabel: 'Números'
@@ -541,7 +540,6 @@ export default function CreatorDashboardHome() {
       header: 'Valor',
       accessor: (row) => formatCurrency(row.amount),
       sortable: true,
-      align: 'center',
       width: '120px',
       priority: 2,
       mobileLabel: 'Valor'
@@ -551,7 +549,6 @@ export default function CreatorDashboardHome() {
       header: 'Valor Recebido',
       accessor: (row) => formatCurrency(row.amountReceived),
       sortable: true,
-      align: 'center',
       width: '120px',
       priority: 2,
       mobileLabel: 'Valor Recebido'
