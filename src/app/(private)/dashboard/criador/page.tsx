@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
-import { FaTicketAlt, FaMoneyBillWave, FaUsers, FaTrophy, FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import { FaTicketAlt, FaMoneyBillWave, FaUsers, FaTrophy, FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTimes, FaCreditCard } from 'react-icons/fa';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
@@ -13,6 +13,7 @@ import Link from 'next/link';
 import creatorPaymentAPIClient from '@/API/creator/creatorPaymentAPIClient';
 import { useSession } from 'next-auth/react';
 import { formatCurrency } from '@/utils/formatNumber';
+import { SiPix } from 'react-icons/si';
 
 // Styled Components for statistics cards
 const PageContent = styled.div`
@@ -269,6 +270,24 @@ const FilterGroup = styled.div`
   }
 `;
 
+const PaymentMethodContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const PaymentMethodIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.04);
+`;
+
 const ViewButton = styled.button`
   padding: 6px 12px;
   background-color: rgba(106, 17, 203, 0.1);
@@ -444,6 +463,17 @@ export default function CreatorDashboardHome() {
     { value: 'REFUNDED', label: 'Estornados' },
     { value: 'FAILED', label: 'Falhou' },
   ];
+
+  const getPaymentIcon = (method: string) => {
+    method = method.toLowerCase();
+    if (method.includes('pix')) {
+      return <SiPix size={16} />;
+    } else if (method.includes('cartão') || method.includes('card') || method.includes('credito') || method.includes('débito')) {
+      return <FaCreditCard size={16} />;
+    } else {
+      return <FaMoneyBillWave size={16} />;
+    }
+  };
   
   const openBuyerModal = (sale: any) => {
     setSelectedBuyer(sale);
@@ -509,17 +539,34 @@ export default function CreatorDashboardHome() {
     {
       id: 'amount',
       header: 'Valor',
-      accessor: (row) => `R$ ${formatCurrency(row.amount)}`,
+      accessor: (row) => formatCurrency(row.amount),
       sortable: true,
-      align: 'right',
+      align: 'center',
       width: '120px',
       priority: 2,
       mobileLabel: 'Valor'
     },
     {
+      id: 'amountReceived',
+      header: 'Valor Recebido',
+      accessor: (row) => formatCurrency(row.amountReceived),
+      sortable: true,
+      align: 'center',
+      width: '120px',
+      priority: 2,
+      mobileLabel: 'Valor Recebido'
+    },
+    {
       id: 'method',
       header: 'Método',
-      accessor: (row) => row.paymentMethod,
+      accessor: (row) => (
+        <PaymentMethodContainer>
+        <PaymentMethodIcon>
+          {getPaymentIcon(row.paymentMethod)}
+        </PaymentMethodIcon>
+        {row.paymentMethod}
+      </PaymentMethodContainer>
+      ),
       sortable: true,
       priority: 0,
       mobileLabel: 'Método'
