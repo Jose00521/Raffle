@@ -12,7 +12,7 @@ import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { INumberPackageCampaign, useCampaignSelection } from '@/hooks/useCampaignSelection';
 import { toast } from 'react-toastify';
 import QuickSignupModal from '@/components/campaign/QuickSignupModal';
-import { formatCurrency } from '@/utils/formatNumber';
+import { formatCurrency, formatInteger } from '@/utils/formatNumber';
 import { CertificationSectionCompact } from '../ui/CertificationSection';
 import { useSession } from 'next-auth/react';
 import LoginModal from '../auth/LoginModal';
@@ -931,7 +931,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       ) : null;
                     })()}
                     
-                    <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
+                    <PacoteQuantidade>{formatInteger(pacote.quantity)} cotas</PacoteQuantidade>
                     <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
                     <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
                     <PacoteEconomia>Economize {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
@@ -1278,7 +1278,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       ) : null;
                     })()}
                     
-                    <PacoteQuantidade>{pacote.quantity} cotas</PacoteQuantidade>
+                    <PacoteQuantidade>{formatInteger(pacote.quantity)} cotas</PacoteQuantidade>
                     <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
                     <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
                     <PacoteEconomia>Economize {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
@@ -1346,13 +1346,13 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     Suas chances: 
                     <ChancesTexto 
                       $level={
-                        selection?.quantity && selection.quantity < 100 ? 'basic' : 
-                        selection?.quantity && selection.quantity < 250 ? 'good' : 
+                        selection?.quantity && selection.quantity < campanhaDetalhes?.numberPackages[0]?.quantity ? 'basic' : 
+                        selection?.quantity && selection.quantity < campanhaDetalhes?.numberPackages[1]?.quantity ? 'good' : 
                         'excellent'
                       }
                     >
-                      {selection?.quantity && selection.quantity < 100 ? 'Boas' : 
-                       selection?.quantity && selection.quantity < 250 ? 'Ótimas' : 
+                      {selection?.quantity && selection.quantity < campanhaDetalhes?.numberPackages[0]?.quantity ? 'Boas' : 
+                       selection?.quantity && selection.quantity < campanhaDetalhes?.numberPackages[1]?.quantity ? 'Ótimas' : 
                        'Excelentes'}
                     </ChancesTexto>
                   </ChancesInfo>
@@ -1488,15 +1488,15 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <TitulosPremiadosLista>
                 <PremiadosInfoBox $type="total">
                   <PremiadosLabel>Total</PremiadosLabel>
-                  <PremiadosValor>100</PremiadosValor>
+                  <PremiadosValor>60</PremiadosValor>
                 </PremiadosInfoBox>
                 <PremiadosInfoBox $type="disponivel">
                   <PremiadosLabel>Disponíveis</PremiadosLabel>
-                  <PremiadosValor>100</PremiadosValor>
+                  <PremiadosValor>54</PremiadosValor>
                 </PremiadosInfoBox>
                 <PremiadosInfoBox $type="sorteado">
                   <PremiadosLabel>Sorteados</PremiadosLabel>
-                  <PremiadosValor>0</PremiadosValor>
+                  <PremiadosValor>6</PremiadosValor>
                 </PremiadosInfoBox>
               </TitulosPremiadosLista>
               

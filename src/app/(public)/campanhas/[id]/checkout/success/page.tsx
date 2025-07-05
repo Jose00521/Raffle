@@ -12,6 +12,7 @@ import { IPayment } from '@/models/interfaces/IPaymentInterfaces';
 import { formatCurrency } from '@/utils/formatters';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { sendGTMEvent } from '@next/third-parties/google';
+import { formatInteger } from '@/utils/formatNumber';
 
 // Interfaces
 interface CheckoutData {
@@ -991,7 +992,7 @@ export default function SuccessPage() {
                           <TimelineContent>
                             <TimelineTitle>Quantidade de Números</TimelineTitle>
                             <TimelineDescription>
-                              {checkoutData.campaignSelection.quantity} números da sorte
+                              {formatInteger(checkoutData.campaignSelection.quantity)} números da sorte
                               {checkoutData.campaignSelection.isCombo && ` (${checkoutData.campaignSelection.name})`}
                             </TimelineDescription>
                             <TimelineTime>Processado</TimelineTime>

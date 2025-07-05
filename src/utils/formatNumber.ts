@@ -29,6 +29,40 @@ export const formatCurrency = (value: string | number, currencySymbol: string = 
 };
 
 /**
+ * Formata um número inteiro com separadores de milhar no padrão brasileiro
+ * Exemplo: 40000 -> 40.000, 2000 -> 2.000, 1000000 -> 1.000.000
+ * Aceita entrada como número ou string
+ */
+export const formatInteger = (value: string | number): string => {
+  // Se for null, undefined ou string vazia
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  // Converter para número
+  let numericValue: number;
+  if (typeof value === 'string') {
+    // Remover caracteres não numéricos, exceto sinal negativo
+    const cleanValue = value.replace(/[^\d\-]/g, '');
+    numericValue = parseInt(cleanValue, 10);
+  } else {
+    numericValue = Math.floor(value); // Garantir que é um inteiro
+  }
+  
+  // Se o valor não for um número válido, retornar string vazia
+  if (isNaN(numericValue)) {
+    return '';
+  }
+  
+  // Usar Intl.NumberFormat para formatação padronizada sem casas decimais
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(numericValue);
+};
+
+/**
  * Converte um valor de string formatada como moeda para um número
  * Suporta diferentes formatos, como R$ 1.234,56 ou 1234.56
  */

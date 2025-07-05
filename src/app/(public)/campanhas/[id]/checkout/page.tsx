@@ -9,7 +9,7 @@ import { IUser } from '@/models/interfaces/IUserInterfaces';
 import { toast, ToastContainer } from 'react-toastify';
 import SecurityModal from '@/components/auth/SecurityModal';
 import Timer from '@/components/ui/Timer';
-import { formatCurrency } from '@/utils/formatNumber';
+import { formatCurrency, formatInteger } from '@/utils/formatNumber';
 import { useCheckoutFlow } from '@/hooks/useCheckoutFlow';
 import CertificationSection, { CertificationSectionCompact } from '@/components/ui/CertificationSection';
 import { usePaymentMonitor } from '@/hooks/usePaymentMonitor';
@@ -2633,7 +2633,7 @@ function CheckoutContent() {
                   <RegularDetails>
                     <DetailRow>
                       <DetailLabel>📦 Quantidade de Números</DetailLabel>
-                      <DetailValue>{checkoutData?.campaignSelection.quantity || 0}</DetailValue>
+                      <DetailValue>{formatInteger(checkoutData?.campaignSelection.quantity || 0)}</DetailValue>
                     </DetailRow>
                     <DetailRow>
                       <DetailLabel>💰 Valor Unitário</DetailLabel>

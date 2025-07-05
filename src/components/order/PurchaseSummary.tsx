@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { INumberPackageCampaign } from '@/hooks/useCampaignSelection';
-import { formatCurrency } from '@/utils/formatNumber';
+import { formatCurrency, formatInteger } from '@/utils/formatNumber';
 
 interface PurchaseSummaryProps {
   selection: INumberPackageCampaign;
@@ -43,7 +43,7 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         <SimpleContent>
           <SimpleInfoGrid>
             <SimpleInfoLabel>Quantidade:</SimpleInfoLabel>
-            <SimpleInfoValue>{quantity} números</SimpleInfoValue>
+            <SimpleInfoValue>{formatInteger(quantity)} números</SimpleInfoValue>
             
             <SimpleInfoLabel>Preço unitário:</SimpleInfoLabel>
             <SimpleInfoValue>{formatCurrency(unitPrice)}</SimpleInfoValue>
@@ -110,7 +110,7 @@ export const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
       <ComboValuesSection>
         <ComboInfoGrid>
           <ComboInfoLabel>Quantidade:</ComboInfoLabel>
-          <ComboInfoValue>{quantity} números</ComboInfoValue>
+          <ComboInfoValue>{formatInteger(quantity)} números</ComboInfoValue>
           
           <ComboInfoLabel>Preço unitário:</ComboInfoLabel>
           <ComboInfoValue>{formatCurrency(unitPrice)}</ComboInfoValue>
