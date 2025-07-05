@@ -468,7 +468,7 @@ export default function CreatorDashboardHome() {
     method = method.toLowerCase();
     if (method.includes('pix')) {
       return <SiPix size={16} />;
-    } else if (method.includes('cartão') || method.includes('card') || method.includes('credito') || method.includes('débito')) {
+    } else if (method.includes('CREDIT_CARD') || method.includes('DEBIT_CARD') || method.includes('CREDIT_CARD')) {
       return <FaCreditCard size={16} />;
     } else {
       return <FaMoneyBillWave size={16} />;
