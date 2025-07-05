@@ -19,7 +19,7 @@ export async function expirePixPayments() {
       paymentMethod: PaymentMethodEnum.PIX,
       status: { $in: [PaymentStatusEnum.PENDING, PaymentStatusEnum.INITIALIZED] },
       expiresAt: { $lte: now }
-    }).populate('userId', 'name email userCode')
+    }).populate('customerId', 'name email userCode')
       .populate('campaignId', 'title campaignCode');
     
     if (pixToExpire.length === 0) {

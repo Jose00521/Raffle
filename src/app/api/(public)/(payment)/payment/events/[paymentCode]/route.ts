@@ -25,7 +25,7 @@ export async function GET(
       try {
         const payment = await Payment!.findOne({ paymentCode },'-_id')
         .populate('campaignId','-_id')
-        .populate('userId', '-_id')
+        .populate('customerId', '-_id')
         .lean();
         
         if (!payment) {
@@ -67,7 +67,7 @@ export async function GET(
           // Buscar status atual do pagamento (sempre verifica o banco)
           const updatedPayment = await Payment!.findOne({ paymentCode },'-_id')
           .populate('campaignId','-_id')
-          .populate('userId', '-_id')
+          .populate('customerId', '-_id')
           .lean();
           
           if (!updatedPayment) {
