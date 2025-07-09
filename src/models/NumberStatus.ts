@@ -258,7 +258,7 @@ if (isServer && NumberStatusSchema) {
         
         // 4. Inicializar/atualizar estatísticas da campanha
         // Obter estatísticas diretamente do bitmap
-        const stats = await BitMapService.getAvailabilityStats(rifaId);
+        // const stats = await BitMapService.getAvailabilityStats(rifaId);
         
         // Usar cast para acessar o método no modelo
         // const thisModel = this as NumberStatusModel;
@@ -401,90 +401,6 @@ if (isServer && NumberStatusSchema) {
       await session.commitTransaction();
       
       return reservedDocs;
-    } catch (error) {
-      // Rollback em caso de erro
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  };
-
-  /**
-   * Método para liberar números reservados
-   */
-  NumberStatusSchema.statics.releaseReservedNumbers = async function(
-    rifaId: string,
-    numbers: Array<number | string>,
-    userId: string
-  ) {
-    // Formatar os números para consistência
-    const formattedNumbers = numbers.map(num => {
-      if (typeof num === 'number') {
-        return num.toString();
-      }
-      return num;
-    });
-    
-    // Iniciar uma transação
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
-      // Buscar os documentos que serão removidos para contar
-      const docsToRelease = await this.find({
-        campaignId: rifaId,
-        number: { $in: formattedNumbers },
-        userId,
-        status: NumberStatusEnum.RESERVED
-      }).session(session);
-      
-      const releasedCount = docsToRelease.length;
-      
-      // Remover as reservas
-      await this.deleteMany({
-        campaignId: rifaId,
-        number: { $in: formattedNumbers },
-        userId,
-        status: NumberStatusEnum.RESERVED
-      }).session(session);
-      
-      // Buscar campanha para obter o criador
-      const campaignDoc = await mongoose.model('Campaign').findById(rifaId, 'creatorId').lean();
-      
-      if (!campaignDoc) {
-        throw new Error('Campanha não encontrada');
-      }
-      
-      // Converter para objeto simples
-      const campaign = campaignDoc as any;
-      
-      // Atualizar estatísticas se algum número foi liberado
-      if (releasedCount > 0) {
-        // Buscar estatísticas atuais
-        const stats = await CampaignStatsHistory.getLatestSnapshot(rifaId);
-        if (stats) {
-          // Atualizar estatísticas
-          const thisModel = this as NumberStatusModel;
-          await thisModel.updateCampaignStats(
-            rifaId,
-            campaign.creatorId,
-            {
-              available: stats.availableNumbers + releasedCount,
-              reserved: stats.reservedNumbers - releasedCount
-            }
-          );
-        }
-      }
-      
-      // 🔄 ATUALIZADO: Restaurar números no bitmap
-      const numericNumbers = formattedNumbers.map(num => parseInt(num));
-      await BitMapService.restoreNumbers(rifaId, numericNumbers);
-      
-      // Commit da transação
-      await session.commitTransaction();
-      
-      return { released: releasedCount };
     } catch (error) {
       // Rollback em caso de erro
       await session.abortTransaction();

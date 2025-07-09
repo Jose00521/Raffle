@@ -15,6 +15,7 @@ import { maskAddress, maskCPF, maskEmail, maskPhone, maskCEP} from "@/utils/mask
 import { getSocketServer } from "../socketio";
 import SocketServiceDefault from "../lib/socket/SocketService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
+import { BitMapService } from "@/services/BitMapService";
 
 export interface IPaymentRepository {
     getPaymentsByCreatorId(pagination: {
@@ -322,10 +323,14 @@ export class PaymentRepository implements IPaymentRepository {
         pixQrCode: string;
         expiresAt: string | Date | undefined;
     }> | ApiResponse<null>> {
+        const connection = await this.db.connect();
+
+        const session = await connection.startSession();
+        
         try {
             const { gatewayResponse, paymentCode } = data;
 
-            await this.db.connect();
+            session.startTransaction();
 
             console.log('paymentCode vindo do updatePixPaymentToPending', paymentCode);
             
@@ -378,7 +383,11 @@ export class PaymentRepository implements IPaymentRepository {
         if(!updatedPayment){
             return createErrorResponse('Pagamento não encontrado para atualizar', 404);
         }
-        
+
+        await BitMapService.reserveRandomNumbers(payment.campaignId as string, payment.numbersQuantity, undefined, session);
+
+        await session.commitTransaction();
+
         return createSuccessResponse({
             pixCode: gatewayResponse.pixCode,
             pixQrCode: gatewayResponse.pixQrCode,
@@ -387,12 +396,16 @@ export class PaymentRepository implements IPaymentRepository {
         }, 'Pagamento atualizado com sucesso', 200);
 
         } catch (error) {
+            await session.abortTransaction();
+
             throw new ApiError({
                 success: false,
                 message: 'Erro ao atualizar pagamento',
                 statusCode: 500,
                 cause: error as Error
             });
+        } finally {
+            session.endSession();
         }
     }
 

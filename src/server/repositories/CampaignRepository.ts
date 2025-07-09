@@ -16,7 +16,7 @@ import { generateEntityCode } from '@/models/utils/idGenerator';
 import { ApiError } from '../utils/errorHandler/ApiError';
 import { deleteMultipleFromS3 } from '@/lib/upload-service/client/deleteFromS3';
 import InstantPrize from '@/models/InstantPrize';
-import BitMapModel from '@/models/BitMapModel';
+import { BitMapModel } from '@/models/BitMapModel';
 import Prize from '@/models/Prize';
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
@@ -172,8 +172,8 @@ export class CampaignRepository implements ICampaignRepository {
 
    async deleteCampaign(id: string, userCode: string): Promise<ApiResponse<ICampaign | null>> {
 
-    await this.db.connect();
-    const session = await mongoose.startSession();
+    const connection = await this.db.connect();
+    const session = await connection.startSession();
 
     try {
 
@@ -279,8 +279,8 @@ export class CampaignRepository implements ICampaignRepository {
     instantPrizesData?: InstantPrizesPayload
   ): Promise<ICampaign> {
 
-    await this.db.connect();
-    const session = await mongoose.startSession();
+    const connection = await this.db.connect();
+    const session = await connection.startSession();
     
     try {
       session.startTransaction();
@@ -340,9 +340,13 @@ export class CampaignRepository implements ICampaignRepository {
   }
 
   async updateCampaign(id: string, userCode: string, updatedCampaign: Partial<ICampaign>): Promise<ApiResponse<ICampaign> | ApiResponse<null>> {
-    try {
-      await this.db.connect();
+    const connection = await this.db.connect();
 
+    const session = await connection.startSession();
+    
+    try {
+
+      session.startTransaction();
 
       const campaign = await Campaign.findOne({campaignCode: id});
 
@@ -384,18 +388,25 @@ export class CampaignRepository implements ICampaignRepository {
 
       campaign.updatedAt = new Date();
 
-      await campaign.save();
+      await campaign.save({session});
+
+      await session.commitTransaction();
 
       return createSuccessResponse(campaign, 'Campanha atualizada com sucesso', 200);
 
       
     } catch (error) {
+
+      await session.abortTransaction();
+
       throw new ApiError({
         success: false,
         message: '[CampaignRepository] Erro ao atualizar campanha:',
         statusCode: 500,
         cause: error as Error
       });
+    } finally {
+      session.endSession();
     }
   }
 
