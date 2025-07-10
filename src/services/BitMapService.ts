@@ -531,56 +531,52 @@ export class BitMapService {
     
     // Criar operações em lote para cada shard
     for (const [shardIndex, byteUpdates] of Object.entries(shardUpdates)) {
-      const bitOperations: IBitOperations = {};
+      const updateDoc: any = { 
+        $set: { updatedAt: new Date() },
+        $inc: {} 
+      };
       let numBitsChanged = 0;
       
-      Object.entries(byteUpdates).forEach(([byteIndex, bitMask]) => {
-        // Contar bits usando a tabela de lookup em vez do loop while
-        numBitsChanged += this.countBits(bitMask as number);
+      // Em vez de usar $bit, vamos buscar e atualizar cada shard manualmente
+      const shard = await BitMapShardModel.findOne({ 
+        campaignId, 
+        shardIndex: parseInt(shardIndex) 
+      }).session(session || null);
+      
+      if (!shard) {
+        console.error(`Shard não encontrado: campaignId=${campaignId}, shardIndex=${shardIndex}`);
+        continue;
+      }
+      
+      // Modificar o bitmap diretamente
+      Object.entries(byteUpdates).forEach(([byteIdx, bitMask]) => {
+        const idx = parseInt(byteIdx);
+        const mask = bitMask as number;
         
-        bitOperations[`bitmap.${byteIndex}`] = { and: ~(bitMask as number) };
+        // Contar bits usando a tabela de lookup
+        numBitsChanged += this.countBits(mask);
+        
+        // Atualizar o byte diretamente no buffer
+        shard.bitmap[idx] = shard.bitmap[idx] & ~mask;
       });
       
-      bulkOps.push({
-        updateOne: {
-          filter: { campaignId, shardIndex: parseInt(shardIndex) },
-          update: {
-            $bit: bitOperations,
-            $inc: { availableCount: -numBitsChanged },
-            $set: { updatedAt: new Date() }
-          }
-        }
-      });
+      // Atualizar a contagem de números disponíveis
+      shard.availableCount -= numBitsChanged;
+      shard.updatedAt = new Date();
+      
+      // Salvar as alterações
+      await shard.save({ session });
     }
     
-    // Executar todas as operações em um único bulkWrite
-    if (bulkOps.length > 0) {
-      if (session) {
-        await BitMapShardModel.bulkWrite(bulkOps, { session });
-        
-        // Atualizar metadados
-        await BitMapMetaModel.updateOne(
-          { campaignId },
-          { 
-            $inc: { totalAvailableCount: -zeroBasedNumbers.length },
-            $set: { updatedAt: new Date() }
-          },
-          { session }
-        );
-      } else {
-        await BitMapShardModel.bulkWrite(bulkOps, { session });
-        
-        // Atualizar metadados
-        await BitMapMetaModel.updateOne(
-          { campaignId },
-          { 
-            $inc: { totalAvailableCount: -zeroBasedNumbers.length },
-            $set: { updatedAt: new Date() }
-          },
-          { session }
-        );
-      }
-    }
+    // Atualizar metadados
+    await BitMapMetaModel.updateOne(
+      { campaignId },
+      { 
+        $inc: { availableCount: -zeroBasedNumbers.length },
+        $set: { updatedAt: new Date() }
+      },
+      { session }
+    );
   }
   
   /**
@@ -692,55 +688,48 @@ export class BitMapService {
     
     // Criar operações em lote para cada shard
     for (const [shardIndex, byteUpdates] of Object.entries(shardUpdates)) {
-      const bitOperations: IBitOperations = {};
       let numBitsChanged = 0;
       
-      Object.entries(byteUpdates).forEach(([byteIndex, bitMask]) => {
-        // Contar bits usando a tabela de lookup em vez do loop while
-        numBitsChanged += this.countBits(bitMask as number);
+      // Em vez de usar $bit, vamos buscar e atualizar cada shard manualmente
+      const shard = await BitMapShardModel.findOne({ 
+        campaignId, 
+        shardIndex: parseInt(shardIndex) 
+      }).session(session || null);
+      
+      if (!shard) {
+        console.error(`Shard não encontrado: campaignId=${campaignId}, shardIndex=${shardIndex}`);
+        continue;
+      }
+      
+      // Modificar o bitmap diretamente
+      Object.entries(byteUpdates).forEach(([byteIdx, bitMask]) => {
+        const idx = parseInt(byteIdx);
+        const mask = bitMask as number;
         
-        bitOperations[`bitmap.${byteIndex}`] = { or: (bitMask as number) };
+        // Contar bits usando a tabela de lookup
+        numBitsChanged += this.countBits(mask);
+        
+        // Atualizar o byte diretamente no buffer
+        shard.bitmap[idx] = shard.bitmap[idx] | mask;
       });
       
-      bulkOps.push({
-        updateOne: {
-          filter: { campaignId, shardIndex: parseInt(shardIndex) },
-          update: {
-            $bit: bitOperations,
-            $inc: { availableCount: numBitsChanged },
-            $set: { updatedAt: new Date() }
-          }
-        }
-      });
+      // Atualizar a contagem de números disponíveis
+      shard.availableCount += numBitsChanged;
+      shard.updatedAt = new Date();
+      
+      // Salvar as alterações
+      await shard.save({ session });
     }
     
-    // Executar todas as operações em um único bulkWrite
-    if (bulkOps.length > 0) {
-      if (session) {
-        await BitMapShardModel.bulkWrite(bulkOps, { session });
-        
-        // Atualizar metadados
-        await BitMapMetaModel.updateOne(
-          { campaignId },
-          { 
-            $inc: { totalAvailableCount: zeroBasedNumbers.length },
-            $set: { updatedAt: new Date() }
-          },
-          { session }
-        );
-      } else {
-        await BitMapShardModel.bulkWrite(bulkOps);
-        
-        // Atualizar metadados
-        await BitMapMetaModel.updateOne(
-          { campaignId },
-          { 
-            $inc: { totalAvailableCount: zeroBasedNumbers.length },
-            $set: { updatedAt: new Date() }
-          }
-        );
-      }
-    }
+    // Atualizar metadados
+    await BitMapMetaModel.updateOne(
+      { campaignId },
+      { 
+        $inc: { availableCount: zeroBasedNumbers.length },
+        $set: { updatedAt: new Date() }
+      },
+      { session }
+    );
   }
   
   /**
@@ -780,110 +769,143 @@ export class BitMapService {
       throw new Error(`Não há números suficientes disponíveis. Solicitados: ${quantity}, Disponíveis: ${meta.availableCount}`);
     }
     
-    // Estratégia: selecionar números de shards com base na proporção de números disponíveis
-    const selected: number[] = [];
+    // Obter todos os shards com números disponíveis
+    const shards = await BitMapShardModel.find({ 
+      campaignId, 
+      availableCount: { $gt: 0 } 
+    });
     
-    // Obter todos os shards e suas contagens disponíveis
-    const shards = await BitMapShardModel.find({ campaignId }).sort({ shardIndex: 1 });
+    // Abordagem híbrida para máxima aleatoriedade e eficiência
+    const allSelectedNumbers: number[] = [];
     
-    // Calcular quantos números selecionar de cada shard com base na proporção
-    const shardsToSelect: Array<{shardIndex: number, count: number}> = [];
+    // Calcular quantos números selecionar de cada shard
+    const totalAvailable = shards.reduce((sum, shard) => sum + shard.availableCount, 0);
+    const shardsToSelect: Array<{shard: any, count: number}> = [];
+    
+    // Distribuir a quantidade proporcionalmente entre os shards
     let remainingToSelect = quantity;
     
+    // Primeira passagem: distribuir proporcionalmente
     for (const shard of shards) {
       if (remainingToSelect <= 0) break;
       
-      // Calcular proporção de números a selecionar deste shard
-      const proportion = shard.availableCount / meta.availableCount;
-      let numbersFromShard = Math.min(
-        Math.floor(quantity * proportion),
-        shard.availableCount,
-        remainingToSelect
-      );
+      // Usar proporção para distribuição inicial
+      const proportion = shard.availableCount / totalAvailable;
+      let numbersFromShard = Math.floor(quantity * proportion);
       
-      // Garantir que pelo menos 1 número seja selecionado se houver disponível
+      // Garantir pelo menos 1 número por shard se possível
       if (numbersFromShard === 0 && shard.availableCount > 0 && remainingToSelect > 0) {
         numbersFromShard = 1;
       }
       
+      // Não exceder o disponível ou o restante necessário
+      numbersFromShard = Math.min(numbersFromShard, shard.availableCount, remainingToSelect);
+      
       if (numbersFromShard > 0) {
-        shardsToSelect.push({ shardIndex: shard.shardIndex, count: numbersFromShard });
+        shardsToSelect.push({ shard, count: numbersFromShard });
         remainingToSelect -= numbersFromShard;
       }
     }
     
-    // Se ainda faltam números para selecionar, distribuir entre os shards disponíveis
+    // Segunda passagem: distribuir o restante aleatoriamente
     if (remainingToSelect > 0) {
+      // Criar array de shards com capacidade restante
+      const shardsWithCapacity = shards.filter(shard => {
+        const alreadySelected = shardsToSelect.find(s => s.shard.shardIndex === shard.shardIndex)?.count || 0;
+        return shard.availableCount > alreadySelected;
+      });
+      
+      // Embaralhar os shards para distribuição aleatória
+      for (let i = shardsWithCapacity.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shardsWithCapacity[i], shardsWithCapacity[j]] = [shardsWithCapacity[j], shardsWithCapacity[i]];
+      }
+      
+      // Distribuir o restante
       let shardIndex = 0;
-      while (remainingToSelect > 0 && shardIndex < shards.length) {
-        const shard = shards[shardIndex];
-        const shardSelectInfo = shardsToSelect.find(s => s.shardIndex === shard.shardIndex);
+      while (remainingToSelect > 0 && shardIndex < shardsWithCapacity.length) {
+        const shard = shardsWithCapacity[shardIndex];
+        const existingSelection = shardsToSelect.find(s => s.shard.shardIndex === shard.shardIndex);
         
-        const alreadySelected = shardSelectInfo?.count || 0;
+        const alreadySelected = existingSelection?.count || 0;
         const remaining = shard.availableCount - alreadySelected;
         
         if (remaining > 0) {
-          const additional = Math.min(remaining, remainingToSelect);
+          // Adicionar um número por vez para distribuição mais uniforme
+          const additional = Math.min(1, remaining, remainingToSelect);
           
-          if (shardSelectInfo) {
-            shardSelectInfo.count += additional;
+          if (existingSelection) {
+            existingSelection.count += additional;
           } else {
-            shardsToSelect.push({ shardIndex: shard.shardIndex, count: additional });
+            shardsToSelect.push({ shard, count: additional });
           }
           
           remainingToSelect -= additional;
         }
         
-        shardIndex++;
+        // Avançar para o próximo shard ou voltar ao início se chegou ao fim
+        shardIndex = (shardIndex + 1) % shardsWithCapacity.length;
       }
     }
     
-    // Selecionar números de cada shard usando algoritmo otimizado
-    for (const { shardIndex, count } of shardsToSelect) {
-      const shard = shards.find(s => s.shardIndex === shardIndex)!;
-      const shardNumbers = await this.selectNumbersFromShard(shard, count);
+    // Embaralhar a ordem de processamento dos shards
+    for (let i = shardsToSelect.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shardsToSelect[i], shardsToSelect[j]] = [shardsToSelect[j], shardsToSelect[i]];
+    }
+    
+    // Selecionar números de cada shard
+    for (const { shard, count } of shardsToSelect) {
+      if (count <= 0) continue;
+      
+      // Usar método otimizado para selecionar números do shard
+      const shardNumbers = await this.selectTrulyRandomNumbersFromShard(shard, count);
       
       // Converter para números globais (base 1)
       for (const offset of shardNumbers) {
         const globalNumber = shard.startNumber + offset + 1; // +1 para base 1
-        selected.push(globalNumber);
+        allSelectedNumbers.push(globalNumber);
       }
     }
     
-    return selected;
+    // Embaralhar completamente o resultado final usando Fisher-Yates
+    for (let i = allSelectedNumbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allSelectedNumbers[i], allSelectedNumbers[j]] = [allSelectedNumbers[j], allSelectedNumbers[i]];
+    }
+    
+    return allSelectedNumbers;
   }
   
   /**
-   * Seleciona números aleatórios disponíveis de um shard específico
-   * Usa algoritmo Fisher-Yates para garantir distribuição uniforme
+   * Seleciona números verdadeiramente aleatórios de um shard
+   * Implementação otimizada para garantir máxima aleatoriedade
    * @param shard Documento do shard
    * @param count Quantidade de números a selecionar
    * @returns Array de offsets selecionados (base 0)
    */
-  private static async selectNumbersFromShard(shard: any, count: number): Promise<number[]> {
-    // Para shards grandes, usar abordagem por segmentos
-    if ((shard.endNumber - shard.startNumber + 1) > BITMAP_CONFIG.SEGMENT_SIZE * 10) {
-      return this.selectNumbersFromLargeShard(shard, count);
-    }
-    
-    // Para shards menores, construir array de posições disponíveis usando lookup table
-    const availablePositions: number[] = [];
+  private static async selectTrulyRandomNumbersFromShard(shard: any, count: number): Promise<number[]> {
     const shardSize = shard.endNumber - shard.startNumber + 1;
     
-    // Percorrer bytes do bitmap
+    // Para shards muito grandes, usar amostragem por reservatório
+    if (shard.availableCount > 100000 && count < shard.availableCount / 10) {
+      return this.reservoirSamplingFromShard(shard, count);
+    }
+    
+    // Para shards menores ou quando precisamos de muitos números,
+    // coletar todos os números disponíveis e embaralhar
+    const availablePositions: number[] = [];
+    
+    // Coletar todos os números disponíveis usando lookup table
     for (let byteIndex = 0; byteIndex < shard.bitmap.length; byteIndex++) {
       const byte = shard.bitmap[byteIndex];
       
-      // Pular bytes sem bits disponíveis
       if (byte > 0) {
-        // Obter posições de bits disponíveis diretamente da tabela de lookup
         const bitPositions = BITS_POSITIONS[byte];
         
-        // Calcular posição absoluta e adicionar ao array
         for (const bitPos of bitPositions) {
           const position = byteIndex * 8 + bitPos;
           
-          // Verificar se a posição está dentro dos limites do shard
           if (position < shardSize) {
             availablePositions.push(position);
           }
@@ -891,10 +913,9 @@ export class BitMapService {
       }
     }
     
-    // Aplicar Fisher-Yates shuffle para os primeiros 'count' elementos
-    for (let i = 0; i < Math.min(count, availablePositions.length); i++) {
-      const j = i + Math.floor(Math.random() * (availablePositions.length - i));
-      // Swap
+    // Embaralhar completamente usando Fisher-Yates
+    for (let i = availablePositions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
       [availablePositions[i], availablePositions[j]] = [availablePositions[j], availablePositions[i]];
     }
     
@@ -903,88 +924,52 @@ export class BitMapService {
   }
   
   /**
-   * Seleciona números aleatórios disponíveis de um shard grande
-   * Usa abordagem por segmentos para otimizar memória e desempenho
+   * Implementa o algoritmo Reservoir Sampling para selecionar números aleatórios
+   * de um shard grande sem precisar armazenar todos os números disponíveis
    * @param shard Documento do shard
    * @param count Quantidade de números a selecionar
    * @returns Array de offsets selecionados (base 0)
    */
-  private static async selectNumbersFromLargeShard(shard: any, count: number): Promise<number[]> {
-    const selected: number[] = [];
+  private static reservoirSamplingFromShard(shard: any, count: number): number[] {
     const shardSize = shard.endNumber - shard.startNumber + 1;
-    const segmentSize = BITMAP_CONFIG.SEGMENT_SIZE;
-    const segmentCount = Math.ceil(shardSize / segmentSize);
+    const reservoir: number[] = [];
+    let seen = 0;
     
-    // 1. Identificar segmentos com números disponíveis
-    const segmentsWithAvailable: number[] = [];
-    
-    for (let segment = 0; segment < segmentCount; segment++) {
-      const startByte = Math.floor((segment * segmentSize) / 8);
-      const endByte = Math.floor(((segment + 1) * segmentSize - 1) / 8);
+    // Percorrer todos os números do shard
+    for (let byteIndex = 0; byteIndex < shard.bitmap.length; byteIndex++) {
+      const byte = shard.bitmap[byteIndex];
       
-      // Verificar rapidamente se há algum bit 1 neste segmento
-      let hasAvailable = false;
-      for (let byteIndex = startByte; byteIndex <= endByte && byteIndex < shard.bitmap.length; byteIndex++) {
-        if (shard.bitmap[byteIndex] > 0) {
-          hasAvailable = true;
-          break;
-        }
-      }
-      
-      if (hasAvailable) {
-        segmentsWithAvailable.push(segment);
-      }
-    }
-    
-    // 2. Embaralhar segmentos para distribuição aleatória Fisher-Yates
-    for (let i = segmentsWithAvailable.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [segmentsWithAvailable[i], segmentsWithAvailable[j]] = [segmentsWithAvailable[j], segmentsWithAvailable[i]];
-    }
-    
-    // 3. Coletar números disponíveis dos segmentos
-    for (const segment of segmentsWithAvailable) {
-      if (selected.length >= count) break;
-      
-      const startOffset = segment * segmentSize;
-      const endOffset = Math.min((segment + 1) * segmentSize - 1, shardSize - 1);
-      const startByteIndex = Math.floor(startOffset / 8);
-      const endByteIndex = Math.floor(endOffset / 8);
-      
-      // Coletar números disponíveis neste segmento usando lookup table
-      const availableInSegment: number[] = [];
-      
-      for (let byteIndex = startByteIndex; byteIndex <= endByteIndex; byteIndex++) {
-        const byte = shard.bitmap[byteIndex];
+      if (byte > 0) {
+        const bitPositions = BITS_POSITIONS[byte];
         
-        // Pular bytes sem bits disponíveis
-        if (byte > 0) {
-          // Obter posições de bits disponíveis diretamente da tabela de lookup
-          const bitPositions = BITS_POSITIONS[byte];
+        for (const bitPos of bitPositions) {
+          const position = byteIndex * 8 + bitPos;
           
-          for (const bitPos of bitPositions) {
-            const position = byteIndex * 8 + bitPos;
+          if (position < shardSize) {
+            seen++;
             
-            // Verificar se a posição está dentro do segmento atual e do shard
-            if (position >= startOffset && position <= endOffset && position < shardSize) {
-              availableInSegment.push(position);
+            if (reservoir.length < count) {
+              // Preencher o reservatório inicialmente
+              reservoir.push(position);
+            } else {
+              // Substituir elementos com probabilidade decrescente
+              const j = Math.floor(Math.random() * seen);
+              if (j < count) {
+                reservoir[j] = position;
+              }
             }
           }
         }
       }
-      
-      // Embaralhar números disponíveis no segmento
-      for (let i = availableInSegment.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [availableInSegment[i], availableInSegment[j]] = [availableInSegment[j], availableInSegment[i]];
-      }
-      
-      // Adicionar à seleção
-      const remaining = count - selected.length;
-      selected.push(...availableInSegment.slice(0, remaining));
     }
     
-    return selected;
+    // Embaralhar o resultado final
+    for (let i = reservoir.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [reservoir[i], reservoir[j]] = [reservoir[j], reservoir[i]];
+    }
+    
+    return reservoir;
   }
   
   /**
@@ -1247,9 +1232,7 @@ export class BitMapService {
   }
   
   /**
-   * Obtém estatísticas detalhadas sobre o bitmap de uma campanha
-   * @param campaignId ID da campanha
-   * @returns Estatísticas do bitmap
+   * Obtém estatísticas do bitmap de uma campanha
    */
   static async getBitmapStats(campaignId: string): Promise<{
     totalNumbers: number;
@@ -1270,20 +1253,15 @@ export class BitMapService {
       
       if (meta) {
         // Bitmap shardado
-        const totalNumbers = meta.totalNumbers;
-        const availableCount = meta.availableCount;
-        const takenCount = totalNumbers - availableCount;
-        
-        // Contar shards com números disponíveis
         const shards = await BitMapShardModel.find({ campaignId });
-        const shardsWithAvailable = shards.filter(shard => shard.availableCount > 0).length;
+        const shardsWithAvailable = shards.filter(s => s.availableCount > 0).length;
         
         return {
-          totalNumbers,
-          availableCount,
-          takenCount,
-          availablePercentage: (availableCount / totalNumbers) * 100,
-          takenPercentage: (takenCount / totalNumbers) * 100,
+          totalNumbers: meta.totalNumbers,
+          availableCount: meta.availableCount,
+          takenCount: meta.totalNumbers - meta.availableCount,
+          availablePercentage: (meta.availableCount / meta.totalNumbers) * 100,
+          takenPercentage: ((meta.totalNumbers - meta.availableCount) / meta.totalNumbers) * 100,
           isSharded: true,
           shardInfo: {
             shardCount: meta.shardCount,
@@ -1296,19 +1274,15 @@ export class BitMapService {
         const bitmap = await BitMapModel.getBitmap(campaignId);
         
         if (!bitmap) {
-          throw new Error(`Bitmap não encontrado para a campanha ${campaignId}`);
+          throw new Error(`Bitmap não encontrado para campanha ${campaignId}`);
         }
         
-        const totalNumbers = bitmap.totalNumbers;
-        const availableCount = bitmap.availableCount;
-        const takenCount = totalNumbers - availableCount;
-        
         return {
-          totalNumbers,
-          availableCount,
-          takenCount,
-          availablePercentage: (availableCount / totalNumbers) * 100,
-          takenPercentage: (takenCount / totalNumbers) * 100,
+          totalNumbers: bitmap.totalNumbers,
+          availableCount: bitmap.availableCount,
+          takenCount: bitmap.totalNumbers - bitmap.availableCount,
+          availablePercentage: (bitmap.availableCount / bitmap.totalNumbers) * 100,
+          takenPercentage: ((bitmap.totalNumbers - bitmap.availableCount) / bitmap.totalNumbers) * 100,
           isSharded: false
         };
       }

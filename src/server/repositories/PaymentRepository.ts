@@ -16,6 +16,8 @@ import { getSocketServer } from "../socketio";
 import SocketServiceDefault from "../lib/socket/SocketService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { BitMapService } from "@/services/BitMapService";
+import { NumberStatusEnum } from "@/models/interfaces/INumberStatusInterfaces";
+import NumberStatus from "@/models/NumberStatus";
 
 export interface IPaymentRepository {
     getPaymentsByCreatorId(pagination: {
@@ -384,7 +386,34 @@ export class PaymentRepository implements IPaymentRepository {
             return createErrorResponse('Pagamento não encontrado para atualizar', 404);
         }
 
-        await BitMapService.reserveRandomNumbers(payment.campaignId as string, payment.numbersQuantity, undefined, session);
+        let numbers = await BitMapService.reserveRandomNumbers(payment.campaignId as string, payment.numbersQuantity, undefined, session);
+        // inserir os numeros no NumberStatus como reservado
+
+            // Configurar data de expiração
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 11);
+    
+    // Preparar operações em lote (cada operação é uma inserção)
+    const bulkOps = numbers.map(number => ({
+      insertOne: {
+        document: {
+          campaignId: payment.campaignId,
+          number: number.toString(),
+          status: NumberStatusEnum.RESERVED,
+          userId: payment.customerId,
+          reservedAt: new Date(),
+          expiresAt,
+          paidAt: null
+        }
+      }
+    }));
+
+    await NumberStatus!.bulkWrite(bulkOps, { 
+        session,
+        ordered: false // Define como false para continuar mesmo se houver erros
+      });
+
+        console.log('numbers', numbers);
 
         await session.commitTransaction();
 

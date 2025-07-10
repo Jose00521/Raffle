@@ -138,12 +138,36 @@ interface BitMapMetaModel extends mongoose.Model<IBitmapMeta> {
 
 // ========== MÉTODOS DO BITMAP TRADICIONAL ==========
 
+BitMapSchema.statics.initializeBitmap = async function(campaignId: string, totalNumbers: number): Promise<IBitmap> {
+  // Calcular tamanho do buffer em bytes (1 bit por número)
+  const bufferSize = Math.ceil(totalNumbers / 8);
+  
+  // Criar buffer com todos os bits em 1 (disponíveis)
+  const buffer = Buffer.alloc(bufferSize, 0xFF);
+  
+  // Ajustar bits excedentes no último byte
+  const remainingBits = totalNumbers % 8;
+  if (remainingBits > 0) {
+    // Limpar bits que excedem o total de números
+    buffer[bufferSize - 1] = (1 << remainingBits) - 1;
+  }
+  
+  // Criar e salvar o documento
+  return this.create({
+    campaignId,
+    totalNumbers,
+    bitmap: buffer,
+    availableCount: totalNumbers
+  });
+};
+
 /**
  * Verifica se um número específico está disponível no bitmap
  * @param bitmap Buffer do bitmap
  * @param number Número a verificar (base 0)
  * @returns true se disponível, false se indisponível
  */
+
 BitMapSchema.statics.isNumberAvailable = function(bitmap: Buffer, number: number): boolean {
   const byteIndex = Math.floor(number / 8);
   const bitIndex = number % 8;
