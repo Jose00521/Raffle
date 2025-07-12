@@ -18,6 +18,7 @@ import { deleteMultipleFromS3 } from '@/lib/upload-service/client/deleteFromS3';
 import InstantPrize from '@/models/InstantPrize';
 import { BitMapModel } from '@/models/BitMapModel';
 import Prize from '@/models/Prize';
+import { BitMapService } from '@/services/BitMapService';
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
   type: 'money' | 'item';
@@ -240,7 +241,7 @@ export class CampaignRepository implements ICampaignRepository {
 
       //2 - excluir bitmaps
 
-      await BitMapModel.deleteMany({campaignId: campaign?._id}).session(session);
+      await BitMapService.deleteBitmap(campaign?._id?.toString() || '', session);
       //3 - excluir todos os prêmios instantâneos
       await InstantPrize.deleteMany({campaignId: campaign?._id}).session(session);
       //4 - excluir todos os numbersStatus

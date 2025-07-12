@@ -387,31 +387,37 @@ export class PaymentRepository implements IPaymentRepository {
         }
 
         let numbers = await BitMapService.reserveRandomNumbers(payment.campaignId as string, payment.numbersQuantity, undefined, session);
+
+        const isNumberAvailable = await BitMapService.isNumberAvailable(payment.campaignId as string, numbers[0]);
+        console.log('isNumberAvailable', isNumberAvailable);
+        const checkNumbersAvailability = await BitMapService.checkNumbersAvailability(payment.campaignId as string, numbers);
+        console.log('checkNumbersAvailability',checkNumbersAvailability);
         // inserir os numeros no NumberStatus como reservado
 
             // Configurar data de expiração
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 11);
-    
-    // Preparar operações em lote (cada operação é uma inserção)
-    const bulkOps = numbers.map(number => ({
-      insertOne: {
-        document: {
-          campaignId: payment.campaignId,
-          number: number.toString(),
-          status: NumberStatusEnum.RESERVED,
-          userId: payment.customerId,
-          reservedAt: new Date(),
-          expiresAt,
-          paidAt: null
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+        
+        // Preparar operações em lote (cada operação é uma inserção)
+        const bulkOps = numbers.map(number => ({
+        insertOne: {
+            document: {
+            campaignId: payment.campaignId,
+            number: number.toString(),
+            status: NumberStatusEnum.RESERVED,
+            userId: payment.customerId,
+            paymentId: payment._id,
+            reservedAt: new Date(),
+            expiresAt,
+            paidAt: null
+            }
         }
-      }
-    }));
+        }));
 
-    await NumberStatus!.bulkWrite(bulkOps, { 
-        session,
-        ordered: false // Define como false para continuar mesmo se houver erros
-      });
+        await NumberStatus!.bulkWrite(bulkOps, { 
+            session,
+            ordered: false // Define como false para continuar mesmo se houver erros
+        });
 
         console.log('numbers', numbers);
 

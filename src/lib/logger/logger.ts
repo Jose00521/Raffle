@@ -19,12 +19,6 @@ function createLogger(): pino.Logger {
     // Use pino-pretty only in development
     const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
   
-    console.log('Logger Configuration:', {
-      NODE_ENV: process.env.NODE_ENV,
-      isDevelopment,
-      timestamp: new Date().toISOString()
-    });
-  
   let config: pino.LoggerOptions;
   
   if (!isProduction) {

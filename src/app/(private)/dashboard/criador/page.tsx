@@ -451,7 +451,7 @@ export default function CreatorDashboardHome() {
   // Get unique campaigns for filter dropdown
   const campaignOptions = [
     { value: 'all', label: 'Todas as Campanhas' },
-    ...Array.from(new Set(sales.map(sale => sale.campaignId.title)))
+    ...Array.from(new Set(sales.map(sale => sale.campaignId?.title)))
       .map(campaign => ({ value: campaign, label: campaign }))
   ];
   
@@ -521,7 +521,7 @@ export default function CreatorDashboardHome() {
     {
       id: 'campaign',
       header: 'Campanha',
-      accessor: (row) => row.campaignId.title,
+      accessor: (row) => row.campaignId?.title || "N/A",
       sortable: true,
       priority: 3,
       mobileLabel: 'Campanha'

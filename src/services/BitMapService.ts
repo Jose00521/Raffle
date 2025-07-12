@@ -68,10 +68,10 @@ for (let byte = 0; byte < 256; byte++) {
  */
 const BITMAP_CONFIG = {
   // Tamanho máximo de bitmap não shardado (em números)
-  MAX_SINGLE_BITMAP_SIZE: 10_000_000,
+  MAX_SINGLE_BITMAP_SIZE: 50,
   
   // Tamanho padrão de cada shard (em números)
-  DEFAULT_SHARD_SIZE: 10_000_000,
+  DEFAULT_SHARD_SIZE: 50,
   
   // Limite de tamanho de documento MongoDB (16MB)
   MONGODB_DOC_SIZE_LIMIT: 16 * 1024 * 1024,
@@ -120,7 +120,7 @@ export class BitMapService {
       if (totalNumbers <= BITMAP_CONFIG.MAX_SINGLE_BITMAP_SIZE) {
         // Usar bitmap tradicional para rifas menores
         console.log(`Usando bitmap tradicional para ${totalNumbers} números`);
-        return await BitMapModel.initializeBitmap(campaignId, totalNumbers);
+      return await BitMapModel.initializeBitmap(campaignId, totalNumbers);
       } else {
         // Usar bitmap shardado para rifas grandes
         console.log(`Usando bitmap shardado para ${totalNumbers} números`);
@@ -131,7 +131,7 @@ export class BitMapService {
       throw error;
     }
   }
-  
+
   /**
    * Inicializa um bitmap shardado para uma nova campanha
    * @param campaignId ID da campanha
@@ -241,16 +241,51 @@ export class BitMapService {
         const shardIndex = Math.floor(zeroBasedNumber / meta.shardSize);
         const relativeNumber = zeroBasedNumber % meta.shardSize;
         
-        const shard = await BitMapShardModel.getBitmapShard(campaignId, shardIndex);
-        if (!shard) return false;
+        // Buscar o shard diretamente da collection para garantir dados atualizados
+        const shardDoc = await BitMapShardModel.collection.findOne({ 
+          campaignId, 
+          shardIndex 
+        });
         
-        return BitMapShardModel.isNumberAvailable(shard.bitmap, relativeNumber);
+        if (!shardDoc) return false;
+        
+        // Extrair o bitmap do documento
+        const bitmapData = shardDoc.bitmap;
+        
+        // Converter o bitmap binário para um Buffer que podemos manipular
+        let bitmapBuffer: Buffer = Buffer.from(bitmapData);
+        
+        const byteIndex = Math.floor(relativeNumber / 8);
+        const bitIndex = relativeNumber % 8;
+        
+        // Verificar se o byte existe antes de acessá-lo
+        if (byteIndex >= bitmapBuffer.length) {
+          return false;
+        }
+        
+        // Bit 1 = disponível
+        return (bitmapBuffer[byteIndex] & (1 << bitIndex)) !== 0;
       } else {
-        // Bitmap tradicional
-        const bitmap = await BitMapModel.getBitmap(campaignId);
-        if (!bitmap) return false;
+        // Bitmap tradicional - buscar diretamente da collection para garantir dados atualizados
+        const bitmapDoc = await BitMapModel.collection.findOne({ campaignId });
+        if (!bitmapDoc) return false;
         
-        return BitMapModel.isNumberAvailable(bitmap.bitmap, zeroBasedNumber);
+        // Extrair o bitmap do documento
+        const bitmapData = bitmapDoc.bitmap;
+        
+        // Converter o bitmap binário para um Buffer que podemos manipular
+        let bitmapBuffer: Buffer = Buffer.from(bitmapData);
+        
+        const byteIndex = Math.floor(zeroBasedNumber / 8);
+        const bitIndex = zeroBasedNumber % 8;
+        
+        // Verificar se o byte existe antes de acessá-lo
+        if (byteIndex >= bitmapBuffer.length) {
+          return false;
+        }
+        
+        // Bit 1 = disponível
+        return (bitmapBuffer[byteIndex] & (1 << bitIndex)) !== 0;
       }
     } catch (error) {
       console.error(`Erro ao verificar disponibilidade do número ${number}:`, error);
@@ -293,30 +328,40 @@ export class BitMapService {
   private static async checkNumbersAvailabilityTraditional(campaignId: string, zeroBasedNumbers: number[]): Promise<boolean[]> {
     const result = new Array(zeroBasedNumbers.length).fill(false);
     
-    // Calcular quais bytes precisamos verificar
-    const byteIndices = new Set<number>();
-    zeroBasedNumbers.forEach(number => {
-      byteIndices.add(Math.floor(number / 8));
+    // Buscar o bitmap completo diretamente da collection para garantir dados atualizados
+    const bitmapDoc = await BitMapModel.findOne({ campaignId });
+    if (!bitmapDoc) {
+      return result; // Retorna todos como indisponíveis se não encontrar o bitmap
+    }
+    
+    // Extrair o bitmap do documento
+    const bitmapData = bitmapDoc.bitmap;
+    
+    this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilityTraditional');
+    
+    // Converter o bitmap binário para um Buffer que podemos manipular
+    let bitmapBuffer: Buffer = Buffer.from(bitmapData);
+    
+   
+    let bitIndexCount = 1;
+    bitmapBuffer.forEach((byte, index) => {
+      console.log('byte', byte.toString(2));
+       byte.toString(2).split('').reverse().forEach((bit, bitIndex) => {
+        console.log('bit', bit,bitIndexCount);
+        bitIndexCount++;
+       });
     });
     
-    // Projeção para incluir apenas os bytes necessários
-    const projection: IProjection = { _id: 1 };
-    byteIndices.forEach(byteIndex => {
-      projection[`bitmap.${byteIndex}`] = 1;
-    });
-    
-    // Buscar apenas os bytes necessários do bitmap
-    const bitmap = await BitMapModel.findOne({ campaignId }, projection);
-    
-    if (bitmap) {
-      // Verificar cada número
-      for (let i = 0; i < zeroBasedNumbers.length; i++) {
-        const number = zeroBasedNumbers[i];
-        const byteIndex = Math.floor(number / 8);
-        const bitIndex = number % 8;
-        
+    // Verificar cada número
+    for (let i = 0; i < zeroBasedNumbers.length; i++) {
+      const number = zeroBasedNumbers[i];
+      const byteIndex = Math.floor(number / 8);
+      const bitIndex = number % 8;
+      
+      // Verificar se o byte existe antes de acessá-lo
+      if (byteIndex < bitmapBuffer.length) {
         // Bit 1 = disponível
-        if (bitmap.bitmap[byteIndex] & (1 << bitIndex)) {
+        if (bitmapBuffer[byteIndex] & (1 << bitIndex)) {
           result[i] = true;
         }
       }
@@ -359,59 +404,51 @@ export class BitMapService {
       // Processar cada shard em paralelo para este lote
       const shardPromises = Object.entries(numbersByShardIndex).map(
         async ([shardIndex, shardNumbers]) => {
-          // Calcular quais bytes precisamos verificar
-          const byteSet = new Set<number>();
-          shardNumbers.forEach(({ offset }: { offset: number }) => {
-            byteSet.add(Math.floor(offset / 8));
-          });
-          
-          // Converter Set para array e ordenar para otimizar a projeção
-          const byteIndices = Array.from(byteSet).sort((a, b) => a - b);
-          
-          // Otimizar a projeção para buscar apenas intervalos contíguos de bytes
-          const projection: IProjection = { _id: 1 };
-          
-          if (byteIndices.length > 0) {
-            let startByte = byteIndices[0];
-            let endByte = startByte;
+          try {
+            // Buscar o shard diretamente da collection para garantir dados atualizados
+            const shardDoc = await BitMapShardModel.findOne({ 
+              campaignId, 
+              shardIndex: parseInt(shardIndex) 
+            });
             
-            for (let k = 1; k < byteIndices.length; k++) {
-              if (byteIndices[k] === endByte + 1) {
-                // Byte contíguo, estender o intervalo
-                endByte = byteIndices[k];
-              } else {
-                // Intervalo não contíguo, adicionar o intervalo atual e iniciar um novo
-                for (let b = startByte; b <= endByte; b++) {
-                  projection[`bitmap.${b}`] = 1;
+            if (!shardDoc || !shardDoc.bitmap) {
+              console.error(`Shard não encontrado ou bitmap undefined: campaignId=${campaignId}, shardIndex=${shardIndex}`);
+              return;
+            }
+            
+            // Extrair o bitmap do documento
+            const bitmapData = shardDoc.bitmap;
+            
+            // Converter o bitmap binário para um Buffer que podemos manipular
+            let bitmapBuffer: Buffer = Buffer.from(bitmapData);
+
+            this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilitySharded');
+
+            let bitIndexCount = 1;
+            bitmapBuffer.forEach((byte, index) => {
+              console.log('byte', byte.toString(2));
+               byte.toString(2).split('').reverse().forEach((bit, bitIndex) => {
+                console.log('bit', bit,bitIndexCount);
+                bitIndexCount++;
+               });
+            });
+            
+            // Verificar cada número neste shard
+            for (const { originalIndex, offset } of shardNumbers) {
+              const byteIndex = Math.floor(offset / 8);
+              const bitIndex = offset % 8;
+              
+              // Verificar se o byte existe antes de acessá-lo
+              if (byteIndex < bitmapBuffer.length) {
+                // Bit 1 = disponível
+                if (bitmapBuffer[byteIndex] & (1 << bitIndex)) {
+                  result[originalIndex] = true;
                 }
-                startByte = byteIndices[k];
-                endByte = startByte;
               }
             }
-            
-            // Adicionar o último intervalo
-            for (let b = startByte; b <= endByte; b++) {
-              projection[`bitmap.${b}`] = 1;
-            }
-          }
-          
-          // Buscar apenas os bytes necessários do shard
-          const shard = await BitMapShardModel.findOne(
-            { campaignId, shardIndex: parseInt(shardIndex) },
-            projection
-          );
-          
-          if (!shard) return;
-          
-          // Verificar cada número neste shard
-          for (const { originalIndex, offset } of shardNumbers) {
-            const byteIndex = Math.floor(offset / 8);
-            const bitIndex = offset % 8;
-            
-            // Bit 1 = disponível
-            if (shard.bitmap[byteIndex] & (1 << bitIndex)) {
-              result[originalIndex] = true;
-            }
+          } catch (error) {
+            console.error(`Erro ao verificar disponibilidade no shard ${shardIndex}:`, error);
+            // Não propagar o erro para não interromper todo o processamento
           }
         }
       );
@@ -450,50 +487,75 @@ export class BitMapService {
       throw error;
     }
   }
+
+  private static async markNumbersAsTakenTraditionalOptimized(campaignId: string, zeroBasedNumbers: number[], session?: mongoose.ClientSession): Promise<number> {
+    // Buscar o bitmap completo
+    const bitmap = await BitMapModel.findOne({ campaignId });
+    if (!bitmap) {
+      throw new Error(`Bitmap não encontrado para a campanha ${campaignId}`);
+    }
   
-  /**
-   * Implementação otimizada para marcar múltiplos números como ocupados em bitmap tradicional
-   */
-  private static async markNumbersAsTakenTraditionalOptimized(
-    campaignId: string, 
-    zeroBasedNumbers: number[],
-    session?: mongoose.ClientSession
-  ) {
-    // Agrupar por byte para minimizar operações
-    const byteUpdates: IByteUpdates = {};
+    // Converter o bitmap binário para um Buffer que podemos manipular
+    let bitmapBuffer: Buffer = Buffer.from(bitmap?.bitmap);
+
+    console.log('bitmapBuffer original', bitmapBuffer);
     
+    // Criar uma cópia do buffer para modificar
+    let updatedBuffer = Buffer.from(bitmapBuffer);
+    let numBitsChanged = 0;
+  
+    // Modificar os bits específicos
     for (const number of zeroBasedNumbers) {
       const byteIndex = Math.floor(number / 8);
       const bitIndex = number % 8;
-      
-      if (!byteUpdates[byteIndex]) {
-        byteUpdates[byteIndex] = 0;
+  
+      // Verificar se o bit já está marcado como indisponível
+      const currentByte = updatedBuffer[byteIndex];
+      const bitMask = 1 << bitIndex;
+      const isAvailable = (currentByte & bitMask) !== 0;
+  
+      if (isAvailable) {
+        // Marcar o bit como indisponível (0)
+        updatedBuffer[byteIndex] = updatedBuffer[byteIndex] & ~bitMask;
+        numBitsChanged++;
       }
-      
-      byteUpdates[byteIndex] |= (1 << bitIndex);
     }
+ 
+    this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenTraditionalOptimized');
+
+    console.log(`Marcando ${numBitsChanged} bits como indisponíveis`);
     
-    // Construir operação de atualização para todos os bytes afetados
-    const bitOperations: IBitOperations = {};
-    let numBitsChanged = 0;
-    
-    Object.entries(byteUpdates).forEach(([byteIndex, bitMask]) => {
-      // Contar bits usando a tabela de lookup
-      numBitsChanged += this.countBits(bitMask as number);
-      
-      bitOperations[`bitmap.${byteIndex}`] = { and: ~(bitMask as number) };
-    });
-    
-    // Uma única operação para atualizar todos os bytes
-    await BitMapModel.updateOne(
-      { campaignId },
-      {
-        $bit: bitOperations,
-        $inc: { availableCount: -numBitsChanged },
-        $set: { updatedAt: new Date() }
-      },
-      { session }
-    );
+    if (numBitsChanged > 0) {
+      try {
+        // Forçar a atualização direta no MongoDB
+        const result = await BitMapModel.collection.updateOne(
+          { _id: bitmap._id },
+          { 
+            $set: { 
+              bitmap: updatedBuffer,
+              updatedAt: new Date()
+            }, 
+            $inc: { availableCount: -numBitsChanged } 
+          }
+        );
+        
+        console.log('Resultado da atualização MongoDB:', result);
+        
+        // Verificar se a atualização foi bem-sucedida
+        if (result.modifiedCount === 0) {
+          console.error('Falha ao atualizar bitmap no MongoDB');
+        } else {
+          console.log('bitmap atualizado com sucesso');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar bitmap no MongoDB:', error);
+        throw error;
+      }
+    } else {
+      console.log(`Nenhum bit alterado para campanha ${campaignId}`);
+    }
+  
+    return numBitsChanged;
   }
   
   /**
@@ -507,76 +569,119 @@ export class BitMapService {
   ) {
     const shardSize = meta.shardSize;
     
-    // Para grandes volumes, usamos bulkWrite para máxima eficiência
-    const bulkOps: mongoose.AnyBulkWriteOperation[] = [];
-    const shardUpdates: IShardUpdates = {};
-    
     // Agrupar números por shard
+    const numbersByShardIndex: Record<number, number[]> = {};
+    
     for (const number of zeroBasedNumbers) {
       const shardIndex = Math.floor(number / shardSize);
       const offset = number % shardSize;
-      const byteIndex = Math.floor(offset / 8);
-      const bitIndex = offset % 8;
       
-      if (!shardUpdates[shardIndex]) {
-        shardUpdates[shardIndex] = {};
+      if (!numbersByShardIndex[shardIndex]) {
+        numbersByShardIndex[shardIndex] = [];
       }
       
-      if (!shardUpdates[shardIndex][byteIndex]) {
-        shardUpdates[shardIndex][byteIndex] = 0;
-      }
-      
-      shardUpdates[shardIndex][byteIndex] |= (1 << bitIndex);
+      numbersByShardIndex[shardIndex].push(offset);
     }
     
-    // Criar operações em lote para cada shard
-    for (const [shardIndex, byteUpdates] of Object.entries(shardUpdates)) {
-      const updateDoc: any = { 
-        $set: { updatedAt: new Date() },
-        $inc: {} 
-      };
-      let numBitsChanged = 0;
+    let totalBitsChanged = 0;
+    
+    // Processar cada shard
+    for (const [shardIndexStr, offsets] of Object.entries(numbersByShardIndex)) {
+      const shardIndex = parseInt(shardIndexStr);
       
-      // Em vez de usar $bit, vamos buscar e atualizar cada shard manualmente
-      const shard = await BitMapShardModel.findOne({ 
+      // Buscar o shard diretamente da collection para garantir dados atualizados
+      const shardDoc = await BitMapShardModel.findOne({ 
         campaignId, 
-        shardIndex: parseInt(shardIndex) 
-      }).session(session || null);
+        shardIndex
+      });
       
-      if (!shard) {
+      if (!shardDoc) {
         console.error(`Shard não encontrado: campaignId=${campaignId}, shardIndex=${shardIndex}`);
         continue;
       }
       
-      // Modificar o bitmap diretamente
-      Object.entries(byteUpdates).forEach(([byteIdx, bitMask]) => {
-        const idx = parseInt(byteIdx);
-        const mask = bitMask as number;
-        
-        // Contar bits usando a tabela de lookup
-        numBitsChanged += this.countBits(mask);
-        
-        // Atualizar o byte diretamente no buffer
-        shard.bitmap[idx] = shard.bitmap[idx] & ~mask;
-      });
+      // Extrair o bitmap do documento
+      const bitmapData = shardDoc.bitmap;
       
-      // Atualizar a contagem de números disponíveis
-      shard.availableCount -= numBitsChanged;
-      shard.updatedAt = new Date();
+      // Converter o bitmap binário para um Buffer que podemos manipular
+      let bitmapBuffer: Buffer = Buffer.from(bitmapData);
       
-      // Salvar as alterações
-      await shard.save({ session });
+      // Criar uma cópia do buffer para modificar
+      let updatedBuffer = Buffer.from(bitmapBuffer);
+      let numBitsChanged = 0;
+      
+      // Modificar os bits específicos
+      for (const offset of offsets) {
+        const byteIndex = Math.floor(offset / 8);
+        const bitIndex = offset % 8;
+        
+        // Verificar se o bit já está marcado como indisponível
+        const currentByte = updatedBuffer[byteIndex];
+        const bitMask = 1 << bitIndex;
+        const isAvailable = (currentByte & bitMask) !== 0;
+        
+        if (isAvailable) {
+          // Marcar o bit como indisponível (0)
+          updatedBuffer[byteIndex] = updatedBuffer[byteIndex] & ~bitMask;
+          numBitsChanged++;
+        }
+      }
+
+      this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenShardedOptimized');
+      
+      if (numBitsChanged > 0) {
+        try {
+          // Forçar a atualização direta no MongoDB
+          const result = await BitMapShardModel.collection.updateOne(
+            { _id: shardDoc._id },
+            { 
+              $set: { 
+                bitmap: updatedBuffer,
+                updatedAt: new Date()
+              }, 
+              $inc: { availableCount: -numBitsChanged } 
+            }
+          );
+          
+          console.log(`Resultado da atualização do shard ${shardIndex}:`, result);
+          
+          // Verificar se a atualização foi bem-sucedida
+          if (result.modifiedCount === 0) {
+            console.error(`Falha ao atualizar bitmap do shard ${shardIndex} no MongoDB`);
+          } else {
+            console.log(`Bitmap do shard ${shardIndex} atualizado com sucesso`);
+            totalBitsChanged += numBitsChanged;
+          }
+        } catch (error) {
+          console.error(`Erro ao atualizar bitmap do shard ${shardIndex} no MongoDB:`, error);
+          // Não lançar o erro para continuar com outros shards
+        }
+      }
     }
     
-    // Atualizar metadados
-    await BitMapMetaModel.updateOne(
-      { campaignId },
-      { 
-        $inc: { availableCount: -zeroBasedNumbers.length },
-        $set: { updatedAt: new Date() }
-      },
-      { session }
-    );
+    // Atualizar metadados se houve alterações
+    if (totalBitsChanged > 0) {
+      try {
+        const result = await BitMapMetaModel.collection.updateOne(
+          { campaignId },
+          { 
+            $inc: { availableCount: -totalBitsChanged },
+            $set: { updatedAt: new Date() }
+          }
+        );
+        
+        console.log('Resultado da atualização dos metadados:', result);
+        
+        if (result.modifiedCount === 0) {
+          console.error('Falha ao atualizar metadados do bitmap no MongoDB');
+        } else {
+          console.log('Metadados do bitmap atualizados com sucesso');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar metadados do bitmap no MongoDB:', error);
+        throw error;
+      }
+    }
   }
   
   /**
@@ -616,41 +721,71 @@ export class BitMapService {
     zeroBasedNumbers: number[],
     session?: mongoose.ClientSession
   ) {
-    // Agrupar por byte para minimizar operações
-    const byteUpdates: IByteUpdates = {};
+    // Buscar o bitmap completo diretamente da collection para garantir dados atualizados
+    const bitmapDoc = await BitMapModel.findOne({ campaignId });
+    if (!bitmapDoc) {
+      throw new Error(`Bitmap não encontrado para a campanha ${campaignId}`);
+    }
     
+    // Extrair o bitmap do documento
+    const bitmapData = bitmapDoc.bitmap;
+    
+    // Converter o bitmap binário para um Buffer que podemos manipular
+    let bitmapBuffer: Buffer = Buffer.from(bitmapData);
+    
+    // Criar uma cópia do buffer para modificar
+    let updatedBuffer = Buffer.from(bitmapBuffer);
+    let numBitsChanged = 0;
+  
+    // Modificar os bits específicos
     for (const number of zeroBasedNumbers) {
       const byteIndex = Math.floor(number / 8);
       const bitIndex = number % 8;
-      
-      if (!byteUpdates[byteIndex]) {
-        byteUpdates[byteIndex] = 0;
+  
+      // Verificar se o bit já está marcado como disponível
+      const currentByte = updatedBuffer[byteIndex];
+      const bitMask = 1 << bitIndex;
+      const isAvailable = (currentByte & bitMask) !== 0;
+  
+      if (!isAvailable) {
+        // Marcar o bit como disponível (1)
+        updatedBuffer[byteIndex] = updatedBuffer[byteIndex] | bitMask;
+        numBitsChanged++;
       }
-      
-      byteUpdates[byteIndex] |= (1 << bitIndex);
     }
+
+    this.showBitmap(updatedBuffer, 'bitmap marcado como disponível em markNumbersAsAvailableTraditionalOptimized');
+    console.log(`Marcando ${numBitsChanged} bits como disponíveis`);
     
-    // Construir operação de atualização para todos os bytes afetados
-    const bitOperations: IBitOperations = {};
-    let numBitsChanged = 0;
-    
-    Object.entries(byteUpdates).forEach(([byteIndex, bitMask]) => {
-      // Contar bits usando a tabela de lookup
-      numBitsChanged += this.countBits(bitMask as number);
-      
-      bitOperations[`bitmap.${byteIndex}`] = { or: (bitMask as number) };
-    });
-    
-    // Uma única operação para atualizar todos os bytes
-    await BitMapModel.updateOne(
-      { campaignId },
-      {
-        $bit: bitOperations,
-        $inc: { availableCount: numBitsChanged },
-        $set: { updatedAt: new Date() }
-      },
-      { session }
-    );
+    if (numBitsChanged > 0) {
+      try {
+        // Forçar a atualização direta no MongoDB
+        const result = await BitMapModel.updateOne(
+          { _id: bitmapDoc._id },
+          { 
+            $set: { 
+              bitmap: updatedBuffer,
+              updatedAt: new Date()
+            }, 
+            $inc: { availableCount: numBitsChanged } 
+          }
+        );
+        
+        console.log('Resultado da atualização MongoDB:', result);
+        
+        // Verificar se a atualização foi bem-sucedida
+        if (result.modifiedCount === 0) {
+          console.error('Falha ao atualizar bitmap no MongoDB');
+        } else {
+          console.log('bitmap atualizado com sucesso');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar bitmap no MongoDB:', error);
+        throw error;
+      }
+    } else {
+      console.log(`Nenhum bit alterado para campanha ${campaignId}`);
+    }
   }
   
   /**
@@ -664,74 +799,119 @@ export class BitMapService {
   ) {
     const shardSize = meta.shardSize;
     
-    // Para grandes volumes, usamos bulkWrite para máxima eficiência
-    const bulkOps: mongoose.AnyBulkWriteOperation[] = [];
-    const shardUpdates: IShardUpdates = {};
-    
     // Agrupar números por shard
+    const numbersByShardIndex: Record<number, number[]> = {};
+    
     for (const number of zeroBasedNumbers) {
       const shardIndex = Math.floor(number / shardSize);
       const offset = number % shardSize;
-      const byteIndex = Math.floor(offset / 8);
-      const bitIndex = offset % 8;
       
-      if (!shardUpdates[shardIndex]) {
-        shardUpdates[shardIndex] = {};
+      if (!numbersByShardIndex[shardIndex]) {
+        numbersByShardIndex[shardIndex] = [];
       }
       
-      if (!shardUpdates[shardIndex][byteIndex]) {
-        shardUpdates[shardIndex][byteIndex] = 0;
-      }
-      
-      shardUpdates[shardIndex][byteIndex] |= (1 << bitIndex);
+      numbersByShardIndex[shardIndex].push(offset);
     }
     
-    // Criar operações em lote para cada shard
-    for (const [shardIndex, byteUpdates] of Object.entries(shardUpdates)) {
-      let numBitsChanged = 0;
+    let totalBitsChanged = 0;
+    
+    // Processar cada shard
+    for (const [shardIndexStr, offsets] of Object.entries(numbersByShardIndex)) {
+      const shardIndex = parseInt(shardIndexStr);
       
-      // Em vez de usar $bit, vamos buscar e atualizar cada shard manualmente
-      const shard = await BitMapShardModel.findOne({ 
+      // Buscar o shard diretamente da collection para garantir dados atualizados
+      const shardDoc = await BitMapShardModel.collection.findOne({ 
         campaignId, 
-        shardIndex: parseInt(shardIndex) 
-      }).session(session || null);
+        shardIndex
+      });
       
-      if (!shard) {
+      if (!shardDoc) {
         console.error(`Shard não encontrado: campaignId=${campaignId}, shardIndex=${shardIndex}`);
         continue;
       }
       
-      // Modificar o bitmap diretamente
-      Object.entries(byteUpdates).forEach(([byteIdx, bitMask]) => {
-        const idx = parseInt(byteIdx);
-        const mask = bitMask as number;
-        
-        // Contar bits usando a tabela de lookup
-        numBitsChanged += this.countBits(mask);
-        
-        // Atualizar o byte diretamente no buffer
-        shard.bitmap[idx] = shard.bitmap[idx] | mask;
-      });
+      // Extrair o bitmap do documento
+      const bitmapData = shardDoc.bitmap;
       
-      // Atualizar a contagem de números disponíveis
-      shard.availableCount += numBitsChanged;
-      shard.updatedAt = new Date();
+      // Converter o bitmap binário para um Buffer que podemos manipular
+      let bitmapBuffer: Buffer = Buffer.from(bitmapData);
       
-      // Salvar as alterações
-      await shard.save({ session });
+      // Criar uma cópia do buffer para modificar
+      let updatedBuffer = Buffer.from(bitmapBuffer);
+      let numBitsChanged = 0;
+      
+      // Modificar os bits específicos
+      for (const offset of offsets) {
+        const byteIndex = Math.floor(offset / 8);
+        const bitIndex = offset % 8;
+        
+        // Verificar se o bit já está marcado como disponível
+        const currentByte = updatedBuffer[byteIndex];
+        const bitMask = 1 << bitIndex;
+        const isAvailable = (currentByte & bitMask) !== 0;
+        
+        if (!isAvailable) {
+          // Marcar o bit como disponível (1)
+          updatedBuffer[byteIndex] |= bitMask;
+          numBitsChanged++;
+        }
+      }
+      
+      if (numBitsChanged > 0) {
+        try {
+          // Forçar a atualização direta no MongoDB
+          const result = await BitMapShardModel.collection.updateOne(
+            { _id: shardDoc._id },
+            { 
+              $set: { 
+                bitmap: updatedBuffer,
+                updatedAt: new Date()
+              }, 
+              $inc: { availableCount: numBitsChanged } 
+            }
+          );
+          
+          console.log(`Resultado da atualização do shard ${shardIndex}:`, result);
+          
+          // Verificar se a atualização foi bem-sucedida
+          if (result.modifiedCount === 0) {
+            console.error(`Falha ao atualizar bitmap do shard ${shardIndex} no MongoDB`);
+          } else {
+            console.log(`Bitmap do shard ${shardIndex} atualizado com sucesso`);
+            totalBitsChanged += numBitsChanged;
+          }
+        } catch (error) {
+          console.error(`Erro ao atualizar bitmap do shard ${shardIndex} no MongoDB:`, error);
+          // Não lançar o erro para continuar com outros shards
+        }
+      }
     }
     
-    // Atualizar metadados
-    await BitMapMetaModel.updateOne(
-      { campaignId },
-      { 
-        $inc: { availableCount: zeroBasedNumbers.length },
-        $set: { updatedAt: new Date() }
-      },
-      { session }
-    );
+    // Atualizar metadados se houve alterações
+    if (totalBitsChanged > 0) {
+      try {
+        const result = await BitMapMetaModel.collection.updateOne(
+          { campaignId },
+          { 
+            $inc: { availableCount: totalBitsChanged },
+            $set: { updatedAt: new Date() }
+          }
+        );
+        
+        console.log('Resultado da atualização dos metadados:', result);
+        
+        if (result.modifiedCount === 0) {
+          console.error('Falha ao atualizar metadados do bitmap no MongoDB');
+        } else {
+          console.log('Metadados do bitmap atualizados com sucesso');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar metadados do bitmap no MongoDB:', error);
+        throw error;
+      }
+    }
   }
-  
+
   /**
    * Seleciona números aleatórios disponíveis
    * @param campaignId ID da campanha
@@ -748,14 +928,14 @@ export class BitMapService {
         return await this.selectRandomNumbersSharded(campaignId, quantity, meta);
       } else {
         // Bitmap tradicional
-        return await BitMapModel.selectRandomNumbers(campaignId, quantity);
+      return await BitMapModel.selectRandomNumbers(campaignId, quantity);
       }
     } catch (error) {
       console.error(`Erro ao selecionar ${quantity} números aleatórios:`, error);
       throw error;
     }
   }
-  
+
   /**
    * Seleciona números aleatórios disponíveis usando bitmap shardado
    * @param campaignId ID da campanha
@@ -937,6 +1117,7 @@ export class BitMapService {
     
     // Percorrer todos os números do shard
     for (let byteIndex = 0; byteIndex < shard.bitmap.length; byteIndex++) {
+      
       const byte = shard.bitmap[byteIndex];
       
       if (byte > 0) {
@@ -1013,7 +1194,7 @@ export class BitMapService {
       throw error;
     }
   }
-  
+
   /**
    * Obtém a contagem de números disponíveis
    * @param campaignId ID da campanha
@@ -1055,7 +1236,7 @@ export class BitMapService {
         return meta.totalNumbers;
       } else {
         // Bitmap tradicional
-        const bitmap = await BitMapModel.getBitmap(campaignId);
+      const bitmap = await BitMapModel.getBitmap(campaignId);
         if (!bitmap) return 0;
         
         return bitmap.totalNumbers;
@@ -1232,6 +1413,94 @@ export class BitMapService {
   }
   
   /**
+   * Deleta completamente os dados de bitmap de uma campanha
+   * @param campaignId ID da campanha
+   * @param session Sessão MongoDB opcional para transações
+   * @returns Objeto com informações sobre a operação de exclusão
+   */
+  static async deleteBitmap(campaignId: string, session?: mongoose.ClientSession): Promise<{
+    deleted: boolean;
+    wasSharded: boolean;
+    deletedShards?: number;
+    message: string;
+  }> {
+    try {
+      // Verificar se estamos usando bitmap shardado
+      const meta = await BitMapMetaModel.getBitmapMeta(campaignId);
+      
+      // Usar transação se fornecida ou criar uma nova
+      const useTransaction = !!session;
+      const sessionToUse = session || await mongoose.startSession();
+      
+      if (!useTransaction) {
+        sessionToUse.startTransaction();
+      }
+      
+      try {
+        if (meta) {
+          // Bitmap shardado - deletar todos os shards e metadados
+          const deleteShardResult = await BitMapShardModel.deleteMany(
+            { campaignId }, 
+            { session: sessionToUse }
+          );
+          
+          const deleteMetaResult = await BitMapMetaModel.deleteOne(
+            { campaignId }, 
+            { session: sessionToUse }
+          );
+          
+          if (!useTransaction) {
+            await sessionToUse.commitTransaction();
+          }
+          
+          return {
+            deleted: true,
+            wasSharded: true,
+            deletedShards: deleteShardResult.deletedCount || 0,
+            message: `Bitmap shardado excluído com sucesso: ${deleteShardResult.deletedCount} shards e metadados removidos`
+          };
+        } else {
+          // Bitmap tradicional - deletar documento único
+          const deleteResult = await BitMapModel.deleteOne(
+          { campaignId },
+            { session: sessionToUse }
+          );
+          
+          if (!useTransaction) {
+            await sessionToUse.commitTransaction();
+          }
+          
+          if (deleteResult.deletedCount === 0) {
+            return {
+              deleted: false,
+              wasSharded: false,
+              message: `Nenhum bitmap encontrado para a campanha ${campaignId}`
+            };
+          }
+          
+          return {
+            deleted: true,
+            wasSharded: false,
+            message: `Bitmap tradicional excluído com sucesso`
+          };
+        }
+      } catch (error) {
+        if (!useTransaction) {
+          await sessionToUse.abortTransaction();
+        }
+        throw error;
+      } finally {
+        if (!useTransaction) {
+          sessionToUse.endSession();
+        }
+      }
+    } catch (error) {
+      console.error(`Erro ao deletar bitmap da campanha ${campaignId}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
    * Obtém estatísticas do bitmap de uma campanha
    */
   static async getBitmapStats(campaignId: string): Promise<{
@@ -1291,4 +1560,12 @@ export class BitMapService {
       throw error;
     }
   }
-}
+
+  private static showBitmap(bitmap: Buffer, message?: string) {
+    console.log(message || 'bitmap');
+    let bitmapBuffer: Buffer = Buffer.from(bitmap);
+    bitmapBuffer.forEach((byte, index) => {
+      console.log('byte', byte.toString(2));
+    });
+  }
+} 

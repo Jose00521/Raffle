@@ -78,7 +78,7 @@ if (isServer && NumberStatusSchema) {
   NumberStatusSchema.index({ campaignId: 1, number: 1 }, { unique: true });
 
   // TTL index para expirar reservas automaticamente
-  NumberStatusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  // NumberStatusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   
   // Índices adicionais para otimização
   

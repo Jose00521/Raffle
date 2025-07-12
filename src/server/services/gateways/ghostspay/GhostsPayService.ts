@@ -12,6 +12,8 @@ export function GhostsPayService() {
       },
     });
 
+    console.log('response ghostspay', response);
+
     const dataResponse = await response.json() as IPaymentGhostResponse;
 
     return {
