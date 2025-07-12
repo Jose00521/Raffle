@@ -61,6 +61,16 @@ const participantCampaignAPI = {
       }
     },
 
+    getMyNumbers: async (cpf: string) => {
+      try {
+        const response = await fetch(`/api/user/participant/my-numbers?cpf=${cpf}`);
+        const result = await response.json();
+        return result;
+      } catch {
+        return createErrorResponse('Erro ao conectar com o servidor:', 500);
+      }
+    },
+
 
 
 

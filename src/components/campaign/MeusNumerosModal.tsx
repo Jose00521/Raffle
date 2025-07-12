@@ -12,10 +12,12 @@ import { toast } from 'react-toastify';
 import { formatCurrency } from '@/utils/formatNumber';
 import { CertificationSectionCompact } from '../ui/CertificationSection';
 import Modal from '../ui/Modal';
+import Image from 'next/image';
 
 // Schema de validação para o CPF
 import { MyNumbersFormData, myNumbersSchema } from '@/zod/mynumbers.schema';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
+import participantCampaignAPI from '@/API/participant/participantCampaignAPIClient';
 
 interface MeusNumerosModalProps {
   isOpen: boolean;
@@ -47,7 +49,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
   const [userData, setUserData] = useState<any>(null);
   const [showNumbers, setShowNumbers] = useState<{ [key: number]: boolean }>({});
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<MyNumbersFormData>({
+  const { register, handleSubmit, formState: { errors }, setError, watch } = useForm<MyNumbersFormData>({
     resolver: zodResolver(myNumbersSchema),
     mode: 'all',
     shouldFocusError: true,
@@ -63,17 +65,15 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
     setIsLoading(true);
     
     try {
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await participantCampaignAPI.getMyNumbers(data.cpf);
+
+      console.log('result', result);
       
-      const cpfNumbers = data.cpf.replace(/\D/g, '');
-      const foundUser = mockUserNumbers[0];
-      
-      if (foundUser) {
-        setUserData(foundUser);
+      if (result) {
+        
 
       } else {
-        toast.info('Nenhum número encontrado para este CPF');
+        setError('cpf', { message: 'Nenhum número encontrado para este CPF' });
         setUserData(null);
       }
     } catch (error) {
@@ -157,8 +157,40 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
               <FaShieldAlt />
               Seus dados são protegidos e não serão compartilhados
             </SecurityInfo>
+            <SecurityFooter>
+          <SecurityText>
+            <span><FaShieldAlt />Proteção Nível Militar: Seus dados são guardados com criptografia AES-512 - o mesmo padrão usado por bancos e governos para máxima segurança</span>
+          </SecurityText>
+          
+          <TrustLogos>
+            <LogoItem>
+              <Image 
+                src="/icons/loterias-caixa-logo.svg" 
+                alt="Loteria Federal" 
+                width={80} 
+                height={80}
+                className="logo-image"
+              />
+
+
+              
+              {/* <div className="logo-text">Autorizado<br/>Loteria Federal</div> */}
+            </LogoItem>
             
-            <CertificationSectionCompact />
+            <LogoItem>
+              <Image 
+                src="/icons/pix-banco-central.svg" 
+                alt="PIX Banco Central" 
+                width={80} 
+                height={80}
+                className="logo-image"
+              />
+              {/* <div className="logo-text">Pagamento<br/>PIX Seguro</div> */}
+            </LogoItem>
+          </TrustLogos>
+        </SecurityFooter>
+     
+            {/* <CertificationSectionCompact /> */}
           </FormContainer>
         ) : (
           <ResultsContainer>
@@ -270,6 +302,119 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
     </Modal>
   );
 };
+
+const TrustLogos = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  
+  @media (max-width: 576px) {
+    gap: 1.25rem;
+  }
+`;
+
+const LogoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  
+  .logo-image {
+    filter: brightness(1.1);
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  .logo-text {
+    font-size: 0.55rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.1;
+  }
+  
+  @media (max-width: 576px) {
+    gap: 0.25rem;
+    
+    .logo-text {
+      font-size: 0.5rem;
+    }
+  }
+`;
+
+const SecurityFooter = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.50rem;
+  background: linear-gradient(135deg, #f8fffe 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(46, 204, 113, 0.1);
+  
+  @media (max-width: 576px) {
+    margin-top: 0.75rem;
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+`;
+
+const SecurityText = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #4a5568;
+  text-align: center;
+  line-height: 1.4;
+  font-weight: 500;
+  
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    
+    svg {
+      color: #27ae60;
+      font-size: 1rem;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 2px rgba(39, 174, 96, 0.2));
+      margin-right: 0.2rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 0.65rem;
+    
+    span {
+      gap: 0.4rem;
+      
+      svg {
+        font-size: 0.9rem;
+        margin-right: 0.15rem;
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    span {
+      flex-direction: column;
+      gap: 0.3rem;
+      
+      svg {
+        font-size: 1.1rem;
+        margin-right: 0;
+      }
+    }
+  }
+`;
 
 // Styled Components
 const fadeIn = keyframes`
