@@ -13,6 +13,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import { sendGTMEvent } from '@next/third-parties/google';
 import { formatInteger } from '@/utils/formatNumber';
+import Modal from '@/components/ui/Modal';
 
 // Interfaces
 interface CheckoutData {
@@ -35,26 +36,29 @@ const fadeInUp = keyframes`
   }
 `;
 
-// Animação de confete mais fluida e otimizada para mobile
+// Animação de confete mais fluida e natural
 const confettiFall = keyframes`
   0% {
-    transform: translateY(-10px) rotate(0deg) scale(1);
+    transform: translateY(-50px) rotate(0deg) scale(1);
     opacity: 1;
   }
-  25% {
-    transform: translateY(calc(25vh)) rotate(90deg) scale(0.9);
+  10% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(calc(30vh)) rotate(120deg) scale(0.9);
     opacity: 0.9;
   }
-  50% {
-    transform: translateY(calc(50vh)) rotate(180deg) scale(0.8);
+  60% {
+    transform: translateY(calc(60vh)) rotate(240deg) scale(0.8);
     opacity: 0.8;
   }
-  75% {
-    transform: translateY(calc(75vh)) rotate(270deg) scale(0.7);
-    opacity: 0.7;
+  85% {
+    transform: translateY(calc(85vh)) rotate(360deg) scale(0.7);
+    opacity: 0.6;
   }
   100% {
-    transform: translateY(100vh) rotate(360deg) scale(0.6);
+    transform: translateY(100vh) rotate(480deg) scale(0.6);
     opacity: 0;
   }
 `;
@@ -355,11 +359,25 @@ const SuccessTitle = styled.h1`
   }
   
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    
+    &::after {
+      width: 60px;
+      height: 2px;
+      bottom: -6px;
+    }
   }
   
   @media (max-width: 480px) {
-    font-size: 2rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    
+    &::after {
+      width: 40px;
+      height: 2px;
+      bottom: -4px;
+    }
   }
 `;
 
@@ -373,7 +391,15 @@ const SuccessSubtitle = styled.p`
   opacity: 0.9;
   
   @media (max-width: 768px) {
-    font-size: 1.125rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    max-width: 90%;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-width: 95%;
   }
 `;
 
@@ -414,7 +440,7 @@ const PurchaseDetails = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 2rem;
+    padding: 1rem;
     border-radius: 20px;
   }
 `;
@@ -435,6 +461,11 @@ const SectionTitle = styled.h2`
     background: linear-gradient(135deg, #22c55e, #16a34a);
     border-radius: 2px;
   }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+  
 `;
 
 const Timeline = styled.div`
@@ -451,67 +482,159 @@ const Timeline = styled.div`
     background: linear-gradient(180deg, #22c55e, #16a34a);
     border-radius: 1px;
   }
+  
+  @media (max-width: 768px) {
+    margin: 1.5rem 0;
+    
+    &::before {
+      left: 16px;
+      width: 2px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin: 1.25rem 0;
+    
+    &::before {
+      left: 12px;
+      width: 1.5px;
+    }
+  }
 `;
 
 const TimelineItem = styled.div<{ $delay: number }>`
-  position: relative;
-  padding-left: 60px;
+  display: flex;
   margin-bottom: 2rem;
-  animation: ${fadeInUp} 0.6s ease-out ${({ $delay }) => $delay}s both;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    left: 14px;
-    top: 8px;
-    width: 12px;
-    height: 12px;
-    background: #22c55e;
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 0 0 2px #22c55e;
-  }
+  position: relative;
+  animation: ${fadeInUp} 0.6s ease-out;
+  animation-delay: ${({ $delay }) => $delay}s;
+  opacity: 0;
+  animation-fill-mode: forwards;
   
   &:last-child {
     margin-bottom: 0;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1.25rem;
+  }
+`;
+
+const TimelinePoint = styled.div`
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-right: 1.5rem;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+  position: relative;
+  z-index: 2;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    opacity: 0.2;
+    z-index: -1;
+  }
+  
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+    margin-right: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+    margin-right: 1rem;
+  }
 `;
 
 const TimelineContent = styled.div`
-  background: rgba(255, 255, 255, 0.8);
+  background: white;
   border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid rgba(34, 197, 94, 0.1);
+  padding: 1.25rem;
+  flex-grow: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  position: relative;
   transition: all 0.3s ease;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    border-radius: 8px;
   }
 `;
 
-const TimelineTitle = styled.h3`
+const TimelineTitle = styled.h4`
   font-size: 1rem;
   font-weight: 600;
   color: #166534;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    margin-bottom: 0.15rem;
+  }
 `;
 
-const TimelineDescription = styled.p`
-  font-size: 0.875rem;
-  color: #16a34a;
-  line-height: 1.5;
-  margin: 0;
+const TimelineDescription = styled.div`
+  font-size: 0.95rem;
+  color: #374151;
+  margin-bottom: 0.25rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    margin-bottom: 0.15rem;
+  }
 `;
 
-const TimelineTime = styled.span`
-  font-size: 0.75rem;
-  color: #059669;
-  font-weight: 500;
-  opacity: 0.8;
-  margin-top: 0.5rem;
-  display: block;
+const TimelineTime = styled.div`
+  font-size: 0.8rem;
+  color: #6b7280;
+  
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.65rem;
+  }
 `;
 
 const QuickActions = styled.div`
@@ -593,6 +716,11 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   
   &:last-child {
     margin-bottom: 0;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.875rem !important;
+    padding: 1rem 1rem !important;
   }
 `;
 
@@ -701,6 +829,18 @@ const CheckContainer = styled.div`
   width: 120px;
   height: 120px;
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+  }
 `;
 
 const CheckCircle = styled.div`
@@ -736,6 +876,20 @@ const CheckCircle = styled.div`
     opacity: 0.2;
     animation: ${ripple} 2s ease-out 0.5s infinite;
   }
+  
+  @media (max-width: 480px) {
+    box-shadow: 
+      0 10px 20px rgba(34, 197, 94, 0.3),
+      0 5px 10px rgba(0, 0, 0, 0.2);
+      
+    &::before {
+      inset: -2px;
+    }
+    
+    &::after {
+      inset: -4px;
+    }
+  }
 `;
 
 const CheckSvg = styled.svg`
@@ -754,6 +908,24 @@ const CheckSvg = styled.svg`
     animation: ${checkDraw} 1.2s ease-out 0.6s forwards;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   }
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    
+    path {
+      stroke-width: 2.5;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    
+    path {
+      stroke-width: 2;
+    }
+  }
 `;
 
 const LoadingText = styled.div`
@@ -767,6 +939,14 @@ const LoadingTitle = styled.h2`
   margin-bottom: 0.5rem;
   opacity: 0;
   animation: ${fadeInUp} 0.6s ease-out 1.2s forwards;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
+  }
 `;
 
 const LoadingSubtitle = styled.p`
@@ -774,6 +954,14 @@ const LoadingSubtitle = styled.p`
   opacity: 0.8;
   opacity: 0;
   animation: ${fadeInUp} 0.6s ease-out 1.4s forwards;
+  
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const SuccessContentWrapper = styled.div<{ $showContent: boolean }>`
@@ -781,6 +969,270 @@ const SuccessContentWrapper = styled.div<{ $showContent: boolean }>`
   transform: ${({ $showContent }) => $showContent ? 'translateY(0)' : 'translateY(20px)'};
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   transition-delay: ${({ $showContent }) => $showContent ? '0.3s' : '0s'};
+`;
+
+// Novos componentes para o modal de números
+const NumbersModalContent = styled.div`
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1.5rem 1rem;
+  }
+`;
+
+const NumbersModalTitle = styled.h3`
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    
+    &::after {
+      width: 60px;
+      height: 2px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    
+    &::after {
+      width: 50px;
+      height: 2px;
+    }
+  }
+`;
+
+const NumbersGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.625rem;
+  margin: 1.75rem 0;
+  
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    margin: 1.25rem 0;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.375rem;
+    margin: 1rem 0;
+  }
+`;
+
+const NumberBadge = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.625rem 0.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(59, 130, 246, 0.15);
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+  
+  @media (max-width: 640px) {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+    padding: 0.375rem 0.125rem;
+    border-radius: 5px;
+  }
+`;
+
+const ModalDescription = styled.p`
+  color: #475569;
+  font-size: 1rem;
+  margin: 1.5rem auto 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 90%;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin: 1.25rem auto 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    margin: 1rem auto 0.5rem;
+  }
+`;
+
+const LimitNotice = styled.div`
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0 auto 1.5rem;
+  max-width: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #0369a1;
+  font-size: 0.875rem;
+  
+  i {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+    
+    i {
+      font-size: 0.875rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.7rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    
+    i {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
+const ModalFooter = styled.div`
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.5rem;
+  
+  @media (max-width: 768px) {
+    margin-top: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-top: 1rem;
+  }
+`;
+
+const ModalButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  
+  &:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  i {
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9rem;
+    border-radius: 7px;
+    
+    i {
+      font-size: 0.8rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    
+    i {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
+const BlueUnderline = styled.span`
+  position: relative;
+  display: inline-block;
+  color: #3b82f6;
+  font-weight: 700;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 1px;
+  }
 `;
 
 export default function SuccessPage() {
@@ -793,6 +1245,8 @@ export default function SuccessPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const confettiContainerRef = useRef<HTMLDivElement>(null);
+  const [isNumbersModalOpen, setIsNumbersModalOpen] = useState(false);
+  const [userNumbers, setUserNumbers] = useState<number[]>([]);
 
   const prizeValue = ()=>{
 
@@ -894,6 +1348,20 @@ export default function SuccessPage() {
     };
   }, [params?.id]);
 
+  // Função para obter os números do usuário do sessionStorage
+  useEffect(() => {
+    try {
+      const pixData = sessionStorage.getItem('pix');
+      if (pixData) {
+        const pixObject = JSON.parse(pixData);
+        if (pixObject && pixObject.numbers && Array.isArray(pixObject.numbers)) {
+          setUserNumbers(pixObject.numbers);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao obter números do sessionStorage:', error);
+    }
+  }, []);
 
   // Cores mais vibrantes para o confete
   const confettiColors = [
@@ -926,11 +1394,11 @@ export default function SuccessPage() {
       <Layout hideHeader={true} hideFooter={true}>
         <SuccessContentWrapper $showContent={showContent}>
           <SuccessContainer>
-            {showConfetti && showContent && (
+            {/* {showConfetti && showContent && (
               <ConfettiContainer ref={confettiContainerRef}>
                 {Array.from({ length: 100 }).map((_, i) => {
                   const size = Math.random() * 10 + 5; // Tamanhos variados
-                  const duration = Math.random() * 4 + 3; // Durações variadas
+                  const duration = 4 + 3; // Durações variadas
                   const rotation = Math.random() * 360; // Rotação aleatória
                   
                   return (
@@ -946,7 +1414,7 @@ export default function SuccessPage() {
                   );
                 })}
               </ConfettiContainer>
-            )}
+            )} */}
         
             <ContentWrapper>
               <SuccessHeader>
@@ -979,6 +1447,7 @@ export default function SuccessPage() {
                     <>
                       <Timeline>
                         <TimelineItem $delay={0.1}>
+                          <TimelinePoint />
                           <TimelineContent>
                             <TimelineTitle>Campanha Selecionada</TimelineTitle>
                             <TimelineDescription>
@@ -989,6 +1458,7 @@ export default function SuccessPage() {
                         </TimelineItem>
                         
                         <TimelineItem $delay={0.2}>
+                          <TimelinePoint />
                           <TimelineContent>
                             <TimelineTitle>Quantidade de Números</TimelineTitle>
                             <TimelineDescription>
@@ -1000,6 +1470,7 @@ export default function SuccessPage() {
                         </TimelineItem>
                         
                         <TimelineItem $delay={0.3}>
+                          <TimelinePoint />
                           <TimelineContent>
                             <TimelineTitle>Pagamento Confirmado</TimelineTitle>
                             <TimelineDescription>
@@ -1010,6 +1481,7 @@ export default function SuccessPage() {
                         </TimelineItem>
                         
                         <TimelineItem $delay={0.4}>
+                          <TimelinePoint />
                           <TimelineContent>
                             <TimelineTitle>Números Reservados</TimelineTitle>
                             <TimelineDescription>
@@ -1026,21 +1498,19 @@ export default function SuccessPage() {
                 <QuickActions>
                   <SectionTitle>⚡ Ações Rápidas</SectionTitle>
                   
-                  {/* <ActionButton $variant="primary">
+                  <ActionButton 
+                    $variant="primary"
+                    onClick={() => setIsNumbersModalOpen(true)}
+                  >
                     <i className="fas fa-list" />
                     Ver Meus Números
-                  </ActionButton> */}
+                  </ActionButton>
                   
                   <ActionButton $variant="secondary">
                     <i className="fas fa-share" />
                     Compartilhar
                   </ActionButton>
-  {/*               
-                  <ActionButton $variant="secondary">
-                    <i className="fas fa-download" />
-                    Baixar Comprovante
-                  </ActionButton> */}
-                  
+  
                   <ActionButton 
                     $variant="secondary"
                     onClick={() => router.push('/')}
@@ -1073,6 +1543,43 @@ export default function SuccessPage() {
           </SuccessContainer>
         </SuccessContentWrapper>
       </Layout>
+
+      {/* Modal para exibir os números */}
+      <Modal 
+        isOpen={isNumbersModalOpen} 
+        onClose={() => setIsNumbersModalOpen(false)}
+        maxWidth="650px"
+      >
+        <NumbersModalContent>
+          <NumbersModalTitle>Seus Números da Sorte</NumbersModalTitle>
+          
+          <ModalDescription>
+            Parabéns! Estes são seus números para o sorteio.
+          </ModalDescription>
+          
+          {userNumbers.length >= 30 && (
+            <LimitNotice>
+              <i className="fas fa-info-circle" />
+              Exibindo os primeiros {userNumbers.length} números adquiridos.
+            </LimitNotice>
+          )}
+          
+          <NumbersGrid>
+            {userNumbers.slice(0, 30).map((number, index) => (
+              <NumberBadge key={index}>
+                {number.toString().padStart(7, '0')}
+              </NumberBadge>
+            ))}
+          </NumbersGrid>
+          
+          <ModalFooter>
+            <ModalButton onClick={() => setIsNumbersModalOpen(false)}>
+              <i className="fas fa-check-circle" />
+              Fechar
+            </ModalButton>
+          </ModalFooter>
+        </NumbersModalContent>
+      </Modal>
     </>
   );
 } 

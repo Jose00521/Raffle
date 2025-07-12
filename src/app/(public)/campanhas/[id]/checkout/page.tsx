@@ -227,6 +227,72 @@ const TopSecurityBadge = styled.div`
   }
 `;
 
+// Novo componente para o aviso de números reservados
+const ReservationAlert = styled.div`
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  color: white;
+  padding: 1rem 0;
+  text-align: center;
+  position: relative;
+  z-index: 40;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem 0;
+  }
+`;
+
+const ReservationAlertContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  
+  i {
+    font-size: 1.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+    font-size: 0.7rem !important;
+    
+    i {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 0.75rem;
+    font-size: 0.7rem !important;
+    
+    i {
+      font-size: 1rem;
+    }
+  }
+`;
+
 const ContentWrapper = styled.div`
   position: relative;
   z-index: 2;
@@ -2215,6 +2281,13 @@ function CheckoutContent() {
             </TopSecurityBadge>
           </TopSecurityContent>
         </TopSecurityBar>
+        
+        <ReservationAlert>
+          <ReservationAlertContent>
+            <i className="fas fa-info-circle"></i>
+            Os números estão reservados e precisam ser pagos para confirmar.
+          </ReservationAlertContent>
+        </ReservationAlert>
         
         <ContentWrapper>
           <CheckoutHeader>

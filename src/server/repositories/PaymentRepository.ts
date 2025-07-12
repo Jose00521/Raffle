@@ -261,12 +261,14 @@ export class PaymentRepository implements IPaymentRepository {
     }
 
     async confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
+        const connection = await this.db.connect();
+        const session = await connection.startSession();
         try {
             const { externalId, paymentMethod, status, approvedAt } = data;
 
             console.log('chegou aqui 1', externalId, paymentMethod, status, approvedAt);
 
-            await this.db.connect();
+            session.startTransaction();
 
             const payment = await Payment!.findOne({
                 $or: [
@@ -288,7 +290,15 @@ export class PaymentRepository implements IPaymentRepository {
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
 
-                await payment.save();
+                await payment.save({session});
+
+                // atualizar o status do numero status para pago
+                await NumberStatus!.updateMany({
+                    paymentId: payment._id,
+                    status: NumberStatusEnum.RESERVED
+                }, {
+                    $set: { status: NumberStatusEnum.PAID }
+                }, {session});
 
 
                 await User.updateOne({
@@ -300,11 +310,14 @@ export class PaymentRepository implements IPaymentRepository {
                     }
                 });
 
+                await session.commitTransaction();
+
                 return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
             }
 
             return createErrorResponse('Status de pagamento não suportado', 400);
         } catch (error) {
+            await session.abortTransaction();
             console.error('[PAYMENT_CONFIRM_ERROR]', error);
             throw new ApiError({
                 success: false,
@@ -312,6 +325,8 @@ export class PaymentRepository implements IPaymentRepository {
                 statusCode: 500,
                 cause: error as Error
             });
+        } finally {
+            session.endSession();
         }
     }
 
