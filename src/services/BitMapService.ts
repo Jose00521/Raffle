@@ -68,10 +68,10 @@ for (let byte = 0; byte < 256; byte++) {
  */
 const BITMAP_CONFIG = {
   // Tamanho máximo de bitmap não shardado (em números)
-  MAX_SINGLE_BITMAP_SIZE: 50,
+  MAX_SINGLE_BITMAP_SIZE: 10_000_000,
   
   // Tamanho padrão de cada shard (em números)
-  DEFAULT_SHARD_SIZE: 50,
+  DEFAULT_SHARD_SIZE: 10_000_000,
   
   // Limite de tamanho de documento MongoDB (16MB)
   MONGODB_DOC_SIZE_LIMIT: 16 * 1024 * 1024,
@@ -267,7 +267,7 @@ export class BitMapService {
         return (bitmapBuffer[byteIndex] & (1 << bitIndex)) !== 0;
       } else {
         // Bitmap tradicional - buscar diretamente da collection para garantir dados atualizados
-        const bitmapDoc = await BitMapModel.collection.findOne({ campaignId });
+        const bitmapDoc = await BitMapModel.findOne({ campaignId });
         if (!bitmapDoc) return false;
         
         // Extrair o bitmap do documento
@@ -422,16 +422,16 @@ export class BitMapService {
             // Converter o bitmap binário para um Buffer que podemos manipular
             let bitmapBuffer: Buffer = Buffer.from(bitmapData);
 
-            this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilitySharded');
+            //this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilitySharded');
 
-            let bitIndexCount = 1;
-            bitmapBuffer.forEach((byte, index) => {
-              console.log('byte', byte.toString(2));
-               byte.toString(2).split('').reverse().forEach((bit, bitIndex) => {
-                console.log('bit', bit,bitIndexCount);
-                bitIndexCount++;
-               });
-            });
+            // let bitIndexCount = 1;
+            // bitmapBuffer.forEach((byte, index) => {
+            //   console.log('byte', byte.toString(2));
+            //    byte.toString(2).split('').reverse().forEach((bit, bitIndex) => {
+            //     console.log('bit', bit,bitIndexCount);
+            //     bitIndexCount++;
+            //    });
+            // });
             
             // Verificar cada número neste shard
             for (const { originalIndex, offset } of shardNumbers) {
@@ -627,7 +627,7 @@ export class BitMapService {
         }
       }
 
-      this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenShardedOptimized');
+      //this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenShardedOptimized');
       
       if (numBitsChanged > 0) {
         try {
@@ -820,7 +820,7 @@ export class BitMapService {
       const shardIndex = parseInt(shardIndexStr);
       
       // Buscar o shard diretamente da collection para garantir dados atualizados
-      const shardDoc = await BitMapShardModel.collection.findOne({ 
+      const shardDoc = await BitMapShardModel.findOne({ 
         campaignId, 
         shardIndex
       });
@@ -852,7 +852,7 @@ export class BitMapService {
         
         if (!isAvailable) {
           // Marcar o bit como disponível (1)
-          updatedBuffer[byteIndex] |= bitMask;
+          updatedBuffer[byteIndex] = updatedBuffer[byteIndex] | bitMask;
           numBitsChanged++;
         }
       }
@@ -888,9 +888,10 @@ export class BitMapService {
     }
     
     // Atualizar metadados se houve alterações
+    console.log('totalBitsChanged', totalBitsChanged);
     if (totalBitsChanged > 0) {
       try {
-        const result = await BitMapMetaModel.collection.updateOne(
+        const result = await BitMapMetaModel.updateOne(
           { campaignId },
           { 
             $inc: { availableCount: totalBitsChanged },

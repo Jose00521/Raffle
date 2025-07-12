@@ -9,12 +9,11 @@ import dbConnect from '@/server/lib/dbConnect';
 const BATCH_SIZE = 5000; // Tamanho do lote para processamento
 const MAX_CONCURRENT_CAMPAIGNS = 5; // Número máximo de campanhas processadas em paralelo
 
-export async function releaseExpireNumbers() {
+export async function releaseExpireNumbersByPaymentId(paymentId: string,session: mongoose.ClientSession) {
     logger.info('Iniciando liberação de números expirados');
 
     try {
         // Garantir que estamos conectados ao banco de dados
-        await dbConnect();
         
         const now = new Date();
         
@@ -23,8 +22,8 @@ export async function releaseExpireNumbers() {
         const expiredNumbersByCampaign = await NumberStatus!.aggregate([
             { 
                 $match: { 
-                    expiresAt: { $lte: now },
-                    status: NumberStatusEnum.RESERVED
+                    status: NumberStatusEnum.RESERVED,
+                    paymentId: new mongoose.Types.ObjectId(paymentId)
                 }
             },
             {
@@ -55,7 +54,6 @@ export async function releaseExpireNumbers() {
         let totalProcessed = 0;
         
         // Criar uma única sessão para todo o job
-        const session = await mongoose.connection.startSession();
 
 
         try {
@@ -74,9 +72,7 @@ export async function releaseExpireNumbers() {
                     for (let i = 0; i < numbers.length; i += BATCH_SIZE) {
                         const numbersBatch = numbers.slice(i, i + BATCH_SIZE);
                         const numberIdsBatch = numberIds.slice(i, i + BATCH_SIZE);
-                        
-                        // Iniciar transação para este lote usando a sessão compartilhada
-                        session.startTransaction();
+                    
                         
                         try {
                             // 5. Atualizar bitmap para este lote
@@ -88,7 +84,7 @@ export async function releaseExpireNumbers() {
                                 { session }
                             );
                             
-                            await session.commitTransaction();
+                            
                             totalProcessed += numbersBatch.length;
                             
                             // Log a cada lote para acompanhamento de progresso
@@ -96,7 +92,7 @@ export async function releaseExpireNumbers() {
                                 logger.info(`Campanha ${campaignId}: processado lote de ${numbersBatch.length} números (${i + numbersBatch.length}/${numbers.length})`);
                             }
                         } catch (error) {
-                            await session.abortTransaction();
+                            
                             logger.error({
                                 message: `Erro ao processar lote da campanha ${campaignId}`,
                                 error: error instanceof Error ? error.message : String(error),
@@ -108,10 +104,9 @@ export async function releaseExpireNumbers() {
             }
         } finally {
             // Garantir que a sessão seja finalizada independentemente do resultado
-            session.endSession();
+            logger.info(`Liberação de números expirados concluída: ${totalProcessed} números processados`);
         }
 
-        logger.info(`Liberação de números expirados concluída: ${totalProcessed} números processados`);
     } catch (error) {
         logger.error({ 
             message: 'Erro ao processar job de liberação de números expirados',

@@ -16,6 +16,7 @@ interface CheckoutData {
 interface Pix {
   pixCode: string;
   pixQrCode: string;
+  numbers: number[];
   expiresAt: string | null;
   paymentCode: string;
 }
@@ -144,6 +145,7 @@ export class PaymentCreationService {
           pixCode: response.data?.pixCode,
           pixQrCode: response.data?.pixQrCode,
           paymentCode: response.data?.paymentCode,
+          numbers: response.data?.numbers,
           expiresAt: response.data?.expiresAt
         });
         

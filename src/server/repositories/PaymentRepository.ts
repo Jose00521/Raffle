@@ -390,13 +390,13 @@ export class PaymentRepository implements IPaymentRepository {
 
         const isNumberAvailable = await BitMapService.isNumberAvailable(payment.campaignId as string, numbers[0]);
         console.log('isNumberAvailable', isNumberAvailable);
-        const checkNumbersAvailability = await BitMapService.checkNumbersAvailability(payment.campaignId as string, numbers);
+        const checkNumbersAvailability = await BitMapService.checkNumbersAvailability(payment.campaignId as string, [10880418,11042084,6584441,8461577,...numbers]);
         console.log('checkNumbersAvailability',checkNumbersAvailability);
         // inserir os numeros no NumberStatus como reservado
 
             // Configurar data de expiração
         const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+        expiresAt.setMinutes(expiresAt.getMinutes() + 10);
         
         // Preparar operações em lote (cada operação é uma inserção)
         const bulkOps = numbers.map(number => ({
@@ -427,6 +427,7 @@ export class PaymentRepository implements IPaymentRepository {
             pixCode: gatewayResponse.pixCode,
             pixQrCode: gatewayResponse.pixQrCode,
             paymentCode: updatedPayment.paymentCode || paymentCode,
+            numbers: numbers.slice(0, 30),
             expiresAt: updatedPayment.expiresAt?.toISOString() || '',
         }, 'Pagamento atualizado com sucesso', 200);
 

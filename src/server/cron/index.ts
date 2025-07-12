@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import type { IDBConnection } from '@/server/lib/dbConnect';
 import { inject, injectable } from 'tsyringe';
 import { container } from '@/server/container/container';
-import { releaseExpireNumbers } from './jobs/releaseExpireNumbers';
+// import { releaseExpireNumbers } from './jobs/releaseExpireNumbersByFallback';
 
 /**
  * Gerenciador de Cron Jobs
@@ -110,27 +110,27 @@ class CronManager {
     
     // Adicione aqui o registro de outros jobs conforme necessário
         // Job para liberar números expirados
-        if (CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.enabled) {
-          const releaseExpireNumbersTask = cron.schedule(
-            CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.schedule, 
-            async () => {
-              try {
-                logger.info('Executando job de liberação de números expirados');
-                await releaseExpireNumbers();
-              } catch (error) {
-                logger.error('Erro ao executar job de liberação de números expirados', { 
-                  error: error instanceof Error ? error.message : String(error),
-                  stack: error instanceof Error ? error.stack : undefined
-                });
-              }
-            }
-          );
+        // if (CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.enabled) {
+        //   const releaseExpireNumbersTask = cron.schedule(
+        //     CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.schedule, 
+        //     async () => {
+        //       try {
+        //         logger.info('Executando job de liberação de números expirados');
+        //         await releaseExpireNumbers();
+        //       } catch (error) {
+        //         logger.error('Erro ao executar job de liberação de números expirados', { 
+        //           error: error instanceof Error ? error.message : String(error),
+        //           stack: error instanceof Error ? error.stack : undefined
+        //         });
+        //       }
+        //     }
+        //   );
           
-          this.jobs.set('releaseExpireNumbers', releaseExpireNumbersTask);
-          logger.info('Job de liberação de números expirados registrado', { 
-            schedule: CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.schedule 
-          });
-        }
+        //   this.jobs.set('releaseExpireNumbers', releaseExpireNumbersTask);
+        //   logger.info('Job de liberação de números expirados registrado', { 
+        //     schedule: CRON_CONFIG.RELEASE_EXPIRE_NUMBERS.schedule 
+        //   });
+        // }
   }
   
   /**

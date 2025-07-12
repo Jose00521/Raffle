@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { PaymentStatusEnum, PaymentMethodEnum } from '@/models/interfaces/IPaymentInterfaces';
 import Payment from '@/models/Payment';
 import logger from '@/lib/logger/logger';
+import { releaseExpireNumbersByPaymentId } from './releaseExpireNumbersByPaymentId';
 
 /**
  * Job para expirar pagamentos PIX
@@ -50,12 +51,15 @@ export async function expirePixPayments() {
           amount: payment.amount,
           expiredAt: now.toISOString()
         });
-        
+      
+
         // TODO: Aqui você pode adicionar:
         // - Liberar números reservados
         // - Enviar notificação para o usuário
         // - Limpar cache relacionado
         // - Etc.
+
+        await releaseExpireNumbersByPaymentId(payment._id.toString(), session);
       }
       
       // Commit da transação
