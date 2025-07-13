@@ -1055,7 +1055,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               Participar agora
               <i className="fas fa-chevron-right"></i>
             </BotaoParticipar>
-            <CertificationSectionCompact />
+            {/* <CertificationSectionCompact /> */}
             
             {/* Informação de segurança */}
             <SegurancaInfo onClick={() => setShowSecurityModal(true)}>
@@ -1407,7 +1407,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                 Participar agora
                 <i className="fas fa-chevron-right"></i>
               </BotaoParticipar>
-              <CertificationSectionCompact />
+              {/* <CertificationSectionCompact /> */}
               
               {/* Informação de segurança */}
               <SegurancaInfo onClick={() => setShowSecurityModal(true)}>

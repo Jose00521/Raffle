@@ -2453,7 +2453,7 @@ function CheckoutContent() {
                 </PixCodeContainer>
               </PixCodeSection>
 
-              <CertificationSection />
+              {/* <CertificationSection /> */}
               
               <HowToPaySection>
                 <HowToPayTitle>📋 Instruções Detalhadas para Pagamento PIX</HowToPayTitle>
@@ -2740,7 +2740,7 @@ function CheckoutContent() {
                   Falar com Suporte
                 </SupportButton>
               </SupportSection>
-              <CertificationSectionCompact />
+              {/* <CertificationSectionCompact /> */}
 
               <SecurityButtonContainerDesktop>
                 <SecurityButton onClick={() => setIsSecurityModalOpen(true)}>
