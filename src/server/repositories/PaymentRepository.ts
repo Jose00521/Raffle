@@ -6,7 +6,7 @@ import { ApiError } from "../utils/errorHandler/ApiError";
 import Payment from "@/models/Payment";
 import Campaign from "@/models/Campaign";
 import { User } from "@/models/User";
-import { CampaignStatusEnum } from "@/models/interfaces/ICampaignInterfaces";
+import { CampaignStatusEnum, ICampaign } from "@/models/interfaces/ICampaignInterfaces";
 import { generateEntityCode } from "@/models/utils/idGenerator";
 import { v4 as uuidv4 } from 'uuid';
 import { SocketService } from "../lib/socket/SocketService";
@@ -18,6 +18,7 @@ import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { BitMapService } from "@/services/BitMapService";
 import { NumberStatusEnum } from "@/models/interfaces/INumberStatusInterfaces";
 import NumberStatus from "@/models/NumberStatus";
+import { SecureDataUtils } from "@/utils/encryption";
 
 export interface IPaymentRepository {
     getPaymentsByCreatorId(pagination: {
@@ -58,6 +59,14 @@ export interface IPaymentRepository {
     }): Promise<ApiResponse<null>>;
 
     confirmPixPayment(data: IPaymentGhostWebhookPost): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
+
+    getMyNumbers(cpf: string, campaignCode: string): Promise<ApiResponse<{
+        cpf: string;
+        campaign: Partial<ICampaign>;
+        user: Partial<IUser>;
+        paymentCurrentCampaign: IPayment[];
+        otherPayments: IPayment[];
+    } | null>>;
 }
 
 
@@ -69,6 +78,63 @@ export class PaymentRepository implements IPaymentRepository {
         @inject("db") db: IDBConnection
     ) {
         this.db = db;
+    }
+
+    async getMyNumbers(cpf: string, campaignCode: string): Promise<ApiResponse<{
+        cpf: string;
+        campaign: Partial<ICampaign>;
+        user: Partial<IUser>;
+        paymentCurrentCampaign: IPayment[];
+        otherPayments: IPayment[];
+    } | null>> {
+        try {
+            await this.db.connect();
+
+            const campaign = await Campaign.findOne({ campaignCode });
+
+            if(!campaign){
+                return createErrorResponse('Campanha não encontrada', 404);
+            }
+
+            const user = await User.findOne({ cpf_hash: SecureDataUtils.hashDocument(cpf) });
+
+            if(!user){
+                return createErrorResponse('Usuário não encontrado', 404);
+            }
+
+            const paymentCurrentCampaign = await Payment!.find({
+                campaignId: campaign._id,
+                customerId: user._id,
+                status: PaymentStatusEnum.APPROVED
+            })
+
+            const otherPayments = await Payment!.find({
+                _id: { $nin: paymentCurrentCampaign?.map(payment => payment._id) },
+                customerId: user._id,
+                status: PaymentStatusEnum.APPROVED
+            })
+            .populate('campaignId')
+
+            if(paymentCurrentCampaign.length === 0 && otherPayments.length === 0){
+                return createErrorResponse('Nenhum número encontrado', 404);
+            }
+            
+            return createSuccessResponse({
+                cpf,
+                campaign,
+                user,
+                paymentCurrentCampaign,
+                otherPayments
+            }, 'Números buscados com sucesso', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar números',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
     }
 
     async getPaymentsByCreatorId(pagination: {

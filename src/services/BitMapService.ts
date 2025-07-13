@@ -1211,7 +1211,7 @@ export class BitMapService {
         return meta.availableCount;
       } else {
         // Bitmap tradicional
-        const bitmap = await BitMapModel.getBitmap(campaignId);
+      const bitmap = await BitMapModel.getBitmap(campaignId);
         if (!bitmap) return 0;
         
         return bitmap.availableCount;
@@ -1412,7 +1412,7 @@ export class BitMapService {
       session.endSession();
     }
   }
-  
+
   /**
    * Deleta completamente os dados de bitmap de uma campanha
    * @param campaignId ID da campanha

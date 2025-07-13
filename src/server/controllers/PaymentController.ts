@@ -3,8 +3,18 @@ import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse } from "../utils/errorHandler/api";
 import type { IPaymentService } from "../services/PaymentService";
 import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import { ICampaign } from "@/models/interfaces/ICampaignInterfaces";
+import { IUser } from "@/models/interfaces/IUserInterfaces";
 
 export interface IPaymentController {
+    getMyNumbers(cpf: string, campaignCode: string): Promise<ApiResponse<{
+        cpf: string;
+        campaign: Partial<ICampaign>;
+        user: Partial<IUser>;
+        paymentCurrentCampaign: IPayment[];
+        otherPayments: IPayment[];
+    } | null>>;
+
     getPaymentsByCreatorId(pagination: {
         userCode: string;
         page: number;
@@ -54,6 +64,16 @@ export class PaymentController implements IPaymentController {
         @inject("paymentService") paymentService: IPaymentService
     ) {
         this.paymentService = paymentService;
+    }
+
+    async getMyNumbers(cpf: string, campaignCode: string): Promise<ApiResponse<{
+        cpf: string;
+        campaign: Partial<ICampaign>;
+        user: Partial<IUser>;
+        paymentCurrentCampaign: IPayment[];
+        otherPayments: IPayment[];
+    } | null>> {
+        return this.paymentService.getMyNumbers(cpf, campaignCode);
     }
 
     async getPaymentsByCreatorId(pagination: {

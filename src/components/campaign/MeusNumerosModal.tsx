@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FaTicketAlt, FaSearch, FaUser, FaTrophy, FaCalendarCheck, FaShieldAlt, FaTimes, FaCopy, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaTicketAlt, FaSearch, FaUser, FaTrophy, FaCalendarCheck, FaShieldAlt, FaTimes, FaCopy, FaEye, FaEyeSlash, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import Image from 'next/image';
 import { MyNumbersFormData, myNumbersSchema } from '@/zod/mynumbers.schema';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import participantCampaignAPI from '@/API/participant/participantCampaignAPIClient';
+import { IPayment, PaymentStatusEnum } from '@/models/interfaces/IPaymentInterfaces';
 
 interface MeusNumerosModalProps {
   isOpen: boolean;
@@ -46,7 +47,11 @@ const mockUserNumbers = [
 
 const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, campaignCode, campaign }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{
+    campaign: Partial<ICampaign>;
+    paymentCurrentCampaign: Partial<IPayment>[];
+    otherPayments: Partial<IPayment>[];
+  } | null>(null);
   const [showNumbers, setShowNumbers] = useState<{ [key: number]: boolean }>({});
 
   const { register, handleSubmit, formState: { errors }, setError, watch } = useForm<MyNumbersFormData>({
@@ -65,15 +70,14 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
     setIsLoading(true);
     
     try {
-      const result = await participantCampaignAPI.getMyNumbers(data.cpf);
+      const result = await participantCampaignAPI.getMyNumbers(data.cpf, campaignCode || '');
 
       console.log('result', result);
       
-      if (result) {
-        
-
+      if (result.success) {
+        setUserData(result.data);
       } else {
-        setError('cpf', { message: 'Nenhum número encontrado para este CPF' });
+        setError('cpf', { message: result.message });
         setUserData(null);
       }
     } catch (error) {
@@ -104,7 +108,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="600px">
+    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="650px">
       <ModalContent>
         <CloseButton onClick={handleClose}>
           <FaTimes />
@@ -158,143 +162,224 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
               Seus dados são protegidos e não serão compartilhados
             </SecurityInfo>
             <SecurityFooter>
-          <SecurityText>
-            <span><FaShieldAlt />Proteção Nível Militar: Seus dados são guardados com criptografia AES-512 - o mesmo padrão usado por bancos e governos para máxima segurança</span>
-          </SecurityText>
-          
-          <TrustLogos>
-            <LogoItem>
-              <Image 
-                src="/icons/loterias-caixa-logo.svg" 
-                alt="Loteria Federal" 
-                width={80} 
-                height={80}
-                className="logo-image"
-              />
-
-
+              <SecurityText>
+                <span><FaShieldAlt />Proteção Nível Militar: Seus dados são guardados com criptografia AES-512 - o mesmo padrão usado por bancos e governos para máxima segurança</span>
+              </SecurityText>
               
-              {/* <div className="logo-text">Autorizado<br/>Loteria Federal</div> */}
-            </LogoItem>
-            
-            <LogoItem>
-              <Image 
-                src="/icons/pix-banco-central.svg" 
-                alt="PIX Banco Central" 
-                width={80} 
-                height={80}
-                className="logo-image"
-              />
-              {/* <div className="logo-text">Pagamento<br/>PIX Seguro</div> */}
-            </LogoItem>
-          </TrustLogos>
-        </SecurityFooter>
-     
-            {/* <CertificationSectionCompact /> */}
+              <TrustLogos>
+                <LogoItem>
+                  <Image 
+                    src="/icons/loterias-caixa-logo.svg" 
+                    alt="Loteria Federal" 
+                    width={80} 
+                    height={80}
+                    className="logo-image"
+                  />
+                </LogoItem>
+                
+                <LogoItem>
+                  <Image 
+                    src="/icons/pix-banco-central.svg" 
+                    alt="PIX Banco Central" 
+                    width={80} 
+                    height={80}
+                    className="logo-image"
+                  />
+                </LogoItem>
+              </TrustLogos>
+            </SecurityFooter>
           </FormContainer>
         ) : (
           <ResultsContainer>
-            {userData ? (
-              <></>
-            ) : (
-                <UserInfo>
-                <UserStats>
-                  <StatItem>
-                    <StatIcon><FaTicketAlt /></StatIcon>
-                    <StatValue>{userData.totalNumbers}</StatValue>
-                    <StatLabel>Números</StatLabel>
-                  </StatItem>
-                  <StatItem>
-                    <StatIcon><FaTrophy /></StatIcon>
-                    <StatValue>{formatCurrency(userData.totalInvested)}</StatValue>
-                    <StatLabel>Investido</StatLabel>
-                  </StatItem>
-                  <StatItem>
-                    <StatIcon><FaCalendarCheck /></StatIcon>
-                    <StatValue>{userData.purchases.length}</StatValue>
-                    <StatLabel>Compras</StatLabel>
-                  </StatItem>
-                </UserStats>
-              </UserInfo>
+            {/* Compras da campanha atual */}
+            {userData.paymentCurrentCampaign && userData.paymentCurrentCampaign.length > 0 && (
+              <>
+                <PurchasesTitle>
+                  <FaTrophy /> Compras nesta campanha
+                </PurchasesTitle>
+                <PurchasesList>
+                  {userData.paymentCurrentCampaign.map((purchase: any) => (
+                    <PurchaseCard key={purchase.paymentCode}>
+                      <PurchaseHeader>
+                        <PurchaseInfo>
+                          <CampaignImage>
+                            <Image 
+                              src={(userData.campaign as Partial<ICampaign>)?.coverImage as string} 
+                              alt={(userData.campaign as Partial<ICampaign>)?.title || 'Campanha'} 
+                              width={70} 
+                              height={70}
+                              style={{ objectFit: 'cover' }}
+                            />
+                          </CampaignImage>
+                          <CampaignInfo>
+                            <CampaignTitle>{userData.campaign.title}</CampaignTitle>
+                            <PurchaseDetails>
+                              {purchase.purchaseAt && (
+                                <DetailItem>
+                                  <FaCalendarCheck />
+                                  <span>Data:</span> {new Date(purchase.purchaseAt).toLocaleDateString('pt-BR')}
+                                </DetailItem>
+                              )}
+                              {purchase.amount && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Valor:</span> {formatCurrency(purchase.amount)}
+                                </DetailItem>
+                              )}
+                              {purchase.paymentMethod && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Pagamento:</span> {purchase.paymentMethod}
+                                </DetailItem>
+                              )}
+                            </PurchaseDetails>
+                          </CampaignInfo>
+                        </PurchaseInfo>
+                        <PurchaseStatus $status={purchase.status}>
+                          {purchase.status === PaymentStatusEnum.APPROVED ? (
+                            <>
+                              <FaCheckCircle /> Confirmado
+                            </>
+                          ) : (
+                            <>
+                              <FaClock /> Pendente
+                            </>
+                          )}
+                        </PurchaseStatus>
+                      </PurchaseHeader>
+
+                      <NumbersSection>
+                        <NumbersHeader>
+                          <NumbersCount>
+                            {purchase.numbers.length} números adquiridos
+                          </NumbersCount>
+                          <ToggleButton 
+                            onClick={() => toggleShowNumbers(purchase.paymentCode)}
+                            $visible={true}
+                          >
+                            {showNumbers[purchase.paymentCode] ? <FaEyeSlash /> : <FaEye />}
+                            {showNumbers[purchase.paymentCode] ? 'Ocultar' : 'Mostrar'}
+                          </ToggleButton>
+                        </NumbersHeader>
+                        
+                        {showNumbers[purchase.paymentCode] && (
+                          <NumbersGrid $hasMoreNumbers={purchase.numbers.length > 30}>
+                            {purchase.numbers.map((number: string, index: number) => (
+                              <NumberChip 
+                                key={index}
+                                onClick={() => copyNumber(number)}
+                                title="Clique para copiar"
+                              >
+                                <span>{number}</span>
+                                <FaCopy />
+                              </NumberChip>
+                            ))}
+                          </NumbersGrid>
+                        )}
+                        
+                        <DrawInfo>
+                          <FaTrophy />
+                          <p>
+                            <strong>Sorteio:</strong> {userData.campaign.drawDate ? 
+                              new Date(userData.campaign.drawDate).toLocaleDateString('pt-BR') : 
+                              'Data a definir'
+                            }
+                            <br />
+                            Seus números já estão reservados. Caso você ganhe, nossa equipe entrará em contato via WhatsApp!
+                          </p>
+                        </DrawInfo>
+                      </NumbersSection>
+                    </PurchaseCard>
+                  ))}
+                </PurchasesList>
+              </>
             )}
 
+            {/* Outras campanhas */}
+            {userData.otherPayments && userData.otherPayments.length > 0 && (
+              <>
+                <SectionDivider>
+                  <span>Outras campanhas</span>
+                </SectionDivider>
+                
+                <PurchasesList>
+                  {userData.otherPayments.map((purchase, index: number) => (
+                    <PurchaseCard key={index}>
+                      <PurchaseHeader>
+                        <PurchaseInfo>
+                          <CampaignImage>
+                            <Image 
+                              src={(purchase.campaignId as Partial<ICampaign>)?.coverImage as string} 
+                              alt={(purchase.campaignId as Partial<ICampaign>)?.title || 'Campanha'} 
+                              width={70} 
+                              height={70}
+                              style={{ objectFit: 'cover' }}
+                            />
+                          </CampaignImage>
+                          <CampaignInfo>
+                            <CampaignTitle>{(purchase.campaignId as any)?.title}</CampaignTitle>
+                            <PurchaseDetails>
+                              {purchase.purchaseAt && (
+                                <DetailItem>
+                                  <FaCalendarCheck />
+                                  <span>Data:</span> {new Date(purchase.purchaseAt).toLocaleDateString('pt-BR')}
+                                </DetailItem>
+                              )}
+                              {purchase.amount && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Valor:</span> {formatCurrency(purchase.amount)}
+                                </DetailItem>
+                              )}
+                              {purchase.paymentMethod && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Pagamento:</span> {purchase.paymentMethod}
+                                </DetailItem>
+                              )}
+                              {purchase.numbersQuantity && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Quantidade:</span> {purchase.numbersQuantity} números
+                                </DetailItem>
+                              )}
+                            </PurchaseDetails>
+                          </CampaignInfo>
+                        </PurchaseInfo>
+                        <PurchaseStatus $status={purchase.status || ''}>
+                          {purchase.status === PaymentStatusEnum.APPROVED ? (
+                            <>
+                              <FaCheckCircle /> Confirmado
+                            </>
+                          ) : (
+                            <>
+                              <FaClock /> Pendente
+                            </>
+                          )}
+                        </PurchaseStatus>
+                      </PurchaseHeader>
 
-            <PurchasesList>
-              <PurchasesTitle>Histórico de Compras</PurchasesTitle>
-              {userData.purchases.map((purchase: any) => (
-                <PurchaseCard key={purchase.id}>
-                  <PurchaseHeader>
-                    <PurchaseInfo>
-                      <CampaignTitle>{campaign?.title}</CampaignTitle>
-                      <PurchaseDetails>
-                        {
-                            purchase.purchaseDate && (
-                                <DetailItem>
-                                    <span>Data:</span> {new Date(purchase.purchaseDate).toLocaleDateString('pt-BR')}
-                                </DetailItem>
-                            )
-                        }
-                        {
-                            purchase.value && (
-                                <DetailItem>
-                                    <span>Valor:</span> {formatCurrency(purchase.value)}
-                                </DetailItem>
-                            )
-                        }
-                        {
-                            purchase.paymentMethod && (
-                                <DetailItem>
-                                    <span>Pagamento:</span> {purchase.paymentMethod}
-                                </DetailItem>
-                            )
-                        }
-                      </PurchaseDetails>
-                    </PurchaseInfo>
-                    <PurchaseStatus $status={purchase.status}>
-                      {purchase.status === 'confirmed' ? 'Confirmado' : 'Pendente'}
-                    </PurchaseStatus>
-                  </PurchaseHeader>
-
-                  <NumbersSection>
-                    <NumbersHeader>
-                      <NumbersCount>
-                        {/* {purchase.numbers.length}  */}
-                        Seus números já foram reservados, agora é só aguardar!
-                        <br />
-                        <br />
-                        Caso você ganhe, nossa equipe entrará em contato com você via WhatsApp :)
-                      </NumbersCount>
-                      <ToggleButton 
-                        onClick={() => toggleShowNumbers(purchase.id)}
-                        $visible={false}
-                        // $visible={showNumbers[purchase.id]}
-                      >
-                        {showNumbers[purchase.id] ? <FaEyeSlash /> : <FaEye />}
-                        {showNumbers[purchase.id] ? 'Ocultar' : 'Mostrar'}
-                      </ToggleButton>
-                    </NumbersHeader>
-                    
-                    {showNumbers[purchase.id] && (
-                      <NumbersGrid>
-                        {purchase.numbers.map((number: string, index: number) => (
-                          <NumberChip 
-                            key={index}
-                            onClick={() => copyNumber(number)}
-                            title="Clique para copiar"
-                          >
-                            <span>{number}</span>
-                            <FaCopy />
-                          </NumberChip>
-                        ))}
-                      </NumbersGrid>
-                    )}
-                  </NumbersSection>
-                </PurchaseCard>
-              ))}
-            </PurchasesList>
+                      <NumbersSection>
+                        <DrawInfo>
+                          <FaTrophy />
+                          <p>
+                            <strong>Campanha:</strong> {(purchase.campaignId as any)?.title}
+                            <br />
+                            <strong>Sorteio:</strong> {(purchase.campaignId as any)?.drawDate ? 
+                              new Date((purchase.campaignId as any).drawDate).toLocaleDateString('pt-BR') : 
+                              'Data a definir'
+                            }
+                          </p>
+                        </DrawInfo>
+                      </NumbersSection>
+                    </PurchaseCard>
+                  ))}
+                </PurchasesList>
+              </>
+            )}
 
             <BackButton onClick={() => setUserData(null)}>
-              Nova Consulta
+              <FaSearch /> Nova Consulta
             </BackButton>
           </ResultsContainer>
         )}
@@ -433,7 +518,7 @@ const gradientMove = keyframes`
   100% { background-position: 0% 50%; }
 `;
 
-const   ModalContent = styled.div`
+const ModalContent = styled.div`
   position: relative;
   overflow: hidden;
   display: flex;
@@ -636,64 +721,25 @@ const ResultsContainer = styled.div`
   max-height: calc(70vh - 100px);
 `;
 
-const UserInfo = styled.div`
-  background: linear-gradient(135deg, rgba(106, 17, 203, 0.1), rgba(37, 117, 252, 0.1));
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid rgba(106, 17, 203, 0.2);
-`;
-
-const UserStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+const SectionDivider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
   
-  @media (max-width: 480px) {
-    gap: 15px;
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
   }
-`;
-
-const StatItem = styled.div`
-  text-align: center;
-  padding: 15px 10px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
-  @media (max-width: 480px) {
-    padding: 12px 8px;
-  }
-`;
-
-const StatIcon = styled.div`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 1.5rem;
-  margin-bottom: 8px;
-  
-  @media (max-width: 480px) {
-    font-size: 1.3rem;
-  }
-`;
-
-const StatValue = styled.div`
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 4px;
-  
-  @media (max-width: 480px) {
-    font-size: 1rem;
-  }
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  
-  @media (max-width: 480px) {
-    font-size: 0.7rem;
+  span {
+    padding: 0 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 `;
 
@@ -725,12 +771,13 @@ const PurchaseCard = styled.div`
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  padding: 20px;
+  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   
   &:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 `;
 
@@ -738,7 +785,7 @@ const PurchaseHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15px;
+  padding: 20px;
   
   @media (max-width: 480px) {
     flex-direction: column;
@@ -747,6 +794,40 @@ const PurchaseHeader = styled.div`
 `;
 
 const PurchaseInfo = styled.div`
+  flex: 1;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const CampaignImage = styled.div`
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid white;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+  }
+`;
+
+const CampaignInfo = styled.div`
   flex: 1;
 `;
 
@@ -771,6 +852,14 @@ const PurchaseDetails = styled.div`
 const DetailItem = styled.div`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.text.secondary};
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  
+  svg {
+    color: ${({ theme }) => theme.colors.primary};
+    font-size: 0.9rem;
+  }
   
   span {
     font-weight: 600;
@@ -785,8 +874,11 @@ const PurchaseStatus = styled.div<{ $status: string }>`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   
-  ${({ $status, theme }) => $status === 'confirmed' ? css`
+  ${({ $status, theme }) => $status === PaymentStatusEnum.APPROVED ? css`
     background: rgba(40, 167, 69, 0.1);
     color: ${theme.colors.success};
     border: 1px solid rgba(40, 167, 69, 0.3);
@@ -795,11 +887,16 @@ const PurchaseStatus = styled.div<{ $status: string }>`
     color: #856404;
     border: 1px solid rgba(255, 193, 7, 0.3);
   `}
+  
+  svg {
+    font-size: 0.9rem;
+  }
 `;
 
 const NumbersSection = styled.div`
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  padding-top: 15px;
+  padding: 15px 20px;
+  background: rgba(250, 250, 250, 0.5);
 `;
 
 const NumbersHeader = styled.div`
@@ -820,13 +917,6 @@ const ToggleButton = styled.button<{ $visible: boolean }>`
     `rgba(106, 17, 203, 0.1)` : 
     'transparent'
   };
-
-  display:${({ $visible, theme }) => $visible ? 
-  `flex` : 
-  'none'
-};
-
-
   border: 1px solid ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.primary};
   border-radius: 6px;
@@ -835,6 +925,7 @@ const ToggleButton = styled.button<{ $visible: boolean }>`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
   align-items: center;
   gap: 6px;
   
@@ -843,11 +934,43 @@ const ToggleButton = styled.button<{ $visible: boolean }>`
   }
 `;
 
-const NumbersGrid = styled.div`
+const NumbersGrid = styled.div<{ $hasMoreNumbers?: boolean }>`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 8px;
   animation: ${fadeIn} 0.3s ease;
+  position: relative;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 5px 0;
+  
+  ${({ $hasMoreNumbers }) => $hasMoreNumbers && `
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(250,250,250,1));
+      pointer-events: none;
+      z-index: 1;
+    }
+  `}
+  
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(106, 17, 203, 0.3);
+    border-radius: 10px;
+  }
 `;
 
 const NumberChip = styled.button`
@@ -893,6 +1016,34 @@ const NumberChip = styled.button`
   }
 `;
 
+const DrawInfo = styled.div`
+  background: rgba(106, 17, 203, 0.05);
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  svg {
+    color: ${({ theme }) => theme.colors.primary};
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  
+  p {
+    font-size: 0.85rem;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    margin: 0;
+    line-height: 1.4;
+    
+    strong {
+      color: ${({ theme }) => theme.colors.text.primary};
+      font-weight: 600;
+    }
+  }
+`;
+
 const BackButton = styled.button`
   background: rgba(106, 17, 203, 0.1);
   border: 1px solid ${({ theme }) => theme.colors.primary};
@@ -904,6 +1055,13 @@ const BackButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    font-size: 1rem;
+  }
   
   &:hover {
     background: rgba(106, 17, 203, 0.2);

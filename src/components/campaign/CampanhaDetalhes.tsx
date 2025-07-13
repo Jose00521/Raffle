@@ -95,7 +95,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   
   // Pacotes promocionais disponíveis
   const { selection, selectPackage, selectPackageFunction, clearSelection, updateQuantity } = useCampaignSelection(campanhaDetalhes as ICampaign);
-
+  
   const handleParticipate = useCallback(() => {
     // Validar quantidade mínima
     if (selection?.quantity && selection?.quantity < campanhaDetalhes?.minNumbersPerUser) {
@@ -544,7 +544,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
   const handleTimerExpire = useCallback(() => {
     setShowTimerExpiredMessage(true);
   }, []);
-
+  
   return (
     <Container>
 
@@ -622,7 +622,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
               <CodigoSorteioTitulo>{campanhaDetalhes?.campaignCode}</CodigoSorteioTitulo>
             </HeaderPequeno>
 
-  
+            
             <Titulo>{campanhaDetalhes?.title}</Titulo>
             <Descricao>{campanhaDetalhes?.description}</Descricao>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
           
@@ -644,7 +644,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       <PremioItem key={index}>
                         <PosicaoNumero>{index + 1}º</PosicaoNumero>
                         <div>
-                          <PremioValor>{formatCurrency(Number((distribution.prizes?.[0] as IPrize)?.value) || 0)}</PremioValor>
+                        <PremioValor>{formatCurrency(Number((distribution.prizes?.[0] as IPrize)?.value) || 0)}</PremioValor>
                           <PremioNome>{(distribution.prizes?.[0] as IPrize)?.name || `${index + 1}º Prêmio`}</PremioNome>
                         </div>
                       </PremioItem>
@@ -662,14 +662,14 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     <PremioItem key={index}>
                       <PosicaoNumero>{index + 1}º</PosicaoNumero>
                       <div>
-                        <PremioValor>{formatCurrency(Number((prize as IPrize)?.value) || 0)}</PremioValor>
+                      <PremioValor>{formatCurrency(Number((prize as IPrize)?.value) || 0)}</PremioValor>
                         <PremioNome>{(prize as IPrize)?.name || `${index + 1}º Prêmio`}</PremioNome>
                       </div>
                     </PremioItem>
                   ))
                 )}
                 {/* Mostrar quantos prêmios adicionais há */}
-                {campanhaDetalhes.prizeDistribution.length === 1 && 
+                                 {campanhaDetalhes.prizeDistribution.length === 1 && 
                   campanhaDetalhes.prizeDistribution[0]?.prizes && 
                   campanhaDetalhes.prizeDistribution[0].prizes.length > 3 && (
                    <PremioItem>
@@ -904,7 +904,7 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             {/* Pacotes Promocionais - Nova seção */}
             {
               campanhaDetalhes.enablePackages ? (
-                <PacotesPromocionaisContainer>
+            <PacotesPromocionaisContainer>
               <PacotesPromocionaisTitulo>
                 <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
               </PacotesPromocionaisTitulo>
@@ -960,8 +960,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                   onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} 
                   disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
                 >
-                  <span>−</span>
-                </BotaoMenos>
+                    <span>−</span>
+                  </BotaoMenos>
                 
                 <QuantidadeNumero onClick={handleQuantityClick}>
                   <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
@@ -974,12 +974,12 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                       onChange={handleQuantityChange}
                       onKeyDown={handleQuantityKeyDown}
                       onBlur={handleQuantityBlur}
-                      autoFocus
-                      maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
-                      placeholder="Digite a quantidade"
-                    />
-                  )}
-                </QuantidadeNumero>
+                                             autoFocus
+                       maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                       placeholder="Digite a quantidade"
+                     />
+                   )}
+                  </QuantidadeNumero>
                 
                 <BotaoMais 
                   onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} 
@@ -1252,21 +1252,21 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
             {
               campanhaDetalhes.enablePackages ? (
                 <PacotesPromocionaisContainer>
-              <PacotesPromocionaisTitulo>
+                  <PacotesPromocionaisTitulo>
                 <i className="fas fa-tags"></i> Aumente suas chances de ganhar com os pacotes promocionais!
-              </PacotesPromocionaisTitulo>
-              
+                  </PacotesPromocionaisTitulo>
+                    
               <FlashOfferTimer initialMinutes={timerMinutes} onExpire={handleTimerExpire} />
               
               <PacotesPromocionaisGrid>
                 {campanhaDetalhes?.numberPackages.map((pacote: INumberPackageCampaign) => (
-                  <PacotePromocional 
-                    key={pacote.quantity} 
-                    $melhorOferta={pacote.highlight}
-                    $ativo={selection?.quantity === pacote.quantity}
-                    onClick={() => selectPackage(pacote)}
-                  >
-                    {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
+                    <PacotePromocional 
+                      key={pacote.quantity} 
+                      $melhorOferta={pacote.highlight}
+                      $ativo={selection?.quantity === pacote.quantity}
+                      onClick={() => selectPackage(pacote)}
+                    >
+                      {pacote.highlight && <PacoteMelhorOferta><i className="fas fa-star"></i> Melhor oferta</PacoteMelhorOferta>}
                     
                     {/* Adicionar tag de desconto */}
                     {(() => {
@@ -1279,10 +1279,10 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     })()}
                     
                     <PacoteQuantidade>{formatInteger(pacote.quantity)} cotas</PacoteQuantidade>
-                    <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
-                    <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
+                      <PacoteDescricaoValor>{formatCurrency(campanhaDetalhes?.individualNumberPrice * pacote.quantity || 0)}</PacoteDescricaoValor>
+                      <PacotePreco>{formatCurrency(pacote.price || 0)}</PacotePreco>
                     <PacoteEconomia>Economize {formatCurrency((pacote.quantity * campanhaDetalhes?.individualNumberPrice) - pacote.price || 0)}</PacoteEconomia>
-                  </PacotePromocional>
+                    </PacotePromocional>
                 ))}
               </PacotesPromocionaisGrid>
             </PacotesPromocionaisContainer>
@@ -1312,8 +1312,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                     onClick={() => selection?.quantity && selection.quantity > (campanhaDetalhes?.minNumbersPerUser || 0) && updateQuantity(selection.quantity - 1)} 
                     disabled={selection?.quantity && selection.quantity <= (campanhaDetalhes?.minNumbersPerUser || 0) || false}
                   >
-                    <span>−</span>
-                  </BotaoMenos>
+                      <span>−</span>
+                    </BotaoMenos>
                   
                   <QuantidadeNumero onClick={handleQuantityClick}>
                     <span style={{ visibility: isEditingQuantity ? 'hidden' : 'visible' }}>
@@ -1326,12 +1326,12 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
                         onChange={handleQuantityChange}
                         onKeyDown={handleQuantityKeyDown}
                         onBlur={handleQuantityBlur}
-                        autoFocus
-                        maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
-                        placeholder="Digite a quantidade"
-                      />
-                    )}
-                  </QuantidadeNumero>
+                                                  autoFocus
+                          maxLength={campanhaDetalhes?.maxNumbersPerUser?.toString().length || 6}
+                          placeholder="Digite a quantidade"
+                        />
+                      )}
+                    </QuantidadeNumero>
                   
                   <BotaoMais 
                     onClick={() => selection?.quantity && updateQuantity(selection.quantity + 1)} 
@@ -1814,22 +1814,22 @@ line-height: 1.3;
 @media (min-width: 768px) {
   font-size: 0.7rem !important;
   margin-bottom: 1rem;
-}
+  }
 `;
 
-  const SubTitulo = styled.h2`
+const SubTitulo = styled.h2`
     font-size: 0.7rem;
-    font-weight: 500;
+  font-weight: 500;
     margin-bottom: 1rem;
-    opacity: 0.9;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    line-height: 1.3;
-    
-    @media (min-width: 768px) {
+  opacity: 0.9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  line-height: 1.3;
+  
+  @media (min-width: 768px) {
       font-size: 0.7rem !important;
       margin-bottom: 1rem;
-    }
-  `;
+  }
+`;
 
 const ValoresContainer = styled.div`
   display: flex;
@@ -3217,7 +3217,7 @@ const ValorPorCota = styled.div`
   background: #f8f8f8;
   padding: 0.3rem 0.7rem;
   border-radius: 20px;
-  
+
   @media (max-width: 576px) {
     font-size: 0.65rem;
     padding: 0.2rem 0.5rem;
@@ -3238,15 +3238,15 @@ const QuantidadeControle = styled.div`
   position: relative;
   overflow: hidden;
   gap: 1.5rem;
-  
-  &::before {
-    content: '';
-    position: absolute;
+    
+    &::before {
+      content: '';
+      position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+      left: 0;
+      width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, 
+      background: linear-gradient(90deg, 
       rgba(106, 17, 203, 0.03) 0%, 
       rgba(106, 17, 203, 0.01) 50%, 
       rgba(106, 17, 203, 0.03) 100%
@@ -3411,8 +3411,8 @@ const BotaoMenos = styled.button<{ disabled: boolean }>`
   }
 
   @media (max-width: 576px) {
-    width: 36px;
-    height: 36px;
+  width: 36px;
+  height: 36px;
     font-size: 1.3rem;
   }
   
@@ -3559,7 +3559,7 @@ const BotaoMais = styled.button<{ $disabled?: boolean }>`
   
   &::before {
     content: '';
-    position: absolute;
+  position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -3578,7 +3578,7 @@ const BotaoMais = styled.button<{ $disabled?: boolean }>`
     }
     
     &::before {
-      opacity: 1;
+    opacity: 1;
     }
   }
   
@@ -5255,4 +5255,4 @@ const DescontoTag = styled.div`
   }
 `;
 
-export default CampanhaDetalhes;
+export default CampanhaDetalhes; 

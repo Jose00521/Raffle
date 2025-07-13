@@ -61,9 +61,9 @@ const participantCampaignAPI = {
       }
     },
 
-    getMyNumbers: async (cpf: string) => {
+    getMyNumbers: async (cpf: string, campaignCode: string) => {
       try {
-        const response = await fetch(`/api/user/participant/my-numbers?cpf=${cpf}`);
+        const response = await fetch(`/api/user/participant/my-numbers?cpf=${cpf}&campaignCode=${campaignCode}`);
         const result = await response.json();
         return result;
       } catch {
