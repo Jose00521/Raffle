@@ -688,13 +688,13 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
       <ProgressoContainer>
         <ProgressoInfo>
           <ProgressoTexto>
-            <span>{82}% vendido</span>
+            <span>{67}% vendido</span>
             {/* <span>Restam: {rifaStats.available} números</span> */}
           </ProgressoTexto>
   
         </ProgressoInfo>
         <ProgressoBar>
-          <ProgressoBarFill style={{ width: `${82}%` }} />
+          <ProgressoBarFill style={{ width: `${67}%` }} />
         </ProgressoBar>
       </ProgressoContainer>
       
