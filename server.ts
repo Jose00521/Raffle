@@ -9,17 +9,13 @@ import './src/server/config/eventEmitter.js'
 
 import { Socket } from "socket.io";
 import logger from './src/lib/logger/logger.ts';
-import express, { Request, Response } from 'express';
 import next from "next";
-import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { DBConnection, IDBConnection } from './src/server/lib/dbConnect.ts';
-import { initializeServices } from './src/server/init.ts';
+import { IDBConnection } from './src/server/lib/dbConnect.ts';
 
 import './src/server/container/container';
 import { container } from './src/server/container/container.ts';
-import { validateEntityCode } from './src/models/utils/idGenerator';
 import { cronManager } from './src/server/cron';
 import { SocketService } from './src/server/lib/socket/SocketService';
 import { StatsService } from './src/server/utils/stats/StatsService';
@@ -63,11 +59,10 @@ app.prepare().then(async () => {
     logger.info(`Novo cliente conectado: ${socket.id}`);
     
     // Adicionar socket à sala do usuário quando autenticado
-    socket.on('authenticate', ({ userId, userType }) => {
-      if (userId) {
-        socket.join(`user:${userId}`);
-        socket.join(`${userType}:${userId}`);
-        logger.info(`Socket ${socket.id} autenticado: ${userType} ${userId}`);
+    socket.on('authenticate', ({ userCode, userType }) => {
+      if (userCode) {
+        socket.join(`${userType}:${userCode}`);
+        logger.info(`Socket ${socket.id} autenticado: ${userType} ${userCode}`);
         socket.emit('authenticated', { success: true });
       }
     });

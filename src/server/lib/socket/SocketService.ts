@@ -102,7 +102,7 @@ export class SocketService {
       this.io.to(roomName).emit(event, eventData);
       
       // Também emitir para a sala do usuário
-    //   this.io.to(userRoomName).emit(event, eventData);
+     // this.io.to(userRoomName).emit(event, eventData);
       
       logger.info(`Notificação de campanha enviada para criador ${creatorId}: ${event}`);
     } catch (error) {

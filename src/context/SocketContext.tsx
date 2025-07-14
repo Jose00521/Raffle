@@ -103,15 +103,15 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
         console.log('Conectado ao servidor Socket.IO');
         
         // Enviar identificação do usuário - autenticado ou não
-        socketInstance.emit('identify', { 
+        socketInstance.emit('authenticate', { 
           userCode: userCode,
           isAuthenticated: !!session?.user?.id,
-          userType: session?.user?.role === 'creator' ? 'creator' : 'participant'
+          userType: session?.user?.role
         });
 
         // Entrar automaticamente na room específica do usuário
-        socketInstance.emit('joinRoom', `user:${userCode}`);
-        console.log(`Entrando na room user:${userCode}`);
+        socketInstance.emit('joinRoom', `${session?.user?.role}:${userCode}`);
+        console.log(`Entrando na room ${session?.user?.role}:${userCode}`);
       });
       
       socketInstance.on('authenticated', (response) => {
