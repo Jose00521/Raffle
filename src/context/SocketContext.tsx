@@ -92,7 +92,7 @@ export function SocketProvider({ children, autoToast = true }: SocketProviderPro
     // Criar socket apenas se ainda não existe
     if (!socketRef.current) {
       console.log('Inicializando conexão Socket.IO...');
-      const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin, {
+      const socketInstance = io(process.env.NEXTAUTH_URL, {
         path: '/api/socket/io'
       });
       socketRef.current = socketInstance;

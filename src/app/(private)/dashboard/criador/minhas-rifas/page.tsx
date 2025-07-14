@@ -770,7 +770,7 @@ export default function MinhasRifasPage() {
     if (notifications.length > 0) {
       // Pegar a notificação mais recente
       const notification = notifications[0];
-      
+      console.log('notification', notification);
       // Atualizar a campanha na lista
       setCampaigns(prevCampaigns => 
         prevCampaigns.map(campaign => 

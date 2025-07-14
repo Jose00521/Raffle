@@ -49,7 +49,7 @@ app.prepare().then(async () => {
   const io = new Server(httpServer, {
     cors: {
       origin: process.env.NODE_ENV === 'production' 
-        ? process.env.NEXTAUTH_URL || 'https://raffle-6wkb-q4k52ejrt-jose0521s-projects.vercel.app'
+        ? process.env.NEXTAUTH_URL
         : "*",
       methods: ["GET", "POST"],
       credentials: true
