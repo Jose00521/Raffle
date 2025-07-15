@@ -696,6 +696,8 @@ const CampanhaDetalhes: React.FC<CampanhaDetalheProps> = ({ campanhaDetalhes }) 
         <ProgressoBar>
           <ProgressoBarFill style={{ width: `${67}%` }} />
         </ProgressoBar>
+
+        
       </ProgressoContainer>
       
       {/* Conteúdo principal */}

@@ -198,19 +198,22 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                   <FaTrophy /> Compras nesta campanha
                 </PurchasesTitle>
                 <PurchasesList>
-                  {userData.paymentCurrentCampaign.map((purchase: any) => (
+                  {userData.paymentCurrentCampaign.map((purchase) => (
                     <PurchaseCard key={purchase.paymentCode}>
                       <PurchaseHeader>
                         <PurchaseInfo>
-                          <CampaignImage>
-                            <Image 
-                              src={(userData.campaign as Partial<ICampaign>)?.coverImage as string} 
-                              alt={(userData.campaign as Partial<ICampaign>)?.title || 'Campanha'} 
-                              width={70} 
-                              height={70}
-                              style={{ objectFit: 'cover' }}
-                            />
-                          </CampaignImage>
+                        <CampaignImageContainer>
+                          {userData.campaign.coverImage ? (
+                        <CampaignImage 
+                          src={userData.campaign.coverImage as string} 
+                          alt={userData.campaign.title || 'Campanha'} 
+                        />
+                      ) : (
+                        <CampaignImagePlaceholder>
+                          <i className="fas fa-image" />
+                        </CampaignImagePlaceholder>
+                      )}
+                          </CampaignImageContainer>
                           <CampaignInfo>
                             <CampaignTitle>{userData.campaign.title}</CampaignTitle>
                             <PurchaseDetails>
@@ -232,10 +235,16 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                                   <span>Pagamento:</span> {purchase.paymentMethod}
                                 </DetailItem>
                               )}
+                              {purchase.numbersQuantity && (
+                                <DetailItem>
+                                  <FaTicketAlt />
+                                  <span>Quantidade:</span> {purchase.numbersQuantity} números
+                                </DetailItem>
+                              )}
                             </PurchaseDetails>
                           </CampaignInfo>
                         </PurchaseInfo>
-                        <PurchaseStatus $status={purchase.status}>
+                        <PurchaseStatus $status={purchase.status || ''}>
                           {purchase.status === PaymentStatusEnum.APPROVED ? (
                             <>
                               <FaCheckCircle /> Confirmado
@@ -249,9 +258,9 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                       </PurchaseHeader>
 
                       <NumbersSection>
-                        <NumbersHeader>
+                        {/* <NumbersHeader>
                           <NumbersCount>
-                            {purchase.numbers.length} números adquiridos
+                            {purchase.numbersQuantity} números adquiridos
                           </NumbersCount>
                           <ToggleButton 
                             onClick={() => toggleShowNumbers(purchase.paymentCode)}
@@ -260,10 +269,10 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                             {showNumbers[purchase.paymentCode] ? <FaEyeSlash /> : <FaEye />}
                             {showNumbers[purchase.paymentCode] ? 'Ocultar' : 'Mostrar'}
                           </ToggleButton>
-                        </NumbersHeader>
+                        </NumbersHeader> */}
                         
-                        {showNumbers[purchase.paymentCode] && (
-                          <NumbersGrid $hasMoreNumbers={purchase.numbers.length > 30}>
+                        {/* {showNumbers[purchase.paymentCode] && (
+                          <NumbersGrid $hasMoreNumbers={purchase.numbersQuantity> 30}>
                             {purchase.numbers.map((number: string, index: number) => (
                               <NumberChip 
                                 key={index}
@@ -275,7 +284,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                               </NumberChip>
                             ))}
                           </NumbersGrid>
-                        )}
+                        )} */}
                         
                         <DrawInfo>
                           <FaTrophy />
@@ -308,13 +317,16 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                       <PurchaseHeader>
                         <PurchaseInfo>
                           <CampaignImage>
-                            <Image 
-                              src={(purchase.campaignId as Partial<ICampaign>)?.coverImage as string} 
-                              alt={(purchase.campaignId as Partial<ICampaign>)?.title || 'Campanha'} 
-                              width={70} 
-                              height={70}
-                              style={{ objectFit: 'cover' }}
-                            />
+                          {(purchase.campaignId as Partial<ICampaign>)?.coverImage ? (
+                        <CampaignImage 
+                          src={(purchase.campaignId as Partial<ICampaign>)?.coverImage as string} 
+                          alt={(purchase.campaignId as Partial<ICampaign>)?.title || 'Campanha'} 
+                        />
+                      ) : (
+                        <CampaignImagePlaceholder>
+                          <i className="fas fa-image" />
+                        </CampaignImagePlaceholder>
+                      )}
                           </CampaignImage>
                           <CampaignInfo>
                             <CampaignTitle>{(purchase.campaignId as any)?.title}</CampaignTitle>
@@ -387,6 +399,39 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
     </Modal>
   );
 };
+
+
+const CampaignImageContainer = styled.div`
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+  }
+`;
+
+const CampaignImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const CampaignImagePlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 1.5rem;
+`;
 
 const TrustLogos = styled.div`
   display: flex;
@@ -802,28 +847,6 @@ const PurchaseInfo = styled.div`
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: flex-start;
-  }
-`;
-
-const CampaignImage = styled.div`
-  width: 70px;
-  height: 70px;
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  @media (max-width: 480px) {
-    width: 60px;
-    height: 60px;
   }
 `;
 

@@ -330,7 +330,7 @@ export class PaymentRepository implements IPaymentRepository {
         const connection = await this.db.connect();
         const session = await connection.startSession();
         try {
-            const { externalId, paymentMethod, status, approvedAt } = data;
+            const { externalId, paymentMethod, status, approvedAt , } = data;
 
             console.log('chegou aqui 1', externalId, paymentMethod, status, approvedAt);
 
@@ -356,15 +356,21 @@ export class PaymentRepository implements IPaymentRepository {
                 payment.status = PaymentStatusEnum.APPROVED;
                 payment.approvedAt = new Date(approvedAt);
 
-                await payment.save({session});
-
                 // atualizar o status do numero status para pago
                 await NumberStatus!.updateMany({
                     paymentId: payment._id,
                     status: NumberStatusEnum.RESERVED
                 }, {
-                    $set: { status: NumberStatusEnum.PAID }
+                    $set: { status: NumberStatusEnum.PAID, paidAt: new Date(approvedAt) }
                 }, {session});
+
+                // await NumberStatus!.collection.updateMany({
+                //     status: NumberStatusEnum.PAID.toLocaleLowerCase()
+                // }, {
+                //     $set: { status: NumberStatusEnum.PAID }
+                // }, {session});
+
+                console.log('chegou aqui 4 userCode', (payment.customerId as unknown as IUser).userCode);
 
 
                 await User.updateOne({
@@ -374,7 +380,10 @@ export class PaymentRepository implements IPaymentRepository {
                     $set: {
                         role: 'participant'
                     }
-                });
+                }, {session});
+
+                
+                await payment.save({session});
 
                 await session.commitTransaction();
 
