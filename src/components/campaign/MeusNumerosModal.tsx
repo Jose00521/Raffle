@@ -19,6 +19,7 @@ import { MyNumbersFormData, myNumbersSchema } from '@/zod/mynumbers.schema';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import participantCampaignAPI from '@/API/participant/participantCampaignAPIClient';
 import { IPayment, PaymentStatusEnum } from '@/models/interfaces/IPaymentInterfaces';
+import { IUser } from '@/models/interfaces/IUserInterfaces';
 
 interface MeusNumerosModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ const mockUserNumbers = [
 const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, campaignCode, campaign }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState<{
+    user: Partial<IUser>;
     campaign: Partial<ICampaign>;
     paymentCurrentCampaign: Partial<IPayment>[];
     otherPayments: Partial<IPayment>[];
@@ -122,7 +124,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
             <HeaderText>
               <ModalTitle>Meus Números</ModalTitle>
               <ModalSubtitle>
-                {!userData ? 'Digite seu CPF para consultar seus números' : `Olá, participante!`}
+                {!userData ? 'Digite seu CPF para consultar seus números' : `Olá, ${userData.user.name}!`}
               </ModalSubtitle>
             </HeaderText>
           </HeaderContent>
