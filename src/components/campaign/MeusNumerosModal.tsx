@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FaTicketAlt, FaSearch, FaUser, FaTrophy, FaCalendarCheck, FaShieldAlt, FaTimes, FaCopy, FaEye, FaEyeSlash, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { FaTicketAlt, FaSearch, FaUser, FaTrophy, FaCalendarCheck, FaShieldAlt, FaTimes, FaCopy, FaEye, FaEyeSlash, FaCheckCircle, FaClock, FaMoneyBill } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -54,7 +54,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
   } | null>(null);
   const [showNumbers, setShowNumbers] = useState<{ [key: number]: boolean }>({});
 
-  const { register, handleSubmit, formState: { errors }, setError, watch } = useForm<MyNumbersFormData>({
+  const { register, handleSubmit, formState: { errors, isValid }, setError, watch } = useForm<MyNumbersFormData>({
     resolver: zodResolver(myNumbersSchema),
     mode: 'all',
     shouldFocusError: true,
@@ -143,7 +143,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
               />
             </SearchSection>
 
-            <SearchButton type="submit" disabled={isLoading}>
+            <SearchButton type="submit" disabled={isLoading || !isValid}>
               {isLoading ? (
                 <>
                   <LoadingSpinner />
@@ -231,7 +231,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                               )}
                               {purchase.paymentMethod && (
                                 <DetailItem>
-                                  <FaTicketAlt />
+                                  <FaMoneyBill />
                                   <span>Pagamento:</span> {purchase.paymentMethod}
                                 </DetailItem>
                               )}
@@ -345,7 +345,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                               )}
                               {purchase.paymentMethod && (
                                 <DetailItem>
-                                  <FaTicketAlt />
+                                  <FaMoneyBill />
                                   <span>Pagamento:</span> {purchase.paymentMethod}
                                 </DetailItem>
                               )}
