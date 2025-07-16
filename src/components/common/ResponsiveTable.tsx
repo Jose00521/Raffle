@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaSort, FaSortUp, FaSortDown, FaChevronRight, FaChevronDown } from 'react-icons/fa';
+import EmptyStateDisplay from './EmptyStateDisplay';
+import TableLoadingState from './TableLoadingState';
 
 export interface ColumnDefinition {
   id: string;
@@ -24,11 +26,24 @@ interface ResponsiveTableProps {
   noDataMessage?: string;
   rowKeyField?: string;
   isLoading?: boolean;
+  loadingRows?: number; // Número de linhas skeleton para exibir durante o loading
   onRowClick?: (row: any) => void;
   expandableContent?: (row: any) => React.ReactNode;
   initialSortBy?: { id: string; desc: boolean };
   stickyHeader?: boolean;
   zebra?: boolean;
+  // Props para EmptyState customizado
+  useCustomEmptyState?: boolean;
+  emptyStateType?: 'payments' | 'campaigns' | 'sales' | 'general';
+  emptyStateProps?: {
+    title?: string;
+    description?: string;
+    actionText?: string;
+    onActionClick?: () => void;
+    hasFilters?: boolean;
+    onClearFilters?: () => void;
+    icon?: React.ReactNode;
+  };
 }
 
 type SortDirection = 'asc' | 'desc' | 'none';
@@ -226,7 +241,6 @@ const MobileNoDataContainer = styled.div`
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
   font-size: 0.9rem;
   background: white;
-  border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 `;
 
@@ -322,11 +336,15 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
   noDataMessage = "No data available",
   rowKeyField = 'id',
   isLoading = false,
+  loadingRows,
   onRowClick,
   expandableContent,
   initialSortBy,
   stickyHeader = false,
-  zebra = true
+  zebra = true,
+  useCustomEmptyState = false,
+  emptyStateType = 'general',
+  emptyStateProps = {}
 }) => {
   const [tableState, setTableState] = useState<TableState>({
     sortBy: initialSortBy ? { id: initialSortBy.id, direction: initialSortBy.desc ? 'desc' : 'asc' } : null,
@@ -412,10 +430,14 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
   // Filter visible columns for mobile based on priority
   const visibleMobileColumns = columns.filter(col => col.id !== mobileTitleColumn.id && col.priority !== 0);
   
-  if (isLoading) {
+    if (isLoading) {
     return (
       <TableContainer className={className}>
-        <LoadingOverlay>Loading data...</LoadingOverlay>
+        <TableLoadingState 
+          columns={columns.length + (expandableContent ? 1 : 0)} 
+          rows={data.length > 0 ? data.length : 10}
+          showMobile={true}
+        />
       </TableContainer>
     );
   }
@@ -500,11 +522,22 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                 );
               })
             ) : (
-              <NoDataContainer>
-                <NoDataCell colSpan={columns.length + (expandableContent ? 1 : 0)}>
-                  {noDataMessage}
-                </NoDataCell>
-              </NoDataContainer>
+              useCustomEmptyState ? (
+                <NoDataContainer>
+                  <NoDataCell colSpan={columns.length + (expandableContent ? 1 : 0)} style={{ padding: 0, border: 'none' }}>
+                    <EmptyStateDisplay
+                      type={emptyStateType}
+                      {...emptyStateProps}
+                    />
+                  </NoDataCell>
+                </NoDataContainer>
+              ) : (
+                <NoDataContainer>
+                  <NoDataCell colSpan={columns.length + (expandableContent ? 1 : 0)}>
+                    {noDataMessage}
+                  </NoDataCell>
+                </NoDataContainer>
+              )
             )}
           </TableBody>
         </StyledTable>

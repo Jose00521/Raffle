@@ -3,6 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { FaAngleLeft, FaAngleRight, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
+import CustomDropdown from './CustomDropdown';
 
 interface PaginationProps {
   currentPage: number;
@@ -82,23 +83,19 @@ const PageEllipsis = styled.div`
 const RowsPerPageContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 0.85rem;
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
 `;
 
-const RowsPerPageSelect = styled.select`
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: white;
-  font-size: 0.85rem;
-  cursor: pointer;
-  
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors?.primary || '#6a11cb'};
-  }
+const RowsPerPageLabel = styled.span`
+  white-space: nowrap;
+  font-weight: 500;
 `;
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -114,6 +111,18 @@ const Pagination: React.FC<PaginationProps> = ({
   // Calcular os itens exibidos atualmente
   const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(currentPage * pageSize, totalItems);
+  
+  // Converter as opções de pageSize para o formato do CustomDropdown
+  const pageSizeDropdownOptions = pageSizeOptions.map(option => ({
+    value: option.toString(),
+    label: option.toString()
+  }));
+  
+  const handlePageSizeChange = (value: string) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(Number(value));
+    }
+  };
   
   // Renderizar os botões de paginação com lógica para mostrar elipses quando necessário
   const renderPaginationButtons = () => {
@@ -218,17 +227,15 @@ const Pagination: React.FC<PaginationProps> = ({
       
       {onPageSizeChange && (
         <RowsPerPageContainer>
-          <span>Itens por página:</span>
-          <RowsPerPageSelect
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          >
-            {pageSizeOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </RowsPerPageSelect>
+          <RowsPerPageLabel>Itens por página:</RowsPerPageLabel>
+          <CustomDropdown
+            id="pagination-page-size"
+            options={pageSizeDropdownOptions}
+            value={pageSize.toString()}
+            onChange={handlePageSizeChange}
+            width="80px"
+            direction="up"
+          />
         </RowsPerPageContainer>
       )}
     </PaginationContainer>

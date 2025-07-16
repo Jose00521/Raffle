@@ -104,6 +104,50 @@ export enum PaymentStatusEnum {
   }
 
 
+  // Pagination Data Response
+  export interface IPaginationDataResponse {
+      totalItems: number;
+      totalPages: number;
+      page: number;
+      limit: number;
+      skip: number;
+  }
+
+  export interface IPaginationDataRequest {
+    page: number;
+    pageSize: number;
+  }
+
+
+export interface IPaymentPaginationRequest {
+  page: number;
+  pageSize: number;
+  searchTerm: string;
+  campaignId: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface IPaymentPaginationRequestServer {
+  userCode: string;
+  page: number;
+  limit: number;
+  skip: number;
+  searchTerm: string;
+  campaignId: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+}
+
+  export interface IPaymentPaginationResponse {
+    paginationData: IPaginationDataResponse;
+    campaigns: Partial<ICampaign>[];
+    sales: IPayment[];
+  }
+
+
 
 
   //Ghostspay Payment Request

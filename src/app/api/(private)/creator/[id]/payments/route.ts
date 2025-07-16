@@ -15,14 +15,24 @@ export const GET = withAuth(async (request: NextRequest, { params, session }: { 
         }
 
         const query = request.nextUrl.searchParams;
+        const searchTerm = query.get('searchTerm') || '';
+        const campaignId = query.get('campaignId') || '';
+        const status = query.get('status') || '';
         const page = Number(query.get('page')) || 1;
         const limit = Number(query.get('limit')) || 10;
+        const startDate = query.get('startDate') || '';
+        const endDate = query.get('endDate') || '';
 
         const pagination = {
             userCode: session.user.id,
             page,
             limit,
             skip: (page - 1) * limit,
+            searchTerm,
+            campaignId, 
+            status,
+            startDate,
+            endDate
         }
 
         console.log('[GET PAGINATION] pagination', pagination);

@@ -1,7 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
-import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import Payment from "@/models/Payment";
 import Campaign from "@/models/Campaign";
@@ -21,21 +21,7 @@ import NumberStatus from "@/models/NumberStatus";
 import { SecureDataUtils } from "@/utils/encryption";
 
 export interface IPaymentRepository {
-    getPaymentsByCreatorId(pagination: {
-        userCode: string;
-        page: number;
-        limit: number;
-        skip: number;
-    }): Promise<ApiResponse<{
-        paginationData: {   
-            totalItems: number;
-            totalPages: number;
-            page: number;
-            limit: number;
-            skip: number;
-        };
-        sales: IPayment[];
-    }>>;
+    getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>>;
 
     createInitialPixPaymentAttempt(data: {
         gateway: string;
@@ -137,36 +123,53 @@ export class PaymentRepository implements IPaymentRepository {
         }
     }
 
-    async getPaymentsByCreatorId(pagination: {
-        userCode: string;
-        page: number;
-        limit: number;
-        skip: number;
-    }): Promise<ApiResponse<{
-        paginationData: {   
-            totalItems: number;
-            totalPages: number;
-            page: number;
-            limit: number;
-            skip: number;
-        };
-        sales: IPayment[];
-    }>> {
+    async getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>> {
         try {
             await this.db.connect();
 
-            const { userCode, page, limit, skip } = pagination;
+            const { userCode, page, limit, skip, searchTerm, campaignId, status, startDate, endDate } = pagination;
 
             const creator = await User.findOne({ userCode, role: 'creator' });
 
-            const [payments, totalItems] = await Promise.all([
-                Payment!.find({ creatorId: creator._id })
+            const campaign = await Campaign.findOne({ campaignCode: campaignId });
+
+            const query: any = {
+                // fixo sempre existe
+                creatorId: creator._id,
+            }
+
+            if(campaignId){
+                Object.assign(query, { campaignId: campaign._id });
+            }
+            if(status){
+                Object.assign(query, { status });
+            }
+            
+            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            if(startDate || endDate){
+                const dateCondition: any = {};
+                
+                if(startDate){
+                    dateCondition.$gte = new Date(startDate);
+                }
+                if(endDate){
+                    dateCondition.$lte = new Date(endDate);
+                }
+                
+                Object.assign(query, { createdAt: dateCondition });
+            }
+
+            
+
+            const [payments, totalItems, campaigns] = await Promise.all([
+                Payment!.find(query)
                     .populate('campaignId', '-_id')
                     .populate('customerId', '-_id')
                     .skip(skip)
                     .limit(limit)
                     .sort({ createdAt: -1 }),
-                Payment!.countDocuments({ creatorId: creator._id })
+                Payment!.countDocuments(query),
+                Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode')
             ]);
 
             const totalPages = Math.ceil(totalItems / limit);
@@ -179,6 +182,7 @@ export class PaymentRepository implements IPaymentRepository {
                     limit,
                     skip
                 },
+                campaigns,
                 sales: payments
             }, 'Pagamentos buscados com sucesso', 200);
 

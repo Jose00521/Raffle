@@ -2,7 +2,7 @@ import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse } from "../utils/errorHandler/api";
 import type { IPaymentRepository } from "../repositories/PaymentRepository";
-import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { ICampaign } from "@/models/interfaces/ICampaignInterfaces";
 
@@ -15,21 +15,7 @@ export interface IPaymentService {
         otherPayments: IPayment[];
     } | null>>;
 
-    getPaymentsByCreatorId(pagination: {
-        userCode: string;
-        page: number;
-        limit: number;
-        skip: number;
-    }): Promise<ApiResponse<{   
-        paginationData: {
-            totalItems: number;
-            totalPages: number;
-            page: number;
-            limit: number;
-            skip: number;
-        };
-        sales: IPayment[];
-    }>>;
+    getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>>;
 
     createInitialPixPaymentAttempt(data: {
         gateway: string;
@@ -76,21 +62,7 @@ export class PaymentService implements IPaymentService {
         return this.paymentRepository.getMyNumbers(cpf, campaignCode);
     }
 
-    async getPaymentsByCreatorId(pagination: {
-        userCode: string;
-        page: number;
-        limit: number;
-        skip: number;
-    }): Promise<ApiResponse<{
-        paginationData: {
-            totalItems: number;
-            totalPages: number;
-            page: number;
-            limit: number;
-            skip: number;
-        };
-        sales: IPayment[];
-    }>> {
+    async getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>> {
         return this.paymentRepository.getPaymentsByCreatorId(pagination);
     }
 

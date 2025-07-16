@@ -55,7 +55,7 @@ const CampaignGrid: React.FC<CampaignGridProps> = ({
   campaigns, 
   emptyMessage = "Nenhuma campanha encontrada no momento. Por favor, volte mais tarde."
 }) => {
-  if (campaigns.length === 0) {
+  if (!campaigns || campaigns.length === 0) {
     return (
       <Grid>
         <EmptyMessage>

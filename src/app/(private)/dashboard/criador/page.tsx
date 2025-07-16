@@ -8,12 +8,19 @@ import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
 import Pagination from '@/components/common/Pagination';
+import EmptyStateDisplay from '@/components/common/EmptyStateDisplay';
+import DateRangePicker from '@/components/common/DateRangePicker';
+import { formatLocalDateToISOString, formatLocalDateToEndOfDayISOString } from '@/utils/dateUtils';
 import { usePagination } from '@/hooks/usePagination';
 import Link from 'next/link';
 import creatorPaymentAPIClient from '@/API/creator/creatorPaymentAPIClient';
 import { useSession } from 'next-auth/react';
 import { formatCurrency } from '@/utils/formatNumber';
 import { SiPix } from 'react-icons/si';
+import { PaymentStatusEnum } from '@/models/interfaces/IPaymentInterfaces';
+import { useRouter } from 'next/navigation';
+
+import debounce from 'lodash/debounce';
 
 // Styled Components for statistics cards
 const PageContent = styled.div`
@@ -182,91 +189,190 @@ const ChartContainer = styled.div`
   }
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 30px 16px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  font-size: 0.85rem;
-  
-  @media (min-width: 768px) {
-    padding: 35px 20px;
-    font-size: 0.9rem;
-  }
-`;
 
 // Styled Components for sales table
 const FiltersContainer = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+`;
+
+const FiltersHeader = styled.div`
   display: flex;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  gap: 15px;
-  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+`;
+
+const FiltersTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ActiveFiltersCount = styled.span`
+  background: linear-gradient(135deg, #6a11cb 0%, #8b5cf6 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 12px;
+  min-width: 20px;
+  text-align: center;
+`;
+
+const FiltersGrid = styled.div`
+  display: grid;
+  grid-template-columns: 2.5fr 1fr 1fr 1.2fr auto;
+  gap: 20px;
+  align-items: end;
+  
+  @media (max-width: 1400px) {
+    grid-template-columns: 2fr 1fr 1fr 1.2fr;
+    gap: 16px;
+  }
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
   
   @media (max-width: 768px) {
-    flex-direction: column;
-    width: 100%;
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 `;
 
 const SearchBar = styled.div`
   position: relative;
-  flex: 1;
-  max-width: 400px;
-  
-  @media (max-width: 768px) {
-    max-width: 100%;
   width: 100%;
+  
+  @media (max-width: 1200px) {
+    grid-column: 1 / -1;
   }
 `;
 
 const SearchIcon = styled.div`
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  font-size: 0.9rem;
+  font-size: 1rem;
   pointer-events: none;
   z-index: 1;
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  height: 46px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 0 15px 0 40px;
-  font-size: 0.9rem;
-  background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  transition: all 0.2s ease;
-  position: relative;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  padding: 0 20px 0 48px;
+  font-size: 1rem;
+  background-color: #fafbfc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
   
   &:focus {
     outline: none;
     border-color: #6a11cb;
-    box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(106, 17, 203, 0.08);
   }
   
   &::placeholder {
     color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-    opacity: 0.7;
+    opacity: 0.8;
   }
 `;
 
-const FilterGroup = styled.div`
+const FilterWrapper = styled.div`
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   
-  @media (max-width: 768px) {
-    width: 100%;
+  /* Padronizar altura dos elementos de filtro */
+  .custom-dropdown button,
+  .date-range-input {
+    height: 52px !important;
+    border-radius: 10px !important;
+    border: 2px solid rgba(0, 0, 0, 0.08) !important;
+    background-color: #fafbfc !important;
+    font-size: 1rem !important;
+    
+    &:focus {
+      background-color: white !important;
+      border-color: #6a11cb !important;
+      box-shadow: 0 0 0 4px rgba(106, 17, 203, 0.08) !important;
+    }
+  }
+`;
+
+const FilterLabel = styled.label`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  margin-bottom: 4px;
+`;
+
+const ClearFiltersButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 52px;
+  min-width: 140px;
+  white-space: nowrap;
+  
+  &:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    border-color: rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
   }
   
-  @media (max-width: 480px) {
-    gap: 8px;
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 1400px) {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-width: 160px;
+    margin-top: 8px;
+  }
+  
+  @media (max-width: 1200px) {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-width: 160px;
+    margin-top: 8px;
+  }
+  
+  @media (max-width: 768px) {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-width: 160px;
+    margin-top: 8px;
   }
 `;
 
@@ -390,17 +496,24 @@ const DetailValue = styled.div`
 `;
 
 export default function CreatorDashboardHome() {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('all');
+  const [viewMode, setViewMode] = useState('');
   const [dateRange, setDateRange] = useState('todas');
+  const [dateRangeFilter, setDateRangeFilter] = useState<{startDate: Date | null, endDate: Date | null}>({
+    startDate: null,
+    endDate: null
+  });
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sales, setSales] = useState<any[]>([]);
   const [paginationData, setPaginationData] = useState<any>(null);
+  const [campaigns, setCampaigns] = useState<{title: string, campaignCode: string}[]>([]);
   const { data: session } = useSession();
+  
 
+  const router = useRouter();
     // Inicializa o hook de paginação
     const pagination = usePagination({
       totalItems: paginationData?.totalItems || 0,
@@ -417,25 +530,45 @@ export default function CreatorDashboardHome() {
       pageSize, 
       pageSizeOptions, 
       setCurrentPage, 
-      setPageSize,
-      canGoToPrevPage,
-      canGoToNextPage } = pagination;
+      setPageSize } = pagination;
   
   useEffect(() => {
-    console.log(currentPage, pageSize, session?.user.id);
+    debounce(() => {
+      setIsLoading(true);
+    }, 1000);
     const fetchSales = async () => {
-      const response = await creatorPaymentAPIClient.getCreatorPaymentsById(session?.user.id as string, currentPage, pageSize);
-      const { paginationData, sales} = response.data || { paginationData: null, sales: [] };
 
-      console.log('sales', sales);
-      console.log('paginationData', paginationData);
+      const params = {
+        page: currentPage,
+        pageSize: pageSize,
+        searchTerm: searchTerm,
+        campaignId: activeTab,
+        status: viewMode,
+        startDate: formatLocalDateToISOString(dateRangeFilter.startDate),
+        endDate: formatLocalDateToEndOfDayISOString(dateRangeFilter.endDate)
+      }
+
+      console.log(params);
+
+
+      const response = await creatorPaymentAPIClient.getCreatorPaymentsById(session?.user.id as string, params);
+      
+      if(response.success) {
+
+      const { paginationData, campaigns, sales } = response.data || { paginationData: null, campaigns: [], sales: [] };
  
       setSales(sales);
       setPaginationData(paginationData);
+      setCampaigns(campaigns);
+
+
+      }
+
+      setIsLoading(false);
     }
     fetchSales();
     // Simulate data loading
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, activeTab, viewMode, dateRangeFilter]);
   
 
   
@@ -450,18 +583,17 @@ export default function CreatorDashboardHome() {
   
   // Get unique campaigns for filter dropdown
   const campaignOptions = [
-    { value: 'all', label: 'Todas as Campanhas' },
-    ...Array.from(new Set(sales.map(sale => sale.campaignId?.title)))
-      .map(campaign => ({ value: campaign, label: campaign }))
+    { value: '', label: 'Todas as Campanhas' },
+    ...campaigns.map(campaign => ({ value: campaign.campaignCode, label: campaign.title }))
   ];
   
   const statusOptions = [
-    { value: 'all', label: 'Todos os Status' },
-    { value: 'APPROVED', label: 'Pagos' },
-    { value: 'PENDING', label: 'Pendentes' },
-    { value: 'EXPIRED', label: 'Expirado' },  
-    { value: 'REFUNDED', label: 'Estornados' },
-    { value: 'FAILED', label: 'Falhou' },
+    { value: '', label: 'Todos os Status' },
+    { value: PaymentStatusEnum.APPROVED, label: 'Pagos' },
+    { value: PaymentStatusEnum.PENDING, label: 'Pendentes' },
+    { value: PaymentStatusEnum.EXPIRED, label: 'Expirado' },  
+    { value: PaymentStatusEnum.REFUNDED, label: 'Estornados' },
+    { value: PaymentStatusEnum.FAILED, label: 'Falhou' },
   ];
 
   const getPaymentIcon = (method: string) => {
@@ -678,44 +810,75 @@ export default function CreatorDashboardHome() {
               </SectionHeader>
               
         <FiltersContainer>
-          <SearchBar>
-            <SearchIcon>
-              <FaSearch />
-            </SearchIcon>
-            <SearchInput 
-              type="text" 
-              placeholder="Buscar por cliente, campanha, email..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </SearchBar>
-          
-          <FilterGroup>
-            <CustomDropdown
-              id="campaign-filter"
-              options={campaignOptions}
-              value={activeTab}
-              onChange={setActiveTab}
-              placeholder="Todas as Campanhas"
-              width="200px"
-            />
+          <FiltersHeader>
+            <FiltersTitle>
+              <FaFilter /> Filtros
+              <ActiveFiltersCount>
+                  {[
+                    searchTerm.trim() !== '',
+                    activeTab !== '',
+                    viewMode !== '',
+                    dateRangeFilter.startDate !== null || dateRangeFilter.endDate !== null
+                  ].filter(Boolean).length}
+                </ActiveFiltersCount>
+              </FiltersTitle>
+            </FiltersHeader>
+          <FiltersGrid>
+            <SearchBar>
+              <SearchIcon>
+                <FaSearch />
+              </SearchIcon>
+              <SearchInput 
+                type="text" 
+                placeholder="Buscar por cliente, campanha, email..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </SearchBar>
             
-            <CustomDropdown
-              id="status-filter"
-              options={statusOptions}
-              value={viewMode}
-              onChange={setViewMode}
-              placeholder="Todos os Status"
-              width="180px"
-            />
-          </FilterGroup>
+            <FilterWrapper>
+              <FilterLabel>Campanha:</FilterLabel>
+              <CustomDropdown
+                id="campaign-filter"
+                options={campaignOptions}
+                value={activeTab}
+                onChange={setActiveTab}
+                placeholder="Todas as Campanhas"
+                className="custom-dropdown"
+              />
+            </FilterWrapper>
+            
+            <FilterWrapper>
+              <FilterLabel>Status:</FilterLabel>
+              <CustomDropdown
+                id="status-filter"
+                options={statusOptions}
+                value={viewMode}
+                onChange={setViewMode}
+                placeholder="Todos os Status"
+                className="custom-dropdown"
+              />
+            </FilterWrapper>
+            
+            <FilterWrapper>
+              <FilterLabel>Período:</FilterLabel>
+              <DateRangePicker
+                value={dateRangeFilter}
+                onChange={setDateRangeFilter}
+                placeholder="Selecione o período"
+              />
+            </FilterWrapper>
+            <ClearFiltersButton onClick={() => {
+              setSearchTerm('');
+              setActiveTab('');
+              setViewMode('');
+              setDateRangeFilter({ startDate: null, endDate: null });
+            }}>
+              Limpar Filtros
+            </ClearFiltersButton>
+          </FiltersGrid>
         </FiltersContainer>
-        
-        {isLoading ? (
-          <ChartContainer>
-            <div>Carregando dados...</div>
-          </ChartContainer>
-        ) : sales.length > 0 ? (
+
           <>
             <ResponsiveTable
               columns={columns}
@@ -723,6 +886,19 @@ export default function CreatorDashboardHome() {
               rowKeyField="id"
               noDataMessage="Nenhuma venda encontrada"
               zebra={true}
+              isLoading={isLoading}
+              useCustomEmptyState={true}
+              emptyStateType="payments"
+              emptyStateProps={{
+                hasFilters: searchTerm.trim() !== '' || activeTab !== '' || viewMode !== '' || dateRangeFilter.startDate !== null || dateRangeFilter.endDate !== null,
+                onClearFilters: () => {
+                  setSearchTerm('');
+                  setActiveTab('');
+                  setViewMode('');
+                  setDateRangeFilter({ startDate: null, endDate: null });
+                },
+                onActionClick: () => router.push('/dashboard/criador/nova-rifa')
+              }}
             />
             
             <Pagination
@@ -735,11 +911,6 @@ export default function CreatorDashboardHome() {
               onPageSizeChange={setPageSize}
             />
           </>
-        ) : (
-          <EmptyState>
-            Nenhuma venda encontrada com os filtros selecionados.
-          </EmptyState>
-        )}
             </Section>
       
       {selectedBuyer && (

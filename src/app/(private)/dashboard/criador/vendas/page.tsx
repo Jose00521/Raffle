@@ -7,6 +7,8 @@ import { FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelop
 import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
+import EmptyStateDisplay from '@/components/common/EmptyStateDisplay';
+import { useRouter } from 'next/navigation';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -138,6 +140,7 @@ const SearchInput = styled.input`
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   transition: all 0.2s ease;
   position: relative;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
   
   &:focus {
   outline: none;
@@ -409,7 +412,8 @@ export default function VendasPage() {
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const router = useRouter();
+
   useEffect(() => {
     // Simulate data loading
     const timer = setTimeout(() => {
@@ -618,6 +622,7 @@ export default function VendasPage() {
         
         <FilterGroup>
           <CustomDropdown
+            id="campaign-filter"
             options={campaignOptions}
             value={campaignFilter}
             onChange={setCampaignFilter}
@@ -626,6 +631,7 @@ export default function VendasPage() {
           />
           
           <CustomDropdown
+            id="status-filter"
             options={statusOptions}
             value={statusFilter}
             onChange={setStatusFilter}
@@ -673,6 +679,17 @@ export default function VendasPage() {
           noDataMessage="Nenhuma venda encontrada"
           stickyHeader
           zebra
+          useCustomEmptyState={true}
+          emptyStateType="sales"
+          emptyStateProps={{
+            hasFilters: searchTerm.trim() !== '' || campaignFilter !== 'all' || statusFilter !== 'all',
+            onClearFilters: () => {
+              setSearchTerm('');
+              setCampaignFilter('all');
+              setStatusFilter('all');
+            },
+            onActionClick: () => router.push('/dashboard/criador/nova-rifa')
+          }}
         />
       )}
       
