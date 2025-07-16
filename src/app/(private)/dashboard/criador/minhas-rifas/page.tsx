@@ -10,6 +10,7 @@ import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 import { CampaignStatusEnum, ICampaign } from '@/models/interfaces/ICampaignInterfaces';
 import { useSocket } from '@/context/SocketContext';
 import { toast, ToastContainer } from 'react-toastify';
+import { formatCurrency } from '@/utils/formatters';
 
 // Styled Components
 const PageHeader = styled.div`
@@ -276,12 +277,11 @@ const RifaBadge = styled.div<{ $status: string }>`
       return `
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
         color: white;
-        animation: pulse 3s infinite ease-in-out;
-        
-        @keyframes pulse {
-          0% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-          50% { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.6); }
-          100% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+        animation: blink 2s ease infinite;
+  
+        @keyframes blink {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
         }
       `;
     } else if ($status === 'COMPLETED') {
@@ -941,11 +941,27 @@ const StyledToggleSwitch = styled(ToggleSwitch)`
   transform: scale(0.9);
 `;
 
+interface CampaignWithStats extends ICampaign {
+  bitmapStats: {
+    availableCount: number;
+    takenCount: number;
+    totalNumbers: number;
+    availablePercentage: number;
+    takenPercentage: number;
+    isSharded: boolean;
+    shardInfo: {
+      shardCount: number;
+      shardSize: number;
+      shardsWithAvailableNumbers: number;
+    };
+  };
+}
+
 export default function MinhasRifasPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignWithStats[]>([]);
 
   const { notifications } = useSocket();
   
@@ -990,7 +1006,7 @@ export default function MinhasRifasPage() {
   // Função para alternar o status cancelado/ativo da campanha
   const toggleCampaignStatus = async (id: string) => {
 
-    setCampaigns(prev => prev.map((campaign: ICampaign) => {
+    setCampaigns(prev => prev.map((campaign: CampaignWithStats) => {
       if (campaign.campaignCode === id) {
         // Se a campanha estiver cancelada, restaura para o status anterior
         // Caso contrário, marca como cancelada
@@ -1009,7 +1025,7 @@ export default function MinhasRifasPage() {
 
       toast.success('Status da campanha atualizado com sucesso');
     }else{
-      setCampaigns(prev => prev.map((campaign: ICampaign) => {
+      setCampaigns(prev => prev.map((campaign: CampaignWithStats) => {
         if (campaign.campaignCode === id) {
           // Se a campanha estiver cancelada, restaura para o status anterior
           // Caso contrário, marca como cancelada
@@ -1204,7 +1220,7 @@ export default function MinhasRifasPage() {
                       </MetaItem>
                       <MetaItem>
                         <div className="label">Preço</div>
-                        <div className="value">R$ {campaign.individualNumberPrice.toFixed(2)}</div>
+                        <div className="value">R$ {formatCurrency(campaign.individualNumberPrice)}</div>
                       </MetaItem>
                       <MetaItem>
                         <div className="label">Vencedores</div>
@@ -1242,17 +1258,17 @@ export default function MinhasRifasPage() {
                     <ProgressSection>
                       <ProgressHeader>
                         <ProgressLabel>Progresso de Vendas</ProgressLabel>
-                        <ProgressPercentage>{campaign.stats?.percentComplete || 0}%</ProgressPercentage>
+                        <ProgressPercentage>{Number(campaign.bitmapStats?.takenPercentage.toPrecision(4)) || 0}%</ProgressPercentage>
                       </ProgressHeader>
                       <ProgressBar>
-                        <ProgressFill $percent={campaign.stats?.percentComplete || 0} />
+                        <ProgressFill $percent={Number(campaign.bitmapStats?.takenPercentage.toPrecision(4)) || 0} />
                       </ProgressBar>
                       <ProgressDetails>
                         <span className="numbers">
-                          {campaign.stats?.sold?.toLocaleString('pt-BR') || 0} vendidos
+                          {campaign.bitmapStats?.takenCount?.toLocaleString('pt-BR') || 0} vendidos
                         </span>
                         <span className="numbers">
-                          {(campaign.totalNumbers - (campaign.stats?.sold || 0))?.toLocaleString('pt-BR')} restantes
+                          {(campaign.bitmapStats?.availableCount || 0)?.toLocaleString('pt-BR')} restantes
                         </span>
                       </ProgressDetails>
                     </ProgressSection>

@@ -83,15 +83,25 @@ export class CampaignRepository implements ICampaignRepository {
 
       const user = await User.findOne({ userCode: userCode });
 
-      console.log("user for list prizes",user);
-
       if(!user){
           return createErrorResponse('Usuário não encontrado', 404);
       }
 
-      const campaigns = await Campaign.find({createdBy: user?._id},'-_id').exec();
+      const campaigns = await Campaign.find({createdBy: user?._id}).lean();
 
-      return createSuccessResponse(campaigns as ICampaign[], 'Campanhas ativas carregadas com sucesso', 200);
+      const campaingsStats = campaigns.map(async (campaign) => {
+        const bitmapStats = await BitMapService.getBitmapStats(campaign._id as string);
+        return {
+          ...campaign,
+          bitmapStats
+        }
+      })
+
+      const campaignsWithStats = await Promise.all(campaingsStats);
+
+      console.log("campaignsWithStats",campaignsWithStats);
+
+      return createSuccessResponse(campaignsWithStats as unknown as ICampaign[], 'Campanhas ativas carregadas com sucesso', 200);
     } catch (error) {
       console.error('Erro ao buscar campanhas ativas:', error);
       throw error;
