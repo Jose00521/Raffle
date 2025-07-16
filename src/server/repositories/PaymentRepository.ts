@@ -163,7 +163,7 @@ export class PaymentRepository implements IPaymentRepository {
 
             
 
-            const [payments, totalItems, campaigns] = await Promise.all([
+            const [payments, totalItems, campaigns, stats] = await Promise.all([
                 Payment!.find(query)
                     .populate('campaignId', '-_id')
                     .populate('customerId', '-_id')
@@ -172,7 +172,7 @@ export class PaymentRepository implements IPaymentRepository {
                     .sort({ createdAt: -1 }),
                 Payment!.countDocuments(query),
                 Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode'),
-                
+                this.countParticipantsByCreatorId(campaignId || '', creator._id, startDate || '', endDate || ''),
             ]);
 
             const totalPages = Math.ceil(totalItems / limit);
@@ -186,7 +186,8 @@ export class PaymentRepository implements IPaymentRepository {
                     skip
                 },
                 campaigns,
-                sales: payments
+                sales: payments,
+                stats
             }, 'Pagamentos buscados com sucesso', 200);
 
         } catch (error) {

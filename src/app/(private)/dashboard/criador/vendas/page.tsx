@@ -525,8 +525,8 @@ export default function VendasPage() {
   const [viewMode, setViewMode] = useState('');
   const [dateRange, setDateRange] = useState('todas');
   const [dateRangeFilter, setDateRangeFilter] = useState<{startDate: Date | null, endDate: Date | null}>({
-    startDate: null,
-    endDate: null
+    startDate: new Date(),
+    endDate: new Date()
   });
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -535,6 +535,7 @@ export default function VendasPage() {
   const [paginationData, setPaginationData] = useState<any>(null);
   const [campaigns, setCampaigns] = useState<{title: string, campaignCode: string}[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [stats, setStats] = useState<any>(null);
   const { data: session } = useSession();
   
 
@@ -579,11 +580,12 @@ export default function VendasPage() {
       
       if(response.success) {
 
-      const { paginationData, campaigns, sales } = response.data || { paginationData: null, campaigns: [], sales: [] };
+      const { paginationData, campaigns, sales, stats } = response.data || { paginationData: null, campaigns: [], sales: [], stats: null };
  
       setSales(sales);
       setPaginationData(paginationData);
       setCampaigns(campaigns);
+      setStats(stats);
 
       }
       
@@ -617,12 +619,12 @@ export default function VendasPage() {
       
       if(response.success) {
 
-      const { paginationData, campaigns, sales } = response.data || { paginationData: null, campaigns: [], sales: [] };
+      const { paginationData, campaigns, sales, stats } = response.data || { paginationData: null, campaigns: [], sales: [] };
  
       setSales(sales);
       setPaginationData(paginationData);
       setCampaigns(campaigns);
-
+      setStats(stats);
 
       }
 
@@ -827,26 +829,30 @@ export default function VendasPage() {
 
       <StatsContainer>
         <StatCard>
-          <StatTitle>Total de Vendas</StatTitle>
-          <StatValue>R$ {32}</StatValue>
-          <StatMeta>De {32} transações</StatMeta>
+          <StatTitle>Receita Bruta</StatTitle>
+          <StatValue>{formatCurrency(stats?.valores.bruto)}</StatValue>
+          <StatMeta>De {stats?.vendas.total} transações</StatMeta>
+        </StatCard>
+
+        <StatCard>
+          <StatTitle>Receita Líquida</StatTitle>
+          <StatValue>{formatCurrency(stats?.valores.liquido)}</StatValue>
+          <StatMeta>De {stats?.vendas.total} transações</StatMeta>
+        </StatCard>
+
+        <StatCard>
+          <StatTitle>Vendas</StatTitle>
+          <StatValue>{stats?.vendas.total}</StatValue>
         </StatCard>
         
         <StatCard>
           <StatTitle>Números Vendidos</StatTitle>
-          <StatValue>{32}</StatValue>
+          <StatValue>{stats?.numeros.vendidos}</StatValue>
           <StatMeta>
-            Média de {32} por venda
+            Média de {formatCurrency(stats?.estatisticas.ticketMedio)} por venda
           </StatMeta>
         </StatCard>
-        
-        <StatCard>
-          <StatTitle>Pagamentos</StatTitle>
-          <StatValue>{32}</StatValue>
-          <StatMeta>
-            {32} pendentes • {32} estornados
-          </StatMeta>
-        </StatCard>
+      
       </StatsContainer>
       
         
