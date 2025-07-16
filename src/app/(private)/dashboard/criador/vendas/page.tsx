@@ -193,6 +193,12 @@ const StatusTag = styled.span<{ $status: string }>`
       return `
         background-color: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
+        animation: blink 2s ease infinite;
+  
+        @keyframes blink {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
       `;
     } else if ($status === 'REFUNDED' || $status === 'FAILED' || $status === 'EXPIRED') {
       return `
