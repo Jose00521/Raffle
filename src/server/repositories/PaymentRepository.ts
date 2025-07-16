@@ -19,9 +19,11 @@ import { BitMapService } from "@/services/BitMapService";
 import { NumberStatusEnum } from "@/models/interfaces/INumberStatusInterfaces";
 import NumberStatus from "@/models/NumberStatus";
 import { SecureDataUtils } from "@/utils/encryption";
+import mongoose from "mongoose";
 
 export interface IPaymentRepository {
     getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>>;
+    getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>>;
 
     createInitialPixPaymentAttempt(data: {
         gateway: string;
@@ -169,7 +171,8 @@ export class PaymentRepository implements IPaymentRepository {
                     .limit(limit)
                     .sort({ createdAt: -1 }),
                 Payment!.countDocuments(query),
-                Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode')
+                Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode'),
+                
             ]);
 
             const totalPages = Math.ceil(totalItems / limit);
@@ -184,6 +187,76 @@ export class PaymentRepository implements IPaymentRepository {
                 },
                 campaigns,
                 sales: payments
+            }, 'Pagamentos buscados com sucesso', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar pagamentos',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+
+    
+    async getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>> {
+        try {
+            await this.db.connect();
+
+            const { userCode, limit = 10, campaignId, startDate, endDate } = pagination;
+
+            const creator = await User.findOne({ userCode, role: 'creator' });
+
+            const campaign = await Campaign.findOne({ campaignCode: campaignId });
+
+            const query: any = {
+                // fixo sempre existe
+                creatorId: creator._id,
+                status: PaymentStatusEnum.APPROVED
+            }
+
+            if(campaignId){
+                Object.assign(query, { campaignId: campaign._id });
+            }
+            
+            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            if(startDate || endDate){
+                const dateCondition: any = {};
+                
+                if(startDate){
+                    dateCondition.$gte = new Date(startDate);
+                }
+                if(endDate){
+                    dateCondition.$lte = new Date(endDate);
+                }
+                
+                Object.assign(query, { createdAt: dateCondition });
+            }
+
+            
+
+            const [payments, campaigns, stats, salesByDay, totalCampaignsCount,totalCampaignsCountCompleted ] = await Promise.all([
+                Payment!.find(query)
+                    .populate('campaignId', '-_id')
+                    .populate('customerId', '-_id')
+                    .limit(limit)
+                    .sort({ createdAt: -1 }),
+                Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode'),
+                this.countParticipantsByCreatorId(campaignId || '', creator._id, startDate || '', endDate || ''),
+                this.getVendasPorDia(campaignId || '', startDate || '', endDate || ''),
+                Campaign!.countDocuments({ createdBy: creator._id }),
+                Campaign!.countDocuments({ createdBy: creator._id, status: CampaignStatusEnum.COMPLETED })
+            ]);
+            
+            return createSuccessResponse({
+                campaigns,
+                sales: payments,
+                stats,
+                salesByDay,
+                totalCampaignsCount,
+                totalCampaignsCountCompleted
             }, 'Pagamentos buscados com sucesso', 200);
 
         } catch (error) {
@@ -368,31 +441,63 @@ export class PaymentRepository implements IPaymentRepository {
                     $set: { status: NumberStatusEnum.PAID, paidAt: new Date(approvedAt) }
                 }, {session});
 
-                // await NumberStatus!.collection.updateMany({
-                //     status: NumberStatusEnum.PAID.toLocaleLowerCase()
-                // }, {
-                //     $set: { status: NumberStatusEnum.PAID }
-                // }, {session});
 
-                console.log('chegou aqui 4 userCode', (payment.customerId as unknown as IUser).userCode);
-
-
-                await User.updateOne({
-                    userCode: (payment.customerId as unknown as IUser).userCode,
-                    role: 'user'
-                }, {
-                    $set: {
-                        role: 'participant'
-                    }
-                }, {session});
-
-                
-                await payment.save({session});
-
-                await session.commitTransaction();
-
-                return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
+                // Atualizar role de 'user' para 'participant'
+      
+                    const userCode = (payment.customerId as unknown as IUser).userCode;
+                    console.log('Tentando atualizar role do usuário:', userCode);
+                    
+                    // Usar findOneAndUpdate que funciona melhor com discriminators
+                    const updatedUser = await User.findOneAndUpdate(
+                        {
+                            userCode: userCode,
+                            role: 'user'
+                        },
+                        {
+                            $set: {
+                                role: 'participant'
+                            }
+                        },
+                        { 
+                            session,
+                            new: true, // Retorna o documento atualizado
+                            runValidators: true
+                        }
+                    );
+                    
+                    if (updatedUser) {
+                        console.log('✅ Role atualizado com sucesso:', {
+                            userCode: updatedUser.userCode,
+                            oldRole: 'user',
+                            newRole: updatedUser.role,
+                            _id: updatedUser._id
+                        });
+                    } else {
+                        console.log('⚠️ Nenhum usuário foi atualizado. Possíveis causas:', {
+                            userCode: userCode,
+                            razoes: [
+                                'Usuário não encontrado',
+                                'Usuário já é participant',
+                                'UserCode incorreto'
+                            ]
+                        });
+                        
+                        // Verificar se o usuário existe
+                        const existingUser = await User.findOne({ userCode: userCode });
+                        console.log('Usuário existente:', {
+                            exists: !!existingUser,
+                            currentRole: existingUser?.role,
+                            userCode: existingUser?.userCode
+                        });
+  
             }
+
+            await payment.save({session});
+
+            await session.commitTransaction();
+
+            return createSuccessResponse(payment as IPayment, 'Pagamento confirmado com sucesso', 200);
+        }
 
             return createErrorResponse('Status de pagamento não suportado', 400);
         } catch (error) {
@@ -569,6 +674,192 @@ export class PaymentRepository implements IPaymentRepository {
                 cause: error as Error
             });
         }
+    }
+
+
+    async countParticipantsByCreatorId(campaignId: string, creatorId: string, startDate: string, endDate: string): Promise<ApiResponse<number>> {
+        try {
+
+            const queryMatch ={
+                creatorId: new mongoose.Types.ObjectId(creatorId),
+                status: PaymentStatusEnum.APPROVED
+            }
+
+            const campaign = await Campaign.findOne({ campaignCode: campaignId });
+
+            if(campaignId){
+                Object.assign(queryMatch, { campaignId: campaign._id });
+            }
+
+            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            if(startDate || endDate){
+                const dateCondition: any = {};
+                
+                if(startDate){
+                    dateCondition.$gte = new Date(startDate);
+                }
+                if(endDate){
+                    dateCondition.$lte = new Date(endDate);
+                }
+                
+                Object.assign(queryMatch, { createdAt: dateCondition });
+            }            
+
+
+
+            const resultado = await Payment!.aggregate([
+                {
+                    // Filtrar apenas pagamentos aprovados da campanha
+                    $match: queryMatch
+                },
+                {
+                    // Calcular todos os valores em um único grupo
+                    $group: {
+                        _id: null, // Agrupar tudo em um resultado
+                        
+                        // QUANTIDADE DE VENDAS
+                        totalVendas: { $sum: 1 },
+                        
+                        // PARTICIPANTES ÚNICOS
+                        participantesUnicos: { $addToSet: "$customerId" },
+                        
+                        // VALORES FINANCEIROS
+                        valorBruto: { $sum: "$amount" },              // Valor total das vendas
+                        valorLiquido: { $sum: "$amountReceived" },    // Valor que o criador recebe
+                        taxasVendedor: { $sum: "$taxSeller" },        // Taxas do vendedor
+                        taxasPlataforma: { $sum: "$taxPlatform" },    // Taxas da plataforma
+                        
+                        // NÚMEROS VENDIDOS
+                        totalNumeros: { $sum: "$numbersQuantity" },
+                        
+                        // ESTATÍSTICAS ADICIONAIS
+                        ticketMedio: { $avg: "$amount" },
+                        maiorVenda: { $max: "$amount" },
+                        menorVenda: { $min: "$amount" }
+                    }
+                },
+                {
+                    // Transformar o resultado final
+                    $project: {
+                        _id: 0,
+                        vendas: {
+                            total: "$totalVendas",
+                            participantesUnicos: { $size: "$participantesUnicos" }
+                        },
+                        valores: {
+                            bruto: { $round: ["$valorBruto", 2] },
+                            liquido: { $round: ["$valorLiquido", 2] },
+                            taxas: {
+                                vendedor: { $round: ["$taxasVendedor", 2] },
+                                plataforma: { $round: ["$taxasPlataforma", 2] },
+                                total: { $round: [{ $add: ["$taxasVendedor", "$taxasPlataforma"] }, 2] }
+                            }
+                        },
+                        numeros: {
+                            vendidos: "$totalNumeros"
+                        },
+                        estatisticas: {
+                            ticketMedio: { $round: ["$ticketMedio", 2] },
+                            maiorVenda: "$maiorVenda",
+                            menorVenda: "$menorVenda"
+                        }
+                    }
+                }
+            ]);
+            
+            return resultado[0] || {
+                vendas: { total: 0, participantesUnicos: 0 },
+                valores: { bruto: 0, liquido: 0, taxas: { vendedor: 0, plataforma: 0, total: 0 } },
+                numeros: { vendidos: 0 },
+                estatisticas: { ticketMedio: 0, maiorVenda: 0, menorVenda: 0 }
+            };
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar total de participantes',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+
+    async getVendasPorDia(campaignId: string, startDate: string, endDate: string) {
+
+        const queryMatch ={
+            status: PaymentStatusEnum.APPROVED
+        }
+
+        const campaign = await Campaign.findOne({ campaignCode: campaignId });
+
+        if(campaignId){
+            Object.assign(queryMatch, { campaignId: campaign._id });
+        }
+
+        // 🔧 CORREÇÃO: Construir condições de data corretamente
+        if(startDate || endDate){
+            const dateCondition: any = {};
+            
+            if(startDate){
+                dateCondition.$gte = new Date(startDate);
+            }
+            if(endDate){
+                dateCondition.$lte = new Date(endDate);
+            }
+            
+            Object.assign(queryMatch, { createdAt: dateCondition });
+        }     
+
+        const resultado = await Payment!.aggregate([
+            {
+                // Filtrar pagamentos aprovados no período
+                $match: queryMatch
+            },
+            {
+                // Agrupar por data mantendo campos para ordenação cronológica
+                $group: {
+                    _id: {
+                        // Campos para ordenação cronológica
+                        year: { $year: { date: "$createdAt", timezone: "America/Sao_Paulo" } },
+                        month: { $month: { date: "$createdAt", timezone: "America/Sao_Paulo" } },
+                        day: { $dayOfMonth: { date: "$createdAt", timezone: "America/Sao_Paulo" } },
+                        // Campo formatado para exibição
+                        dateFormatted: {
+                            $dateToString: {
+                                format: "%d/%m/%Y",
+                                date: "$createdAt",
+                                timezone: "America/Sao_Paulo"
+                            }
+                        }
+                    },
+                    sales: { $sum: 1 },                    // Quantidade de vendas
+                    valorBruto: { $sum: "$amount" },       // Valor total vendido
+                    valorLiquido: { $sum: "$amountReceived" }, // Valor líquido
+                    participantes: { $addToSet: "$customerId" } // Participantes únicos do dia
+                }
+            },
+            {
+                // Ordenar cronologicamente (ano, mês, dia)
+                $sort: { 
+                    "_id.year": 1, 
+                    "_id.month": 1, 
+                    "_id.day": 1 
+                }
+            },
+            {
+                // Formatar resultado final
+                $project: {
+                    _id: 0,
+                    date: "$_id.dateFormatted",
+                    sales: 1,
+                    valorBruto: { $round: ["$valorBruto", 2] },
+                    valorLiquido: { $round: ["$valorLiquido", 2] },
+                    participantesUnicos: { $size: "$participantes" }
+                }
+            }
+        ]);
+        
+        return resultado;
     }
 
 

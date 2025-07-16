@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
-import { FaTicketAlt, FaMoneyBillWave, FaUsers, FaTrophy, FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTimes, FaCreditCard } from 'react-icons/fa';
+import { FaTicketAlt, FaMoneyBillWave, FaUsers, FaTrophy, FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTimes, FaCreditCard, FaSync } from 'react-icons/fa';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
@@ -19,6 +19,8 @@ import { formatCurrency } from '@/utils/formatNumber';
 import { SiPix } from 'react-icons/si';
 import { PaymentStatusEnum } from '@/models/interfaces/IPaymentInterfaces';
 import { useRouter } from 'next/navigation';
+
+import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 
 import debounce from 'lodash/debounce';
 
@@ -231,25 +233,171 @@ const ActiveFiltersCount = styled.span`
   text-align: center;
 `;
 
+const ButtonsContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    
+    button {
+      width: 100%;
+    }
+  }
+`;
+
+// Skeleton Loading Components
+const SkeletonBase = styled.div`
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+  
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`;
+
+const SkeletonStatCard = styled(StatCard)`
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+`;
+
+const SkeletonCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  
+  @media (min-width: 768px) {
+    margin-bottom: 16px;
+  }
+`;
+
+const SkeletonCardTitle = styled(SkeletonBase)`
+  height: 16px;
+  width: 80px;
+  
+  @media (min-width: 768px) {
+    height: 18px;
+    width: 90px;
+  }
+`;
+
+const SkeletonCardIcon = styled(SkeletonBase)`
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  
+  @media (min-width: 768px) {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+`;
+
+const SkeletonCardValue = styled(SkeletonBase)`
+  height: 32px;
+  width: 120px;
+  margin-bottom: 8px;
+  
+  @media (min-width: 768px) {
+    height: 36px;
+    width: 140px;
+    margin-bottom: 10px;
+  }
+`;
+
+const SkeletonCardTrend = styled(SkeletonBase)`
+  height: 14px;
+  width: 160px;
+  
+  @media (min-width: 768px) {
+    height: 16px;
+    width: 180px;
+  }
+`;
+
+const SkeletonFiltersContainer = styled(FiltersContainer)`
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+`;
+
+const SkeletonFilterTitle = styled(SkeletonBase)`
+  height: 20px;
+  width: 80px;
+  margin-bottom: 20px;
+`;
+
+const SkeletonFilterInput = styled(SkeletonBase)`
+  height: 52px;
+  width: 100%;
+  border-radius: 10px;
+`;
+
 const FiltersGrid = styled.div`
   display: grid;
-  grid-template-columns: 2.5fr 1fr 1fr 1.2fr auto;
+  grid-template-columns: 2fr 1.5fr auto;
   gap: 20px;
   align-items: end;
   
   @media (max-width: 1400px) {
-    grid-template-columns: 2fr 1fr 1fr 1.2fr;
+    grid-template-columns: 2fr 1.5fr auto;
     gap: 16px;
   }
   
   @media (max-width: 1200px) {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+    
+    ${ButtonsContainer} {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
   }
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 16px;
+    
+    ${ButtonsContainer} {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
   }
 `;
 
@@ -348,31 +496,52 @@ const ClearFiltersButton = styled.button`
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     border-color: rgba(0, 0, 0, 0.12);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   
   &:active {
     transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const RefreshButton = styled.button<{ $isLoading?: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: ${({ $isLoading }) => $isLoading ? 'not-allowed' : 'pointer'};
+  transition: all 0.3s ease;
+  height: 52px;
+  min-width: 140px;
+  white-space: nowrap;
+  opacity: ${({ $isLoading }) => $isLoading ? 0.7 : 1};
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a0fb5 0%, #1e5ce6 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(106, 17, 203, 0.3);
   }
   
-  @media (max-width: 1400px) {
-    grid-column: 1 / -1;
-    justify-self: start;
-    min-width: 160px;
-    margin-top: 8px;
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(106, 17, 203, 0.3);
   }
   
-  @media (max-width: 1200px) {
-    grid-column: 1 / -1;
-    justify-self: start;
-    min-width: 160px;
-    margin-top: 8px;
+  svg {
+    animation: ${({ $isLoading }) => $isLoading ? 'spin 1s linear infinite' : 'none'};
   }
   
-  @media (max-width: 768px) {
-    grid-column: 1 / -1;
-    justify-self: start;
-    min-width: 160px;
-    margin-top: 8px;
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 `;
 
@@ -475,75 +644,169 @@ const StatusTag = styled.span<{ $status: string }>`
   }}
 `;
 
-const DetailRow = styled.div`
-  display: flex;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
+const ChartCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  height: 320px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   
-  &:last-child {
-    margin-bottom: 0;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  @media (max-width: 900px) {
+    height: 300px;
+    padding: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    height: 280px;
+  }
+  
+  @media (max-width: 480px) {
+    height: 260px;
+    padding: 20px;
+  }
+  
+  h3 {
+    margin: 0 0 20px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+    
+    @media (max-width: 480px) {
+      font-size: 0.95rem;
+      margin: 0 0 16px;
+    }
   }
 `;
 
-const DetailLabel = styled.div`
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  width: 120px;
+const ChartsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
 `;
 
-const DetailValue = styled.div`
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+// Skeleton components for charts (defined after ChartCard)
+const SkeletonChartCard = styled(ChartCard)`
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+`;
+
+const SkeletonChartTitle = styled(SkeletonBase)`
+  height: 20px;
+  width: 180px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 480px) {
+    height: 18px;
+    width: 160px;
+    margin-bottom: 16px;
+  }
+`;
+
+const SkeletonChart = styled(SkeletonBase)`
+  height: calc(100% - 60px);
+  width: 100%;
+  border-radius: 12px;
+  
+  @media (max-width: 480px) {
+    height: calc(100% - 50px);
+  }
 `;
 
 export default function CreatorDashboardHome() {
   const [activeTab, setActiveTab] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('');
-  const [dateRange, setDateRange] = useState('todas');
   const [dateRangeFilter, setDateRangeFilter] = useState<{startDate: Date | null, endDate: Date | null}>({
-    startDate: null,
-    endDate: null
+    startDate: new Date(),
+    endDate: new Date()
   });
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [sales, setSales] = useState<any[]>([]);
-  const [paginationData, setPaginationData] = useState<any>(null);
   const [campaigns, setCampaigns] = useState<{title: string, campaignCode: string}[]>([]);
+  const [statsData, setStatsData] = useState<any>({});
+  const [salesByDayData, setSalesByDayData] = useState<any[]>([]);
+  const [totalCampaignsCount, setTotalCampaignsCount] = useState<number>(0);
+  const [totalCampaignsCountCompleted, setTotalCampaignsCountCompleted] = useState<number>(0);
   const { data: session } = useSession();
   
 
   const router = useRouter();
-    // Inicializa o hook de paginação
-    const pagination = usePagination({
-      totalItems: paginationData?.totalItems || 0,
-      initialPage: 1,
-      initialPageSize: 10,
-      pageSizeOptions: [5, 10, 25, 50]
-    });
-    
-    // Paginar os dados filtrados
 
-    const { 
-      currentPage, 
-      totalPages, 
-      pageSize, 
-      pageSizeOptions, 
-      setCurrentPage, 
-      setPageSize } = pagination;
+  // Função para forçar atualização manual dos dados
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      const params = {
+        pageSize: 5,
+        searchTerm: searchTerm,
+        campaignId: activeTab,
+        startDate: formatLocalDateToISOString(dateRangeFilter.startDate),
+        endDate: formatLocalDateToEndOfDayISOString(dateRangeFilter.endDate)
+      };
+
+      const response = await creatorPaymentAPIClient.getLatestCreatorPaymentsById(session?.user.id as string, params);
+      
+      if(response.success) {
+        const { campaigns, sales, stats, salesByDay, totalCampaignsCount, totalCampaignsCountCompleted } = response.data || { 
+          paginationData: null, 
+          campaigns: [], 
+          sales: [], 
+          stats: { totalParticipants: 0 }, 
+          salesByDay: [] 
+        };
+   
+        setSales(sales);
+        setCampaigns(campaigns);
+        setStatsData(stats);
+        setSalesByDayData(salesByDay);
+        setTotalCampaignsCount(totalCampaignsCount);
+        setTotalCampaignsCountCompleted(totalCampaignsCountCompleted);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   
   useEffect(() => {
     debounce(() => {
       setIsLoading(true);
     }, 1000);
     const fetchSales = async () => {
-
       const params = {
-        page: currentPage,
-        pageSize: pageSize,
+        pageSize: 5,
         searchTerm: searchTerm,
         campaignId: activeTab,
-        status: viewMode,
         startDate: formatLocalDateToISOString(dateRangeFilter.startDate),
         endDate: formatLocalDateToEndOfDayISOString(dateRangeFilter.endDate)
       }
@@ -551,24 +814,25 @@ export default function CreatorDashboardHome() {
       console.log(params);
 
 
-      const response = await creatorPaymentAPIClient.getCreatorPaymentsById(session?.user.id as string, params);
+      const response = await creatorPaymentAPIClient.getLatestCreatorPaymentsById(session?.user.id as string, params);
       
       if(response.success) {
 
-      const { paginationData, campaigns, sales } = response.data || { paginationData: null, campaigns: [], sales: [] };
+      const { campaigns, sales, stats, salesByDay, totalCampaignsCount, totalCampaignsCountCompleted } = response.data || { paginationData: null, campaigns: [], sales: [], stats: { totalParticipants: 0 }, salesByDay: [] };
  
       setSales(sales);
-      setPaginationData(paginationData);
       setCampaigns(campaigns);
-
-
+      setStatsData(stats);
+      setSalesByDayData(salesByDay);
+      setTotalCampaignsCount(totalCampaignsCount);
+      setTotalCampaignsCountCompleted(totalCampaignsCountCompleted);
       }
 
       setIsLoading(false);
     }
     fetchSales();
     // Simulate data loading
-  }, [currentPage, pageSize, activeTab, viewMode, dateRangeFilter]);
+  }, [activeTab, dateRangeFilter]);
   
 
   
@@ -586,7 +850,7 @@ export default function CreatorDashboardHome() {
     { value: '', label: 'Todas as Campanhas' },
     ...campaigns.map(campaign => ({ value: campaign.campaignCode, label: campaign.title }))
   ];
-  
+
   const statusOptions = [
     { value: '', label: 'Todos os Status' },
     { value: PaymentStatusEnum.APPROVED, label: 'Pagos' },
@@ -732,194 +996,428 @@ export default function CreatorDashboardHome() {
     }
   ];
   
+  // Componente Skeleton para os primeiros cards estáticos
+  const SkeletonStaticCards = () => (
+    <PageContent>
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+    </PageContent>
+  );
+
+  // Componente Skeleton para filtros
+  const SkeletonFilters = () => (
+    <Section>
+      <SkeletonFiltersContainer>
+        <FiltersHeader>
+          <SkeletonFilterTitle />
+        </FiltersHeader>
+        <FiltersGrid>
+          <FilterWrapper>
+            <FilterLabel>Campanha:</FilterLabel>
+            <SkeletonFilterInput />
+          </FilterWrapper>
+          
+          <FilterWrapper>
+            <FilterLabel>Período:</FilterLabel>
+            <SkeletonFilterInput />
+          </FilterWrapper>
+          
+          <ButtonsContainer>
+            <SkeletonFilterInput style={{ minWidth: '140px', height: '52px' }} />
+            <SkeletonFilterInput style={{ minWidth: '140px', height: '52px' }} />
+          </ButtonsContainer>
+        </FiltersGrid>
+      </SkeletonFiltersContainer>
+    </Section>
+  );
+
+  // Componente Skeleton para estatísticas dinâmicas
+  const SkeletonDynamicStats = () => (
+    <PageContent>
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+      
+      <SkeletonStatCard>
+        <SkeletonCardHeader>
+          <SkeletonCardTitle />
+          <SkeletonCardIcon />
+        </SkeletonCardHeader>
+        <SkeletonCardValue />
+        <SkeletonCardTrend />
+      </SkeletonStatCard>
+    </PageContent>
+  );
+
+  // Componente Skeleton para gráficos
+  const SkeletonCharts = () => (
+    <Section>
+      <ChartsGrid>
+        <SkeletonChartCard>
+          <SkeletonChartTitle />
+          <SkeletonChart />
+        </SkeletonChartCard>
+
+        <SkeletonChartCard>
+          <SkeletonChartTitle />
+          <SkeletonChart />
+        </SkeletonChartCard>
+      </ChartsGrid>
+    </Section>
+  );
+
   return (
     <CreatorDashboard>
-          <PageContent>
-            <StatCard>
-              <CardHeader>
-            <CardTitle>Total de Rifas</CardTitle>
-                <CardIcon $color="#6a11cb">
-                  <FaTicketAlt />
-                </CardIcon>
-              </CardHeader>
-          <CardValue>24</CardValue>
-              <CardTrend $positive={true}>
-            +5 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Total de Vendas</CardTitle>
-                <CardIcon $color="#0ea5e9">
-                  <FaMoneyBillWave />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>R$ 24.320</CardValue>
-              <CardTrend $positive={true}>
-                +R$ 4.500 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Participantes</CardTitle>
-                <CardIcon $color="#10b981">
-                  <FaUsers />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>152</CardValue>
-              <CardTrend $positive={true}>
-                +34 desde o mês passado
-              </CardTrend>
-            </StatCard>
-            
-            <StatCard>
-              <CardHeader>
-                <CardTitle>Rifas Finalizadas</CardTitle>
-                <CardIcon $color="#f59e0b">
-                  <FaTrophy />
-                </CardIcon>
-              </CardHeader>
-              <CardValue>3</CardValue>
-              <CardTrend $positive={false}>
-                Mesmo número do mês passado
-              </CardTrend>
-            </StatCard>
-          </PageContent>
-          
-          <Section>
-            <SectionHeader>
-              <SectionTitle>Desempenho de Vendas</SectionTitle>
-            </SectionHeader>
-            
-            <ChartContainer>
-              {/* Aqui seria implementado um gráfico real com biblioteca como Chart.js, Recharts, etc. */}
-              <div style={{ color: '#666', fontStyle: 'italic' }}>
-                Gráfico de desempenho de vendas (será implementado com Chart.js)
-              </div>
-            </ChartContainer>
-          </Section>
-          
-            <Section>
-              <SectionHeader>
-                <SectionTitle>Vendas Recentes</SectionTitle>
-                <SectionLink href="/dashboard/criador/vendas">
-                  Ver todas
-                </SectionLink>
-              </SectionHeader>
-              
-        <FiltersContainer>
-          <FiltersHeader>
-            <FiltersTitle>
-              <FaFilter /> Filtros
-              <ActiveFiltersCount>
-                  {[
-                    searchTerm.trim() !== '',
-                    activeTab !== '',
-                    viewMode !== '',
-                    dateRangeFilter.startDate !== null || dateRangeFilter.endDate !== null
-                  ].filter(Boolean).length}
-                </ActiveFiltersCount>
-              </FiltersTitle>
-            </FiltersHeader>
-          <FiltersGrid>
-            <SearchBar>
-              <SearchIcon>
-                <FaSearch />
-              </SearchIcon>
-              <SearchInput 
-                type="text" 
-                placeholder="Buscar por cliente, campanha, email..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </SearchBar>
-            
-            <FilterWrapper>
-              <FilterLabel>Campanha:</FilterLabel>
-              <CustomDropdown
-                id="campaign-filter"
-                options={campaignOptions}
-                value={activeTab}
-                onChange={setActiveTab}
-                placeholder="Todas as Campanhas"
-                className="custom-dropdown"
-              />
-            </FilterWrapper>
-            
-            <FilterWrapper>
-              <FilterLabel>Status:</FilterLabel>
-              <CustomDropdown
-                id="status-filter"
-                options={statusOptions}
-                value={viewMode}
-                onChange={setViewMode}
-                placeholder="Todos os Status"
-                className="custom-dropdown"
-              />
-            </FilterWrapper>
-            
-            <FilterWrapper>
-              <FilterLabel>Período:</FilterLabel>
-              <DateRangePicker
-                value={dateRangeFilter}
-                onChange={setDateRangeFilter}
-                placeholder="Selecione o período"
-              />
-            </FilterWrapper>
-            <ClearFiltersButton onClick={() => {
-              setSearchTerm('');
-              setActiveTab('');
-              setViewMode('');
-              setDateRangeFilter({ startDate: null, endDate: null });
-            }}>
-              Limpar Filtros
-            </ClearFiltersButton>
-          </FiltersGrid>
-        </FiltersContainer>
 
-          <>
-            <ResponsiveTable
-              columns={columns}
-              data={sales}
-              rowKeyField="id"
-              noDataMessage="Nenhuma venda encontrada"
-              zebra={true}
-              isLoading={isLoading}
-              useCustomEmptyState={true}
-              emptyStateType="payments"
-              emptyStateProps={{
-                hasFilters: searchTerm.trim() !== '' || activeTab !== '' || viewMode !== '' || dateRangeFilter.startDate !== null || dateRangeFilter.endDate !== null,
-                onClearFilters: () => {
-                  setSearchTerm('');
-                  setActiveTab('');
-                  setViewMode('');
-                  setDateRangeFilter({ startDate: null, endDate: null });
-                },
-                onActionClick: () => router.push('/dashboard/criador/nova-rifa')
-              }}
-            />
+      {/* Skeleton ou conteúdo real baseado no loading */}
+      {isLoading ? (
+        <>
+          <SkeletonStaticCards />
+          <SkeletonFilters />
+          <SkeletonDynamicStats />
+          <SkeletonCharts />
+        </>
+      ) : (
+        <>
+              {/* Cards estáticos sempre visíveis */}
+      <PageContent>
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Total de Rifas</CardTitle>
+            <CardIcon $color="#6a11cb">
+              <FaTicketAlt />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>{totalCampaignsCount}</CardValue>
+          <CardTrend $positive={true}>
             
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={paginationData?.totalItems || 0}
-              pageSizeOptions={pageSizeOptions}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-            />
-          </>
-            </Section>
-      
-      {selectedBuyer && (
-        <BuyerDetailsModal
-          isOpen={isModalOpen}
-          onClose={closeBuyerModal}
-          buyer={selectedBuyer}
-        />
+          </CardTrend>
+        </StatCard>
+        
+        <StatCard>
+          <CardHeader>
+            <CardTitle>Rifas Finalizadas</CardTitle>
+            <CardIcon $color="#f59e0b">
+              <FaTrophy />
+            </CardIcon>
+          </CardHeader>
+          <CardValue>{totalCampaignsCountCompleted}</CardValue>
+          <CardTrend $positive={false}>
+            
+          </CardTrend>
+        </StatCard>
+      </PageContent>
+          <Section>
+            <FiltersContainer>
+              <FiltersHeader>
+                <FiltersTitle>
+                  <FaFilter /> Filtros
+                  <ActiveFiltersCount>
+                    {[
+                      searchTerm.trim() !== '',
+                      activeTab !== '',
+                      dateRangeFilter.startDate !== null || dateRangeFilter.endDate !== null
+                    ].filter(Boolean).length}
+                  </ActiveFiltersCount>
+                </FiltersTitle>
+              </FiltersHeader>
+              <FiltersGrid>
+                <FilterWrapper>
+                  <FilterLabel>Campanha:</FilterLabel>
+                  <CustomDropdown
+                    id="campaign-filter-dashboard"
+                    options={campaignOptions}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    placeholder="Todas as Campanhas"
+                    className="custom-dropdown"
+                  />
+                </FilterWrapper>
+                
+                <FilterWrapper>
+                  <FilterLabel>Período:</FilterLabel>
+                  <DateRangePicker
+                    value={dateRangeFilter}
+                    onChange={setDateRangeFilter}
+                    placeholder="Selecione o período"
+                  />
+                </FilterWrapper>
+                
+                <ButtonsContainer>
+                  <ClearFiltersButton onClick={() => {
+                    setSearchTerm('');
+                    setActiveTab('');
+                    setDateRangeFilter({ startDate: null, endDate: null });
+                  }}>
+                    <FaTimes />
+                    Limpar Filtros
+                  </ClearFiltersButton>
+                  
+                  <RefreshButton 
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    $isLoading={isRefreshing}
+                  >
+                    <FaSync />
+                    {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+                  </RefreshButton>
+                </ButtonsContainer>
+              </FiltersGrid>
+            </FiltersContainer>
+          </Section>
+
+          {!statsData.vendas ? (
+            <SkeletonDynamicStats />
+          ) : (
+            <PageContent>
+              <StatCard>
+                <CardHeader>
+                  <CardTitle>Receita Bruta</CardTitle>
+                  <CardIcon $color="#0ea5e9">
+                    <FaMoneyBillWave />
+                  </CardIcon>
+                </CardHeader>
+                <CardValue>{formatCurrency(statsData.valores.bruto)}</CardValue>
+                <CardTrend $positive={true}>
+                  Comparado ao período anterior
+                </CardTrend>
+              </StatCard>
+
+              <StatCard>
+                <CardHeader>
+                  <CardTitle>Receita Líquida</CardTitle>
+                  <CardIcon $color="#0ea5e9">
+                    <FaMoneyBillWave />
+                  </CardIcon>
+                </CardHeader>
+                <CardValue>{formatCurrency(statsData.valores.liquido)}</CardValue>
+                <CardTrend $positive={true}>
+                  Comparado ao período anterior
+                </CardTrend>
+              </StatCard>
+
+              <StatCard>
+                <CardHeader>
+                  <CardTitle>Quantidade de Vendas</CardTitle>
+                  <CardIcon $color="#0ea5e9">
+                    <FaMoneyBillWave />
+                  </CardIcon>
+                </CardHeader>
+                <CardValue>{statsData.vendas.total}</CardValue>
+                <CardTrend $positive={true}>
+                  Comparado ao período anterior
+                </CardTrend>
+              </StatCard>
+              
+              <StatCard>
+                <CardHeader>
+                  <CardTitle>Participantes</CardTitle>
+                  <CardIcon $color="#10b981">
+                    <FaUsers />
+                  </CardIcon>
+                </CardHeader>
+                <CardValue>{statsData.vendas.participantesUnicos}</CardValue>
+                <CardTrend $positive={true}>
+                  Comparado ao período anterior
+                </CardTrend>
+              </StatCard>
+            </PageContent>
+          )}
+
+          <Section>
+            {/* Gráfico com duas linhas: Faturamento e Vendas */}
+            <ChartsGrid>
+              <ChartCard>
+                <h3>Desempenho de Vendas</h3>
+                <ResponsiveContainer width="100%" height="90%">
+                  <LineChart 
+                    data={salesByDayData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    />
+                    <YAxis 
+                      yAxisId="valorLiquido"
+                      orientation="left"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tickFormatter={(value) => formatCurrency(value)}
+                    />
+                    <YAxis 
+                      yAxisId="sales"
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'Faturamento') {
+                          return [formatCurrency(value), name];
+                        }
+                        return [value, name];
+                      }}
+                      labelFormatter={(label) => `Data: ${label}`}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      iconType="line"
+                      wrapperStyle={{ 
+                        paddingTop: '20px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    
+                    {/* Linha do Faturamento (Azul) */}
+                    <Line 
+                      yAxisId="valorLiquido"
+                      type="monotone" 
+                      dataKey="valorLiquido" 
+                      stroke="#3B82F6" 
+                      strokeWidth={3}
+                      dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2, fill: '#fff' }}
+                      name="Faturamento"
+                    />
+                    
+                    {/* Linha das Vendas (Verde) */}
+                    <Line 
+                      yAxisId="sales"
+                      type="monotone" 
+                      dataKey="sales" 
+                      stroke="#10B981" 
+                      strokeWidth={3}
+                      dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2, fill: '#fff' }}
+                      name="Vendas"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard>
+                <h3>Desempenho de Participantes</h3>
+                <ResponsiveContainer width="100%" height="90%">
+                  <LineChart 
+                    data={salesByDayData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    />
+                    <YAxis 
+                      yAxisId="participantesUnicos"
+                      orientation="left"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tickFormatter={(value) => value}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'Participantes') {
+                          return [value, name];
+                        }
+                        return [value, name];
+                      }}
+                      labelFormatter={(label) => `Data: ${label}`}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      iconType="line"
+                      wrapperStyle={{ 
+                        paddingTop: '20px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    
+                    {/* Linha dos Participantes (Roxo) */}
+                    <Line 
+                      yAxisId="participantesUnicos"
+                      type="monotone" 
+                      dataKey="participantesUnicos" 
+                      stroke="#8B5CF6" 
+                      strokeWidth={3}
+                      dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#8B5CF6', strokeWidth: 2, fill: '#fff' }}
+                      name="Participantes"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </ChartsGrid>
+          </Section>
+        </>
       )}
+
+      {/* Modal de detalhes do comprador */}
+      <BuyerDetailsModal
+        isOpen={isModalOpen}
+        onClose={closeBuyerModal}
+        buyer={selectedBuyer}
+      />
     </CreatorDashboard>
   );
 } 

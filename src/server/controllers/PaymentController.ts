@@ -16,6 +16,7 @@ export interface IPaymentController {
     } | null>>;
 
     getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>>;
+    getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>>;
 
     createInitialPixPaymentAttempt(data: {
         gateway: string;
@@ -64,6 +65,10 @@ export class PaymentController implements IPaymentController {
 
     async getPaymentsByCreatorId(pagination: IPaymentPaginationRequestServer): Promise<ApiResponse<IPaymentPaginationResponse | null>> {
         return this.paymentService.getPaymentsByCreatorId(pagination);
+    }
+
+    async getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>> {
+        return this.paymentService.getLatestPaymentsByCreatorId(pagination);
     }
 
     async createInitialPixPaymentAttempt(data: {
