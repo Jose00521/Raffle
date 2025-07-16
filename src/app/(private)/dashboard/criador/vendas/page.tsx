@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
-import { FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaCreditCard, FaMoneyBillWave, FaSync, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaDownload, FaCalendarAlt, FaEye, FaUser, FaEnvelope, FaCreditCard, FaMoneyBillWave, FaSync, FaTimes, FaDollarSign, FaShoppingCart, FaTags, FaArrowUp, FaCheckCircle, FaChartBar, FaUsers } from 'react-icons/fa';
 import CustomDropdown from '@/components/common/CustomDropdown';
 import ResponsiveTable, { ColumnDefinition } from '@/components/common/ResponsiveTable';
 import BuyerDetailsModal from '@/components/common/BuyerDetailsModal';
@@ -120,57 +120,287 @@ const FilterGroup = styled.div`
 
 const StatsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+  }
   
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 16px;
+    margin-bottom: 24px;
   }
 `;
 
 const StatCard = styled.div`
   background: white;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
   
-  @media (min-width: 768px) {
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-color: rgba(106, 17, 203, 0.2);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 50%, #10b981 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  
+  @media (max-width: 480px) {
     padding: 18px;
-  border-radius: 12px;
+    border-radius: 12px;
   }
 `;
 
+const StatCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+`;
+
+const StatTitleContainer = styled.div`
+  flex: 1;
+`;
+
 const StatTitle = styled.div`
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin-bottom: 10px;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#64748B'};
+  margin-bottom: 4px;
+  letter-spacing: 0.025em;
   
-  @media (min-width: 768px) {
-    font-size: 0.9rem;
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+`;
+
+const StatIcon = styled.div<{ $color: string }>`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: ${props => props.$color || 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px ${props => props.$color ? `${props.$color}40` : 'rgba(106, 17, 203, 0.25)'};
+  transition: all 0.3s ease;
+  
+  ${StatCard}:hover & {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px ${props => props.$color ? `${props.$color}50` : 'rgba(106, 17, 203, 0.35)'};
+  }
+  
+  @media (max-width: 768px) {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    border-radius: 10px;
   }
 `;
 
 const StatValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  font-size: 2rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#1E293B'};
+  margin-bottom: 8px;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #1E293B 0%, #475569 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   
-  @media (min-width: 768px) {
-    font-size: 1.75rem;
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.6rem;
   }
 `;
 
 const StatMeta = styled.div`
-  font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin-top: 5px;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#64748B'};
+  display: flex;
+  align-items: center;
+  gap: 6px;
   
-  @media (min-width: 768px) {
-    font-size: 0.85rem;
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
   }
+`;
+
+const StatTrend = styled.div<{ $positive?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 8px;
+  
+  ${({ $positive }) => $positive ? `
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  ` : `
+    background: rgba(239, 68, 68, 0.1);
+    color: #DC2626;
+  `}
+`;
+
+const StatBadge = styled.div<{ $variant: 'success' | 'warning' | 'info' | 'primary' }>`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  ${({ $variant }) => {
+    switch ($variant) {
+      case 'success':
+        return `
+          background: rgba(16, 185, 129, 0.15);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        `;
+      case 'warning':
+        return `
+          background: rgba(245, 158, 11, 0.15);
+          color: #D97706;
+          border: 1px solid rgba(245, 158, 11, 0.2);
+        `;
+      case 'info':
+        return `
+          background: rgba(59, 130, 246, 0.15);
+          color: #2563EB;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+        `;
+      case 'primary':
+        return `
+          background: rgba(106, 17, 203, 0.15);
+          color: #6a11cb;
+          border: 1px solid rgba(106, 17, 203, 0.2);
+        `;
+      default:
+        return `
+          background: rgba(106, 17, 203, 0.15);
+          color: #6a11cb;
+          border: 1px solid rgba(106, 17, 203, 0.2);
+        `;
+    }
+  }}
+`;
+
+// Skeleton Loading Components
+const SkeletonBase = styled.div`
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+  
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`;
+
+const SkeletonStatCard = styled(StatCard)`
+  &::before {
+    opacity: 0;
+  }
+  
+  &:hover {
+    transform: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+`;
+
+const SkeletonStatIcon = styled(SkeletonBase)`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  
+  @media (max-width: 768px) {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+`;
+
+const SkeletonStatTitle = styled(SkeletonBase)`
+  height: 16px;
+  width: 120px;
+  margin-bottom: 4px;
+`;
+
+const SkeletonStatMeta = styled(SkeletonBase)`
+  height: 14px;
+  width: 150px;
+`;
+
+const SkeletonStatValue = styled(SkeletonBase)`
+  height: 32px;
+  width: 100px;
+  margin-bottom: 8px;
+  
+  @media (max-width: 768px) {
+    height: 28px;
+  }
+`;
+
+const SkeletonStatTrend = styled(SkeletonBase)`
+  height: 20px;
+  width: 80px;
+  border-radius: 20px;
+`;
+
+const SkeletonStatBadge = styled(SkeletonBase)`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  height: 20px;
+  width: 60px;
+  border-radius: 20px;
 `;
 
 const StatusTag = styled.span<{ $status: string }>`
@@ -828,31 +1058,147 @@ export default function VendasPage() {
       </PageHeader>
 
       <StatsContainer>
-        <StatCard>
-          <StatTitle>Receita Bruta</StatTitle>
-          <StatValue>{formatCurrency(stats?.valores.bruto)}</StatValue>
-          <StatMeta>De {stats?.vendas.total} transações</StatMeta>
-        </StatCard>
+        {!stats || isLoading ? (
+          // Skeleton Loading
+          <>
+            <SkeletonStatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <SkeletonStatTitle />
+                  <SkeletonStatMeta />
+                </StatTitleContainer>
+                <SkeletonStatIcon />
+              </StatCardHeader>
+              <SkeletonStatValue />
+              <SkeletonStatTrend />
+              <SkeletonStatBadge />
+            </SkeletonStatCard>
 
-        <StatCard>
-          <StatTitle>Receita Líquida</StatTitle>
-          <StatValue>{formatCurrency(stats?.valores.liquido)}</StatValue>
-          <StatMeta>De {stats?.vendas.total} transações</StatMeta>
-        </StatCard>
+            <SkeletonStatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <SkeletonStatTitle />
+                  <SkeletonStatMeta />
+                </StatTitleContainer>
+                <SkeletonStatIcon />
+              </StatCardHeader>
+              <SkeletonStatValue />
+              <SkeletonStatTrend />
+              <SkeletonStatBadge />
+            </SkeletonStatCard>
 
-        <StatCard>
-          <StatTitle>Vendas</StatTitle>
-          <StatValue>{stats?.vendas.total}</StatValue>
-        </StatCard>
-        
-        <StatCard>
-          <StatTitle>Números Vendidos</StatTitle>
-          <StatValue>{stats?.numeros.vendidos}</StatValue>
-          <StatMeta>
-            Média de {formatCurrency(stats?.estatisticas.ticketMedio)} por venda
-          </StatMeta>
-        </StatCard>
-      
+            <SkeletonStatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <SkeletonStatTitle />
+                  <SkeletonStatMeta />
+                </StatTitleContainer>
+                <SkeletonStatIcon />
+              </StatCardHeader>
+              <SkeletonStatValue />
+              <SkeletonStatTrend />
+              <SkeletonStatBadge />
+            </SkeletonStatCard>
+
+            <SkeletonStatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <SkeletonStatTitle />
+                  <SkeletonStatMeta />
+                </StatTitleContainer>
+                <SkeletonStatIcon />
+              </StatCardHeader>
+              <SkeletonStatValue />
+              <SkeletonStatTrend />
+              <SkeletonStatBadge />
+            </SkeletonStatCard>
+          </>
+        ) : (
+          // Dados reais
+          <>
+            <StatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <StatTitle>Receita Bruta</StatTitle>
+                  <StatMeta>De {stats?.vendas?.total || 0} transações</StatMeta>
+                </StatTitleContainer>
+                <StatIcon $color="linear-gradient(135deg, #10b981 0%, #059669 100%)">
+                  <FaMoneyBillWave />
+                </StatIcon>
+              </StatCardHeader>
+              <StatValue>{stats?.valores?.bruto ? formatCurrency(stats.valores.bruto) : 'R$ 0,00'}</StatValue>
+              <StatTrend $positive>
+                <FaArrowUp />
+                +{stats?.estatisticas?.variacaoBruto || 0}% este mês
+              </StatTrend>
+              {/* <StatBadge $variant="success">
+                Receita
+              </StatBadge> */}
+            </StatCard>
+
+            <StatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <StatTitle>Receita Líquida</StatTitle>
+                  <StatMeta>Após taxas e descontos</StatMeta>
+                </StatTitleContainer>
+                <StatIcon $color="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)">
+                  <FaDollarSign />
+                </StatIcon>
+              </StatCardHeader>
+              <StatValue>{stats?.valores?.liquido ? formatCurrency(stats.valores.liquido) : 'R$ 0,00'}</StatValue>
+              <StatTrend $positive>
+                <FaArrowUp />
+                +{stats?.estatisticas?.variacaoLiquido || 0}% este mês
+              </StatTrend>
+              {/* <StatBadge $variant="warning">
+                Lucro
+              </StatBadge> */}
+            </StatCard>
+
+            <StatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <StatTitle>Total de Vendas</StatTitle>
+                  <StatMeta>Vendas confirmadas</StatMeta>
+                </StatTitleContainer>
+                <StatIcon $color="linear-gradient(135deg, #6a11cb 0%, #5a0fb5 100%)">
+                  <FaShoppingCart />
+                </StatIcon>
+              </StatCardHeader>
+              <StatValue>{stats?.vendas?.total || 0}</StatValue>
+              <StatTrend $positive>
+                <FaArrowUp />
+                +{stats?.estatisticas?.variacaoVendas || 0}% este mês
+              </StatTrend>
+              {/* <StatBadge $variant="primary">
+                Vendas
+              </StatBadge> */}
+            </StatCard>
+            
+            <StatCard>
+              <StatCardHeader>
+                <StatTitleContainer>
+                  <StatTitle>Números Vendidos</StatTitle>
+                  <StatMeta>
+                    Ticket médio: {stats?.estatisticas?.ticketMedio ? formatCurrency(stats.estatisticas.ticketMedio) : 'R$ 0,00'}
+                  </StatMeta>
+                </StatTitleContainer>
+                <StatIcon $color="linear-gradient(135deg, #2575fc 0%, #1e5ce6 100%)">
+                  <FaTags />
+                </StatIcon>
+              </StatCardHeader>
+              <StatValue>{stats?.numeros?.vendidos || 0}</StatValue>
+              <StatTrend $positive>
+                <FaArrowUp />
+                +{stats?.estatisticas?.variacaoNumeros || 0}% este mês
+              </StatTrend>
+              {/* <StatBadge $variant="info">
+                Números
+              </StatBadge> */}
+            </StatCard>
+          </>
+        )}
       </StatsContainer>
       
         

@@ -55,6 +55,7 @@ export class PrizeRepository implements IPrizeRepository {
 
             // Usar populate para incluir os dados completos do usuário e da categoria
             const prizes = await Prize.find({ createdBy: user?._id }, '-_id')
+                .sort({ createdAt: -1 })
                 .populate({
                     path: 'createdBy',
                     model: 'User',

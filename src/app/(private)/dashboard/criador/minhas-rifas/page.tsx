@@ -177,7 +177,7 @@ const Tab = styled.button<{ $active: boolean }>`
 
 const RifaCardsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
   
   @media (max-width: 480px) {
@@ -188,25 +188,43 @@ const RifaCardsGrid = styled.div`
 
 const RifaCard = styled.div`
   background: white;
-  border-radius: 12px;
-  
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   height: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
   
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-color: rgba(106, 17, 203, 0.2);
+    
+    &::before {
+      opacity: 1;
+    }
   }
   
   @media (max-width: 768px) {
-    border-radius: 10px;
+    border-radius: 12px;
     
     &:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
     }
   }
 `;
@@ -214,14 +232,15 @@ const RifaCard = styled.div`
 const RifaImageContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 200px;
+  overflow: hidden;
   
   @media (max-width: 768px) {
-    height: 160px;
+    height: 180px;
   }
   
   @media (max-width: 480px) {
-    height: 140px;
+    height: 160px;
   }
 `;
 
@@ -231,44 +250,58 @@ const RifaImage = styled.div<{ $imageUrl: string }>`
   background-image: url(${props => props.$imageUrl});
   background-size: cover;
   background-position: center;
+  transition: transform 0.5s ease;
+  
+  ${RifaCard}:hover & {
+    transform: scale(1.05);
+  }
 `;
 
 const RifaBadge = styled.div<{ $status: string }>`
   position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 5px 10px;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
   border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   
   ${({ $status }) => {
     if ($status === 'ACTIVE') {
       return `
-        background-color: rgba(16, 185, 129, 0.9);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
         color: white;
         animation: pulse 3s infinite ease-in-out;
         
         @keyframes pulse {
-          0% { opacity: 0.4; }
-          50% { opacity: 1; }
-          100% { opacity: 0.4; }
+          0% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+          50% { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.6); }
+          100% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
         }
       `;
     } else if ($status === 'COMPLETED') {
       return `
-        background-color: rgba(106, 17, 203, 0.9);
+        background: linear-gradient(135deg, rgba(106, 17, 203, 0.95) 0%, rgba(79, 70, 229, 0.95) 100%);
         color: white;
       `;
     } else if ($status === 'PENDING' || $status === 'SCHEDULED') {
       return `
-        background-color: rgba(59, 130, 246, 0.9);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+        color: white;
+      `;
+    } else if ($status === 'cancelada') {
+      return `
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
         color: white;
       `;
     } else {
       return `
-        background-color: rgba(107, 114, 128, 0.9);
+        background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%);
         color: white;
       `;
     }
@@ -276,14 +309,14 @@ const RifaBadge = styled.div<{ $status: string }>`
 `;
 
 const RifaContent = styled.div`
-  padding: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  justify-content: space-between;
+  position: relative;
   
   @media (max-width: 768px) {
-    padding: 12px;
+    padding: 16px;
   }
 `;
 
@@ -291,52 +324,50 @@ const RifaUpperContent = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 `;
 
 const RifaTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
 `;
 
 const RifaTitle = styled.h3`
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
   
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
-  margin-left: 10px;
   flex-shrink: 0;
-
-  padding: 4px 8px;
-  border-radius: 20px;
-  transition: all 0.2s ease;
-  
-
+  background: rgba(248, 250, 252, 0.8);
+  padding: 8px 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(226, 232, 240, 0.6);
   
   @media (max-width: 768px) {
-    padding: 3px 6px;
+    padding: 6px 10px;
   }
 `;
 
 const StatusLabel = styled.span`
   font-size: 0.8rem;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-weight: 600;
+  color: #64748b;
   margin-right: 8px;
   
   @media (max-width: 480px) {
@@ -345,25 +376,51 @@ const StatusLabel = styled.span`
 `;
 
 const RifaMeta = styled.div`
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
   align-items: center;
   font-size: 0.85rem;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
-  margin-bottom: 10px;
+  color: #64748b;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+`;
+
+const MetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  
+  .label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .value {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.9rem;
+  }
 `;
 
 const RifaStats = styled.div`
-  margin: 15px 0;
-  padding: 10px;
-  background-color: ${({ theme }) => theme.colors?.background || '#f5f7fa'};
-  border-radius: 8px;
+  margin: 16px 0 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  backdrop-filter: blur(4px);
 `;
 
 const StatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  align-items: center;
+  margin-bottom: 8px;
   font-size: 0.85rem;
   
   &:last-child {
@@ -372,82 +429,164 @@ const StatRow = styled.div`
 `;
 
 const StatLabel = styled.span`
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  color: #64748b;
+  font-weight: 500;
 `;
 
 const StatValue = styled.span`
+  font-weight: 700;
+  color: #1e293b;
+  
+  &.highlight {
+    color: #6366f1;
+  }
+  
+  &.success {
+    color: #059669;
+  }
+  
+  &.warning {
+    color: #d97706;
+  }
+`;
+
+const ProgressSection = styled.div`
+  margin-top: 16px;
+`;
+
+const ProgressHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const ProgressLabel = styled.span`
+  font-size: 0.8rem;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  color: #475569;
+`;
+
+const ProgressPercentage = styled.span`
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6366f1;
 `;
 
 const ProgressBar = styled.div`
   height: 8px;
-  background-color: ${({ theme }) => theme.colors?.gray?.light || '#e5e7eb'};
-  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.8) 0%, rgba(203, 213, 225, 0.8) 100%);
+  border-radius: 8px;
   overflow: hidden;
-  margin-top: 15px;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 `;
 
 const ProgressFill = styled.div<{ $percent: number }>`
   height: 100%;
   width: ${props => props.$percent}%;
-  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-  border-radius: 4px;
-  transition: width 1s ease;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  border-radius: 8px;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 `;
 
-const ProgressText = styled.div`
+const ProgressDetails = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.75rem;
-  margin-top: 5px;
-  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  margin-top: 6px;
+  color: #64748b;
+  
+  .numbers {
+    font-weight: 600;
+    color: #475569;
+  }
 `;
 
 const RifaActions = styled.div`
   display: flex;
-  
-  gap: 10px;
-  min-height: 38px;
+  gap: 8px;
   margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 `;
 
-const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' }>`
-  padding: ${props => (props.$variant === 'icon' || props.$variant === 'edit') ? '8px' : '8px 12px'};
+const RifaActionButton = styled.button<{ $variant?: 'outline' | 'icon' | 'edit' | 'primary' | 'secondary' }>`
+  padding: ${props => (props.$variant === 'icon' || props.$variant === 'edit') ? '10px' : '10px 16px'};
   background: ${props => {
     if (props.$variant === 'outline') return 'transparent';
-    if (props.$variant === 'edit') return '#6366f1';
-    return 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+    if (props.$variant === 'edit') return 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+    if (props.$variant === 'secondary') return 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
+    return 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
   }};
-  color: ${props => props.$variant === 'outline' ? '#6a11cb' : 'white'};
-  border: ${props => props.$variant === 'outline' ? '1px solid #6a11cb' : 'none'};
-  border-radius: 6px;
-  font-size: 0.9rem;
-  min-height: 38px;
+  color: ${props => props.$variant === 'outline' ? '#6366f1' : 'white'};
+  border: ${props => props.$variant === 'outline' ? '2px solid #6366f1' : 'none'};
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s ease;
-  height: 38px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 42px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
   
   ${props => {
     if (props.$variant === 'icon' || props.$variant === 'edit') {
-      return `width: 38px; min-width: 38px;`;
+      return `width: 42px; min-width: 42px;`;
     }
     return `flex: 1;`;
   }}
   
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${props => {
-      if (props.$variant === 'outline') return '0 4px 12px rgba(106, 17, 203, 0.15)';
-      if (props.$variant === 'edit') return '0 4px 12px rgba(99, 102, 241, 0.3)';
-      return '0 4px 12px rgba(106, 17, 203, 0.3)';
+      if (props.$variant === 'outline') return '0 8px 20px rgba(99, 102, 241, 0.2)';
+      if (props.$variant === 'edit') return '0 8px 20px rgba(245, 158, 11, 0.3)';
+      if (props.$variant === 'secondary') return '0 8px 20px rgba(100, 116, 139, 0.3)';
+      return '0 8px 20px rgba(99, 102, 241, 0.4)';
     }};
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   a {
@@ -543,7 +682,7 @@ const EmptyStateText = styled.p`
 // Skeleton Loader Components
 const LoadingSkeletonGrid = styled.div`
   display: grid;
-  grid-template-columns: ${'repeat(auto-fill, minmax(300px, 1fr))' as string};
+  grid-template-columns: ${'repeat(auto-fill, minmax(350px, 1fr))' as string};
   gap: 20px;
   
   @media (max-width: 480px) {
@@ -554,22 +693,23 @@ const LoadingSkeletonGrid = styled.div`
 
 const LoadingSkeletonCard = styled.div`
   background-color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   position: relative;
   height: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.5);
   
   @media (max-width: 768px) {
-    border-radius: 10px;
+    border-radius: 12px;
   }
 `;
 
 const SkeletonImage = styled.div`
-  height: 180px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  height: 200px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   
@@ -586,36 +726,36 @@ const SkeletonImage = styled.div`
   }
   
   @media (max-width: 768px) {
-    height: 160px;
+    height: 180px;
   }
   
   @media (max-width: 480px) {
-    height: 140px;
+    height: 160px;
   }
 `;
 
 const SkeletonBadge = styled.div`
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 60px;
-  height: 24px;
+  top: 12px;
+  right: 12px;
+  width: 80px;
+  height: 26px;
   border-radius: 20px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.1s;
 `;
 
 const SkeletonContent = styled.div`
-  padding: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
   justify-content: space-between;
   
   @media (max-width: 768px) {
-    padding: 12px;
+    padding: 16px;
   }
 `;
 
@@ -623,70 +763,90 @@ const SkeletonUpperContent = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 `;
 
 const SkeletonTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
 `;
 
 const SkeletonTitle = styled.div`
-  height: 24px;
+  height: 28px;
   flex: 1;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.1s;
-  border-radius: 4px;
+  border-radius: 6px;
 `;
 
 const SkeletonToggle = styled.div`
-  width: 40px;
-  height: 20px;
-  margin-left: 10px;
-  border-radius: 10px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  width: 100px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.2s;
 `;
 
 const SkeletonMeta = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
 `;
 
-const SkeletonMetaText = styled.div`
-  height: 16px;
-  width: 100px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+const SkeletonMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const SkeletonMetaLabel = styled.div`
+  height: 12px;
+  width: 60px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.3s;
   border-radius: 4px;
 `;
 
+const SkeletonMetaValue = styled.div`
+  height: 16px;
+  width: 80px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.35s;
+  border-radius: 4px;
+`;
+
 const SkeletonStats = styled.div`
-  margin: 15px 0;
-  padding: 10px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
+  margin: 16px 0 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
 `;
 
 const SkeletonStatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 `;
 
 const SkeletonStatLabel = styled.div`
   height: 16px;
-  width: 100px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  width: 120px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   border-radius: 4px;
@@ -694,33 +854,63 @@ const SkeletonStatLabel = styled.div`
 
 const SkeletonStatValue = styled.div`
   height: 16px;
-  width: 80px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  width: 100px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 4px;
+`;
+
+const SkeletonProgressSection = styled.div`
+  margin-top: 16px;
+`;
+
+const SkeletonProgressHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const SkeletonProgressLabel = styled.div`
+  height: 14px;
+  width: 120px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+  border-radius: 4px;
+`;
+
+const SkeletonProgressPercentage = styled.div`
+  height: 16px;
+  width: 40px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  animation-delay: 0.45s;
   border-radius: 4px;
 `;
 
 const SkeletonProgressBar = styled.div`
   height: 8px;
-  border-radius: 4px;
-  margin-top: 15px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  border-radius: 8px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.4s;
 `;
 
-const SkeletonProgressText = styled.div`
+const SkeletonProgressDetails = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-top: 5px;
+  margin-top: 6px;
 `;
 
-const SkeletonProgressTextItem = styled.div`
-  height: 14px;
+const SkeletonProgressDetailItem = styled.div`
+  height: 12px;
   width: 80px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.5s;
@@ -729,23 +919,26 @@ const SkeletonProgressTextItem = styled.div`
 
 const SkeletonActions = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-top: auto;
-  height: 38px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  height: 42px;
 `;
 
 const SkeletonButton = styled.div<{ $width?: string }>`
   flex: ${props => props.$width ? '0' : '1'};
   width: ${props => props.$width || 'auto'};
-  border-radius: 6px;
-  background: ${'linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%)' as string};
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(-90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
   background-size: 400% 400%;
   animation: shimmer 1.8s ease-in-out infinite;
   animation-delay: 0.6s;
 `;
 
 const StyledToggleSwitch = styled(ToggleSwitch)`
-  transform: scale(0.85);
+  transform: scale(0.9);
 `;
 
 export default function MinhasRifasPage() {
@@ -912,8 +1105,18 @@ export default function MinhasRifasPage() {
                     </SkeletonTitleRow>
                     
                     <SkeletonMeta>
-                      <SkeletonMetaText />
-                      <SkeletonMetaText />
+                      <SkeletonMetaItem>
+                        <SkeletonMetaLabel />
+                        <SkeletonMetaValue />
+                      </SkeletonMetaItem>
+                      <SkeletonMetaItem>
+                        <SkeletonMetaLabel />
+                        <SkeletonMetaValue />
+                      </SkeletonMetaItem>
+                      <SkeletonMetaItem>
+                        <SkeletonMetaLabel />
+                        <SkeletonMetaValue />
+                      </SkeletonMetaItem>
                     </SkeletonMeta>
                     
                     <SkeletonStats>
@@ -929,19 +1132,29 @@ export default function MinhasRifasPage() {
                         <SkeletonStatLabel />
                         <SkeletonStatValue />
                       </SkeletonStatRow>
+                      <SkeletonStatRow>
+                        <SkeletonStatLabel />
+                        <SkeletonStatValue />
+                      </SkeletonStatRow>
                     </SkeletonStats>
                     
-                    <SkeletonProgressBar />
-                    <SkeletonProgressText>
-                      <SkeletonProgressTextItem />
-                      <SkeletonProgressTextItem />
-                    </SkeletonProgressText>
+                    <SkeletonProgressSection>
+                      <SkeletonProgressHeader>
+                        <SkeletonProgressLabel />
+                        <SkeletonProgressPercentage />
+                      </SkeletonProgressHeader>
+                      <SkeletonProgressBar />
+                      <SkeletonProgressDetails>
+                        <SkeletonProgressDetailItem />
+                        <SkeletonProgressDetailItem />
+                      </SkeletonProgressDetails>
+                    </SkeletonProgressSection>
                   </SkeletonUpperContent>
                   
                   <SkeletonActions>
                     <SkeletonButton />
                     <SkeletonButton />
-                    <SkeletonButton $width="38px" />
+                    <SkeletonButton $width="42px" />
                   </SkeletonActions>
                 </SkeletonContent>
               </LoadingSkeletonCard>
@@ -966,13 +1179,11 @@ export default function MinhasRifasPage() {
                   <RifaUpperContent>
                     <RifaTitleRow>
                       <RifaTitle title={campaign.title}>
-                        {campaign.title.length > 24 
-                          ? `${campaign.title.substring(0, 24)}...` 
-                          : campaign.title}
+                        {campaign.title}
                       </RifaTitle>
                       {campaign.status !== CampaignStatusEnum.COMPLETED && (
                         <StatusContainer>
-                          {/* <StatusLabel>Ativa</StatusLabel> */}
+                          <StatusLabel>Status</StatusLabel>
                           <StyledToggleSwitch 
                             checked={!campaign.canceled}
                             onChange={() => toggleCampaignStatus(campaign.campaignCode as string)}
@@ -987,16 +1198,25 @@ export default function MinhasRifasPage() {
                     </RifaTitleRow>
                     
                     <RifaMeta>
-                      <div>Criada em {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}</div>
-                      <div>R$ {campaign.individualNumberPrice.toFixed(2)}</div>
-                      <div>{campaign.winnerPositions} vencedores</div>
+                      <MetaItem>
+                        <div className="label">Criada em</div>
+                        <div className="value">{new Date(campaign.createdAt).toLocaleDateString('pt-BR')}</div>
+                      </MetaItem>
+                      <MetaItem>
+                        <div className="label">Preço</div>
+                        <div className="value">R$ {campaign.individualNumberPrice.toFixed(2)}</div>
+                      </MetaItem>
+                      <MetaItem>
+                        <div className="label">Vencedores</div>
+                        <div className="value">{campaign.winnerPositions}</div>
+                      </MetaItem>
                     </RifaMeta>
                     
                     <RifaStats>
                       {campaign.status === CampaignStatusEnum.SCHEDULED && campaign.scheduledActivationDate && (
                         <StatRow>
-                          <StatLabel>Ativação Agendada:</StatLabel>
-                          <StatValue>
+                          <StatLabel>Ativação Agendada</StatLabel>
+                          <StatValue className="highlight">
                             {new Date(campaign.scheduledActivationDate).toLocaleDateString('pt-BR')} às{' '}
                             {new Date(campaign.scheduledActivationDate).toLocaleTimeString('pt-BR', { 
                               hour: '2-digit', 
@@ -1006,39 +1226,43 @@ export default function MinhasRifasPage() {
                         </StatRow>
                       )}
                       <StatRow>
-                        <StatLabel>Data do Sorteio:</StatLabel>
-                        <StatValue>{new Date(campaign.drawDate).toLocaleDateString('pt-BR')}</StatValue>
+                        <StatLabel>Data do Sorteio</StatLabel>
+                        <StatValue className="warning">{new Date(campaign.drawDate).toLocaleDateString('pt-BR')}</StatValue>
                       </StatRow>
                       <StatRow>
-                        <StatLabel>Números Totais:</StatLabel>
-                        <StatValue>{campaign.totalNumbers}</StatValue>
+                        <StatLabel>Números Totais</StatLabel>
+                        <StatValue>{campaign.totalNumbers?.toLocaleString('pt-BR')}</StatValue>
                       </StatRow>
                       <StatRow>
-                        <StatLabel>Vendas Totais:</StatLabel>
-                        <StatValue>R$ {campaign.stats?.totalRevenue.toFixed(2)}</StatValue>
+                        <StatLabel>Receita Total</StatLabel>
+                        <StatValue className="success">R$ {campaign.stats?.totalRevenue?.toFixed(2) || '0,00'}</StatValue>
                       </StatRow>
-                      {/* {campaign.status === CampaignStatusEnum.COMPLETED && campaign.winnerNumbers && (
-                        <StatRow>
-                          <StatLabel>Número Vencedor:</StatLabel>
-                          <StatValue>{campaign.winnerNumbers}</StatValue>
-                        </StatRow>
-                      )} */}
                     </RifaStats>
                     
-                    <ProgressBar>
-                      <ProgressFill $percent={campaign.stats?.percentComplete || 0} />
-                    </ProgressBar>
-                    <ProgressText>
-                      <span>{campaign.stats?.percentComplete}% vendido</span>
-                      <span>{campaign.stats?.sold}/{campaign.totalNumbers} números</span>
-                    </ProgressText>
+                    <ProgressSection>
+                      <ProgressHeader>
+                        <ProgressLabel>Progresso de Vendas</ProgressLabel>
+                        <ProgressPercentage>{campaign.stats?.percentComplete || 0}%</ProgressPercentage>
+                      </ProgressHeader>
+                      <ProgressBar>
+                        <ProgressFill $percent={campaign.stats?.percentComplete || 0} />
+                      </ProgressBar>
+                      <ProgressDetails>
+                        <span className="numbers">
+                          {campaign.stats?.sold?.toLocaleString('pt-BR') || 0} vendidos
+                        </span>
+                        <span className="numbers">
+                          {(campaign.totalNumbers - (campaign.stats?.sold || 0))?.toLocaleString('pt-BR')} restantes
+                        </span>
+                      </ProgressDetails>
+                    </ProgressSection>
                   </RifaUpperContent>
                   
                   <RifaActions>
                     {/* Botão Ver */}
-                    <RifaActionButton>
+                    <RifaActionButton $variant="primary">
                       <Link href={`/dashboard/criador/campanha/${campaign.campaignCode}`}>
-                        <FaEye size={14} /> Ver
+                        <FaEye size={14} /> Ver Detalhes
                       </Link>
                     </RifaActionButton>
                     
@@ -1082,4 +1306,4 @@ export default function MinhasRifasPage() {
       </div>
     </CreatorDashboard>
   );
-} 
+}

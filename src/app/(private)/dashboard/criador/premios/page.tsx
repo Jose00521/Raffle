@@ -675,13 +675,13 @@ export default function PrizesDashboard() {
     }
   };
 
-    // Sort prizes by value
-    const sortedPrizes = [...filteredPrizes].sort((a: IPrize, b: IPrize) => {
-      const valueA = extractNumericValue(a.value);
-      const valueB = extractNumericValue(b.value);
+    // // Sort prizes by value
+    // const sortedPrizes = [...filteredPrizes].sort((a: IPrize, b: IPrize) => {
+    //   const valueA = extractNumericValue(a.value);
+    //   const valueB = extractNumericValue(b.value);
       
-      return sortDesc ? valueB - valueA : valueA - valueB;
-    });
+    //   return sortDesc ? valueB - valueA : valueA - valueB;
+    // });
     
     const handleSortToggle = () => {
       setSortDesc(!sortDesc);
@@ -770,7 +770,7 @@ export default function PrizesDashboard() {
         </FilterGroup>
         
         <ResultsCount>
-          Mostrando <span>{sortedPrizes.length}</span> prêmios
+          Mostrando <span>{filteredPrizes.length}</span> prêmios
         </ResultsCount>
       </FiltersBar>
       
@@ -792,9 +792,9 @@ export default function PrizesDashboard() {
             </LoadingSkeletonCard>
           ))}
         </LoadingSkeletonGrid>
-      ) : sortedPrizes.length > 0 ? (
+      ) : filteredPrizes.length > 0 ? (
         <PrizesGrid>
-          {sortedPrizes.map((prize: IPrize, index: number) => (
+          {filteredPrizes.map((prize: IPrize, index: number) => (
             <Link href={`/dashboard/criador/premios/detalhes/${prize.prizeCode}`} key={prize.prizeCode || prize._id}>
               <PrizeCard 
                 key={prize._id}
