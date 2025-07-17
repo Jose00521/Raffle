@@ -360,12 +360,48 @@ const NavButton = styled.button`
   }
 `;
 
-const MonthYearDisplay = styled.div`
+const MonthYearDisplay = styled.div<{ $isCurrentMonth?: boolean }>`
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: ${props => props.$isCurrentMonth ? '#6a11cb' : '#333'};
   text-align: center;
   flex: 1;
+  position: relative;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: ${props => props.$isCurrentMonth ? 'rgba(106, 17, 203, 0.08)' : 'transparent'};
+  border: ${props => props.$isCurrentMonth ? '1px solid rgba(106, 17, 203, 0.2)' : '1px solid transparent'};
+  transition: all 0.3s ease;
+  
+  ${props => props.$isCurrentMonth && `
+    &::after {
+      content: '• Atual';
+      position: absolute;
+      top: -8px;
+      right: 8px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #6a11cb;
+      background-color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  `}
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    
+    ${props => props.$isCurrentMonth && `
+      &::after {
+        font-size: 0.65rem;
+        top: -6px;
+        right: 6px;
+        padding: 1px 4px;
+      }
+    `}
+  }
 `;
 
 const SelectionInfo = styled.div`
@@ -469,10 +505,31 @@ const DEFAULT_PRESETS = [
     }
   },
   {
+    label: 'Últimos 14 dias',
+    range: { 
+      startDate: addDays(new Date(), -13), 
+      endDate: new Date() 
+    }
+  },
+  {
     label: 'Últimos 30 dias',
     range: { 
       startDate: addDays(new Date(), -29), 
       endDate: new Date() 
+    }
+  },
+  {
+    label: 'Esta semana',
+    range: { 
+      startDate: startOfWeek(new Date(), { locale: ptBR }), 
+      endDate: endOfWeek(new Date(), { locale: ptBR }) 
+    }
+  },
+  {
+    label: 'Semana passada',
+    range: { 
+      startDate: startOfWeek(addDays(new Date(), -7), { locale: ptBR }), 
+      endDate: endOfWeek(addDays(new Date(), -7), { locale: ptBR }) 
     }
   },
   {
@@ -730,7 +787,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                       <NavButton onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                         <FaChevronLeft />
                       </NavButton>
-                      <MonthYearDisplay>
+                      <MonthYearDisplay $isCurrentMonth={isSameMonth(currentMonth, new Date())}>
                         {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                       </MonthYearDisplay>
                       <div style={{ width: '36px' }} />
@@ -777,7 +834,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   <MonthContainer>
                     <Navigation>
                       <div style={{ width: '36px' }} />
-                      <MonthYearDisplay>
+                      <MonthYearDisplay $isCurrentMonth={isSameMonth(addMonths(currentMonth, 1), new Date())}>
                         {format(addMonths(currentMonth, 1), 'MMMM yyyy', { locale: ptBR })}
                       </MonthYearDisplay>
                       <NavButton onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
