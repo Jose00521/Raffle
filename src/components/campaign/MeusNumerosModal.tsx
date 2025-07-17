@@ -318,7 +318,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                     <PurchaseCard key={index}>
                       <PurchaseHeader>
                         <PurchaseInfo>
-                          <CampaignImage>
+                          <CampaignImageContainer>
                           {(purchase.campaignId as Partial<ICampaign>)?.coverImage ? (
                         <CampaignImage 
                           src={(purchase.campaignId as Partial<ICampaign>)?.coverImage as string} 
@@ -329,7 +329,7 @@ const MeusNumerosModal: React.FC<MeusNumerosModalProps> = ({ isOpen, onClose, ca
                           <i className="fas fa-image" />
                         </CampaignImagePlaceholder>
                       )}
-                          </CampaignImage>
+                          </CampaignImageContainer>
                           <CampaignInfo>
                             <CampaignTitle>{(purchase.campaignId as any)?.title}</CampaignTitle>
                             <PurchaseDetails>
