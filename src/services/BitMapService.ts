@@ -337,7 +337,7 @@ export class BitMapService {
     // Extrair o bitmap do documento
     const bitmapData = bitmapDoc.bitmap;
     
-    this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilityTraditional');
+    //this.showBitmap(bitmapData, 'bitmap que vem em checkNumbersAvailabilityTraditional');
     
     // Converter o bitmap binário para um Buffer que podemos manipular
     let bitmapBuffer: Buffer = Buffer.from(bitmapData);
@@ -521,7 +521,7 @@ export class BitMapService {
       }
     }
  
-    this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenTraditionalOptimized');
+    //this.showBitmap(updatedBuffer, 'bitmap marcado como indisponível em markNumbersAsTakenTraditionalOptimized');
 
     console.log(`Marcando ${numBitsChanged} bits como indisponíveis`);
     
@@ -754,7 +754,7 @@ export class BitMapService {
       }
     }
 
-    this.showBitmap(updatedBuffer, 'bitmap marcado como disponível em markNumbersAsAvailableTraditionalOptimized');
+    //this.showBitmap(updatedBuffer, 'bitmap marcado como disponível em markNumbersAsAvailableTraditionalOptimized');
     console.log(`Marcando ${numBitsChanged} bits como disponíveis`);
     
     if (numBitsChanged > 0) {

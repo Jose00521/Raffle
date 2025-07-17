@@ -12,8 +12,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SocketService } from "../lib/socket/SocketService";
 import { container } from "tsyringe";
 import { maskAddress, maskCPF, maskEmail, maskPhone, maskCEP} from "@/utils/maskUtils";
-import { getSocketServer } from "../socketio";
-import SocketServiceDefault from "../lib/socket/SocketService";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { BitMapService } from "@/services/BitMapService";
 import { NumberStatusEnum } from "@/models/interfaces/INumberStatusInterfaces";
