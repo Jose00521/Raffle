@@ -455,6 +455,13 @@ const DEFAULT_PRESETS = [
     }
   },
   {
+    label: 'Ontem',
+    range: { 
+      startDate: addDays(new Date(), -1), 
+      endDate: addDays(new Date(), -1) 
+    }
+  },
+  {
     label: 'Últimos 7 dias',
     range: { 
       startDate: addDays(new Date(), -6), 

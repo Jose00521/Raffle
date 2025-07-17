@@ -147,15 +147,21 @@ export class PaymentRepository implements IPaymentRepository {
                 Object.assign(query, { status });
             }
             
-            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            // 🔧 CORREÇÃO: Construir condições de data corretamente no fuso brasileiro
             if(startDate || endDate){
                 const dateCondition: any = {};
                 
                 if(startDate){
-                    dateCondition.$gte = new Date(startDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const startDateBR = new Date(startDate);
+                    startDateBR.setHours(startDateBR.getHours() + startDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    dateCondition.$gte = startDateBR;
                 }
                 if(endDate){
-                    dateCondition.$lte = new Date(endDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const endDateBR = new Date(endDate);
+                    endDateBR.setHours(endDateBR.getHours() + endDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    dateCondition.$lte = endDateBR;
                 }
                 
                 Object.assign(query, { createdAt: dateCondition });
@@ -222,15 +228,21 @@ export class PaymentRepository implements IPaymentRepository {
                 Object.assign(query, { campaignId: campaign._id });
             }
             
-            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            // 🔧 CORREÇÃO: Construir condições de data corretamente no fuso brasileiro
             if(startDate || endDate){
                 const dateCondition: any = {};
                 
                 if(startDate){
-                    dateCondition.$gte = new Date(startDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const startDateBR = new Date(startDate);
+                    startDateBR.setHours(startDateBR.getHours() + startDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    dateCondition.$gte = startDateBR;
                 }
                 if(endDate){
-                    dateCondition.$lte = new Date(endDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const endDateBR = new Date(endDate);
+                    endDateBR.setHours(endDateBR.getHours() + endDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    dateCondition.$lte = endDateBR;
                 }
                 
                 Object.assign(query, { createdAt: dateCondition });
@@ -692,15 +704,21 @@ export class PaymentRepository implements IPaymentRepository {
                 Object.assign(queryMatch, { campaignId: campaign._id });
             }
 
-            // 🔧 CORREÇÃO: Construir condições de data corretamente
+            // 🔧 CORREÇÃO: Construir condições de data corretamente no fuso brasileiro
             if(startDate || endDate){
                 const dateCondition: any = {};
                 
                 if(startDate){
-                    dateCondition.$gte = new Date(startDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const startDateBR = new Date(startDate);
+                    startDateBR.setHours(startDateBR.getHours() + 3); // Ajustar para UTC-3
+                    dateCondition.$gte = startDateBR;
                 }
                 if(endDate){
-                    dateCondition.$lte = new Date(endDate);
+                    // Criar data no fuso brasileiro (UTC-3)
+                    const endDateBR = new Date(endDate);
+                    endDateBR.setHours(endDateBR.getHours() + 3); // Ajustar para UTC-3
+                    dateCondition.$lte = endDateBR;
                 }
                 
                 Object.assign(queryMatch, { createdAt: dateCondition });
@@ -797,15 +815,21 @@ export class PaymentRepository implements IPaymentRepository {
             Object.assign(queryMatch, { campaignId: campaign._id });
         }
 
-        // 🔧 CORREÇÃO: Construir condições de data corretamente
+        // 🔧 CORREÇÃO: Construir condições de data corretamente no fuso brasileiro
         if(startDate || endDate){
             const dateCondition: any = {};
             
             if(startDate){
-                dateCondition.$gte = new Date(startDate);
+                // Criar data no fuso brasileiro (UTC-3)
+                const startDateBR = new Date(startDate);
+                startDateBR.setHours(startDateBR.getHours() + 3); // Ajustar para UTC-3
+                dateCondition.$gte = startDateBR;
             }
             if(endDate){
-                dateCondition.$lte = new Date(endDate);
+                // Criar data no fuso brasileiro (UTC-3)
+                const endDateBR = new Date(endDate);
+                endDateBR.setHours(endDateBR.getHours() + 3); // Ajustar para UTC-3
+                dateCondition.$lte = endDateBR;
             }
             
             Object.assign(queryMatch, { createdAt: dateCondition });
