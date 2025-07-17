@@ -154,13 +154,13 @@ export class PaymentRepository implements IPaymentRepository {
                 if(startDate){
                     // Criar data no fuso brasileiro (UTC-3)
                     const startDateBR = new Date(startDate);
-                    startDateBR.setHours(startDateBR.getHours() + startDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    startDateBR.setHours(startDateBR.getHours() + (startDateBR.getTimezoneOffset()/60)); // Ajustar para UTC-3
                     dateCondition.$gte = startDateBR;
                 }
                 if(endDate){
                     // Criar data no fuso brasileiro (UTC-3)
                     const endDateBR = new Date(endDate);
-                    endDateBR.setHours(endDateBR.getHours() + endDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    endDateBR.setHours(endDateBR.getHours() + (endDateBR.getTimezoneOffset()/60)); // Ajustar para UTC-3
                     dateCondition.$lte = endDateBR;
                 }
                 
@@ -235,13 +235,13 @@ export class PaymentRepository implements IPaymentRepository {
                 if(startDate){
                     // Criar data no fuso brasileiro (UTC-3)
                     const startDateBR = new Date(startDate);
-                    startDateBR.setHours(startDateBR.getHours() + startDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    startDateBR.setHours(startDateBR.getHours() + (startDateBR.getTimezoneOffset()/60)); // Ajustar para UTC-3
                     dateCondition.$gte = startDateBR;
                 }
                 if(endDate){
                     // Criar data no fuso brasileiro (UTC-3)
                     const endDateBR = new Date(endDate);
-                    endDateBR.setHours(endDateBR.getHours() + endDateBR.getTimezoneOffset()/60); // Ajustar para UTC-3
+                    endDateBR.setHours(endDateBR.getHours() + (endDateBR.getTimezoneOffset()/60)); // Ajustar para UTC-3
                     dateCondition.$lte = endDateBR;
                 }
                 
