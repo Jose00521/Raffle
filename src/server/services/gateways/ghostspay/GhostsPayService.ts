@@ -1,8 +1,26 @@
 import { IPaymentGhostErrorResponse, IPaymentGhostRequest, IPaymentGhostResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import logger from "@/lib/logger/logger";
+import { maskCEP, maskComplement, maskNumber, maskCPF, maskEmail, maskStreet, maskPhone } from "@/utils/maskUtils";
 
 export function GhostsPayService() {
   const createPixPayment = async (data: IPaymentPattern): Promise<{response: Response, data: IPaymentGhostResponse | IPaymentGhostErrorResponse}> => {
+
     const dataToSend = getPixGhostFormat(data);
+
+    logger.info({
+      message: '[REQUEST] GhostsPayService send data to ghostspay',
+      data: {
+        ...dataToSend,
+        email: maskEmail(dataToSend.email),
+        phone: maskPhone(dataToSend.phone),
+        cpf: maskCPF(dataToSend.cpf),
+        cep: maskCEP(dataToSend.cep || ''),
+        street: maskStreet(dataToSend.street || ''),
+        number: maskNumber(dataToSend.number || ''),
+        complement: maskComplement(dataToSend.complement || ''),
+      }
+    });
+
     const response = await fetch(`${process.env.GH_URL}/api/v1/transaction.purchase`, {
       method: 'POST',
       body: JSON.stringify(dataToSend),
@@ -12,9 +30,19 @@ export function GhostsPayService() {
       },
     });
 
-    console.log('response ghostspay', response);
+    if(!response.ok){
+      logger.error({
+        message: '[ERROR] GhostsPayService response not ok',
+        response: response
+      });
+    }
 
-    const dataResponse = await response.json() as IPaymentGhostResponse;
+    const dataResponse = await response.json();
+
+    logger.info({
+      message: '[RESPONSE] GhostsPayService data response',
+      data: dataResponse
+    });
 
     return {
       response,

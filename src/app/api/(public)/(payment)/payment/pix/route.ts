@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
 
       const body = await unMaskUser(bodyMasked);
 
-
       // 🔑 Extrai chave de idempotência do header (padrão da indústria)
       const idempotencyKey = request.headers.get('Idempotency-Key') || 
       request.headers.get('idempotency-key') ||
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
 
         // Retorna o erro do gateway para o cliente.
         const error = data as IPaymentGhostErrorResponse;
-        const errorResponse = NextResponse.json(createErrorResponse(error.issues[0].validation, response.status || 500));
+        const errorResponse = NextResponse.json(createErrorResponse(error.issues?.[0].validation || error.message, response.status || 500));
         errorResponse.headers.set('Idempotency-Key', idempotencyKey);
         return errorResponse;
       }

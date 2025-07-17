@@ -14,7 +14,9 @@ import {
   FaCheckCircle,
   FaExclamationCircle,
   FaTimesCircle,
-  FaArrowRight
+  FaArrowRight,
+  FaUser,
+  FaIdCard
 } from 'react-icons/fa';
 import { MdContentCopy } from 'react-icons/md';
 import { SiPix } from 'react-icons/si';
@@ -342,6 +344,13 @@ const StatusTag = styled.span<{ $status: string }>`
       return `
         background-color: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
+
+        animation: blink 2s ease infinite;
+  
+        @keyframes blink {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }        
       `;
     } else if ($status === 'REFUNDED' || $status === 'FAILED' || $status === 'EXPIRED') {
       return `
@@ -420,7 +429,116 @@ const Tooltip = styled.span`
   pointer-events: none;
 `;
 
+const UserCodeDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.text?.primary || '#333'};
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 12px;
+  position: relative;
+  
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+`;
+
+const UserCodeSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
+const UserCodeText = styled.span`
+  flex: 1;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+`;
+
+const UserCodeLabel = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#666'};
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const CopyUserCodeButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(106, 17, 203, 0.1);
+  color: #6a11cb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(106, 17, 203, 0.2);
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const CopyFeedback = styled.div<{ $show: boolean }>`
+  position: absolute;
+  top: -35px;
+  right: 0;
+  background-color: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: ${props => props.$show ? 1 : 0};
+  transform: translateY(${props => props.$show ? '0' : '10px'});
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid rgba(16, 185, 129, 0.9);
+  }
+`;
+
 const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, buyer }) => {
+  const [copyFeedback, setCopyFeedback] = React.useState<string | null>(null);
+  
   if (!buyer) return null;
   
   const formatPhoneForWhatsApp = (phone: string) => {
@@ -451,8 +569,13 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
   };
   
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    // Você pode adicionar um toast/notificação aqui se desejar
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyFeedback('Copiado!');
+      setTimeout(() => setCopyFeedback(null), 2000); // Exibe feedback por 2 segundos
+    }).catch(() => {
+      setCopyFeedback('Erro ao copiar!');
+      setTimeout(() => setCopyFeedback(null), 2000); // Exibe feedback por 2 segundos
+    });
   };
   
   const getMapUrl = (address: string) => {
@@ -481,6 +604,7 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
               {buyer.customerInfo?.name?.charAt(0)}
             </BuyerAvatar>
             <BuyerInfo>
+
               <BuyerName>{buyer.customerInfo?.name}</BuyerName>
               <BuyerContact>
                 <FaEnvelope size={14} />
@@ -526,7 +650,21 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
               )}
             </BuyerInfo>
           </BuyerProfile>
-          
+                        <UserCodeDisplay>
+                <UserCodeSection>
+                  <UserCodeLabel>
+                    <FaIdCard size={12} />
+                    Código do Cliente:
+                  </UserCodeLabel>
+                  <UserCodeText>{buyer.customerId.userCode}</UserCodeText>
+                </UserCodeSection>
+                <CopyUserCodeButton onClick={() => copyToClipboard(buyer.customerId.userCode)}>
+                  <MdContentCopy size={12} />
+                </CopyUserCodeButton>
+                <CopyFeedback $show={copyFeedback === 'Copiado!'}>
+                  {copyFeedback}
+                </CopyFeedback>
+              </UserCodeDisplay>
           <DetailCard>
             <DetailCardTitle>Informações Pessoais</DetailCardTitle>
             {buyer.billingInfo?.address && (
