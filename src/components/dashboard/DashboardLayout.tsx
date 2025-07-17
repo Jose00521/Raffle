@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
-import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown, FaUser, FaCog, FaSignOutAlt, FaPlusCircle, FaTrophy } from 'react-icons/fa';
+import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown, FaUser, FaCog, FaSignOutAlt, FaPlusCircle, FaTrophy, FaPen } from 'react-icons/fa';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
@@ -11,7 +11,7 @@ import { signOut, useSession } from 'next-auth/react';
 interface MenuItem {
   id: string;
   label: string;
-  path: string;
+  path?: string;
   icon: React.ReactNode;
   subMenuItems?: Array<{
     id: string;
@@ -25,6 +25,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   menuItems: MenuItem[];
   dashboardTitle: string;
+  showComposeButton?: boolean;
 }
 
 // Styled Components with improved responsivity
@@ -236,12 +237,12 @@ const activeNavItemStyles = css`
   background-color: rgba(96, 165, 250, 0.08);
 `;
 
-const NavLink = styled(Link)<{ $isCollapsed: boolean; $active?: boolean }>`
+const NavLink = styled(Link)<{ $isCollapsed: boolean; $active?: boolean; $hasSubmenu?: boolean }>`
   display: flex;
   align-items: center;
   padding: ${props => props.$isCollapsed ? '14px 0' : '14px 16px'};
   text-decoration: none;
-  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.8)' as string};
+  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.8)'};
   font-weight: ${props => props.$active ? '500' : '400'};
   transition: all 0.2s ease;
   position: relative;
@@ -251,9 +252,32 @@ const NavLink = styled(Link)<{ $isCollapsed: boolean; $active?: boolean }>`
   margin: 0 ${props => props.$isCollapsed ? '8px' : '10px'};
 
   ${props => props.$active && activeNavItemStyles}
+  
+  /* Estilo especial para itens com submenu */
+  ${props => props.$hasSubmenu && !props.$isCollapsed && css`
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    
+    &:hover::after {
+      background: rgba(255, 255, 255, 0.7);
+      transform: translateY(-50%) scale(1.5);
+    }
+  `}
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1) as string;
+    background-color: rgba(255, 255, 255, 0.1);
     color: white;
   }
   
@@ -301,15 +325,26 @@ const NavIcon = styled.span`
   }
 `;
 
-const NavLabel = styled.span<{ $isCollapsed: boolean }>`
-  opacity: ${props => props.$isCollapsed ? 0 : 1};
-  transition: opacity 0.2s ease;
+const NavLabel = styled.span<{ $isCollapsed: boolean; $hasSubmenu?: boolean }>`
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
   display: ${props => props.$isCollapsed ? 'none' : 'block'};
+  transition: all 0.2s ease;
   font-size: 0.9rem;
   
-  @media (max-width: 480px) {
+  /* Adicionar ícone de pasta para itens com submenu */
+  ${props => props.$hasSubmenu && css`
+
+  `}
+  
+  @media (max-width: 768px) {
     font-size: 0.85rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
   }
 `;
 
@@ -565,34 +600,58 @@ const UserToggle = styled.button`
 
 const SubMenuContainer = styled.ul<{ $isOpen: boolean; $isCollapsed: boolean }>`
   list-style: none;
-  padding: 0;
-  margin: 0 10px;
-  max-height: ${props => props.$isOpen ? '500px' : '0'};
+  padding: 0 0 0 20px;
+  margin: 0 10px 0 20px; /* Aumenta a margem esquerda para criar hierarquia */
+  max-height: ${props => props.$isOpen ? '300px' : '0'};
   overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: rgba(0, 0, 0, 0.08) as string;
-  border-radius: 6px;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 8px;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  transform: ${props => props.$isOpen ? 'translateY(0)' : 'translateY(-8px)'};
+  position: relative;
+  
+
   
   ${props => props.$isCollapsed && `
     position: absolute;
-    left: 100%;
+    left: calc(100% + 8px);
     top: 0;
-    width: 200px;
+    width: 220px;
     background: linear-gradient(135deg, #5a01bc 0%, #1565ec 100%);
-    border-radius: 6px;
-    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2) as string;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(5px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(90, 1, 188, 0.3);
+    opacity: ${props.$isOpen ? 1 : 0};
+    visibility: ${props.$isOpen ? 'visible' : 'hidden'};
+    transform: ${props.$isOpen ? 'translateX(0) scale(1)' : 'translateX(-8px) scale(0.95)'};
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     z-index: 200;
     margin: 0;
-    padding: 5px 0;
+    padding: 8px 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: none;
+    
+
   `}
 `;
 
-const SubMenuItem = styled.li<{ $active?: boolean }>`
+const SubMenuItem = styled.li<{ $active?: boolean; $index?: number }>`
   position: relative;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeInStagger 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation-delay: ${props => (props.$index || 0) * 0.05}s;
+  
+  @keyframes fadeInStagger {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
   
   ${props => props.$active && css`
     ${activeNavItemStyles}
@@ -600,77 +659,122 @@ const SubMenuItem = styled.li<{ $active?: boolean }>`
 `;
 
 const SubMenuLink = styled(Link)<{ $active?: boolean }>`
-  padding: 10px 10px 10px 44px;
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.6)' as string};
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-  position: relative;
-  font-weight: ${props => props.$active ? '500' : '400'};
-  margin: 2px 0;
-  border-radius: 4px;
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.05) as string;
-    color: white;
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%) as string;
-    width: 5px;
-    height: 5px;
-    background-color: ${props => props.$active ? '#60a5fa' : 'rgba(255, 255, 255, 0.3)' as string};
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-  }
-  
-  &:hover::before {
-    background-color: ${props => props.$active ? '#60a5fa' : 'rgba(255, 255, 255, 0.5)' as string};
-  }
-`;
-
-const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
-  padding: 10px 14px;
+  padding: 12px 12px 12px 24px; /* Mais indentação para hierarquia */
   display: flex;
   align-items: center;
   text-decoration: none;
   color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'};
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
+  font-size: 0.85rem; /* Tamanho menor para indicar hierarquia */
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
   font-weight: ${props => props.$active ? '500' : '400'};
-  border-radius: 4px;
-  margin: 2px 6px;
+  margin: 1px 8px;
+  border-radius: 6px;
+  
+  
+
   
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.08);
     color: white;
+    transform: translateX(2px);
+    padding-left: 26px;
+    
+
   }
   
   ${props => props.$active && css`
-    background-color: rgba(96, 165, 250, 0.08);
+    background-color: rgba(96, 165, 250, 0.15);
+    
+    
+    &::after {
+      background: #60a5fa;
+      width: 16px;
+      height: 2px;
+    }
+  `}
+`;
+
+const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
+  padding: 12px 16px 12px 20px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: ${props => props.$active ? '#ffffff' : 'rgba(255, 255, 255, 0.8)'};
+  font-size: 0.85rem; /* Tamanho menor para hierarquia */
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  font-weight: ${props => props.$active ? '500' : '400'};
+  border-radius: 6px;
+  margin: 2px 8px;
+  position: relative;
+  
+
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
     color: white;
+    transform: translateX(2px);
+    
+
+  }
+  
+  ${props => props.$active && css`
+    background-color: rgba(96, 165, 250, 0.15);
+    color: white;
+    
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: #60a5fa;
+      border-radius: 0 2px 2px 0;
+    }
   `}
 `;
 
 const NavItemWithSubmenu = styled.div<{ $isCollapsed: boolean; $hasOpenSubmenu: boolean; $active?: boolean }>`
   position: relative;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   
-  ${props => props.$isCollapsed && props.$hasOpenSubmenu && `
-    & > ${SubMenuContainer} {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(0);
+  ${props => props.$isCollapsed && `
+    &:hover {
+      & > ${SubMenuContainer} {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0) scale(1);
+        transition-delay: 0.1s;
+      }
+    }
+    
+    &:not(:hover) {
+      & > ${SubMenuContainer} {
+        transition-delay: 0.2s;
+      }
     }
   `}
   
   ${props => !props.$isCollapsed && props.$active && css`
     ${activeNavItemStyles}
+    
+    &::before {
+      animation: slideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: scaleY(0);
+        opacity: 0;
+      }
+      to {
+        transform: scaleY(1);
+        opacity: 1;
+      }
+    }
   `}
 `;
 
@@ -681,27 +785,33 @@ const MenuToggle = styled.button<{ $isOpen: boolean }>`
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6) as string;
+  color: rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   z-index: 10;
-  transition: all 0.2s ease;
-  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 6px;
   
   &:hover {
     color: white;
-    background-color: rgba(255, 255, 255, 0.05) as string;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-50%) scale(1.1);
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
   }
   
   svg {
-    transform: ${props => props.$isOpen ? 'rotate(-180deg)' : 'rotate(0)'};
-    transition: transform 0.3s ease;
-    width: 12px;
-    height: 12px;
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0)'};
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: 14px;
+    height: 14px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
   }
 `;
 
@@ -843,11 +953,244 @@ const UserMenuIcon = styled.span`
   }
 `;
 
+// Animated Container for morphing between states
+const AnimatedComposeContainer = styled.div<{ 
+  $isCollapsed: boolean; 
+  $isOnCreatePage: boolean 
+}>`
+  display: flex;
+  align-items: center;
+  padding: ${({ $isCollapsed }) => $isCollapsed ? '16px' : '12px 16px'};
+  margin: 16px 12px 24px;
+  border: none;
+  border-radius: ${({ $isCollapsed }) => $isCollapsed ? '50%' : '12px'};
+  cursor: ${({ $isOnCreatePage }) => $isOnCreatePage ? 'default' : 'pointer'};
+  position: relative;
+  overflow: hidden;
+  
+  min-height: ${({ $isCollapsed }) => $isCollapsed ? '56px' : '48px'};
+  width: ${({ $isCollapsed }) => $isCollapsed ? '56px' : 'auto'};
+  justify-content: ${({ $isCollapsed }) => $isCollapsed ? 'center' : 'flex-start'};
+  
+  /* Morphing background animation */
+  background: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'
+  };
+  
+  /* Morphing shadow animation */
+  box-shadow: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? `0 4px 12px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(16, 185, 129, 0.2)`
+      : `0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)`
+  };
+  
+  /* Smooth transitions for all properties */
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Morphing border */
+  border: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? '2px solid transparent'
+      : '2px solid rgba(106, 17, 203, 0.1)'
+  };
+  
+  /* Hover effects */
+  &:hover {
+    transform: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'translateY(0)'
+        : 'translateY(-2px)'
+    };
+    
+    box-shadow: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? `0 6px 16px rgba(16, 185, 129, 0.4), 0 4px 8px rgba(16, 185, 129, 0.25)`
+        : `0 8px 30px rgba(106, 17, 203, 0.25), 0 4px 12px rgba(106, 17, 203, 0.15)`
+    };
+    
+    border-color: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'transparent'
+        : 'rgba(106, 17, 203, 0.2)'
+    };
+  }
+  
+  /* Active state morphing effect */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)'
+        : 'transparent'
+    };
+    animation: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'shimmer 2s infinite'
+        : 'none'
+    };
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  /* Ripple effect for click */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'rgba(255, 255, 255, 0.3)'
+        : 'rgba(106, 17, 203, 0.2)'
+    };
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  
+  &:active::after {
+    width: 120px;
+    height: 120px;
+  }
+  
+  @media (max-width: 768px) {
+    margin: 12px 8px 20px;
+    min-height: 48px;
+    width: ${({ $isCollapsed }) => $isCollapsed ? '48px' : 'auto'};
+  }
+`;
+
+const AnimatedComposeIcon = styled.div<{ 
+  $isCollapsed: boolean; 
+  $isOnCreatePage: boolean 
+}>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: ${({ $isCollapsed }) => $isCollapsed ? '20px' : '18px'};
+  margin-right: ${({ $isCollapsed }) => $isCollapsed ? '0' : '12px'};
+  position: relative;
+  z-index: 1;
+  
+  /* Morphing color animation */
+  color: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? 'white'
+      : '#6a11cb'
+  };
+  
+  /* Smooth transitions */
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Icon rotation animation */
+  transform: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? 'rotate(360deg) scale(1.05)'
+      : 'rotate(0deg) scale(1)'
+  };
+  
+  svg {
+    filter: ${({ $isOnCreatePage }) => 
+      $isOnCreatePage 
+        ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+        : 'drop-shadow(0 1px 2px rgba(106, 17, 203, 0.2))'
+    };
+    transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+`;
+
+const AnimatedComposeText = styled.span<{ 
+  $isCollapsed: boolean; 
+  $isOnCreatePage: boolean 
+}>`
+  font-weight: 600;
+  font-size: 14px;
+  display: ${({ $isCollapsed }) => $isCollapsed ? 'none' : 'block'};
+  position: relative;
+  z-index: 1;
+  
+  /* Morphing color and shadow animation */
+  color: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? 'white'
+      : '#6a11cb'
+  };
+  
+  text-shadow: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? '0 1px 2px rgba(0,0,0,0.2)'
+      : '0 1px 2px rgba(106, 17, 203, 0.1)'
+  };
+  
+  /* Smooth transitions */
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Text scale animation */
+  transform: ${({ $isOnCreatePage }) => 
+    $isOnCreatePage 
+      ? 'scale(1.02)'
+      : 'scale(1)'
+  };
+`;
+
+const AnimatedComposeTooltip = styled.div<{ 
+  $visible: boolean; 
+  $isOnCreatePage: boolean 
+}>`
+  position: absolute;
+  left: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: ${({ $visible }) => $visible ? 1 : 0};
+  visibility: ${({ $visible }) => $visible ? 'visible' : 'hidden'};
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  
+  /* Scale animation on show */
+  transform: ${({ $visible }) => 
+    $visible 
+      ? 'translateY(-50%) scale(1)'
+      : 'translateY(-50%) scale(0.9)'
+  };
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 4px solid transparent;
+    border-right-color: #1f2937;
+  }
+`;
+
 // Dashboard Layout Component
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   menuItems,
-  dashboardTitle
+  dashboardTitle,
+  showComposeButton = true
 }) => {
   // Use localStorage to persist sidebar state
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -941,21 +1284,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
     
     // Navigate to the path
-    router.push(item.path);
+    if(item.path){
+      router.push(item.path);
+    }
   };
   
   const handleSubMenuMouseEnter = (id: string) => {
     if (isCollapsed) {
-      setOpenSubmenuIds(prev => [...prev, id]);
+      setOpenSubmenuIds(prev => {
+        if (!prev.includes(id)) {
+          return [...prev, id];
+        }
+        return prev;
+      });
     }
   };
   
   const handleSubMenuMouseLeave = (id: string) => {
     if (isCollapsed) {
-      // Delay hiding the submenu to make it easier to move mouse into it
-      setTimeout(() => {
-        setOpenSubmenuIds(prev => prev.filter(menuId => menuId !== id));
-      }, 300);
+      setOpenSubmenuIds(prev => prev.filter(menuId => menuId !== id));
     }
   };
   
@@ -992,8 +1339,52 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </SidebarTitle>
         </SidebarHeader>
         
+        {/* Botão Nova Rifa estilo Gmail Compose */}
+        {showComposeButton && (
+          pathname === '/dashboard/criador/nova-rifa' ? (
+            <AnimatedComposeContainer 
+              $isCollapsed={isCollapsed} 
+              $isOnCreatePage={true}
+              onMouseEnter={() => setHoverItem('nova-rifa-active')}
+              onMouseLeave={() => setHoverItem(null)}
+            >
+              <AnimatedComposeIcon $isCollapsed={isCollapsed} $isOnCreatePage={true}>
+                <FaPen />
+              </AnimatedComposeIcon>
+              <AnimatedComposeText $isCollapsed={isCollapsed} $isOnCreatePage={true}>
+                Criando Rifa
+              </AnimatedComposeText>
+              {isCollapsed && hoverItem === 'nova-rifa-active' && (
+                <AnimatedComposeTooltip $visible={true} $isOnCreatePage={true}>
+                  Criando Nova Rifa
+                </AnimatedComposeTooltip>
+              )}
+            </AnimatedComposeContainer>
+          ) : (
+            <AnimatedComposeContainer 
+              $isCollapsed={isCollapsed} 
+              $isOnCreatePage={false}
+              onClick={() => router.push('/dashboard/criador/nova-rifa')}
+              onMouseEnter={() => setHoverItem('nova-rifa')}
+              onMouseLeave={() => setHoverItem(null)}
+            >
+              <AnimatedComposeIcon $isCollapsed={isCollapsed} $isOnCreatePage={false}>
+                <FaPlusCircle />
+              </AnimatedComposeIcon>
+              <AnimatedComposeText $isCollapsed={isCollapsed} $isOnCreatePage={false}>
+                Nova Rifa
+              </AnimatedComposeText>
+                             {isCollapsed && hoverItem === 'nova-rifa' && (
+                 <AnimatedComposeTooltip $visible={true} $isOnCreatePage={false}>
+                   Nova Rifa
+                 </AnimatedComposeTooltip>
+               )}
+            </AnimatedComposeContainer>
+          )
+        )}
+        
         <NavMenu>
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const isActive = pathname === item.path || 
                             (item.subMenuItems && item.subMenuItems.some(subItem => subItem.path === pathname));
             
@@ -1017,12 +1408,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                       href="#"
                       $isCollapsed={isCollapsed}
                       $active={Boolean(isActive)}
+                      $hasSubmenu={true}
                       onClick={(e) => handleNavLinkClick(item, e)}
                       onMouseEnter={() => handleNavItemMouseEnter(item.id)}
                       onMouseLeave={handleNavItemMouseLeave}
                     >
                       <NavIcon>{item.icon}</NavIcon>
-                      <NavLabel $isCollapsed={isCollapsed}>{item.label}</NavLabel>
+                      <NavLabel $isCollapsed={isCollapsed} $hasSubmenu={true}>{item.label}</NavLabel>
                       {!isCollapsed && (
                         <MenuToggle 
                           $isOpen={isOpen}
@@ -1040,12 +1432,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     </NavLink>
                     
                     <SubMenuContainer $isOpen={isOpen} $isCollapsed={isCollapsed}>
-                      {item.subMenuItems.map(subItem => {
+                      {item.subMenuItems.map((subItem, subIndex) => {
                         const subItemActive = pathname === subItem.path;
                         return (
                           <SubMenuItem 
                             key={subItem.id} 
                             $active={subItemActive}
+                            $index={subIndex}
                           >
                             {isCollapsed ? (
                               <SubMenuLinkCollapsed
@@ -1089,19 +1482,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 onMouseLeave={handleNavItemMouseLeave}
               >
                 <NavLink 
-                  href={item.path}
+                  href={item.path || ''}
                   $isCollapsed={isCollapsed}
                   $active={Boolean(pathname === item.path)}
                   onClick={(e) => {
                     e.preventDefault();
-                    router.push(item.path);
+                    if(item.path){
+                      router.push(item.path);
+                    }
                     if (isMobileView && !isCollapsed) {
                       setIsCollapsed(true);
                     }
                   }}
                 >
                   <NavIcon>{item.icon}</NavIcon>
-                  <NavLabel $isCollapsed={isCollapsed}>{item.label}</NavLabel>
+                  <NavLabel $isCollapsed={isCollapsed} $hasSubmenu={false}>{item.label}</NavLabel>
                   {isCollapsed && hoverItem === item.id && (
                     <Tooltip $visible={true}>
                       {item.label}

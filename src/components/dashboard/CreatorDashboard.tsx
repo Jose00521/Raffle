@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { FaHome, FaTicketAlt, FaChartLine ,FaTrophy, FaPlusCircle, FaUsers} from 'react-icons/fa';
+import { FaHome, FaTicketAlt, FaChartLine ,FaTrophy, FaPlusCircle, FaUsers, FaMoneyBill, FaMoneyBillAlt, FaCreditCard} from 'react-icons/fa';
 
 // Define the menu items specific to creator dashboard
 const creatorMenuItems = [
@@ -36,12 +36,20 @@ const creatorMenuItems = [
     path: '/dashboard/criador/premios',
     icon: <FaTrophy />,
   },
+
   {
-    id: 'nova-rifa',
-    label: 'Nova Rifa',
-    path: '/dashboard/criador/nova-rifa',
-    icon: <FaPlusCircle />
-  },
+    id: 'pagamentos',
+    label: 'Pagamentos',
+    icon: <FaCreditCard />,
+    subMenuItems: [
+      {
+        id: 'gateways',
+        label: 'Gateways',
+        path: '/dashboard/criador/pagamentos/gateways',
+        icon: <FaMoneyBillAlt />
+      }
+    ]
+  }
 
 ];
 
@@ -69,6 +77,7 @@ const CreatorDashboard: React.FC<CreatorDashboardProps> = ({ children, additiona
     <DashboardLayout 
       menuItems={allMenuItems} 
       dashboardTitle="Painel do Criador"
+      showComposeButton={true}
     >
       {children}
     </DashboardLayout>

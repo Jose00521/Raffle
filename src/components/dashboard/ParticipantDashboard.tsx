@@ -64,6 +64,7 @@ const ParticipantDashboard: React.FC<ParticipantDashboardProps> = ({ children, a
     <DashboardLayout 
       menuItems={allMenuItems} 
       dashboardTitle="Painel do Participante"
+      showComposeButton={false}
     >
       {children}
     </DashboardLayout>
