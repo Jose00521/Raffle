@@ -960,16 +960,19 @@ const AnimatedComposeContainer = styled.div<{
 }>`
   display: flex;
   align-items: center;
-  padding: ${({ $isCollapsed }) => $isCollapsed ? '16px' : '12px 16px'};
+  padding: ${({ $isCollapsed }) => $isCollapsed ? '16px' : '16px 20px'};
   margin: 16px 12px 24px;
   border: none;
-  border-radius: ${({ $isCollapsed }) => $isCollapsed ? '50%' : '12px'};
+  border-radius: ${({ $isCollapsed }) => $isCollapsed ? '50%' : '28px'};
   cursor: ${({ $isOnCreatePage }) => $isOnCreatePage ? 'default' : 'pointer'};
   position: relative;
   overflow: hidden;
   
-  min-height: ${({ $isCollapsed }) => $isCollapsed ? '56px' : '48px'};
-  width: ${({ $isCollapsed }) => $isCollapsed ? '56px' : 'auto'};
+  /* Enhanced smooth sizing transitions */
+  min-height: 56px;
+  height: 56px;
+  width: ${({ $isCollapsed }) => $isCollapsed ? '56px' : 'calc(100% - 24px)'};
+  max-width: ${({ $isCollapsed }) => $isCollapsed ? '56px' : '200px'};
   justify-content: ${({ $isCollapsed }) => $isCollapsed ? 'center' : 'flex-start'};
   
   /* Morphing background animation */
@@ -986,8 +989,16 @@ const AnimatedComposeContainer = styled.div<{
       : `0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)`
   };
   
-  /* Smooth transitions for all properties */
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Coordinated smooth transitions */
+  transition: 
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Morphing border */
   border: ${({ $isOnCreatePage }) => 
@@ -1068,8 +1079,12 @@ const AnimatedComposeContainer = styled.div<{
   
   @media (max-width: 768px) {
     margin: 12px 8px 20px;
+    height: 48px;
     min-height: 48px;
-    width: ${({ $isCollapsed }) => $isCollapsed ? '48px' : 'auto'};
+    width: ${({ $isCollapsed }) => $isCollapsed ? '48px' : 'calc(100% - 16px)'};
+    max-width: ${({ $isCollapsed }) => $isCollapsed ? '48px' : '180px'};
+    border-radius: ${({ $isCollapsed }) => $isCollapsed ? '50%' : '24px'};
+    padding: ${({ $isCollapsed }) => $isCollapsed ? '12px' : '12px 16px'};
   }
 `;
 
@@ -1080,10 +1095,11 @@ const AnimatedComposeIcon = styled.div<{
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: ${({ $isCollapsed }) => $isCollapsed ? '20px' : '18px'};
+  font-size: 20px;
   margin-right: ${({ $isCollapsed }) => $isCollapsed ? '0' : '12px'};
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
   
   /* Morphing color animation */
   color: ${({ $isOnCreatePage }) => 
@@ -1092,8 +1108,11 @@ const AnimatedComposeIcon = styled.div<{
       : '#6a11cb'
   };
   
-  /* Smooth transitions */
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Coordinated smooth transitions */
+  transition: 
+    margin-right 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Icon rotation animation */
   transform: ${({ $isOnCreatePage }) => 
@@ -1110,6 +1129,11 @@ const AnimatedComposeIcon = styled.div<{
     };
     transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+    margin-right: ${({ $isCollapsed }) => $isCollapsed ? '0' : '10px'};
+  }
 `;
 
 const AnimatedComposeText = styled.span<{ 
@@ -1118,9 +1142,18 @@ const AnimatedComposeText = styled.span<{
 }>`
   font-weight: 600;
   font-size: 14px;
-  display: ${({ $isCollapsed }) => $isCollapsed ? 'none' : 'block'};
   position: relative;
   z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 1;
+  
+  /* Enhanced visibility transitions */
+  opacity: ${({ $isCollapsed }) => $isCollapsed ? 0 : 1};
+  transform: ${({ $isCollapsed, $isOnCreatePage }) => {
+    if ($isCollapsed) return 'translateX(-10px) scale(0.9)';
+    return $isOnCreatePage ? 'translateX(0) scale(1.02)' : 'translateX(0) scale(1)';
+  }};
   
   /* Morphing color and shadow animation */
   color: ${({ $isOnCreatePage }) => 
@@ -1135,15 +1168,19 @@ const AnimatedComposeText = styled.span<{
       : '0 1px 2px rgba(106, 17, 203, 0.1)'
   };
   
-  /* Smooth transitions */
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Coordinated smooth transitions with stagger */
+  transition: 
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    text-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Text scale animation */
-  transform: ${({ $isOnCreatePage }) => 
-    $isOnCreatePage 
-      ? 'scale(1.02)'
-      : 'scale(1)'
-  };
+  /* Delay text animation when expanding */
+  transition-delay: ${({ $isCollapsed }) => $isCollapsed ? '0s' : '0.1s'};
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
 `;
 
 const AnimatedComposeTooltip = styled.div<{ 
