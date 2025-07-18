@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { toast } from 'react-toastify';
+import GatewayConfigModal from '@/components/gateway/GatewayConfigModal';
 
 // ============ INTERFACES ============
 interface GatewayTemplate {
@@ -927,6 +928,26 @@ export default function GatewaysPage() {
     }
   };
 
+  const handleAddGateway = (gatewayData: any) => {
+    // Simular criação de gateway
+    const newGateway: UserGateway = {
+      _id: Date.now().toString(),
+      gatewayCode: `USR_${gatewayData.templateCode}_${Date.now()}`,
+      templateRef: gatewayData.templateRef,
+      templateCode: gatewayData.templateCode,
+      isDefault: userGateways.length === 0, // Primeiro gateway vira padrão
+      status: 'PENDING_VALIDATION',
+      displayName: gatewayData.displayName,
+      credentials: gatewayData.credentials,
+      settings: gatewayData.settings,
+      createdAt: new Date(),
+      template: availableGateways.find(t => t._id === gatewayData.templateRef)
+    };
+
+    setUserGateways(prev => [...prev, newGateway]);
+    toast.success(`Gateway ${gatewayData.displayName} adicionado com sucesso!`);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ACTIVE':
@@ -983,7 +1004,7 @@ export default function GatewaysPage() {
               onClick={() => setShowConfigModal(true)}
             >
               <FaPlus />
-              Adicionar Gateway
+              Nova integração
             </AddGatewayButton>
           </HeaderActions>
         </PageHeader>
@@ -1251,6 +1272,13 @@ export default function GatewaysPage() {
             )}
           </AvailableSection>
         </MainContent>
+
+        {/* Modal de Configuração */}
+        <GatewayConfigModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onSave={handleAddGateway}
+        />
       </PageContainer>
     </CreatorDashboard>
   );

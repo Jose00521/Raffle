@@ -104,6 +104,28 @@ export enum PaymentStatusEnum {
   }
 
 
+  export interface IPaymentResultData {
+    processorTransactionId: string
+    amountReceived: number
+    taxSeller: number
+    taxPlatform: number
+    paymentCode: string;
+
+    pixCode: string;
+    pixQrCode: string;
+
+    approvedAt: Date | undefined
+    expiresAt: string | Date | undefined;
+  }
+
+
+  export interface IPaymentResult {
+    response: Response
+    data: IPaymentResultData
+  }
+
+
+
   // Pagination Data Response
   export interface IPaginationDataResponse {
       totalItems: number;

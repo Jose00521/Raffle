@@ -573,16 +573,16 @@ export class PaymentRepository implements IPaymentRepository {
             amountReceived: gatewayResponse.amountSeller/100 || 0,
             taxSeller: gatewayResponse.taxSeller || 0,
             taxPlatform: gatewayResponse.taxPlatform || 0,
-            approvedDate: gatewayResponse.approvedAt ? new Date(gatewayResponse.approvedAt) : undefined,
-            expireDate: gatewayResponse.expiresAt ? new Date(gatewayResponse.expiresAt) : undefined,
+            approvedAt: gatewayResponse.approvedAt ? new Date(gatewayResponse.approvedAt) : undefined,
+            expiresAt: gatewayResponse.expiresAt ? new Date(gatewayResponse.expiresAt) : undefined,
         };
 
         // 2. Adiciona os campos de data condicionalmente
         if (gatewayResponse.approvedAt) {
-            updateData.approvedDate = new Date(gatewayResponse.approvedAt);
+            updateData.approvedAt = new Date(gatewayResponse.approvedAt);
         }
         if (gatewayResponse.expiresAt) {
-            updateData.expireDate = new Date(gatewayResponse.expiresAt);
+            updateData.expiresAt = new Date(gatewayResponse.expiresAt);
         }
 
         // 3. Executa a busca e atualização em uma única chamada atômica

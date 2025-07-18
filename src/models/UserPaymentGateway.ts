@@ -52,10 +52,6 @@ const UserPaymentGatewaySchema = isServer ? new mongoose.Schema<IUserPaymentGate
       of: mongoose.Schema.Types.Mixed,
       default: {}
     },
-    displayName: {
-      type: String,
-      required: true
-    },
     lastValidatedAt: Date,
     validationError: String
   },
