@@ -12,7 +12,9 @@
     "migrate:down": "npx migrate down",
     "migrate:create": "npx migrate create",
     "migrate:reset-db": "npx mongosh \"$MONGODB_URI\" --eval \"db.dropDatabase();\"",
-    "migrate:fresh": "npm run migrate:reset-db && npx migrate up"
+    "migrate:fresh": "npm run migrate:reset-db && npx migrate up",
+    "create-admin": "tsx src/scripts/create-admin-invite.ts",
+    "cleanup-invites": "tsx src/scripts/cleanup-admin-invites.ts"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",

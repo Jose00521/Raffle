@@ -1,4 +1,5 @@
 import mongoose, { Connection } from 'mongoose';
+import logger from '@/lib/logger/logger';
 
 // Declaração global para cache
 declare global {
@@ -65,10 +66,10 @@ export class DBConnection implements IDBConnection {
         retryWrites: true,
       };
 
-      console.log(`🔗 [${process.env.NODE_ENV}] Conectando ao MongoDB...`);
+      logger.info(`🔗 [${process.env.NODE_ENV}] Conectando ao MongoDB...`);
       
       cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-        console.log(`✅ [${process.env.NODE_ENV}] MongoDB conectado com sucesso`);
+        logger.info(`✅ [${process.env.NODE_ENV}] MongoDB conectado com sucesso`);
         return mongoose.connection;
       });
     }

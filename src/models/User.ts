@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { generateEntityCode } from './utils/idGenerator';
 const Schema = mongoose.Schema;
-import { ICreator, IRegularUser, IUser } from './interfaces/IUserInterfaces';
+import { ICreator, IRegularUser, IUser, IAdmin } from './interfaces/IUserInterfaces';
 import { SecureDataUtils } from '@/utils/encryption';
 import { maskCEP, maskComplement, maskNumber, maskStreet, maskCNPJ, maskCPF, maskEmail, maskPhone } from '@/utils/maskUtils';
 
@@ -509,10 +509,145 @@ CreatorSchema.pre('save', async function(this: any, next) {
   }
 });
 
+/**
+ * Schema para Usuário Admin
+ */
+const AdminSchema = new Schema<IAdmin>({
+  // Permissões específicas do admin
+  permissions: [{
+    type: String,
+    enum: [
+      'GATEWAY_MANAGEMENT',
+      'USER_MANAGEMENT', 
+      'CAMPAIGN_MANAGEMENT',
+      'PAYMENT_MANAGEMENT',
+      'SYSTEM_SETTINGS',
+      'AUDIT_ACCESS',
+      'SECURITY_MANAGEMENT',
+      'FULL_ACCESS'
+    ],
+    required: true
+  }],
+  
+  // Dados da criação via convite
+  inviteUsed: {
+    inviteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AdminInvite'
+    },
+    inviteToken: String,
+    usedAt: Date
+  },
+  
+  // Configurações específicas do admin
+  adminSettings: {
+    dashboardLayout: {
+      type: String,
+      default: 'default'
+    },
+    notificationPreferences: {
+      emailAlerts: { type: Boolean, default: true },
+      systemAlerts: { type: Boolean, default: true },
+      securityAlerts: { type: Boolean, default: true }
+    },
+    accessLevel: {
+      type: String,
+      enum: ['SUPER_ADMIN', 'ADMIN', 'MODERATOR'],
+      default: 'ADMIN'
+    },
+    lastPasswordChange: Date,
+    mustChangePassword: { type: Boolean, default: false }
+  },
+  
+  // Auditoria de ações (dados recentes)
+  auditLog: {
+    lastActions: [{
+      action: String,
+      target: String,
+      targetId: String,
+      details: mongoose.Schema.Types.Mixed,
+      timestamp: { type: Date, default: Date.now },
+      ip: String,
+      userAgent: String,
+      result: {
+        type: String,
+        enum: ['SUCCESS', 'FAILED', 'PARTIAL'],
+        default: 'SUCCESS'
+      }
+    }],
+    totalActions: { type: Number, default: 0 },
+    lastLogin: Date,
+    loginHistory: [{
+      timestamp: Date,
+      ip: String,
+      userAgent: String,
+      success: { type: Boolean, default: true },
+      location: {
+        country: String,
+        city: String
+      }
+    }]
+  },
+  
+  // Dados de verificação adicional (2FA, etc)
+  security: {
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, select: false },
+    backupCodes: [{ type: String, select: false }],
+    lastSecurityCheck: Date
+  },
+  
+  // Metadados de criação
+  metadata: {
+    createdBy: { type: String, required: false },
+    createdVia: {
+      type: String,
+      enum: ['INVITE', 'DIRECT', 'MIGRATION'],
+      default: 'INVITE'
+    },
+    ipCreated: String,
+    userAgentCreated: String,
+    isActive: { type: Boolean, default: true },
+    activatedAt: Date,
+    deactivatedAt: Date,
+    deactivatedBy: String,
+    deactivatedReason: String
+  }
+});
+
+// Adiciona métodos estáticos ao schema de Admin (antes de criar o modelo)
+AdminSchema.statics = {
+  // Método auxiliar para criar usuário admin
+  createAdmin: function(data: any) {
+    return this.create({
+      ...data,
+      role: 'admin'
+    });
+  },
+
+  // Método para buscar usuários admin
+  findAdmins: function() {
+    return this.find({ role: 'admin' });
+  }
+};
+
+// ✅ ADICIONE no src/models/User.ts no AdminSchema
+AdminSchema.pre('save', async function(this: any, next) {
+  try {
+    // Admin-specific pre-save logic can be added here
+    // Password will be handled by NextAuth or bcrypt in API routes
+    next();
+  } catch (error) {
+    next(error as Error);
+  }
+});
+
+
 // Criar modelos utilizando discriminators
 let RegularUser: mongoose.Model<IUser>, 
 Participant:mongoose.Model<IUser>, 
-Creator:mongoose.Model<ICreator>;
+Creator:mongoose.Model<ICreator>,
+Admin:mongoose.Model<IAdmin>;
 
 // Cria o modelo de usuário regular
 if (!mongoose.models.user) {
@@ -533,6 +668,13 @@ if (!mongoose.models.creator) {
   Creator = User.discriminator('creator', CreatorSchema) as mongoose.Model<ICreator>;
 } else {
   Creator = mongoose.models.creator as mongoose.Model<ICreator>;
+}
+
+// Cria o modelo de usuário admin
+if (!mongoose.models.admin) {
+  Admin = User.discriminator('admin', AdminSchema) as mongoose.Model<IAdmin>;
+} else {
+  Admin = mongoose.models.admin as mongoose.Model<IAdmin>;
 }
 
 // Configurar índices adicionais após a inicialização do mongoose
@@ -628,4 +770,4 @@ export const setupUserIndexes = async () => {
   console.log('User indexes configured successfully');
 };
 
-export { User, RegularUser, Participant, Creator }; 
+export { User, RegularUser, Participant, Creator, Admin } 

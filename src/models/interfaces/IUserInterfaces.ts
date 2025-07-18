@@ -188,4 +188,92 @@ export interface IAddress {
     };
   }
   
-  export type IUser = IRegularUser | ICreator;
+  export interface IAdmin extends IBaseUser {
+    role: 'admin';
+    // Permissões específicas do admin
+    permissions: AdminPermission[];
+    
+    // Dados da criação via convite
+    inviteUsed?: {
+      inviteId: mongoose.Types.ObjectId;
+      inviteToken: string;
+      usedAt: Date;
+    };
+    
+    // Configurações específicas do admin
+    adminSettings?: {
+      dashboardLayout?: string;
+      notificationPreferences?: {
+        emailAlerts: boolean;
+        systemAlerts: boolean;
+        securityAlerts: boolean;
+      };
+      accessLevel: 'SUPER_ADMIN' | 'ADMIN' | 'MODERATOR';
+      lastPasswordChange?: Date;
+      mustChangePassword?: boolean;
+    };
+    
+    // Auditoria de ações
+    auditLog?: {
+      lastActions: IAdminAction[];
+      totalActions: number;
+      lastLogin: Date;
+      loginHistory: ILoginHistory[];
+    };
+    
+    // Dados de verificação adicional (2FA, etc)
+    security?: {
+      twoFactorEnabled: boolean;
+      twoFactorSecret?: string;
+      backupCodes?: string[];
+      lastSecurityCheck?: Date;
+    };
+    
+    // Metadados de criação
+    metadata?: {
+      createdBy: string; // ID ou 'SYSTEM'
+      createdVia: 'INVITE' | 'DIRECT' | 'MIGRATION';
+      ipCreated?: string;
+      userAgentCreated?: string;
+      isActive: boolean;
+      activatedAt?: Date;
+      deactivatedAt?: Date;
+      deactivatedBy?: string;
+      deactivatedReason?: string;
+    };
+  }
+  
+  export type IUser = IRegularUser | ICreator | IAdmin;
+
+// Tipos auxiliares para Admin
+export type AdminPermission = 
+  | 'GATEWAY_MANAGEMENT'
+  | 'USER_MANAGEMENT' 
+  | 'CAMPAIGN_MANAGEMENT'
+  | 'PAYMENT_MANAGEMENT'
+  | 'SYSTEM_SETTINGS'
+  | 'AUDIT_ACCESS'
+  | 'SECURITY_MANAGEMENT'
+  | 'FULL_ACCESS';
+
+export interface IAdminAction {
+  action: string;
+  target?: string;
+  targetId?: string;
+  details?: any;
+  timestamp: Date;
+  ip?: string;
+  userAgent?: string;
+  result: 'SUCCESS' | 'FAILED' | 'PARTIAL';
+}
+
+export interface ILoginHistory {
+  timestamp: Date;
+  ip: string;
+  userAgent: string;
+  success: boolean;
+  location?: {
+    country?: string;
+    city?: string;
+  };
+}

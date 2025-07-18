@@ -39,6 +39,9 @@ import { IPaymentRepository, PaymentRepository } from '../repositories/PaymentRe
 import { IPaymentService, PaymentService } from '../services/PaymentService';
 import { IPaymentController, PaymentController } from '../controllers/PaymentController';
 import { SSEvents } from '../repositories/events/SSEvents';
+import { AdminController, IAdminController } from '../controllers/AdminController';
+import { AdminService, IAdminService } from '../services/AdminService';
+import { AdminRepository, IAdminRepository } from '../repositories/AdminRepository';
 
 
 // Register dependencies
@@ -54,6 +57,9 @@ container.register<IUserAuthRepository>('userAuthRepository', { useClass: UserAu
 container.register<ICreatorRepository>('creatorRepository', { useClass: CreatorRepository });
 container.register<ICreatorService>('creatorService', { useClass: CreatorService });
 container.register<ICreatorController>('creatorController', { useClass: CreatorController });
+container.register<IAdminRepository>('adminRepository', { useClass: AdminRepository });
+container.register<IAdminService>('adminService', { useClass: AdminService });
+container.register<IAdminController>('adminController', { useClass: AdminController });
 container.register<IPrizeRepository>('prizeRepository', { useClass: PrizeRepository });
 container.register<IPrizeService>('prizeService', { useClass: PrizeService });
 container.register<IPrizeController>('prizeController', { useClass: PrizeController });
