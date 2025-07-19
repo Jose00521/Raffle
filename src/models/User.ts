@@ -541,10 +541,6 @@ const AdminSchema = new Schema<IAdmin>({
   
   // Configurações específicas do admin
   adminSettings: {
-    dashboardLayout: {
-      type: String,
-      default: 'default'
-    },
     notificationPreferences: {
       emailAlerts: { type: Boolean, default: true },
       systemAlerts: { type: Boolean, default: true },
@@ -559,35 +555,35 @@ const AdminSchema = new Schema<IAdmin>({
     mustChangePassword: { type: Boolean, default: false }
   },
   
-  // Auditoria de ações (dados recentes)
-  auditLog: {
-    lastActions: [{
-      action: String,
-      target: String,
-      targetId: String,
-      details: mongoose.Schema.Types.Mixed,
-      timestamp: { type: Date, default: Date.now },
-      ip: String,
-      userAgent: String,
-      result: {
-        type: String,
-        enum: ['SUCCESS', 'FAILED', 'PARTIAL'],
-        default: 'SUCCESS'
-      }
-    }],
-    totalActions: { type: Number, default: 0 },
-    lastLogin: Date,
-    loginHistory: [{
-      timestamp: Date,
-      ip: String,
-      userAgent: String,
-      success: { type: Boolean, default: true },
-      location: {
-        country: String,
-        city: String
-      }
-    }]
-  },
+  // // Auditoria de ações (dados recentes)
+  // auditLog: {
+  //   lastActions: [{
+  //     action: String,
+  //     target: String,
+  //     targetId: String,
+  //     details: mongoose.Schema.Types.Mixed,
+  //     timestamp: { type: Date, default: Date.now },
+  //     ip: String,
+  //     userAgent: String,
+  //     result: {
+  //       type: String,
+  //       enum: ['SUCCESS', 'FAILED', 'PARTIAL'],
+  //       default: 'SUCCESS'
+  //     }
+  //   }],
+  //   totalActions: { type: Number, default: 0 },
+  //   lastLogin: Date,
+  //   loginHistory: [{
+  //     timestamp: Date,
+  //     ip: String,
+  //     userAgent: String,
+  //     success: { type: Boolean, default: true },
+  //     location: {
+  //       country: String,
+  //       city: String
+  //     }
+  //   }]
+  // },
   
   // Dados de verificação adicional (2FA, etc)
   security: {

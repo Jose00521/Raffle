@@ -15,7 +15,7 @@ const publicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] =
 
 const publicDynamicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] = [
   { path: '/campanhas', whenAuthenticated: 'next' },
-
+  { path: '/cadastro-admin', whenAuthenticated: 'redirect' },
 ] as const;
 
 const REDIRECT_WHEN_NOT_AUTHENTICATED = '/login';
