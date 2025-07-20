@@ -10,42 +10,48 @@ import {
   FaCalendarAlt, FaShieldAlt, FaUnlock, FaBell,
   FaExclamationTriangle, FaClipboardCheck
 } from 'react-icons/fa';
+import InputCheckbox from '@/components/common/InputCheckbox';
 
 const StepContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  width: 100%;
+  padding-bottom: 2rem;
 `;
 
 const StepTitle = styled.h2`
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   margin-bottom: 0.5rem;
   text-align: center;
 `;
 
 const StepDescription = styled.p`
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: #6b7280;
   text-align: center;
-  margin-bottom: 2rem;
-  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const ReviewSection = styled.div`
   background: #f8fafc;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: 8px;
+  padding: 1rem;
   border: 1px solid #e2e8f0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -54,7 +60,7 @@ const SectionTitle = styled.h3`
 const ReviewGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  gap: 0.5rem;
   
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -64,23 +70,23 @@ const ReviewGrid = styled.div`
 const ReviewItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
   background: white;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid #e5e7eb;
 `;
 
 const ReviewIcon = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   background: #667eea;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
 `;
 
 const ReviewDetails = styled.div`
@@ -88,13 +94,13 @@ const ReviewDetails = styled.div`
 `;
 
 const ReviewLabel = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #6b7280;
   font-weight: 500;
 `;
 
 const ReviewValue = styled.div`
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   color: #374151;
   font-weight: 600;
   margin-top: 0.125rem;
@@ -103,7 +109,7 @@ const ReviewValue = styled.div`
 const PermissionsList = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.5rem;
+  gap: 0.375rem;
   
   @media (min-width: 640px) {
     grid-template-columns: 1fr 1fr;
@@ -113,99 +119,99 @@ const PermissionsList = styled.div`
 const PermissionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  gap: 0.375rem;
+  padding: 0.375rem;
   background: white;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #e5e7eb;
 `;
 
 const PermissionCheck = styled.div`
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
   background: #10b981;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 `;
 
 const NotificationsList = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.5rem;
+  gap: 0.375rem;
 `;
 
 const NotificationItem = styled.div<{ $enabled: boolean }>`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  gap: 0.375rem;
+  padding: 0.375rem;
   background: white;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #e5e7eb;
   opacity: ${props => props.$enabled ? 1 : 0.6};
 `;
 
 const NotificationStatus = styled.div<{ $enabled: boolean }>`
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
   background: ${props => props.$enabled ? '#10b981' : '#d1d5db'};
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 `;
 
 const TermsSection = styled.div`
   background: #fef3c7;
   border: 2px solid #f59e0b;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-top: 1rem;
+  border-radius: 8px;
+  padding: 1rem 1rem 1.5rem 1rem;
+  margin-top: 0.75rem;
 `;
 
 const TermsHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 `;
 
 const TermsIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: #f59e0b;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
 `;
 
 const TermsTitle = styled.h4`
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #92400e;
   margin: 0;
 `;
 
 const TermsText = styled.p`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #92400e;
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
 `;
 
 const CheckboxContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.5rem;
 `;
 
 const Checkbox = styled.input`
@@ -223,34 +229,38 @@ const Checkbox = styled.input`
 `;
 
 const CheckboxLabel = styled.label`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #374151;
-  line-height: 1.5;
+  line-height: 1.4;
   cursor: pointer;
   flex: 1;
 `;
 
 const ErrorMessage = styled.div`
   color: #ef4444;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   margin-top: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
 `;
 
 const Step4Review: React.FC = () => {
   const { form } = useAdminFormContext();
-  const { control, formState: { errors }, watch } = form;
+
+  const { register, formState: { errors }, setValue, getValues, watch } = form;
 
   const formData = watch();
 
-  const {
-    field: termsAgreementField
-  } = useController({
-    name: 'termsAgreement',
-    control,
-  });
+  const termsAgreement = watch('termsAgreement'); 
+
+  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('termsAgreement', e.target.checked, { 
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+  };
 
   // Funções para formatar dados
   const formatCPF = (cpf: string) => {
@@ -275,12 +285,6 @@ const Step4Review: React.FC = () => {
 
   return (
     <StepContainer>
-      <StepTitle>Revisão e Confirmação</StepTitle>
-      <StepDescription>
-        Revise todas as informações antes de finalizar seu cadastro.
-        Certifique-se de que todos os dados estão corretos.
-      </StepDescription>
-
       {/* Dados Pessoais */}
       <ReviewSection>
         <SectionTitle>
@@ -421,24 +425,22 @@ const Step4Review: React.FC = () => {
         </TermsText>
 
         <CheckboxContainer>
-          <Checkbox
-            type="checkbox"
-            id="termsAgreement"
-            checked={termsAgreementField.value || false}
-            onChange={(e) => termsAgreementField.onChange(e.target.checked)}
-          />
-          <CheckboxLabel htmlFor="termsAgreement">
+        <InputCheckbox
+          id="termsAgreement"
+          label={<>Eu li, compreendi e concordo com os termos de uso e responsabilidades. 
+            Confirmo que tenho autorização para criar esta conta administrativa.</>}
+          checked={!!termsAgreement}
+          {...register('termsAgreement')}
+          onChange={handleTermsChange}
+          required
+          customColor="#10b981"
+          error={errors.termsAgreement?.message as string}
+        />
+          {/* <CheckboxLabel htmlFor="termsAgreement">
             Eu li, compreendi e concordo com os termos de uso e responsabilidades. 
             Confirmo que tenho autorização para criar esta conta administrativa.
-          </CheckboxLabel>
+          </CheckboxLabel> */}
         </CheckboxContainer>
-        
-        {errors.termsAgreement && (
-          <ErrorMessage>
-            <FaExclamationTriangle />
-            {errors.termsAgreement.message}
-          </ErrorMessage>
-        )}
       </TermsSection>
     </StepContainer>
   );

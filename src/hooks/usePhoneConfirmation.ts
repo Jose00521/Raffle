@@ -5,12 +5,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { UseFormSetError, UseFormClearErrors } from 'react-hook-form';
 import debounce from 'lodash/debounce';
 
-interface UsePasswordConfirmationProps {
-  password: {
+interface UsePhoneConfirmationProps {
+  phone: {
     text: string;
     value: string;
   };
-  confirmPassword: {
+  confirmPhone: {
     text: string;
     value: string;
   };
@@ -23,37 +23,46 @@ interface UsePasswordConfirmationProps {
  * Hook personalizado para validar a confirmação de senha em tempo real com debounce
  * Utiliza o debounce do Lodash para melhor performance
  */
-export const usePasswordConfirmation = ({
-  password,
-  confirmPassword,
+export const usePhoneConfirmation = ({
+  phone,
+  confirmPhone,
   setError,
   clearErrors,
   debounceTime = 300
-}: UsePasswordConfirmationProps) => {
-  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
+}: UsePhoneConfirmationProps) => {
+  const [phonesMatch, setPhonesMatch] = useState<boolean | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   
   // Criar a função de validação debounced usando Lodash
   const debouncedValidate = useRef(
-    debounce((password: {text: string, value: string}, confirmPassword: {text: string, value: string}) => {
-      if (!password.value || !confirmPassword.value) {
-        setPasswordsMatch(null);
+    debounce((phone: {text: string, value: string}, confirmPhone: {text: string, value: string}) => {
+        const phoneValue = phone.value.replace(/\D/g, '');
+        const confirmPhoneValue = confirmPhone.value.replace(/\D/g, '');
+
+        if (phoneValue.length < 11 || confirmPhoneValue.length < 11) {
+            setPhonesMatch(null);
+            setIsValidating(false);
+            return;
+        }
+
+      if (!phoneValue || !confirmPhoneValue) {
+        setPhonesMatch(null);
         setIsValidating(false);
         return;
       }
 
-      const match = password.value === confirmPassword.value;
-      setPasswordsMatch(match);
+      const match = phoneValue === confirmPhoneValue;
+      setPhonesMatch(match);
 
       // Atualizar os erros do formulário se os callbacks foram fornecidos
       if (setError && clearErrors) {
         if (!match) {
-          setError(confirmPassword.text, { 
+          setError(confirmPhone.text, { 
             type: 'manual', 
-            message: 'As senhas não conferem' 
+            message: 'Os telefones não conferem' 
           });
         } else {
-          clearErrors(confirmPassword.text);
+          clearErrors(confirmPhone.text);
         }
       }
 
@@ -70,20 +79,20 @@ export const usePasswordConfirmation = ({
 
   // Disparar a validação quando as senhas mudarem
   useEffect(() => {
-    if (confirmPassword.value.length > 0) {
+    if (confirmPhone.value.length > 0) {
       setIsValidating(true);
-      debouncedValidate(password, confirmPassword);
+      debouncedValidate(phone, confirmPhone);
     } else {
-      setPasswordsMatch(null);
+      setPhonesMatch(null);
       // Limpar erro se o campo estiver vazio
       if (clearErrors) {
         clearErrors('confirmarSenha');
       }
     }
-  }, [password.value, confirmPassword.value, clearErrors, debouncedValidate]);
+  }, [phone.value, confirmPhone.value, clearErrors, debouncedValidate]);
 
   return { 
-    passwordsMatch, 
+    phonesMatch, 
     isValidating 
   };
 };

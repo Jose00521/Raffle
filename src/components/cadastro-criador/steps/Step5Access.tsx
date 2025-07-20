@@ -40,8 +40,14 @@ const Step5Access: React.FC = () => {
   // Função para verificar a força da senha
   const { passwordStrength } = usePasswordField(watchPassword);
   const { passwordsMatch, isValidating  } = usePasswordConfirmation({
-    password: watchPassword,
-    confirmPassword: watchConfirmPassword,
+    password: {
+      text: 'senha',
+      value: watchPassword,
+    },
+    confirmPassword: {
+      text: 'confirmarSenha',
+      value: watchConfirmPassword,
+    },
     setError,
     clearErrors,
     debounceTime: 300 // 300ms é um bom valor para debounce de senha

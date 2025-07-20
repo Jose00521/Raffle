@@ -129,6 +129,7 @@ const Step3CompanyInfo: React.FC = () => {
               Tipo de Empresa<span className="required-mark">*</span>
             </label>
             <CustomDropdown
+              id="categoriaEmpresa"
               options={categories}
               value={selectedCategory || ''}
               onChange={handleCategoryChange}

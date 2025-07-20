@@ -284,7 +284,7 @@ export const creatorFormSchema = z.discriminatedUnion('tipoPessoa', [
 }, {
   message: "Os telefones não conferem",
   path: ["confirmarTelefone"],
-});;
+});
 
 export type CreatorFormData = z.infer<typeof creatorFormSchema>;
 export type CreatorInput = z.infer<typeof creatorFormSchema>;

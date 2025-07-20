@@ -43,8 +43,14 @@ const Step2Authentication: React.FC = () => {
   } = usePasswordField(password);
 
   const { passwordsMatch } = usePasswordConfirmation({
-    password,
-    confirmPassword,
+    password: {
+      text: 'senha',
+      value: password,
+    },
+    confirmPassword: {
+      text: 'confirmarSenha',
+      value: confirmPassword,
+    },
     setError,
     clearErrors,
     debounceTime: 300

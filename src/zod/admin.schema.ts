@@ -194,8 +194,9 @@ const AdminSecurityBaseSchema = z.object({
       (password) => /[^A-Za-z0-9]/.test(password),
       'A senha deve conter pelo menos um caractere especial'
     ),
-  confirmPassword: z.string().min(1, 'Por favor, confirme sua senha'),
-});
+  confirmPassword: z.string().min(1, 'Por favor, confirme sua senha')
+})
+
 
 // Schema para permissões e acesso
 export const AdminPermissionsSchema = z.object({
@@ -236,6 +237,7 @@ export const AdminCompleteSchema = AdminPersonalInfoSchema
   .merge(AdminPermissionsSchema)
   .merge(AdminReviewSchema)
 
+
 // Tipos TypeScript derivados dos schemas
 export type AdminPersonalInfo = z.infer<typeof AdminPersonalInfoSchema>;
 export type AdminSecurity = z.infer<typeof AdminSecurityBaseSchema>;
@@ -260,14 +262,14 @@ export const ADMIN_OPTIONS = {
   ],
   
   permissions: [
-    { value: 'GATEWAY_MANAGEMENT', label: 'Gerenciar Gateways de Pagamento' },
-    { value: 'USER_MANAGEMENT', label: 'Gerenciar Usuários' },
-    { value: 'CAMPAIGN_MANAGEMENT', label: 'Gerenciar Campanhas/Rifas' },
-    { value: 'PAYMENT_MANAGEMENT', label: 'Gerenciar Pagamentos' },
-    { value: 'SYSTEM_SETTINGS', label: 'Configurações do Sistema' },
-    { value: 'AUDIT_ACCESS', label: 'Acesso a Auditoria' },
-    { value: 'SECURITY_MANAGEMENT', label: 'Gerenciar Segurança' },
-    { value: 'FULL_ACCESS', label: 'Acesso Total' }
+    { value: 'GATEWAY_MANAGEMENT', label: 'Gerenciar Gateways de Pagamento', description: 'Gerenciar integrações e configurações de pagamento' },
+    { value: 'USER_MANAGEMENT', label: 'Gerenciar Usuários', description: 'Administrar usuários, criadores e participantes' },
+    { value: 'CAMPAIGN_MANAGEMENT', label: 'Gerenciar Campanhas/Rifas', description: 'Supervisionar campanhas e rifas ativas' },
+    { value: 'PAYMENT_MANAGEMENT', label: 'Gerenciar Pagamentos', description: 'Monitorar transações e pagamentos' },
+    { value: 'SYSTEM_SETTINGS', label: 'Configurações do Sistema', description: 'Configurar parâmetros gerais do sistema' },
+    { value: 'AUDIT_ACCESS', label: 'Acesso a Auditoria', description: 'Visualizar logs e relatórios de auditoria' },
+    { value: 'SECURITY_MANAGEMENT', label: 'Gerenciar Segurança', description: 'Gerenciar configurações de segurança' },
+    { value: 'FULL_ACCESS', label: 'Acesso Total', description: 'Acesso total a todas as funcionalidades' }
   ],
   
   departments: [

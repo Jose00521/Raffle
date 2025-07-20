@@ -11,85 +11,97 @@ import Step1PersonalInfo from './steps/Step1PersonalInfo';
 import Step2Security from './steps/Step2Security';
 import Step3Permissions from './steps/Step3Permissions';
 import Step4Review from './steps/Step4Review';
-import { CreatorFormProvider } from '@/context/CreatorFormContext';
 
-const FormContainer = styled.div`
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-    border-radius: 20px;
-    pointer-events: none;
-  }
+const PageContainer = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   
   @media (max-width: 768px) {
-    margin: 1rem;
-    padding: 1.5rem;
-    border-radius: 16px;
+    padding: 0.5rem;
   }
 `;
 
-const FormHeader = styled.div`
+const FormWrapper = styled.div`
+  width: 100%;
+  max-width: 1000px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  margin-top: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-top: 1rem;
+  }
+`;
+
+const Header = styled.div`
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  padding: 1.5rem 2rem;
   text-align: center;
-  margin-bottom: 3rem;
   position: relative;
-  z-index: 2;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem 1.5rem;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 1.875rem;
   font-weight: 700;
-  color: white;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
   
   @media (max-width: 768px) {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: rgba(255,255,255,0.9);
+  font-size: 1rem;
   margin: 0;
-  font-weight: 300;
+  opacity: 0.9;
+  font-weight: 400;
 `;
 
-const ProgressContainer = styled.div`
-  margin-bottom: 3rem;
-  position: relative;
-  z-index: 2;
+const ProgressSection = styled.div`
+  padding: 1rem 2rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
 `;
 
-const ProgressBar = styled.div`
+const ProgressTrack = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
   position: relative;
+  margin: 0;
 `;
 
 const ProgressLine = styled.div`
   position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 1.5px;
+  top: 30%;
+  left: 5%;
+  width: 90%;
+  height: 2px;
+  background: #e2e8f0;
+  transform: translateY(-50%);
   z-index: 1;
 `;
 
@@ -98,93 +110,111 @@ const ProgressFill = styled(motion.div)`
   top: 0;
   left: 0;
   height: 100%;
-  background: linear-gradient(90deg, #4ade80, #22d3ee);
-  border-radius: 1.5px;
-  box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  border-radius: 1px;
 `;
 
-const StepCircle = styled(motion.div)<{ $active: boolean; $completed: boolean }>`
-  width: 50px;
-  height: 50px;
+const StepIndicator = styled(motion.div)<{ $active: boolean; $completed: boolean }>`
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${props => 
-    props.$completed ? 'linear-gradient(135deg, #4ade80, #22d3ee)' :
-    props.$active ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' :
-    'rgba(255,255,255,0.2)'
-  };
-  color: white;
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 1.1rem;
-  position: relative;
-  z-index: 3;
-  border: 3px solid ${props =>
-    props.$completed ? '#4ade80' :
-    props.$active ? '#fbbf24' :
-    'rgba(255,255,255,0.3)'
-  };
-  box-shadow: ${props =>
-    props.$completed ? '0 0 20px rgba(74, 222, 128, 0.6)' :
-    props.$active ? '0 0 20px rgba(251, 191, 36, 0.6)' :
-    '0 4px 15px rgba(0,0,0,0.1)'
-  };
-  transition: all 0.3s ease;
-`;
-
-const StepLabel = styled.div<{ $active: boolean; $completed: boolean }>`
-  text-align: center;
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${props =>
-    props.$completed || props.$active ? 'white' : 'rgba(255,255,255,0.7)'
-  };
-`;
-
-const FormContent = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 2.5rem;
   position: relative;
   z-index: 2;
-  min-height: 600px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  border: 2px solid ${props => 
+    props.$completed ? '#10b981' :
+    props.$active ? '#4f46e5' : '#d1d5db'
+  };
+  background: ${props => 
+    props.$completed ? '#10b981' :
+    props.$active ? '#4f46e5' : '#ffffff'
+  };
+  color: ${props => 
+    props.$completed || props.$active ? '#ffffff' : '#6b7280'
+  };
+  transition: all 0.2s ease-in-out;
   
   @media (max-width: 768px) {
-    padding: 2rem 1.5rem;
-    min-height: 500px;
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
   }
 `;
 
-const NavigationButtons = styled.div`
+const StepLabel = styled.div<{ $active: boolean; $completed: boolean }>`
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: ${props => 
+    props.$completed ? '#10b981' :
+    props.$active ? '#4f46e5' : '#6b7280'
+  };
+  text-align: center;
+  margin-top: 0.375rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.65rem;
+    margin-top: 0.25rem;
+  }
+`;
+
+const StepItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 100px;
+  
+  @media (max-width: 768px) {
+    max-width: 70px;
+  }
+`;
+
+const ContentArea = styled.div`
+  padding: 2rem;
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+`;
+
+const Navigation = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  padding: 1.5rem 2.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 1rem 1.5rem;
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
 `;
 
 const Button = styled(motion.button)<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 1rem 2rem;
-  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.875rem;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
+  transition: all 0.2s ease-in-out;
+  min-width: 100px;
   
   ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
     }
     
     &:disabled {
@@ -193,25 +223,24 @@ const Button = styled(motion.button)<{ $variant?: 'primary' | 'secondary' }>`
       transform: none;
     }
   ` : `
-    background: #f3f4f6;
+    background: white;
     color: #374151;
     border: 1px solid #d1d5db;
     
     &:hover {
-      background: #e5e7eb;
-      transform: translateY(-1px);
+      background: #f9fafb;
+      border-color: #9ca3af;
     }
   `}
   
   @media (max-width: 768px) {
+    width: 100%;
     padding: 0.875rem 1.5rem;
-    font-size: 0.9rem;
-    min-width: 100px;
   }
 `;
 
 const stepIcons = [FaUser, FaLock, FaCog, FaCheck];
-const stepLabels = ['Dados Pessoais', 'Segurança', 'Permissões', 'Revisão'];
+const stepLabels = ['Informações', 'Segurança', 'Permissões', 'Confirmação'];
 
 const StepFormContent: React.FC = () => {
   const { step, isSliding, isSubmitting, handleNextStep, handlePrevStep, form, onSubmit } = useAdminFormContext();
@@ -235,65 +264,67 @@ const StepFormContent: React.FC = () => {
   const progressPercentage = ((step - 1) / 3) * 100;
 
   return (
-    <FormContainer>
-      <FormHeader>
-        <Title>
-          <FaShieldAlt style={{ marginRight: '0.5rem', color: '#fbbf24' }} />
-          Cadastro Administrativo
-        </Title>
-        <Subtitle>
-          Crie sua conta de administrador com acesso privilegiado
-        </Subtitle>
-      </FormHeader>
+    <PageContainer>
+      <FormWrapper>
+        <Header>
+          <Title>
+            <FaShieldAlt style={{ marginRight: '0.5rem' }} />
+            Cadastro Administrativo
+          </Title>
+          <Subtitle>
+            Configure sua conta com privilégios administrativos
+          </Subtitle>
+        </Header>
 
-      <ProgressContainer>
-        <ProgressBar>
-          <ProgressLine>
-            <ProgressFill
-              initial={{ width: '0%' }}
-              animate={{ width: `${progressPercentage}%` }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-            />
-          </ProgressLine>
-          
-          {[1, 2, 3, 4].map((stepNum) => {
-            const StepIcon = stepIcons[stepNum - 1];
-            const isActive = step === stepNum;
-            const isCompleted = step > stepNum;
+        <ProgressSection>
+          <ProgressTrack>
+            <ProgressLine>
+              <ProgressFill
+                initial={{ width: '0%' }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+              />
+            </ProgressLine>
             
-            return (
-              <div key={stepNum} style={{ position: 'relative', zIndex: 3 }}>
-                <StepCircle
-                  $active={isActive}
-                  $completed={isCompleted}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {isCompleted ? <FaCheck /> : <StepIcon />}
-                </StepCircle>
-                <StepLabel $active={isActive} $completed={isCompleted}>
-                  {stepLabels[stepNum - 1]}
-                </StepLabel>
-              </div>
-            );
-          })}
-        </ProgressBar>
-      </ProgressContainer>
+            {[1, 2, 3, 4].map((stepNum) => {
+              const StepIcon = stepIcons[stepNum - 1];
+              const isActive = step === stepNum;
+              const isCompleted = step > stepNum;
+              
+              return (
+                <StepItem key={stepNum}>
+                  <StepIndicator
+                    $active={isActive}
+                    $completed={isCompleted}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isCompleted ? <FaCheck /> : <StepIcon />}
+                  </StepIndicator>
+                  <StepLabel $active={isActive} $completed={isCompleted}>
+                    {stepLabels[stepNum - 1]}
+                  </StepLabel>
+                </StepItem>
+              );
+            })}
+          </ProgressTrack>
+        </ProgressSection>
 
-      <FormContent>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: isSliding ? 50 : 0 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+        <ContentArea>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </ContentArea>
 
-        <NavigationButtons>
+        <Navigation>
           <Button
             type="button"
             onClick={handlePrevStep}
@@ -302,7 +333,7 @@ const StepFormContent: React.FC = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Voltar
+            Anterior
           </Button>
 
           {isLastStep ? (
@@ -313,7 +344,7 @@ const StepFormContent: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {isSubmitting ? 'Cadastrando...' : 'Finalizar Cadastro'}
+              {isSubmitting ? 'Criando conta...' : 'Finalizar cadastro'}
             </Button>
           ) : (
             <Button
@@ -326,18 +357,19 @@ const StepFormContent: React.FC = () => {
               Próximo
             </Button>
           )}
-        </NavigationButtons>
-      </FormContent>
-    </FormContainer>
+        </Navigation>
+      </FormWrapper>
+    </PageContainer>
   );
 };
+
 // Componente principal que envolve o conteúdo com o Provider do contexto
 const SteppedAdminForm: React.FC = () => {
     return (
       <AdminFormProvider>
-        <FormContent />
+        <StepFormContent />
       </AdminFormProvider>
     );
-  };
+};
 
 export default SteppedAdminForm;

@@ -1,4 +1,4 @@
-import { AdminCompleteSchema, AdminStepSchemas, AdminComplete} from '@/zod/admin.schema';
+import { AdminCompleteSchema, AdminComplete, } from '@/zod/admin.schema';
 import { createContext, useContext, useState } from 'react';
 import { UseFormReturn, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +41,7 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     });
 
-    const { trigger, setValue, getValues, setError, clearErrors, handleSubmit } = form;
+    const { trigger } = form;
 
     const handleNextStep = async (): Promise<void> => {
         setIsSliding(true);
@@ -53,34 +53,10 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             switch (step) {
                 case 1:
                     isValid = await trigger(['name', 'email', 'phone', 'confirmPhone', 'cpf', 'birthDate']);
-                    
-                    // Validação adicional para confirmação de telefone
-                    const phone = getValues('phone');
-                    const confirmPhone = getValues('confirmPhone');
-                    
-                    if (phone !== confirmPhone) {
-                        setError('confirmPhone', {
-                            type: 'manual',
-                            message: 'Os telefones não coincidem'
-                        });
-                        isValid = false;
-                    }
                     break;
                     
                 case 2:
                     isValid = await trigger(['password', 'confirmPassword']);
-                    
-                    // Validação adicional para confirmação de senha
-                    const password = getValues('password');
-                    const confirmPassword = getValues('confirmPassword');
-                    
-                    if (password !== confirmPassword) {
-                        setError('confirmPassword', {
-                            type: 'manual',
-                            message: 'As senhas não coincidem'
-                        });
-                        isValid = false;
-                    }
                     break;
                     
                 case 3:
@@ -104,13 +80,19 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setTimeout(() => setIsSliding(false), 300);
         }
     };
-
-    const handlePrevStep = (): void => {
+    
+      // Função para ir para a etapa anterior
+      const handlePrevStep = () => {
         setIsSliding(true);
-        setStep(prevStep => Math.max(1, prevStep - 1));
-        setTimeout(() => setIsSliding(false), 300);
-    };
-
+        // Reduzindo para 300ms para uma resposta mais rápida
+        setTimeout(() => {
+          setStep(step - 1);
+          // Mantendo o pequeno atraso para uma transição suave
+          setTimeout(() => {
+            setIsSliding(false);
+          }, 50);
+        }, 300);
+      };
     const onSubmit = async (data: AdminComplete): Promise<void> => {
         setIsSubmitting(true);
         

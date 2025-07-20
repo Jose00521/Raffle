@@ -6,33 +6,39 @@ import { useController } from 'react-hook-form';
 import { useAdminFormContext } from '@/context/AdminFormContext';
 import FormInput from '@/components/common/FormInput';
 import { FaLock, FaShieldAlt, FaCheck, FaTimes } from 'react-icons/fa';
+import { usePasswordField } from '@/hooks/usePasswordField';
+import { usePasswordConfirmation } from '@/hooks/usePasswordConfirmation';
+import PasswordRequirementsComplete from '@/components/common/PasswordRequirementsComplete';
 
 const StepContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 `;
 
 const StepTitle = styled.h2`
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   margin-bottom: 0.5rem;
   text-align: center;
 `;
 
 const StepDescription = styled.p`
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: #6b7280;
   text-align: center;
-  margin-bottom: 2rem;
-  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 1.25rem;
   
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -40,7 +46,7 @@ const FormGrid = styled.div`
 `;
 
 const FullWidthField = styled.div`
-  grid-column: 1 / -1;
+  
 `;
 
 const PasswordStrengthContainer = styled.div`
@@ -105,85 +111,51 @@ const PasswordStrengthBarContainer = styled.div`
   overflow: hidden;
 `;
 
-const PasswordStrengthFill = styled.div<{ $strength: number }>`
+const PasswordStrengthFill = styled.div<{ $strength: number, $color: string }>`
   height: 100%;
-  background: ${props => {
-    if (props.$strength < 2) return '#ef4444';
-    if (props.$strength < 3) return '#f59e0b';
-    if (props.$strength < 4) return '#eab308';
-    return '#10b981';
-  }};
-  width: ${props => (props.$strength / 4) * 100}%;
+  background: ${props => props.$color};
+  width: ${props => (props.$strength / 5) * 100}%;
   transition: all 0.3s ease;
 `;
 
-const PasswordStrengthLabel = styled.div<{ $strength: number }>`
+const PasswordStrengthLabel = styled.div<{ $strength: number, $color: string }>`
   font-size: 0.8rem;
   font-weight: 500;
   margin-top: 0.5rem;
-  color: ${props => {
-    if (props.$strength < 2) return '#ef4444';
-    if (props.$strength < 3) return '#f59e0b';
-    if (props.$strength < 4) return '#eab308';
-    return '#10b981';
-  }};
+  color: ${props => props.$color};
 `;
 
 const Step2Security: React.FC = () => {
   const { form } = useAdminFormContext();
-  const { control, formState: { errors }, watch } = form;
+  const { 
+    control, 
+    formState: { errors }, 
+    setError,
+    clearErrors,
+    register,
+    watch,
+    trigger
+  } = form;
 
-  const passwordValue = watch('password') || '';
+  const watchPassword = watch('password','');
+  const watchConfirmPassword = watch('confirmPassword', '');
 
-  const {
-    field: passwordField
-  } = useController({
-    name: 'password',
-    control,
+  usePasswordConfirmation({
+    password: {
+      text: 'password',
+      value: watchPassword,
+    },
+    confirmPassword: {
+      text: 'confirmPassword',
+      value: watchConfirmPassword,
+    },
+    setError,
+    clearErrors,
+    debounceTime: 300 // 300ms é um bom valor para debounce de senha
   });
-
-  const {
-    field: confirmPasswordField
-  } = useController({
-    name: 'confirmPassword',
-    control,
-  });
-
-  // Validação de força da senha
-  const getPasswordRequirements = (password: string) => {
-    return {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[^A-Za-z0-9]/.test(password)
-    };
-  };
-
-  const calculatePasswordStrength = (password: string) => {
-    const requirements = getPasswordRequirements(password);
-    return Object.values(requirements).filter(Boolean).length;
-  };
-
-  const requirements = getPasswordRequirements(passwordValue);
-  const strength = calculatePasswordStrength(passwordValue);
-
-  const getStrengthLabel = (strength: number) => {
-    if (strength < 2) return 'Muito Fraca';
-    if (strength < 3) return 'Fraca';
-    if (strength < 4) return 'Média';
-    if (strength < 5) return 'Forte';
-    return 'Muito Forte';
-  };
 
   return (
     <StepContainer>
-      <StepTitle>Configurações de Segurança</StepTitle>
-      <StepDescription>
-        Configure sua senha de acesso e defina as configurações de segurança.
-        Uma senha forte é essencial para proteger sua conta administrativa.
-      </StepDescription>
-
       <FormGrid>
         <FullWidthField>
           <FormInput
@@ -194,67 +166,13 @@ const Step2Security: React.FC = () => {
             placeholder="Digite uma senha forte"
             icon={<FaLock />}
             required
-            value={passwordField.value || ''}
-            onChange={(e) => passwordField.onChange(e.target.value)}
-            onBlur={passwordField.onBlur}
+            {...register('password')}
             error={errors.password?.message}
             helpText="Sua senha deve atender aos critérios de segurança"
           />
-          
-          {passwordValue && (
-            <PasswordStrengthContainer>
-              <PasswordStrengthTitle>
-                <FaShieldAlt />
-                Força da Senha
-              </PasswordStrengthTitle>
-              
-              <PasswordRequirements>
-                <RequirementItem $met={requirements.length}>
-                  <RequirementIcon $met={requirements.length}>
-                    {requirements.length ? <FaCheck /> : <FaTimes />}
-                  </RequirementIcon>
-                  Mínimo 8 caracteres
-                </RequirementItem>
-                
-                <RequirementItem $met={requirements.uppercase}>
-                  <RequirementIcon $met={requirements.uppercase}>
-                    {requirements.uppercase ? <FaCheck /> : <FaTimes />}
-                  </RequirementIcon>
-                  Letra maiúscula
-                </RequirementItem>
-                
-                <RequirementItem $met={requirements.lowercase}>
-                  <RequirementIcon $met={requirements.lowercase}>
-                    {requirements.lowercase ? <FaCheck /> : <FaTimes />}
-                  </RequirementIcon>
-                  Letra minúscula
-                </RequirementItem>
-                
-                <RequirementItem $met={requirements.number}>
-                  <RequirementIcon $met={requirements.number}>
-                    {requirements.number ? <FaCheck /> : <FaTimes />}
-                  </RequirementIcon>
-                  Número
-                </RequirementItem>
-                
-                <RequirementItem $met={requirements.special}>
-                  <RequirementIcon $met={requirements.special}>
-                    {requirements.special ? <FaCheck /> : <FaTimes />}
-                  </RequirementIcon>
-                  Caractere especial
-                </RequirementItem>
-              </PasswordRequirements>
-              
-              <PasswordStrengthBar>
-                <PasswordStrengthBarContainer>
-                  <PasswordStrengthFill $strength={strength} />
-                </PasswordStrengthBarContainer>
-                <PasswordStrengthLabel $strength={strength}>
-                  {getStrengthLabel(strength)}
-                </PasswordStrengthLabel>
-              </PasswordStrengthBar>
-            </PasswordStrengthContainer>
-          )}
+
+          <PasswordRequirementsComplete password={watchPassword} />
+
         </FullWidthField>
 
         <FullWidthField>
@@ -266,9 +184,7 @@ const Step2Security: React.FC = () => {
             placeholder="Digite a senha novamente"
             icon={<FaLock />}
             required
-            value={confirmPasswordField.value || ''}
-            onChange={(e) => confirmPasswordField.onChange(e.target.value)}
-            onBlur={confirmPasswordField.onBlur}
+            {...register('confirmPassword')}
             error={errors.confirmPassword?.message}
             helpText="Repita a senha para confirmação"
           />
@@ -278,4 +194,4 @@ const Step2Security: React.FC = () => {
   );
 };
 
-export default Step2Security;
+export default React.memo(Step2Security);

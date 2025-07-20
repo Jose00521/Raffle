@@ -30,7 +30,7 @@ const CheckboxContainer = styled.label`
   line-height: 1.4;
 `;
 
-const CustomCheckbox = styled.input`
+const CustomCheckbox = styled.input<{ $customColor?: string }>`
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -38,7 +38,7 @@ const CustomCheckbox = styled.input`
   width: 0;
 
   &:checked ~ .checkmark {
-    background-color: #6a11cb;
+    background-color: ${props => props.$customColor || '#6a11cb'};
   }
 
   &:checked ~ .checkmark::after {
@@ -84,6 +84,8 @@ const Checkmark = styled.span`
 const LabelText = styled.span`
   margin-left: 8px;
   line-height: 1.4;
+  color: #374151;
+  font-size: 13px;
 `;
 
 const fadeIn = keyframes`
@@ -140,7 +142,7 @@ const ErrorIcon = styled(FaExclamationCircle)`
 interface InputCheckboxProps {
   id: string;
   name?: string;
-  label: string | React.ReactNode;
+  label?: string | React.ReactNode;
   error?: string;
   disabled?: boolean;
   required?: boolean;
@@ -148,6 +150,7 @@ interface InputCheckboxProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
+  customColor?: string;
 }
 
 const InputCheckbox: React.FC<InputCheckboxProps> = ({
@@ -161,6 +164,7 @@ const InputCheckbox: React.FC<InputCheckboxProps> = ({
   disabled = false,
   required = false,
   onClick,
+  customColor,
   ...rest
 }) => {
   return (
@@ -177,6 +181,7 @@ const InputCheckbox: React.FC<InputCheckboxProps> = ({
           type="checkbox"
           onClick={onClick}
           {...rest}
+          $customColor={customColor}
         />
         <Checkmark className="checkmark"></Checkmark>
         <LabelText>{label}</LabelText>

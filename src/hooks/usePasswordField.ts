@@ -5,6 +5,12 @@ import { getPasswordStrength, getPasswordStrengthText } from '../utils/validator
 
 interface PasswordFieldResult {
   passwordStrength: { strength: number; text: string; color: string };
+  getPasswordRequirements: (password: string) => {
+    length: {
+      requirement: boolean;
+      text: string;
+    };
+  };
 }
 
 /**
@@ -15,9 +21,6 @@ interface PasswordFieldResult {
  * - Controle de visibilidade da senha
  */
 export const usePasswordField = (password: string, confirmPassword?: string): PasswordFieldResult => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
 
   // Memoize password strength calculation with early returns
   const passwordStrength = useMemo(() => {
@@ -26,11 +29,11 @@ export const usePasswordField = (password: string, confirmPassword?: string): Pa
     let strength = 0;
     
     // Adiciona pontuação com base em critérios
-    if (password.length >= 8) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
+    if (password.length >= 8) strength += 1; // verifica se a senha tem 8 caracteres
+    if (/[a-z]/.test(password)) strength += 1; // verifica se a senha tem letra minúscula
+    if (/[A-Z]/.test(password)) strength += 1; // verifica se a senha tem letra maiúscula
+    if (/[0-9]/.test(password)) strength += 1; // verifica se a senha tem número
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 1; // verifica se a senha tem caractere especial
     
     // Define o texto e cor com base na pontuação
     let text = '';
@@ -66,9 +69,35 @@ export const usePasswordField = (password: string, confirmPassword?: string): Pa
     return { strength, text, color };
   }, [password]);
 
+  const getPasswordRequirements = (password: string) => {
+    return {
+      length: {
+        requirement:password.length >= 8,
+        text: 'Mínimo 8 caracteres',
+      },
+      uppercase: {
+        requirement: /[A-Z]/.test(password),
+        text: 'Letra maiúscula',
+      },
+      lowercase: {
+        requirement: /[a-z]/.test(password),
+        text: 'Letra minúscula',
+      },
+      number: {
+        requirement: /[0-9]/.test(password),
+        text: 'Número',
+      },
+      special: {
+        requirement: /[^A-Za-z0-9]/.test(password),
+        text: 'Caractere especial',
+      }
+    };
+  };
+
   
 
   return {
     passwordStrength,
+    getPasswordRequirements
   };
 }; 
