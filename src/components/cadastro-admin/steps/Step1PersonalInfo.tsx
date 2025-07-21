@@ -19,25 +19,6 @@ const StepContainer = styled.div`
   gap: 1.25rem;
 `;
 
-const StepTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 0.5rem;
-  text-align: center;
-`;
-
-const StepDescription = styled.p`
-  font-size: 0.875rem;
-  color: #6b7280;
-  text-align: center;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-`;
-
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -63,8 +44,6 @@ const Step1PersonalInfo: React.FC = () => {
     formState: { errors },
     register,
     watch,
-    getValues,
-    setValue,
     trigger,
     setError,
     clearErrors,
@@ -72,18 +51,21 @@ const Step1PersonalInfo: React.FC = () => {
 
    const registerWithMask = useHookFormMask(register);
 
+   const watchPhone = watch('phone', '');
+   const watchConfirmPhone = watch('confirmPhone', '');
+
    usePhoneConfirmation({
     phone: {
       text: 'phone',
-      value: watch('phone', ''),
+      value: watchPhone,
     },
     confirmPhone: {
       text: 'confirmPhone',
-      value: watch('confirmPhone', ''),
+      value: watchConfirmPhone,
     },
     setError: setError,
     clearErrors: clearErrors,
-    debounceTime: 300
+    debounceTime: 200
    })
 
 

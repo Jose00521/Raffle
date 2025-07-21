@@ -127,7 +127,7 @@ export default function AdminSetupPage() {
     <ContentWrapper>
       
       <FormWrapper>
-        <SteppedAdminForm />
+        <SteppedAdminForm token={token as string} />
       </FormWrapper>
     </ContentWrapper>
     <BrandOverlay>

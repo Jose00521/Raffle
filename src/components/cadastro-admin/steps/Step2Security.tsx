@@ -151,7 +151,7 @@ const Step2Security: React.FC = () => {
     },
     setError,
     clearErrors,
-    debounceTime: 300 // 300ms é um bom valor para debounce de senha
+    debounceTime: 200 // 300ms é um bom valor para debounce de senha
   });
 
   return (

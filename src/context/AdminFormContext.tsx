@@ -3,6 +3,9 @@ import { createContext, useContext, useState } from 'react';
 import { UseFormReturn, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
+import adminAPIClient from '@/API/admin/adminAPIClient';
+import { IAdmin } from '@/models/interfaces/IUserInterfaces';
+import mongoose from 'mongoose';
 
 // Interface do contexto do formulário
 interface FormContextType {
@@ -20,7 +23,7 @@ interface FormContextType {
 // Criação do contexto
 const AdminFormContext = createContext<FormContextType | undefined>(undefined);
 
-export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: string }> = ({ children, token }) => {
     const [step, setStep] = useState(1);
     const [isSliding, setIsSliding] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +33,10 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         resolver: zodResolver(AdminCompleteSchema),
         mode: 'all',
         defaultValues: {
+            phone: '',
+            confirmPhone: '',
+            password: '',
+            confirmPassword: '',
             permissions: [],
             accessLevel: 'ADMIN',
             notificationPreferences: {
@@ -43,41 +50,41 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const { trigger } = form;
 
-    const handleNextStep = async (): Promise<void> => {
-        setIsSliding(true);
-        
-        try {
+    const validateStep = async (currentStep: number) => {
             // Validar campos do step atual
-            let isValid = false;
             
-            switch (step) {
-                case 1:
-                    isValid = await trigger(['name', 'email', 'phone', 'confirmPhone', 'cpf', 'birthDate']);
-                    break;
-                    
-                case 2:
-                    isValid = await trigger(['password', 'confirmPassword']);
-                    break;
-                    
-                case 3:
-                    isValid = await trigger(['permissions', 'accessLevel', 'notificationPreferences']);
-                    break;
-                    
-                case 4:
-                    isValid = await trigger(['termsAgreement']);
-                    break;
-                    
-                default:
-                    isValid = true;
-            }
-            
-            if (isValid) {
-                setStep(prevStep => prevStep + 1);
-            }
+            const fieldsByStep: Record<number, (keyof AdminComplete)[]> = {
+                1: ['name', 'email', 'phone', 'confirmPhone', 'cpf', 'birthDate'],
+                2: ['password', 'confirmPassword'],
+                3: ['permissions', 'accessLevel', 'notificationPreferences'],
+                4: ['termsAgreement']
+            }       
+
+        try {
+            console.log('trigger', fieldsByStep[currentStep])
+            const result = await trigger(fieldsByStep[currentStep], { shouldFocus: true });
+            return result;
         } catch (error) {
-            console.error('Erro na validação:', error);
-        } finally {
-            setTimeout(() => setIsSliding(false), 300);
+            console.error('Validation error:', error);
+            return false;
+        }
+    }
+
+    const handleNextStep = async (): Promise<void> => {
+        const isStepValid = await validateStep(step);
+        console.log('step', step)
+        console.log('isStepValid', isStepValid)
+    
+        if (isStepValid) {
+          setIsSliding(true);
+          // Reduzindo para 300ms para uma resposta mais rápida
+          setTimeout(() => {
+            setStep(step + 1);
+            // Mantendo o pequeno atraso para uma transição suave
+            setTimeout(() => {
+              setIsSliding(false);
+            }, 50);
+          }, 200);
         }
     };
     
@@ -93,20 +100,47 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }, 50);
         }, 300);
       };
+
     const onSubmit = async (data: AdminComplete): Promise<void> => {
         setIsSubmitting(true);
         
         try {
-            console.log('Dados do admin para cadastro:', data);
+            console.log('Dados do admin para cadastro:', {
+                ...data,
+                token: token
+            });
             
-            // Aqui você faria a chamada para a API
-            // const response = await createAdmin(data);
+            const payload : Partial<IAdmin> = {
+                ...data,
+                role: 'admin',
+                adminSettings: {
+                    accessLevel: data.accessLevel,
+                    notificationPreferences: data.notificationPreferences,
+                    lastPasswordChange: new Date(),
+                    mustChangePassword: false
+                },
+                inviteUsed: {
+                inviteToken: token,
+                inviteId: new mongoose.Types.ObjectId(''),
+                usedAt: new Date()
+                },
+                isActive:true,
+                security: {
+                    twoFactorEnabled: false,
+                    twoFactorSecret: '',
+                    backupCodes: [],
+                    lastSecurityCheck: new Date()
+                },
+                metadata: {
+                    createdVia: 'INVITE',
+                    createdBy: 'ADMIN',
+                }
+            }
             
-            // Simular delay da API
-            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Redirecionar para página de sucesso
-            router.push('/cadastro-sucesso?type=admin');
+            const result = adminAPIClient.createAdmin(payload)
+
+            console.log('result',result)
             
         } catch (error) {
             console.error('Erro ao cadastrar admin:', error);

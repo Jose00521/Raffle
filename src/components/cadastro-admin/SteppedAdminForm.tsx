@@ -14,6 +14,7 @@ import Step4Review from './steps/Step4Review';
 
 const PageContainer = styled.div`
   min-height: 100vh;
+  height: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -364,9 +365,9 @@ const StepFormContent: React.FC = () => {
 };
 
 // Componente principal que envolve o conteúdo com o Provider do contexto
-const SteppedAdminForm: React.FC = () => {
+const SteppedAdminForm: React.FC<{ token: string }> = ({ token }) => {
     return (
-      <AdminFormProvider>
+      <AdminFormProvider token={token}>
         <StepFormContent />
       </AdminFormProvider>
     );

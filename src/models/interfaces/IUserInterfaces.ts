@@ -235,7 +235,6 @@ export interface IAddress {
       createdVia: 'INVITE' | 'DIRECT' | 'MIGRATION';
       ipCreated?: string;
       userAgentCreated?: string;
-      isActive: boolean;
       activatedAt?: Date;
       deactivatedAt?: Date;
       deactivatedBy?: string;

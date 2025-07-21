@@ -89,7 +89,7 @@ const PasswordRequirementsComplete: React.FC<PasswordRequirementsCompleteProps> 
 
   return (
     <>
-    {password && (
+    {/* {password && ( */}
         <PasswordStrengthContainer>
           <PasswordStrengthTitle>
             <FaShieldAlt />
@@ -118,7 +118,7 @@ const PasswordRequirementsComplete: React.FC<PasswordRequirementsCompleteProps> 
             </PasswordStrengthLabel>
           </PasswordStrengthBar>
         </PasswordStrengthContainer>
-      )}
+      {/* )} */}
       </>
   )
 }

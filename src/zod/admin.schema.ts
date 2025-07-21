@@ -236,6 +236,36 @@ export const AdminCompleteSchema = AdminPersonalInfoSchema
   .merge(AdminSecurityBaseSchema)
   .merge(AdminPermissionsSchema)
   .merge(AdminReviewSchema)
+  .refine(data => {
+    console.log('executa refine password')
+    return data.password === data.confirmPassword
+  }, {
+    message: "As senhas não conferem",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => {
+    // Remove caracteres especiais antes de comparar
+    console.log('executa refine phone')
+    
+    // Se um dos telefones não estiver preenchido, não comparar
+    if (!data.phone || !data.confirmPhone) {
+      return true;
+    }
+    
+    const phone1 = data.phone.replace(/\D/g, '');
+    const phone2 = data.confirmPhone.replace(/\D/g, '');
+    
+    
+    // Só compara se ambos tiverem pelo menos 10 dígitos (completos)
+    if (phone1.length < 11 || phone2.length < 11) {
+      return true;
+    }
+    
+    return phone1 === phone2;
+  }, {
+    message: "Os telefones não conferem",
+    path: ["confirmPhone"],
+  });
 
 
 // Tipos TypeScript derivados dos schemas

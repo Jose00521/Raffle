@@ -603,7 +603,6 @@ const AdminSchema = new Schema<IAdmin>({
     },
     ipCreated: String,
     userAgentCreated: String,
-    isActive: { type: Boolean, default: true },
     activatedAt: Date,
     deactivatedAt: Date,
     deactivatedBy: String,

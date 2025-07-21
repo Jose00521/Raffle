@@ -38,6 +38,8 @@ export const usePhoneConfirmation = ({
     debounce((phone: {text: string, value: string}, confirmPhone: {text: string, value: string}) => {
         const phoneValue = phone.value.replace(/\D/g, '');
         const confirmPhoneValue = confirmPhone.value.replace(/\D/g, '');
+        console.log('phoneValue', phoneValue)
+        console.log('confirmPhoneValue', confirmPhoneValue)
 
         if (phoneValue.length < 11 || confirmPhoneValue.length < 11) {
             setPhonesMatch(null);
@@ -54,11 +56,12 @@ export const usePhoneConfirmation = ({
       const match = phoneValue === confirmPhoneValue;
       setPhonesMatch(match);
 
+      console.log(match)
+
       // Atualizar os erros do formulário se os callbacks foram fornecidos
       if (setError && clearErrors) {
         if (!match) {
           setError(confirmPhone.text, { 
-            type: 'manual', 
             message: 'Os telefones não conferem' 
           });
         } else {
