@@ -8,7 +8,7 @@ import { IAdminInvite } from "@/models/AdminInvite";
 
 export interface IAdminController {
     validateInvite(token: string): Promise<ApiResponse<null> | ApiResponse<IAdminInvite>>;
-    createAdmin(admin: IAdmin): Promise<ApiResponse<null> | ApiResponse<IAdmin>>;
+    createAdmin(admin: Partial<IAdmin>): Promise<ApiResponse<null> | ApiResponse<IAdmin>>;
 }
 
 @injectable()
@@ -25,9 +25,9 @@ export class AdminController implements IAdminController {
         return this.adminService.validateInvite(token);
     }
 
-    async createAdmin(admin: IAdmin): Promise<ApiResponse<null> | ApiResponse<IAdmin>> {
+    async createAdmin(admin: Partial<IAdmin>): Promise<ApiResponse<null> | ApiResponse<IAdmin>> {
         try {
-            const securePassword = await bcrypt.hash(admin.password, 10);
+            const securePassword = await bcrypt.hash(admin.password || '', 10);
             
             return await this.adminService.createAdmin({...admin, password: securePassword});
         } catch (error) {

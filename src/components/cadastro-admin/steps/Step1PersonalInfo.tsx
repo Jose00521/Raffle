@@ -12,6 +12,8 @@ import { Controller } from 'react-hook-form';
 import FormDatePicker from '@/components/common/FormDatePicker';
 import { FormGroup, StyledFormDatePickerWrapper } from '@/styles/registration.styles';
 import { usePhoneConfirmation } from '@/hooks/usePhoneConfirmation';
+import userAPIClient from '@/API/userAPIClient';
+import { AdminComplete } from '@/zod/admin.schema';
 
 const StepContainer = styled.div`
   display: flex;
@@ -37,6 +39,10 @@ const FullWidthField = styled.div`
 const Step1PersonalInfo: React.FC = () => {
   const { 
     form,
+    setStep,
+    step,
+    handleNextStep,
+    handlePrevStep,
    } = useAdminFormContext();
 
    const {
@@ -63,8 +69,8 @@ const Step1PersonalInfo: React.FC = () => {
       text: 'confirmPhone',
       value: watchConfirmPhone,
     },
-    setError: setError,
-    clearErrors: clearErrors,
+    setError,
+    clearErrors,
     debounceTime: 200
    })
 

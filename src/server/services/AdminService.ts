@@ -6,7 +6,7 @@ import { IAdminInvite } from "@/models/AdminInvite";
 
 export interface IAdminService {
     validateInvite(token: string): Promise<ApiResponse<null> | ApiResponse<IAdminInvite>>;
-    createAdmin(admin: IAdmin): Promise<ApiResponse<null> | ApiResponse<IAdmin>>;
+    createAdmin(admin: Partial<IAdmin>): Promise<ApiResponse<null> | ApiResponse<IAdmin>>;
 }
 
 @injectable()
@@ -19,7 +19,7 @@ export class AdminService implements IAdminService {
         return this.adminRepository.validateInvite(token);
     }
 
-    async createAdmin(admin: IAdmin): Promise<ApiResponse<null> | ApiResponse<IAdmin>> {
+    async createAdmin(admin: Partial<IAdmin>): Promise<ApiResponse<null> | ApiResponse<IAdmin>> {
         return this.adminRepository.createAdmin(admin);
     }
 }

@@ -12,6 +12,11 @@ const UserSchema = new Schema<IUser>({
   userCode: {
     type: String,
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'creator', 'participant'],
+    default: 'user'
+  },
   profilePicture: {
     type: String,
   },

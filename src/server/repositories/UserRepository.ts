@@ -193,6 +193,10 @@ export class UserRepository implements IUserRepository {
                 field: 'telefone',
                 message: 'Telefone já cadastrado'
             });
+            if (phoneExists) duplicatedFields.push({
+                field: 'telefone',
+                message: 'Telefone já cadastrado'
+            });
             
                 
             return createConflictResponse(

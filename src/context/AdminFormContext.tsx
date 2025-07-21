@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import adminAPIClient from '@/API/admin/adminAPIClient';
 import { IAdmin } from '@/models/interfaces/IUserInterfaces';
 import mongoose from 'mongoose';
+import userAPIClient from '@/API/userAPIClient';
 
 // Interface do contexto do formulário
 interface FormContextType {
@@ -48,7 +49,7 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
         }
     });
 
-    const { trigger } = form;
+    const { trigger, setError } = form;
 
     const validateStep = async (currentStep: number) => {
             // Validar campos do step atual
@@ -70,21 +71,50 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
         }
     }
 
+    const verifyIfMainDataExists = async (data: {cpf: string, email: string, phone: string}) => {
+        const response = await userAPIClient.verifyIfMainDataExists(data);
+        if(response.statusCode === 200) {
+          return false;
+        }
+        return response;
+      }
+    
+      const verifyMainData  = async (step: number) => {
+        const {cpf, email, phone} = form.getValues();
+    
+        const response = await verifyIfMainDataExists({cpf: cpf.replace(/\D/g, ''), email, phone: phone.replace(/\D/g, '')});
+    
+        console.log('response validation',response);
+    
+        if(response) {          
+            response.issues.forEach((issue: {field: string, message: string}) => {
+              setError(issue.field as keyof AdminComplete, { message: issue.message });
+            });
+            return;
+        }else{
+          setStep(step); // Pula endereço e senha, vai direto para resumo
+        }
+      }
+
     const handleNextStep = async (): Promise<void> => {
         const isStepValid = await validateStep(step);
         console.log('step', step)
         console.log('isStepValid', isStepValid)
-    
-        if (isStepValid) {
-          setIsSliding(true);
-          // Reduzindo para 300ms para uma resposta mais rápida
-          setTimeout(() => {
-            setStep(step + 1);
-            // Mantendo o pequeno atraso para uma transição suave
-            setTimeout(() => {
-              setIsSliding(false);
-            }, 50);
-          }, 200);
+
+        if(step === 1) {
+          await verifyMainData(step + 1);
+        }else{
+            if (isStepValid) {
+                setIsSliding(true);
+                // Reduzindo para 300ms para uma resposta mais rápida
+                setTimeout(() => {
+                  setStep(step + 1);
+                  // Mantendo o pequeno atraso para uma transição suave
+                  setTimeout(() => {
+                    setIsSliding(false);
+                  }, 50);
+                }, 200);
+              }
         }
     };
     
@@ -113,6 +143,7 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
             const payload : Partial<IAdmin> = {
                 ...data,
                 role: 'admin',
+                birthDate: new Date(data.birthDate),
                 adminSettings: {
                     accessLevel: data.accessLevel,
                     notificationPreferences: data.notificationPreferences,
@@ -120,9 +151,10 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
                     mustChangePassword: false
                 },
                 inviteUsed: {
-                inviteToken: token,
-                inviteId: new mongoose.Types.ObjectId(''),
-                usedAt: new Date()
+                    inviteToken: token,
+                    // Usando uma string vazia para inviteId - o backend deve substituir por um ObjectId válido
+                    inviteId: mongoose.Types.ObjectId.createFromHexString('665266526652665266526652') as any, // Cast para any para evitar erro de tipo
+                    usedAt: new Date()
                 },
                 isActive:true,
                 security: {
@@ -133,12 +165,13 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
                 },
                 metadata: {
                     createdVia: 'INVITE',
-                    createdBy: 'ADMIN',
+                    createdBy: 'SYSTEM',
                 }
             }
+
+            console.log('payload', payload)
             
-            
-            const result = adminAPIClient.createAdmin(payload)
+            const result = await adminAPIClient.createAdmin(payload)
 
             console.log('result',result)
             
@@ -149,6 +182,8 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
             setIsSubmitting(false);
         }
     };
+
+
 
     return (
         <AdminFormContext.Provider value={{

@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { ICreator } from "@/models/interfaces/IUserInterfaces";
+import { IAdmin, ICreator } from "@/models/interfaces/IUserInterfaces";
 import { IRegularUser } from '@/models/interfaces/IUserInterfaces';
 import { CreatorFormData } from "../creator.schema";
 import { RegisterFormData } from "../user.schema";
 import { SignupFormData } from "../quicksignup.validation";
+import { AdminComplete } from "../admin.schema";
 
 export const convertCreatorFormToSchema = (data: ICreator): Partial<CreatorFormData> => {
 return {
@@ -71,3 +72,10 @@ export const convertQuickSignupFormToSchema = (data: IRegularUser): Partial<Sign
     termsAgreement: data.consents.termsAndConditions,
   }
 };
+
+export const convertAdminFormToSchema = (data: Partial<IAdmin>): Partial<AdminComplete> => {
+  return {
+    ...data,
+    birthDate: new Date(data.birthDate || ''),
+  }
+}

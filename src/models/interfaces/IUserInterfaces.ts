@@ -60,6 +60,17 @@ export interface IAddress {
     name: string;
     socialName?: string;
     email: string;
+    birthDate: Date;
+    cpf: string;
+    cpf_encrypted: {
+      encrypted: string;
+      iv: string;
+      tag: string;
+      keyVersion: string;
+      aad: string;
+    };
+    cpf_hash: string;
+    cpf_display: string;
     email_encrypted: {  
       encrypted: string;
       iv: string;
@@ -89,17 +100,6 @@ export interface IAddress {
   
   export interface IRegularUser extends IBaseUser {
     role: 'user' | 'participant'; 
-    cpf: string;
-    cpf_encrypted: {
-      encrypted: string;
-      iv: string;
-      tag: string;
-      keyVersion: string;
-      aad: string;
-    };
-    cpf_hash: string;
-    cpf_display: string;
-    birthDate: Date;
     socialName?: string;
     statistics: {
       participationCount: number;
@@ -140,16 +140,6 @@ export interface IAddress {
   export interface ICreator extends IBaseUser {
     role: 'creator';
     personType: 'individual' | 'company';
-    cpf?: string;
-    cpf_encrypted: {
-      encrypted: string;
-      iv: string;
-      tag: string;
-      keyVersion: string;
-      aad: string;
-    };
-    cpf_hash: string;
-    cpf_display: string;
     cnpj?: string;
     cnpj_encrypted: {
       encrypted: string;
@@ -161,7 +151,6 @@ export interface IAddress {
     cnpj_hash: string;
     cnpj_display: string;
     companyName?: string;
-    birthDate?: Date;
     legalName?: string;
     defaultGateway: mongoose.Types.ObjectId | string;
     gateways: Array<mongoose.Types.ObjectId | string>;

@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 const publicRoutes: { path: string; whenAuthenticated: 'redirect' | 'next' }[] = [
   { path: '/', whenAuthenticated: 'next' },
   { path: '/login', whenAuthenticated: 'redirect' },
+  { path: '/secure-portal-access/a7x92z', whenAuthenticated: 'redirect' },
   { path: '/cadastro-participante', whenAuthenticated: 'redirect' },
   { path: '/cadastro-criador', whenAuthenticated: 'redirect' },
   { path: '/cadastro-sucesso', whenAuthenticated: 'redirect' },

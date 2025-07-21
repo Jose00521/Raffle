@@ -38,10 +38,11 @@ export class CreatorRepository implements ICreatorRepository {
 
             const creator = new Creator({
                 ...creatorData,
+                
             });
 
 
-            creator.userCode = generateEntityCode(creator._id, 'US');
+            creator.userCode = generateEntityCode(creator._id, 'CR');
 
             //salva o usuário
             await creator.save();

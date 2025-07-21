@@ -4,43 +4,45 @@ import { UserController } from '@/server/controllers/UserController';
 import { createErrorResponse } from '@/server/utils/errorHandler/api';
 import { validateWithSchema } from '@/utils/validation.schema';
 import { registerUserSchema } from '@/zod/user.schema';
-import { convertParticipantFormToSchema } from '@/zod/utils/convertToSchema';
+import { convertAdminFormToSchema, convertParticipantFormToSchema } from '@/zod/utils/convertToSchema';
 import { NextResponse } from 'next/server';
 import { IAdmin, IRegularUser } from '@/models/interfaces/IUserInterfaces';
 import { createValidationErrorObject } from '@/server/utils/errorHandler/api';
 import { AdminController } from '@/server/controllers/AdminController';
+import { AdminCompleteSchema, AdminComplete, } from '@/zod/admin.schema';
 /**
  * Endpoint POST: Criar um usuário participante
  */
 
-// const validator = validateWithSchema(registerUserSchema);
+const validator = validateWithSchema(AdminCompleteSchema);
 
-export async function POST( request: NextResponse,response: NextResponse) {
+export async function POST( request: NextResponse, response: NextResponse) {
     try {
         // Envolva todo o código em try/catch
-        const body = await request.json() as Partial<IAdmin>;
+        const body = await request.json() as Partial<IAdmin>; 
 
-        console.log('body participant', body);
+        console.log('body admin', body);
 
 
         if(body.role !== 'admin'){
             return NextResponse.json(createValidationErrorObject(null, 'Role inválida', 422));
         }
 
-        // const validate = validator(convertParticipantFormToSchema(body));
+        const validate = validator(convertAdminFormToSchema(body));
 
-        // console.log('validate participant', validate);
+        console.log('validate admin', validate);
 
-        // if (!validate.success) {
-        //     return NextResponse.json(createValidationErrorObject(validate.errors, 'Erro de validação', 422));
-        // }
+        if (!validate.success) {
+            return NextResponse.json(createValidationErrorObject(validate.errors, 'Erro de validação', 422));
+        }
         
         // Seu código existente...
         const adminController = container.resolve(AdminController);
-        // const result = await adminController.createAdmin(body);
-        
+        const result = await adminController.createAdmin(body);
+
+        console.log('result', result);
         // Garantir resposta válida
-        return NextResponse.json({success:true});
+        return NextResponse.json(result);
       } catch (error) {
         // Log detalhado do erro no servidor
         console.error("ERRO DETALHADO NA API:", error);
