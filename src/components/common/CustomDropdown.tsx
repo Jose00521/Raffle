@@ -34,6 +34,7 @@ const DropdownContainer = styled.div<{ $width?: string }>`
 
 const DropdownButton = styled.button<{ $isOpen: boolean, $hasValue: boolean }>`
   display: flex;
+  height: 55px;
   align-items: center;
   justify-content: space-between;
   width: 100%;
@@ -98,8 +99,8 @@ const DropdownContent = styled.div<{
   position: absolute;
   ${props => props.$direction === 'up' ? 'bottom: 100%;' : 'top: 100%;'}
   left: 0;
-  margin-top: ${props => props.$direction === 'down' ? '5px' : '0'};
-  margin-bottom: ${props => props.$direction === 'up' ? '5px' : '0'};
+  margin-top: ${props => props.$direction === 'down' ? '-20px' : '0'};
+  margin-bottom: ${props => props.$direction === 'up' ? '-20px' : '0'};
   max-height: ${props => props.$maxHeight ? `${props.$maxHeight}px` : '240px'};
   overflow-y: auto;
   background-color: white;
@@ -187,7 +188,7 @@ const OptionsList = styled.ul`
 
 const FormLabel = styled.label`
   display: block;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 8px;
   color: ${({ theme }) => theme.colors?.text?.primary || '#333'};

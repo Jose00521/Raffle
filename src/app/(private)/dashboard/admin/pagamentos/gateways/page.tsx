@@ -8,8 +8,10 @@ import { useRouter } from 'next/navigation';
 import GatewayList from '@/components/gateway/GatewayList';
 import GatewayFilters from '@/components/gateway/GatewayFilters';
 import GatewayStatistics from '@/components/gateway/GatewayStatistics';
+import GatewayFormModal from '@/components/gateway/GatewayFormModal';
 import { Gateway, mockGatewayData } from '@/mocks/gatewayMocks';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import { toast } from 'react-toastify';
 
 const PageContainer = styled.div`
   padding: 1.5rem;
@@ -181,6 +183,7 @@ export default function GatewaysPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Usando dados mock para demonstração
   const { gateways, statistics } = mockGatewayData;
@@ -197,8 +200,35 @@ export default function GatewaysPage() {
     )
   );
   
-  const handleAddNew = () => {
-    router.push('/dashboard/admin/pagamentos/gateways/novo');
+  const handleAddGateway = async (formData: FormData) => {
+    try {
+      // Simular envio para API
+      console.log('Dados do novo gateway:', Object.fromEntries(formData.entries()));
+      
+      // Processar os campos JSON
+      const credentialFields = JSON.parse(formData.get('credentialFields') as string);
+      const settingFields = JSON.parse(formData.get('settingFields') as string);
+      const supportedMethods = JSON.parse(formData.get('supportedMethods') as string);
+      
+      console.log('Campos de credenciais:', credentialFields);
+      console.log('Campos de configuração:', settingFields);
+      console.log('Métodos suportados:', supportedMethods);
+      
+      // Verificar se há arquivo de logo
+      const logo = formData.get('logo');
+      if (logo instanceof File) {
+        console.log('Logo:', logo.name, logo.size, logo.type);
+      }
+      
+      // Simular delay de API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success('Gateway adicionado com sucesso!');
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao adicionar gateway:', error);
+      toast.error('Erro ao adicionar gateway. Por favor tente novamente.');
+    }
   };
   
   return (
@@ -225,7 +255,7 @@ export default function GatewaysPage() {
               $variant="primary"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleAddNew}
+              onClick={() => setIsModalOpen(true)}
             >
               <FaPlus />
               Adicionar Gateway
@@ -265,6 +295,12 @@ export default function GatewaysPage() {
             <GatewayStatistics statistics={statistics} />
           </SidebarContent>
         </ContentSection>
+        
+        <GatewayFormModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleAddGateway}
+        />
       </PageContainer>
     </AdminDashboard>
   );

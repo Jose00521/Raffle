@@ -1667,10 +1667,19 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose }) => {
           Configurações
         </UserMenuItem>
         <UserMenuDivider />
-        <UserMenuItem onClick={() => signOut()}>
-          <UserMenuIcon><FaSignOutAlt /></UserMenuIcon>
-          Sair
-        </UserMenuItem>
+        {
+          session?.user?.role === 'admin' ? (
+            <UserMenuItem onClick={() => signOut({redirect: true, callbackUrl: '/secure-portal-access/a7x92z'})}>
+              <UserMenuIcon><FaSignOutAlt /></UserMenuIcon>
+              Sair
+            </UserMenuItem>
+          ):(
+            <UserMenuItem onClick={() => signOut({redirect: true, callbackUrl: '/login'})}>
+              <UserMenuIcon><FaSignOutAlt /></UserMenuIcon>
+              Sair
+            </UserMenuItem>
+          )
+        }
       </UserMenuItems>
     </UserMenuDropdown>
   );
