@@ -47,10 +47,11 @@ export default function PrivateLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  
   const { data: session, status, update } = useSession({
     required: true,
     onUnauthenticated() {
-      router.push('/login');
+      router.replace('/login');
     },
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +69,11 @@ export default function PrivateLayout({
       const now = Date.now();
       if (now - tokenValidationCache.lastActivity > tokenValidationCache.inactivityThreshold) {
         // Logout por inatividade
-        signOut({ redirect: true, callbackUrl: '/login?reason=inactivity' });
+        if(session?.user?.role == 'admin'){
+          signOut({ redirect: true, callbackUrl: '/secure-portal-access/a7x92z?reason=inactivity' });
+        }else{
+          signOut({ redirect: true, callbackUrl: '/login?reason=inactivity' });
+        }
       }
     }, 60000);
 
