@@ -99,8 +99,8 @@ const DropdownContent = styled.div<{
   position: absolute;
   ${props => props.$direction === 'up' ? 'bottom: 100%;' : 'top: 100%;'}
   left: 0;
-  margin-top: ${props => props.$direction === 'down' ? '-20px' : '0'};
-  margin-bottom: ${props => props.$direction === 'up' ? '-20px' : '0'};
+  margin-top: ${props => props.$direction === 'down' ? '5px' : '0'};
+  margin-bottom: ${props => props.$direction === 'up' ? '5px' : '0'};
   max-height: ${props => props.$maxHeight ? `${props.$maxHeight}px` : '240px'};
   overflow-y: auto;
   background-color: white;
