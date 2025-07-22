@@ -3,64 +3,56 @@
 
 import adminAPIClient from '@/API/admin/adminAPIClient';
 import SteppedAdminForm from '@/components/cadastro-admin/SteppedAdminForm';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { FaArrowLeft } from 'react-icons/fa';
 import styled from 'styled-components';
 
 
 const PageContainer = styled.div`
-
   width: 100%;
-  min-height: 100vh;
-  height: 100%;
+  height: 100vh !important;
   display: flex;
   justify-content: center;
-  background: linear-gradient(135deg,rgb(236, 236, 236) 0%,rgb(255, 255, 255) 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   background-size: cover;
   padding: 0;
-  position: fixed;
-
+  overflow-y: auto; /* Permitir rolagem vertical */
 `;
 
 const ContentWrapper = styled.div`
   width: 100%;
   max-width: 1100px;
-
   display: flex;
   flex-direction: column;
   position: relative;
+  padding: 2rem 0; /* Adicionar espaço vertical */
 `;
 
 
 const FormWrapper = styled.div`
   flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-
   width: 100%;
+  overflow-y: visible; /* Permitir que o conteúdo se estenda além dos limites */
   
   @media (max-width: 768px) {
-    max-height: 100vh;
-    max-height: calc(var(--vh, 1vh) * 100);
+    overflow-y: visible;
   }
 
   @media (max-width: 480px) {
-    max-height: 100vh;
     margin: 0 !important;
   }
 `;
 
 const BrandOverlay = styled.div`
-  position: absolute;
+  position: fixed; /* Mudar para fixed para ficar fixo na tela */
   bottom: 1.5rem;
   right: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(106, 17, 203, 0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 0.9rem;
   font-weight: 600;
   pointer-events: none;
@@ -125,7 +117,6 @@ export default function AdminSetupPage() {
   return (
     <PageContainer>
     <ContentWrapper>
-      
       <FormWrapper>
         <SteppedAdminForm token={token as string} />
       </FormWrapper>

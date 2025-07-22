@@ -75,14 +75,15 @@ const PermissionsGrid = styled.div`
   }
 `;
 
-const PermissionCard = styled.div<{ $selected: boolean }>`
+const PermissionCard = styled.div<{ $selected: boolean, $disabled: boolean }>`
   padding: 0.75rem;
   border: 2px solid ${props => props.$selected ? '#667eea' : '#e5e7eb'};
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   background: ${props => props.$selected ? 'rgba(102, 126, 234, 0.05)' : 'white'};
-  
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  pointer-events: ${props => props.$disabled ? 'none' : 'auto'};
   &:hover {
     border-color: #667eea;
     transform: translateY(-1px);
@@ -236,6 +237,15 @@ const Step3Permissions: React.FC = () => {
   const handlePermissionToggle = (permissionValue: string) => {
     const currentPermissions = getValues('permissions') || [];
     const isSelected = currentPermissions.includes(permissionValue as any);
+
+    if(permissionValue === 'FULL_ACCESS' && !isSelected){
+      setValue('permissions', ['FULL_ACCESS'], {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      return;
+    }
     
     let newPermissions: string[];
     if (isSelected) {
@@ -317,6 +327,7 @@ const Step3Permissions: React.FC = () => {
                 <PermissionCard
                   key={permission.value}
                   $selected={isSelected}
+                  $disabled={selectedPermissions.includes('FULL_ACCESS') && permission.value !== 'FULL_ACCESS'}
                   onClick={() => handlePermissionToggle(permission.value as any)}
                 >
                   <PermissionHeader>

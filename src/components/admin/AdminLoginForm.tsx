@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormInput from '@/components/common/FormInput';
@@ -13,16 +13,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import Link from 'next/link';
-
-// Schema completo para validação do formulário
-const AdminLoginSchema = z.object({
-  email: z.string().email('E-mail inválido').min(1, 'E-mail é obrigatório'),
-  cpf: z.string().min(11, 'CPF inválido').max(14, 'CPF inválido'),
-  password: z.string().min(1, 'Senha é obrigatória')
-});
-
-type AdminLoginFormData = z.infer<typeof AdminLoginSchema>;
+import { AdminLoginSchema, AdminLoginFormData } from '@/zod/admin.schema';
+import { getSession, signIn } from 'next-auth/react';
+import { fadeIn } from '@/styles/registration.styles';
 
 // Componentes estilizados
 const LoginCard = styled.div`
@@ -32,6 +25,23 @@ const LoginCard = styled.div`
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+`;
+
+const ErrorBox = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.error || '#ff3b30'};
+  color: ${({ theme }) => theme.colors.white || '#ffffff'};
+  border: 1.5px solid ${({ theme }) => theme.colors.error || '#ff3b30'};
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(255,0,0,0.07);
+  animation: ${fadeIn} 0.3s;
 `;
 
 const CardHeader = styled.div`
@@ -234,10 +244,11 @@ const AdminLoginForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ipAddress, setIpAddress] = useState<string>('');
+  const [credentialsError, setCredentialsError] = useState(false);
   const router = useRouter();
   
   // Obter o endereço IP do usuário para fins de segurança
-  React.useEffect(() => {
+ useEffect(() => {
     const fetchIP = async () => {
       try {
         // Usando um serviço público para obter o IP
@@ -256,16 +267,22 @@ const AdminLoginForm: React.FC = () => {
   // Único formulário para todos os passos
   const form = useForm<AdminLoginFormData>({
     resolver: zodResolver(AdminLoginSchema),
-    mode: 'onChange',
+    mode: 'all',
     defaultValues: {
       email: '',
       cpf: '',
       password: ''
     }
   });
+
   
   const { register, handleSubmit, formState: { errors, isValid }, trigger, getValues, watch } = form;
   const registerWithMask = useHookFormMask(register);
+
+      // Reset do erro de credenciais
+      useEffect(() => {
+        setCredentialsError(false);
+      }, [getValues('email'), getValues('cpf'), getValues('password')]);
   
   // Validar o primeiro passo e avançar
   const handleNextStep = async () => {
@@ -296,33 +313,40 @@ const AdminLoginForm: React.FC = () => {
   // Enviar o formulário completo
   const onSubmit = async (data: AdminLoginFormData) => {
     setIsLoading(true);
-    setError(null);
+    console.log('[Login Debug] Dados:', data);
     
     try {
-      // Aqui você faria uma chamada para autenticar o usuário
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          cpf: data.cpf.replace(/\D/g, ''),
-          password: data.password,
-        }),
+
+      const result = await signIn('admin-credentials', {
+        email: data.email,
+        cpf: data.cpf,
+        password: data.password,
+        redirect: false,
       });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Erro ao autenticar');
+
+      console.log('[Login Debug] Resultado:', result);
+
+      if(result?.ok){
+        const session = await getSession();
+
+        console.log('[Login Debug] Sessão obtida:', session);
+
+        if(session?.user?.role == 'admin'){
+          router.push('/dashboard/admin');
+        }else{
+          toast.error('Você não tem permissão para acessar este painel.');
+        }
       }
-      
-      // Se for bem-sucedido, redirecione para o dashboard
-      toast.success('Login realizado com sucesso!');
-      router.push('/dashboard/admin');
+
+      if(result?.error === 'CredentialsSignin'){
+        setCredentialsError(true);
+        toast.error('Credenciais inválidas');
+        setIsLoading(false);
+      }
+
+     
     } catch (error) {
-      setError('Senha incorreta. Por favor, tente novamente.');
+      setError('Credenciais inválidas. Por favor, verifique seu e-mail e CPF.');
       console.error('Erro ao autenticar:', error);
     } finally {
       setIsLoading(false);
@@ -439,6 +463,13 @@ const AdminLoginForm: React.FC = () => {
                   error={errors.password?.message}
                   helpText="Digite sua senha de administrador"
                 />
+
+              {credentialsError && (
+                <ErrorBox>
+                  <FaShieldAlt style={{ marginRight: 8 }} />
+                  Telefone ou senha incorretos. Tente novamente.
+                </ErrorBox>
+              )}
                 
                 <ForgotPasswordLink onClick={handleForgotPassword}>
                   Esqueci minha senha

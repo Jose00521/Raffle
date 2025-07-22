@@ -22,7 +22,6 @@ export default function LoginPage() {
   const [isSliding, setIsSliding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [credentialsError, setCredentialsError] = useState(false);
-  const { data: session, status } = useSession();
 
   const { register, setValue, getValues, handleSubmit, formState: { errors }, watch } = useForm<LoginFormData>({
     resolver: zodResolver(loginUserSchema),
@@ -35,7 +34,6 @@ export default function LoginPage() {
     },
   });
   const registerWithMask = useHookFormMask(register);
-  const password = watch('password');
 
   useEffect(() => {
     setCredentialsError(false);
@@ -66,7 +64,6 @@ export default function LoginPage() {
       phone: data.telefone,
       password: data.password,
       redirect: false,
-      
     });
 
 

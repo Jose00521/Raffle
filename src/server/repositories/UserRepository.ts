@@ -194,7 +194,7 @@ export class UserRepository implements IUserRepository {
                 message: 'Telefone já cadastrado'
             });
             if (phoneExists) duplicatedFields.push({
-                field: 'telefone',
+                field: 'phone',
                 message: 'Telefone já cadastrado'
             });
             

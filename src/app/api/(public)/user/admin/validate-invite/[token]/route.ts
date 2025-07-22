@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: { token: string } }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
     const adminController = container.resolve<IAdminController>('adminController');
     const result = await adminController.validateInvite(token);
 

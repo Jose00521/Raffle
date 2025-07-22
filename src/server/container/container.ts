@@ -12,7 +12,7 @@ import { CampaignRepository } from '../repositories/CampaignRepository';
 import { CampaignService } from '../services/CampaignService';
 import { CampaignController } from '../controllers/CampaignController';
 import { ICampaignController } from '../controllers/CampaignController';
-import { IUserAuthRepository, UserAuthRepository } from '../repositories/auth/userAuth';
+import { IUserAuthRepository, UserAuthRepository } from '../repositories/auth/userAuthRepository';
 import { CreatorService, ICreatorService } from '../services/CreatorService';
 import { ICreatorController } from '../controllers/CreatorController';
 import { CreatorController } from '../controllers/CreatorController';
@@ -42,6 +42,7 @@ import { SSEvents } from '../repositories/events/SSEvents';
 import { AdminController, IAdminController } from '../controllers/AdminController';
 import { AdminService, IAdminService } from '../services/AdminService';
 import { AdminRepository, IAdminRepository } from '../repositories/AdminRepository';
+import { AdminAuthRepository, IAdminAuthRepository } from '../repositories/auth/adminAuthRepository';
 
 
 // Register dependencies
@@ -54,6 +55,7 @@ container.register<ICampaignService>('campaignService', { useClass: CampaignServ
 container.register<ICampaignRepository>('campaignRepository', { useClass: CampaignRepository });
 container.register<ICampaignController>('campaignController', { useClass: CampaignController });
 container.register<IUserAuthRepository>('userAuthRepository', { useClass: UserAuthRepository });
+container.register<IAdminAuthRepository>('adminAuthRepository', { useClass: AdminAuthRepository });
 container.register<ICreatorRepository>('creatorRepository', { useClass: CreatorRepository });
 container.register<ICreatorService>('creatorService', { useClass: CreatorService });
 container.register<ICreatorController>('creatorController', { useClass: CreatorController });

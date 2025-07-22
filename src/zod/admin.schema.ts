@@ -2,6 +2,86 @@ import { validateCPF } from '@/utils/validators';
 import { z } from 'zod';
 import { COMMON_EMAIL_DOMAINS } from '@/utils/constants';
 
+
+// Schema completo para validação do formulário
+export const AdminLoginSchema = z.object({
+  email: z
+  .string()
+  .min(1, 'E-mail é obrigatório')
+  .superRefine((value, ctx) => {
+    // Se estiver vazio, não validamos (já tratado pelo min(1))
+    if (value.length <= 1) return true;
+    
+    // Otimização: Validação básica antes de usar regex completa
+    const hasAt = value.includes('@');
+    const hasDot = value.includes('.');
+    
+    if (!hasAt || !hasDot) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'E-mail deve conter @ e .',
+      });
+      return false;
+    }
+    
+    // Só faz a validação completa se já tiver @ e .
+    if (hasAt && hasDot) {
+      // Regex simplificada para validar email básico
+      const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      
+      if (!isValidEmail) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'E-mail inválido',
+        });
+        return false;
+      }
+
+        // Verificação de domínios mais comuns e confiáveis
+        const emailLower = value.toLowerCase();
+        const domain = emailLower.split('@')[1];
+        
+        // Verifica se é um domínio comum ou se termina com extensões válidas
+        const isCommonDomain = COMMON_EMAIL_DOMAINS.includes(domain);
+        
+        if (!isCommonDomain) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Por favor, use um e-mail conhecido',
+          });
+          return false;
+        }
+    }
+    
+    return true;
+  }),
+  cpf: z.string()
+  .nonempty('CPF é obrigatório')
+  .transform(val => {
+    return val.replace(/\D/g, '');
+  })
+  .refine(val => {
+    return val.length === 11;
+  }, {
+    message: 'CPF deve ter 11 dígitos'
+  })
+  .refine(val => {
+    return validateCPF(val);
+  }, {
+    message: 'CPF inválido'
+  }),
+  password: z.string()
+  .min(1, 'Senha é obrigatória')
+  .refine(val => {
+    return val.length >= 8;
+  }, {
+    message: 'Senha deve ter pelo menos 8 caracteres'
+  })
+});
+
+
+export type AdminLoginFormData = z.infer<typeof AdminLoginSchema>;
+
 // Schema para dados pessoais
 export const AdminPersonalInfoSchema = z.object({
     name: z.string()

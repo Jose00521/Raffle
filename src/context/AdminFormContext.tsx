@@ -90,9 +90,9 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
             response.issues.forEach((issue: {field: string, message: string}) => {
               setError(issue.field as keyof AdminComplete, { message: issue.message });
             });
-            return;
+            return false;
         }else{
-          setStep(step); // Pula endereço e senha, vai direto para resumo
+          return true;
         }
       }
 
@@ -102,7 +102,18 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
         console.log('isStepValid', isStepValid)
 
         if(step === 1) {
-          await verifyMainData(step + 1);
+          const isMainDataValid = await verifyMainData(step + 1);
+          if (isStepValid && isMainDataValid) {
+            setIsSliding(true);
+            // Reduzindo para 300ms para uma resposta mais rápida
+            setTimeout(() => {
+              setStep(step + 1);
+              // Mantendo o pequeno atraso para uma transição suave
+              setTimeout(() => {
+                setIsSliding(false);
+              }, 50);
+            }, 200);
+          }
         }else{
             if (isStepValid) {
                 setIsSliding(true);
@@ -116,6 +127,7 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
                 }, 200);
               }
         }
+        
     };
     
       // Função para ir para a etapa anterior
@@ -174,6 +186,12 @@ export const AdminFormProvider: React.FC<{ children: React.ReactNode, token: str
             const result = await adminAPIClient.createAdmin(payload)
 
             console.log('result',result)
+
+            if(result.success){
+                router.push('/cadastro-admin-sucesso');
+            }else{
+                setError('root', { message: result.message });
+            }
             
         } catch (error) {
             console.error('Erro ao cadastrar admin:', error);

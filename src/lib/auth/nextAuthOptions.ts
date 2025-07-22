@@ -4,17 +4,24 @@ import { compare } from 'bcrypt';
 import { User } from '@/models/User';
 import { JWT } from 'next-auth/jwt';
 import { container } from '@/server/container/container';
-import { IUserAuthRepository } from '@/server/repositories/auth/userAuth';
+import { IUserAuthRepository } from '@/server/repositories/auth/userAuthRepository';
 import type { IUser } from '@/models/interfaces/IUserInterfaces';
 import logger from '@/lib/logger/logger';
 import { createToken, verifyToken } from "./jwtUtils";
+import { AdminLoginFormData, AdminLoginSchema } from "@/zod/admin.schema";
+import { validateWithSchema } from "@/utils/validation.schema";
+import { IAdminAuthRepository } from "@/server/repositories/auth/adminAuthRepository";
+import { maskEmail, maskPhone } from "@/utils/maskUtils";
 
 // Validar se as variáveis de ambiente necessárias estão definidas
+
+const validator = validateWithSchema(AdminLoginSchema);
 
 
 export const nextAuthOptions: NextAuthOptions = {
     providers: [
      CredentialsProvider({
+      id: 'credentials',
       name: 'credentials',
       credentials: {
         phone: { label: 'Telefone', type: 'text' },
@@ -24,7 +31,7 @@ export const nextAuthOptions: NextAuthOptions = {
         // Log de tentativa de login (sem dados sensíveis)
         logger.info({
           message: '[auth] Tentativa de login',
-          phone: credentials?.phone ? `***${credentials.phone.slice(-4)}` : 'não fornecido',
+          phone: credentials?.phone ? `${maskPhone(credentials.phone as string)}` : 'não fornecido',
           ip: req?.headers?.['x-forwarded-for'] || req?.headers?.['x-real-ip'] || 'desconhecido',
           userAgent: req?.headers?.['user-agent'] || 'desconhecido'
         });
@@ -73,7 +80,7 @@ export const nextAuthOptions: NextAuthOptions = {
           if (!user) {
               logger.warn({
                 message: '[auth] Credenciais inválidas',
-                phone: `***${credentials.phone.slice(-4)}`
+                phone: `${maskPhone(credentials.phone as string)}`
               });
               return null;
           }
@@ -82,7 +89,7 @@ export const nextAuthOptions: NextAuthOptions = {
           if (!user.isActive) {
             logger.warn({
               message: '[auth] Tentativa de login com conta inativa',
-              phone: `***${credentials.phone.slice(-4)}`,
+              phone: `${maskPhone(credentials.phone as string)}`,
               isActive: user.isActive
             });
               return null;
@@ -106,12 +113,87 @@ export const nextAuthOptions: NextAuthOptions = {
           logger.error({
             message: '[auth] Erro durante autenticação',
             error: error instanceof Error ? error.message : 'Erro desconhecido',
-            phone: credentials?.phone ? `***${credentials.phone.slice(-4)}` : 'não fornecido'
+            phone: credentials?.phone ? `${maskPhone(credentials.phone as string)}` : 'não fornecido'
           });
           return null;
         }
      }
-  })
+  }),
+  CredentialsProvider({
+    id: 'admin-credentials',
+    name: 'admin-credentials',
+    credentials: {
+      email: { label: 'E-mail', type: 'text' },
+      cpf: { label: 'CPF', type: 'text' },
+      password: { label: 'Senha', type: 'password' }
+    },
+    authorize: async (credentials, req) => {
+      // Log de tentativa de login (sem dados sensíveis)
+      logger.info({
+        message: '[auth] Tentativa de login',
+        email: credentials?.email ? `${maskEmail(credentials.email as string)}` : 'não fornecido',
+        ip: req?.headers?.['x-forwarded-for'] || req?.headers?.['x-real-ip'] || 'desconhecido',
+        userAgent: req?.headers?.['user-agent'] || 'desconhecido'
+      });
+
+      const validate = validator(credentials as AdminLoginFormData);
+
+      if(!validate.success){
+        logger.warn('[auth] Credenciais inválidas');
+        return null;
+      }
+
+      try {
+      const adminAuthRepository = container.resolve<IAdminAuthRepository>('adminAuthRepository');
+
+        const admin = await adminAuthRepository.findByCredentials(
+            credentials?.email as string, 
+            credentials?.cpf as string, 
+            credentials?.password as string
+        );
+
+        if (!admin) {
+            logger.warn({
+              message: '[auth] Credenciais inválidas',
+              email: `${maskEmail(credentials?.email as string)}`
+            });
+            return null;
+        }
+
+        // Verificar se a conta está ativa
+        if (!admin.isActive) {
+          logger.warn({
+            message: '[auth] Tentativa de login com conta inativa',
+            email: `${maskEmail(credentials?.email as string)}`,
+            isActive: admin.isActive
+          });
+            return null;
+        }
+        
+        logger.info({
+          message: '[auth] Login bem-sucedido',
+          userId: admin.userCode,
+          role: admin.role
+        });
+
+        return {
+            id: admin.userCode as string,
+            name: admin.name,
+            role: admin.role,
+            email: admin.email_display,
+            phone: admin.phone_display,
+            userCode: admin.userCode,
+        };
+      } catch (error) {
+        logger.error({  
+          message: '[auth] Erro durante autenticação',
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+          email: credentials?.email ? `${maskEmail(credentials.email as string)}` : 'não fornecido'
+        });
+        return null;
+      }
+   }
+})
     ],
     session: {
       strategy: 'jwt',
@@ -201,7 +283,6 @@ export const nextAuthOptions: NextAuthOptions = {
     },
     pages: {
       signIn: '/login',
-      error: '/login', // Redirecionar erros para página de login
     },
     cookies: {
       sessionToken: {
