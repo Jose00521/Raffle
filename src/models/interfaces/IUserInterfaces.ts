@@ -244,6 +244,20 @@ export type AdminPermission =
   | 'SECURITY_MANAGEMENT'
   | 'FULL_ACCESS';
 
+export enum AdminPermissionsEnum {
+  GATEWAY_MANAGEMENT = 'GATEWAY_MANAGEMENT',
+  USER_MANAGEMENT = 'USER_MANAGEMENT',
+  CAMPAIGN_MANAGEMENT = 'CAMPAIGN_MANAGEMENT',
+  PAYMENT_MANAGEMENT = 'PAYMENT_MANAGEMENT',
+  SYSTEM_SETTINGS = 'SYSTEM_SETTINGS',
+  AUDIT_ACCESS = 'AUDIT_ACCESS',
+  SECURITY_MANAGEMENT = 'SECURITY_MANAGEMENT',
+  FULL_ACCESS = 'FULL_ACCESS',
+}
+
+
+export type AdminAccessLevel = 'SUPER_ADMIN' | 'ADMIN' | 'MODERATOR';
+
 export interface IAdminAction {
   action: string;
   target?: string;

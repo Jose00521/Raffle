@@ -2,6 +2,7 @@ import { getServerSession, Session } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { nextAuthOptions } from './nextAuthOptions';
 import logger from '../logger/logger';
+import { AdminPermissionsEnum } from '@/models/interfaces/IUserInterfaces';
 type ApiHandler = (
     request: NextRequest,
     context: { params: any; session: any }
@@ -9,6 +10,7 @@ type ApiHandler = (
   
   interface AuthOptions {
     allowedRoles?: string[];
+    allowedPermissions?: string[];
   }
 
   type UserRole =  'admin' | 'creator' | 'participant';
@@ -41,16 +43,38 @@ export function withAuth(
         logger.info("Verificar papéis se especificado")
         // 🛡️ Verificar papéis se especificado
         if (options.allowedRoles?.length) {
-          if (!options.allowedRoles.includes(session.user.role as UserRole)) {
-            return NextResponse.json(
-              { error: 'Forbidden' },
-              { status: 403 }
-            );
+
+          if(session.user.role === 'admin' && options.allowedRoles.includes('admin')){
+
+            if(options.allowedPermissions?.length){
+
+            if(!session.user.permissions?.includes(AdminPermissionsEnum.FULL_ACCESS)){
+              if(!options.allowedPermissions?.every(permission => session.user.permissions?.includes(permission))){
+                return NextResponse.json(
+                  { error: 'Forbidden' },
+                  { status: 403 }
+                );
+              }
+            }
+            }
+
+            logger.info("Passando sessão validada para o handler")
+            // ✅ Passar sessão validada para o handler
+            return handler(request, { ...context, session });
+          }else{
+            if (!options.allowedRoles.includes(session.user.role as UserRole)) {
+              return NextResponse.json(
+                { error: 'Forbidden' },
+                { status: 403 }
+              );
+            }
+
+            logger.info("Passando sessão validada para o handler")
+            // ✅ Passar sessão validada para o handler
+            return handler(request, { ...context, session });
           }
         }
-        logger.info("Passando sessão validada para o handler")
-        // ✅ Passar sessão validada para o handler
-        return handler(request, { ...context, session });
+
       };
 }
 

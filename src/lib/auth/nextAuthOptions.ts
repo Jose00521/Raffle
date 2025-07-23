@@ -1,11 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcrypt';
-import { User } from '@/models/User';
-import { JWT } from 'next-auth/jwt';
 import { container } from '@/server/container/container';
 import { IUserAuthRepository } from '@/server/repositories/auth/userAuthRepository';
-import type { IUser } from '@/models/interfaces/IUserInterfaces';
 import logger from '@/lib/logger/logger';
 import { createToken, verifyToken } from "./jwtUtils";
 import { AdminLoginFormData, AdminLoginSchema } from "@/zod/admin.schema";
@@ -173,6 +169,7 @@ export const nextAuthOptions: NextAuthOptions = {
         logger.info({
           message: '[auth] Login bem-sucedido',
           userId: admin.userCode,
+          permissions: admin.permissions,
           role: admin.role
         });
 
@@ -180,6 +177,7 @@ export const nextAuthOptions: NextAuthOptions = {
             id: admin.userCode as string,
             name: admin.name,
             role: admin.role,
+            permissions: admin.permissions,
             email: admin.email_display,
             phone: admin.phone_display,
             userCode: admin.userCode,
@@ -236,7 +234,12 @@ export const nextAuthOptions: NextAuthOptions = {
            token.phone = user.phone;
            token.email = user.email;
            token.name = user.name;
+
+           if(user.role === 'admin'){
+            token.permissions = user.permissions;
+           }
          }
+
          
          return token;
       },
@@ -251,6 +254,12 @@ export const nextAuthOptions: NextAuthOptions = {
            phone: token.phone!,
            email: token.email!,
          };
+
+         if(session.user.role === 'admin'){
+          Object.assign(session.user, {
+            permissions: token.permissions,
+          });
+         }
          
         return session;
       },

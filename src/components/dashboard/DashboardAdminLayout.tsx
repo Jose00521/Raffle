@@ -6,6 +6,7 @@ import { FaBars, FaTimes, FaAngleDown, FaAngleRight, FaUserCircle, FaChevronDown
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { AdminPermissionsEnum } from '@/models/interfaces/IUserInterfaces';
 
 // Types
 interface MenuItem {
@@ -13,11 +14,13 @@ interface MenuItem {
   label: string;
   path?: string;
   icon: React.ReactNode;
+  permissions?: AdminPermissionsEnum[];
   subMenuItems?: Array<{
     id: string;
     label: string;
     path: string;
     icon?: React.ReactNode;
+    permissions?: AdminPermissionsEnum[];
   }>;
 }
 
@@ -212,9 +215,11 @@ const NavMenu = styled.ul`
   }
 `;
 
-const NavItem = styled.li<{ $active?: boolean }>`
+const NavItem = styled.li<{ $active?: boolean, $disabled?: boolean }>`
   margin: 0;
   position: relative;
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  pointer-events: ${props => props.$disabled ? 'none' : 'auto'};
   
   &:hover ${Tooltip} {
     opacity: 1;
@@ -635,13 +640,20 @@ const SubMenuContainer = styled.ul<{ $isOpen: boolean; $isCollapsed: boolean }>`
   `}
 `;
 
-const SubMenuItem = styled.li<{ $active?: boolean; $index?: number }>`
+const SubMenuItem = styled.li<{ $active?: boolean; $index?: number; $disabled?: boolean }>`
   position: relative;
+
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  pointer-events: ${props => props.$disabled ? 'none' : 'auto'};
   
+
   
+  ${props => props.$active && css`
+    ${activeNavItemStyles}
+  `}
 `;
 
-const SubMenuLink = styled(Link)<{ $active?: boolean }>`
+const SubMenuLink = styled(Link)<{ $active?: boolean; $disabled?: boolean }>`
   padding: 12px 12px 12px 24px; /* Mais indentação para hierarquia */
   display: flex;
   align-items: center;
@@ -653,7 +665,8 @@ const SubMenuLink = styled(Link)<{ $active?: boolean }>`
   font-weight: ${props => props.$active ? '500' : '400'};
   margin: 1px 8px;
   border-radius: 6px;
-  
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  pointer-events: ${props => props.$disabled ? 'none' : 'auto'};
   
 
   
@@ -678,7 +691,7 @@ const SubMenuLink = styled(Link)<{ $active?: boolean }>`
   `}
 `;
 
-const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
+const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean; $disabled?: boolean }>`
   padding: 12px 16px 12px 20px;
   display: flex;
   align-items: center;
@@ -690,7 +703,8 @@ const SubMenuLinkCollapsed = styled(Link)<{ $active?: boolean }>`
   border-radius: 6px;
   margin: 2px 8px;
   position: relative;
-  
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  pointer-events: ${props => props.$disabled ? 'none' : 'auto'};
 
   
   &:hover {
@@ -1206,13 +1220,13 @@ const AnimatedComposeTooltip = styled.div<{
 `;
 
 // Dashboard Layout Component
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+const DashboardAdminLayout: React.FC<DashboardLayoutProps> = ({
   children,
   menuItems,
   dashboardTitle,
   showComposeButton = true
 }) => {
-  // Use localStorage to persist sidebar state
+  // Use localStorage to persist sidebar state and open submenus
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Try to get the saved state from localStorage
     if (typeof window !== 'undefined') {
@@ -1237,8 +1251,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const { data: session } = useSession();
   const router = useRouter();
   
-  
-  // Save sidebar state to localStorage whenever it changes
+  // Save sidebar state and open submenus to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
@@ -1344,6 +1357,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     setHoverItem(null);
   };
 
+  const hasPermission = (permissions: AdminPermissionsEnum[]) => {
+    if(permissions.length === 0){
+      return true;
+    }
+    if(session?.user?.permissions?.includes(AdminPermissionsEnum.FULL_ACCESS)){
+      return true;
+    }
+
+    return permissions.some(permission => session?.user?.permissions?.includes(permission));
+  }
+
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -1369,49 +1393,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </SidebarTitle>
         </SidebarHeader>
         
-        {/* Botão Nova Rifa estilo Gmail Compose */}
-        {showComposeButton && (
-          pathname === '/dashboard/criador/nova-rifa' ? (
-            <AnimatedComposeContainer 
-              $isCollapsed={isCollapsed} 
-              $isOnCreatePage={true}
-              onMouseEnter={() => setHoverItem('nova-rifa-active')}
-              onMouseLeave={() => setHoverItem(null)}
-            >
-              <AnimatedComposeIcon $isCollapsed={isCollapsed} $isOnCreatePage={true}>
-                <FaPen />
-              </AnimatedComposeIcon>
-              <AnimatedComposeText $isCollapsed={isCollapsed} $isOnCreatePage={true}>
-                Criando Rifa
-              </AnimatedComposeText>
-              {isCollapsed && hoverItem === 'nova-rifa-active' && (
-                <AnimatedComposeTooltip $visible={true} $isOnCreatePage={true}>
-                  Criando Nova Rifa
-                </AnimatedComposeTooltip>
-              )}
-            </AnimatedComposeContainer>
-          ) : (
-            <AnimatedComposeContainer 
-              $isCollapsed={isCollapsed} 
-              $isOnCreatePage={false}
-              onClick={() => router.push('/dashboard/criador/nova-rifa')}
-              onMouseEnter={() => setHoverItem('nova-rifa')}
-              onMouseLeave={() => setHoverItem(null)}
-            >
-              <AnimatedComposeIcon $isCollapsed={isCollapsed} $isOnCreatePage={false}>
-                <FaPlusCircle />
-              </AnimatedComposeIcon>
-              <AnimatedComposeText $isCollapsed={isCollapsed} $isOnCreatePage={false}>
-                Nova Rifa
-              </AnimatedComposeText>
-                             {isCollapsed && hoverItem === 'nova-rifa' && (
-                 <AnimatedComposeTooltip $visible={true} $isOnCreatePage={false}>
-                   Nova Rifa
-                 </AnimatedComposeTooltip>
-               )}
-            </AnimatedComposeContainer>
-          )
-        )}
+    
         
         <NavMenu>
           {menuItems.map((item, index) => {
@@ -1468,12 +1450,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                           <SubMenuItem 
                             key={subItem.id} 
                             $active={subItemActive}
+                            $disabled={!hasPermission(subItem.permissions || [])}
                             $index={subIndex}
                           >
                             {isCollapsed ? (
                               <SubMenuLinkCollapsed
                                 href={subItem.path}
                                 $active={subItemActive}
+                                $disabled={!hasPermission(subItem.permissions || [])}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   router.push(subItem.path);
@@ -1486,6 +1470,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                               <SubMenuLink
                                 href={subItem.path}
                                 $active={subItemActive}
+                                $disabled={!hasPermission(subItem.permissions || [])}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   router.push(subItem.path);
@@ -1508,10 +1493,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <NavItem 
                 key={item.id} 
                 $active={Boolean(pathname === item.path)}
+                $disabled={!hasPermission(item.permissions || [])}
                 onMouseEnter={() => handleNavItemMouseEnter(item.id)}
                 onMouseLeave={handleNavItemMouseLeave}
               >
-                <NavLink 
+                {
+                    hasPermission(item.permissions || []) ? (
+                        <NavLink 
                   href={item.path || ''}
                   $isCollapsed={isCollapsed}
                   $active={Boolean(pathname === item.path)}
@@ -1533,6 +1521,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     </Tooltip>
                   )}
                 </NavLink>
+                    ):(
+                        <></>
+                    )
+                }
               </NavItem>
             );
           })}
@@ -1696,4 +1688,4 @@ function getPageTitleFromPath(path: string): string {
   return 'Dashboard';
 }
 
-export default React.memo(DashboardLayout); 
+export default React.memo(DashboardAdminLayout); 

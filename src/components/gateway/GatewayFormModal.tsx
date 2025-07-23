@@ -11,6 +11,8 @@ import CustomDropdown from '../common/CustomDropdown';
 import InputCheckbox from '../common/InputCheckbox';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { PaymentGatewayTemplateStatus } from '@/mocks/gatewayMocks';
+import { adminGatewayAPIClient } from '@/API/admin/adminGatewayAPIClient';
+import { toast } from 'react-toastify';
 
 // Enums
 export enum FieldType {
@@ -652,7 +654,15 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     formData.append('supportedMethods', JSON.stringify(data.supportedMethods));
     formData.append('apiConfig', JSON.stringify(data.apiConfig));
     
-    await onSubmit(formData);
+    const result = await adminGatewayAPIClient.createGateway(formData);
+
+    if(result.success){
+      toast.success('Gateway criado com sucesso');
+      console.log(result.data);
+    }else{
+      toast.error('Erro ao criar gateway');
+      console.error(result.error);
+    }
   };
   
   const statusOptions = [

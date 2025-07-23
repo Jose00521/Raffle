@@ -1,8 +1,9 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import DashboardLayout from './DashboardLayout';
 import { FaCreditCard, FaHome, FaMoneyBillAlt, FaUser, FaUsers } from 'react-icons/fa';
+import DashboardAdminLayout from './DashboardAdminLayout';
+import { AdminPermissionsEnum } from '@/models/interfaces/IUserInterfaces';
 
 // Define the menu items specific to participant dashboard
 const adminMenuItems = [
@@ -16,24 +17,27 @@ const adminMenuItems = [
         id: 'usuarios',
         label: 'Usuários',
         path: '/dashboard/admin/usuarios',
-        icon: <FaUsers />
+        icon: <FaUsers />,
+        permissions: [AdminPermissionsEnum.USER_MANAGEMENT]
     },
     {
         id: 'criadores',
         label: 'Criadores',
         path: '/dashboard/admin/criadores',
-        icon: <FaUser />
+        icon: <FaUser />,
+        permissions: [AdminPermissionsEnum.USER_MANAGEMENT]
     },
     {
-        id: 'pagamentos',
+        id: 'admin-pagamentos',
         label: 'Pagamentos',
         icon: <FaCreditCard />,
         subMenuItems: [
           {
-            id: 'gateways',
+            id: 'admin-pagamentos-gateways',
             label: 'Gateways',
             path: '/dashboard/admin/pagamentos/gateways',
-            icon: <FaMoneyBillAlt />
+            icon: <FaMoneyBillAlt />,
+            permissions: [AdminPermissionsEnum.GATEWAY_MANAGEMENT]
           }
         ]
       }
@@ -60,13 +64,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ children, additionalMen
   const allMenuItems = [...adminMenuItems, ...additionalMenuItems];
   
   return (
-    <DashboardLayout 
+    <DashboardAdminLayout 
       menuItems={allMenuItems} 
       dashboardTitle="Painel do Administrador"
       showComposeButton={false}
     >
       {children}
-    </DashboardLayout>
+    </DashboardAdminLayout>
   );
 };
 
