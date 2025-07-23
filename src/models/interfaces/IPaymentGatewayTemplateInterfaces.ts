@@ -60,7 +60,7 @@ export interface IPaymentGatewayTemplate {
   description: string;
   provider: string; // Nome do provedor (ex: "MercadoPago")
   version: string; // Versão da API (ex: "v1")
-  
+  templateUniqueCode: string; // Código único do template (ex: MERCADO_PAGO_V1)
   // Status e disponibilidade
   status: PaymentGatewayTemplateStatus;
   isPublic: boolean; // Se está disponível para todos os creators

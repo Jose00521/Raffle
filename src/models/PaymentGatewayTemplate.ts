@@ -101,6 +101,12 @@ const PaymentGatewayTemplateSchema = isServer ? new mongoose.Schema<IPaymentGate
       required: true,
       default: 'v1'
     },
+    templateUniqueCode: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true
+    },
     
     // Status e disponibilidade
     status: {
