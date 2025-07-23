@@ -103,7 +103,6 @@ const PaymentGatewayTemplateSchema = isServer ? new mongoose.Schema<IPaymentGate
     },
     templateUniqueCode: {
       type: String,
-      required: true,
       unique: true,
       index: true
     },

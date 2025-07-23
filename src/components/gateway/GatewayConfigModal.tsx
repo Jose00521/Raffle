@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { FaTimes, FaCheck, FaShieldAlt, FaInfoCircle } from 'react-icons/fa';
 import Modal from '@/components/ui/Modal';
 import AdvancedGatewayDropdown from '@/components/gateway/AdvancedGatewayDropdown';
 import GatewayConfigForm from '@/components/gateway/GatewayConfigForm';
+import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateAPIClient';
 
 // ============ INTERFACES ============
 interface GatewayTemplate {
@@ -489,11 +490,22 @@ const mockGatewayTemplates: GatewayTemplate[] = [
 export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayConfigModalProps) {
   const [step, setStep] = useState(1);
   const [selectedTemplate, setSelectedTemplate] = useState<GatewayTemplate | null>(null);
+  const [gatewayTemplates, setGatewayTemplates] = useState<GatewayTemplate[]>([]);
   const [gatewayData, setGatewayData] = useState({
     displayName: '',
     credentials: new Map(),
     settings: new Map()
   });
+
+  useEffect(() => {
+    const fetchGatewayTemplates = async () => {
+      const result = await adminGatewayTemplateAPIClient.getAllGatewayTemplates();
+      if(result.success){
+        setGatewayTemplates(result.data);
+      }
+    }
+    fetchGatewayTemplates();
+  }, []);
 
   const handleTemplateSelect = (template: GatewayTemplate) => {
     setSelectedTemplate(template);
@@ -568,7 +580,7 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
         <ModalBody>
           {step === 1 && (
             <AdvancedGatewayDropdown
-              templates={mockGatewayTemplates}
+              templates={gatewayTemplates}
               onSelect={handleTemplateSelect}
               selectedTemplate={selectedTemplate}
             />

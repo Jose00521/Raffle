@@ -4,7 +4,10 @@ import mongoose from 'mongoose';
 export enum PaymentGatewayTemplateStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
-  MAINTENANCE = 'MAINTENANCE'
+  MAINTENANCE = 'MAINTENANCE',
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  DEPRECATED = 'DEPRECATED'
 }
 
 // Tipos de campos para formulário dinâmico

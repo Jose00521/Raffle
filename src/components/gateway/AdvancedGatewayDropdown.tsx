@@ -142,7 +142,7 @@ const GatewayList = styled.div`
   }
 `;
 
-const GatewayItem = styled(motion.div)<{ $selected?: boolean }>`
+const GatewayItem = styled(motion.div)<{ $selected?: boolean, $selectedColor?: string, $color?: string }>`
   padding: 20px;
   border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
@@ -154,12 +154,14 @@ const GatewayItem = styled(motion.div)<{ $selected?: boolean }>`
   }
   
   &:hover {
-    background: #f8fafc;
+    background: ${props => props.$color+'10' || '#6366f1'};
   }
   
   ${props => props.$selected && `
     background: rgba(99, 102, 241, 0.05);
-    border-left: 4px solid #6366f1;
+    border-left: 4px solid ${props.$selectedColor || '#6366f1'};
+    background-color: ${props.$selectedColor+'10' || '#6366f1'};
+    background-opacity: 0.05 !important;
     padding-left: 16px;
   `}
 `;
@@ -175,7 +177,6 @@ const GatewayLogo = styled.div<{ $color?: string }>`
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: ${props => props.$color || '#6366f1'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -443,21 +444,23 @@ export default function AdvancedGatewayDropdown({
             >
               {filteredTemplates.map((template, index) => (
                 <GatewayItem
-                  key={template._id}
-                  $selected={selectedTemplate?._id === template._id}
+                  key={template.templateCode}
+                  $selected={selectedTemplate?.templateCode === template.templateCode}
+                  $selectedColor={selectedTemplate?.color}
+                  $color={template.color}
                   onClick={() => handleSelect(template)}
                   initial={{ opacity: 0}}
                   animate={{ opacity: 1}}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ x: 4 }}
                 >
-                  <SelectButton $selected={selectedTemplate?._id === template._id}>
-                    {selectedTemplate?._id === template._id && <FaCheck size={12} />}
+                  <SelectButton $selected={selectedTemplate?.templateCode === template.templateCode}>
+                    {selectedTemplate?.templateCode === template.templateCode && <FaCheck size={12} />}
                   </SelectButton>
 
                   <GatewayHeader>
                     <GatewayLogo $color={template.color}>
-                      {template.name.charAt(0)}
+                      <img src={template.logo} alt={template.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
                     </GatewayLogo>
                     
                     <GatewayInfo>
@@ -479,9 +482,9 @@ export default function AdvancedGatewayDropdown({
                     <MetaItem>
                       <span>Métodos:</span>
                       <MethodsList>
-                        {template.supportedMethods.map(method => (
-                          <MethodTag key={method}>
-                            {getMethodIcon(method)} {getMethodName(method)}
+                        {template.supportedMethods.map((method: any) => (
+                          <MethodTag key={method.method}>
+                            {getMethodIcon(method.method)} {getMethodName(method.method)}
                           </MethodTag>
                         ))}
                       </MethodsList>

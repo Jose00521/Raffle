@@ -43,6 +43,11 @@ import { AdminController, IAdminController } from '../controllers/AdminControlle
 import { AdminService, IAdminService } from '../services/AdminService';
 import { AdminRepository, IAdminRepository } from '../repositories/AdminRepository';
 import { AdminAuthRepository, IAdminAuthRepository } from '../repositories/auth/adminAuthRepository';
+import { GatewayTemplateRepository, IGatewayTemplateRepository } from '../repositories/GatewayTemplateRepository';
+import { IGatewayTemplateService } from '../services/GatewayTemplateService';
+import { GatewayTemplateService } from '../services/GatewayTemplateService';
+import { IGatewayTemplateController } from '../controllers/GatewayTemplateController';
+import { GatewayTemplateController } from '../controllers/GatewayTemplateController';
 
 
 // Register dependencies
@@ -74,6 +79,10 @@ container.register<SocketService>('socketService', { useClass: SocketService });
 container.register<IPaymentRepository>('paymentRepository', { useClass: PaymentRepository });
 container.register<IPaymentService>('paymentService', { useClass: PaymentService });
 container.register<IPaymentController>('paymentController', { useClass: PaymentController });
+container.register<IGatewayTemplateRepository>('gatewayTemplateRepository', { useClass: GatewayTemplateRepository });
+container.register<IGatewayTemplateService>('gatewayTemplateService', { useClass: GatewayTemplateService });
+container.register<IGatewayTemplateController>('gatewayTemplateController', { useClass: GatewayTemplateController });
+
 container.register<SSEvents>('sseEvents', { useClass: SSEvents });
 
 // Registrar o serviço SSEvents

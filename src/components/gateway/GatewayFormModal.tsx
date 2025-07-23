@@ -11,7 +11,7 @@ import CustomDropdown from '../common/CustomDropdown';
 import InputCheckbox from '../common/InputCheckbox';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { PaymentGatewayTemplateStatus } from '@/mocks/gatewayMocks';
-import { adminGatewayAPIClient } from '@/API/admin/adminGatewayAPIClient';
+import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateAPIClient';
 import { toast } from 'react-toastify';
 
 // Enums
@@ -40,10 +40,11 @@ interface GatewayFormData {
   provider: string;
   version: string;
   status: PaymentGatewayTemplateStatus;
-  documentationUrl: string;
+  documentation: string;
   color: string;
   isPublic: boolean;
-  logoFile?: FileList;
+  logo?: File;
+  logoUrl?: string; // URL do logo para modo de edição
   credentialFields: GatewayField[];
   settingFields: GatewayField[];
   supportedMethods: PaymentMethodConfig[];
@@ -505,6 +506,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
   isEditing = false
 }) => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  // Variável de estado para armazenar o arquivo selecionado
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const defaultValues: GatewayFormData = {
@@ -514,7 +517,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     provider: '',
     version: '1.0.0',
     status: PaymentGatewayTemplateStatus.DRAFT,
-    documentationUrl: '',
+    documentation: '',
     color: '#6366f1', // Cor padrão roxa
     isPublic: true,
     credentialFields: [],
@@ -544,10 +547,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     handleSubmit, 
     formState: { errors, isSubmitting }, 
     reset,
-    setValue,
-    watch
   } = useForm<GatewayFormData>({
-    defaultValues: initialData || defaultValues
+    defaultValues:  defaultValues
   });
   
   const { fields: credentialFields, append: appendCredential, remove: removeCredential } = useFieldArray({
@@ -569,20 +570,33 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       reset(initialData || defaultValues);
+      
+      // Limpar o arquivo e preview quando o modal é aberto ou fechado
+      setLogoFile(null);
       setLogoPreview(null);
+      
+      // Se estiver em modo de edição e tiver um logo URL, carregar a prévia
+      if (isEditing && initialData && initialData.logoUrl) {
+        setLogoPreview(initialData.logoUrl);
+      }
     }
-  }, [isOpen, reset, initialData]);
+  }, [isOpen, reset, initialData, isEditing]);
   
   // Lidar com a visualização prévia do logo
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Armazenar o arquivo selecionado
+      setLogoFile(file);
+      
+      // Criar preview do arquivo
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     } else {
+      setLogoFile(null);
       setLogoPreview(null);
     }
   };
@@ -639,14 +653,20 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     formData.append('provider', data.provider);
     formData.append('version', data.version);
     formData.append('status', data.status);
-    formData.append('documentationUrl', data.documentationUrl);
+    formData.append('documentation', data.documentation);
     formData.append('color', data.color);
     formData.append('isPublic', String(data.isPublic));
     
-    // Adicionar logo se existir
-    if (data.logoFile?.[0]) {
-      formData.append('logo', data.logoFile[0]);
+    // Adicionar logo se existir (usar a variável de estado ao invés do valor do formulário)
+    if (logoFile) {
+      formData.append('logo', logoFile);
+      console.log('Anexando logo:', logoFile);
+    } else {
+      console.log('Nenhum logo foi selecionado');
     }
+    
+    // Verificar o que está no FormData
+    console.log('Logo no FormData:', formData.get('logo'));
     
     // Adicionar campos como JSON
     formData.append('credentialFields', JSON.stringify(data.credentialFields));
@@ -654,14 +674,15 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     formData.append('supportedMethods', JSON.stringify(data.supportedMethods));
     formData.append('apiConfig', JSON.stringify(data.apiConfig));
     
-    const result = await adminGatewayAPIClient.createGateway(formData);
+    const result = await adminGatewayTemplateAPIClient.createGateway(formData);
 
     if(result.success){
       toast.success('Gateway criado com sucesso');
+      onClose();
       console.log(result.data);
     }else{
       toast.error('Erro ao criar gateway');
-      console.error(result.error);
+      console.error(result);
     }
   };
   
@@ -867,11 +888,11 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
             />
             
             <Controller
-              name="documentationUrl"
+              name="documentation"
               control={control}
               render={({ field }) => (
                 <FormInput
-                  id="documentationUrl"
+                  id="documentation"
                   label="Link da Documentação"
                   placeholder="https://developers.mercadopago.com"
                   icon={<FaLink />}
@@ -890,7 +911,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
               id="logo"
               type="file"
               accept="image/*"
-              {...register('logoFile')}
+              {...register('logo')}
               onChange={handleLogoChange}
               ref={fileInputRef}
               style={{

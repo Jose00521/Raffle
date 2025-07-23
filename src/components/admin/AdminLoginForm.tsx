@@ -348,7 +348,6 @@ const AdminLoginForm: React.FC = () => {
     } catch (error) {
       setError('Credenciais inválidas. Por favor, verifique seu e-mail e CPF.');
       console.error('Erro ao autenticar:', error);
-    } finally {
       setIsLoading(false);
     }
   };

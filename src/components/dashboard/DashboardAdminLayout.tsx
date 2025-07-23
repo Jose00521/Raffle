@@ -1562,14 +1562,6 @@ const DashboardAdminLayout: React.FC<DashboardLayoutProps> = ({
             <Greeting>{getGreeting()}, <UserName>{session?.user?.name?.split(' ')[0] || 'Usuário'}</UserName>!</Greeting>
             <SubGreeting>Bem-vindo de volta ao seu painel de controle de rifas</SubGreeting>
           </GreetingSection>
-          <ActionButtons>
-            <ActionButton onClick={() => router.push("/dashboard/criador/nova-rifa")}>
-              <FaPlusCircle size={12} /> Nova Rifa
-            </ActionButton>
-            <ActionButton onClick={() => router.push("/dashboard/criador/premios")}>
-              <FaTrophy size={12} /> Prêmios
-            </ActionButton>
-          </ActionButtons>
         </WelcomeHeader>
         
         {children}

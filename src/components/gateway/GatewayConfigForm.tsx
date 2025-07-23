@@ -90,7 +90,7 @@ const GatewayLogo = styled.div<{ $color?: string }>`
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: ${props => props.$color || '#6366f1'};
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -540,7 +540,7 @@ export default function GatewayConfigForm({
 
       <GatewayPreview>
         <GatewayLogo $color={template.color}>
-          {template.name.charAt(0)}
+          <img src={template.logo} alt={template.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
         </GatewayLogo>
         <GatewayInfo>
           <GatewayName>{template.name}</GatewayName>
