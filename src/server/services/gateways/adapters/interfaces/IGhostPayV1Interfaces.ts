@@ -12,6 +12,19 @@ export interface ICreditCard {
     expiration_year: string
   }
 
+  export interface IGhostsCredentials {
+    keys: {
+      secret_key: string;
+    };
+    apiConfig: {
+      baseUrl: string;
+      testBaseUrl?: string;
+      apiVersion?: string;
+      timeout?: number;
+      retries?: number;
+    };
+  }
+
 
 //Ghostspay Payment Request
 export interface IPaymentGhostRequest {

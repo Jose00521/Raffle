@@ -20,7 +20,7 @@ const UserPaymentGatewaySchema = isServer ? new mongoose.Schema<IUserPaymentGate
     },
     description: {
       type: String,
-      required: true
+      default: ''
     },
     // Referência ao template do gateway
     templateRef: {

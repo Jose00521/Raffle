@@ -48,6 +48,9 @@ import { IGatewayTemplateService } from '../services/GatewayTemplateService';
 import { GatewayTemplateService } from '../services/GatewayTemplateService';
 import { IGatewayTemplateController } from '../controllers/GatewayTemplateController';
 import { GatewayTemplateController } from '../controllers/GatewayTemplateController';
+import { CreatorPaymentGatewayRepository, ICreatorPaymentGatewayRepository } from '../repositories/CreatorPaymentGatewayRepository';
+import { CreatorPaymentGatewayService, ICreatorPaymentGatewayService } from '../services/CreatorPaymentGatewayService';
+import { ICreatorPaymentGatewayController, CreatorPaymentGatewayController } from '../controllers/CreatorPaymentGatewayController';
 
 
 // Register dependencies
@@ -82,7 +85,9 @@ container.register<IPaymentController>('paymentController', { useClass: PaymentC
 container.register<IGatewayTemplateRepository>('gatewayTemplateRepository', { useClass: GatewayTemplateRepository });
 container.register<IGatewayTemplateService>('gatewayTemplateService', { useClass: GatewayTemplateService });
 container.register<IGatewayTemplateController>('gatewayTemplateController', { useClass: GatewayTemplateController });
-
+container.register<ICreatorPaymentGatewayRepository>('creatorPaymentGatewayRepository', { useClass: CreatorPaymentGatewayRepository });
+container.register<ICreatorPaymentGatewayService>('creatorPaymentGatewayService', { useClass: CreatorPaymentGatewayService });
+container.register<ICreatorPaymentGatewayController>('creatorPaymentGatewayController', { useClass: CreatorPaymentGatewayController });
 container.register<SSEvents>('sseEvents', { useClass: SSEvents });
 
 // Registrar o serviço SSEvents

@@ -2,7 +2,7 @@ import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse } from "../utils/errorHandler/api";
 import type { IPaymentRepository } from "../repositories/PaymentRepository";
-import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern, IPaymentResultData } from "@/models/interfaces/IPaymentInterfaces";
 import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { ICampaign } from "@/models/interfaces/ICampaignInterfaces";
 
@@ -19,14 +19,16 @@ export interface IPaymentService {
     getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>>;
 
     createInitialPixPaymentAttempt(data: {
-        gateway: string;
+        templateCode: string;
+        templateRef: string;
+        templateName: string;
         body: IPaymentPattern;
         idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 
     updatePixPaymentToPending(data: {
         paymentCode: string;
-        gatewayResponse: IPaymentGhostResponse;
+        gatewayResponse: IPaymentResultData;
     }): Promise<ApiResponse<{
         paymentCode: string;
         pixCode: string;
@@ -72,7 +74,9 @@ export class PaymentService implements IPaymentService {
     }
 
     async createInitialPixPaymentAttempt(data: {
-        gateway: string;
+        templateCode: string;
+        templateRef: string;
+        templateName: string;
         body: IPaymentPattern;
         idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>> {
@@ -85,7 +89,7 @@ export class PaymentService implements IPaymentService {
 
     async updatePixPaymentToPending(data: {
         paymentCode: string;
-        gatewayResponse: IPaymentGhostResponse;
+        gatewayResponse: IPaymentResultData;
     }): Promise<ApiResponse<{
         paymentCode: string;
         pixCode: string;

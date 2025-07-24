@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { 
   FaArrowLeft, FaEye, FaEyeSlash, FaShieldAlt, 
-  FaCheck, FaInfoCircle, FaCog, FaKey, FaLock
+  FaCheck, FaInfoCircle, FaCog, FaKey, FaLock, FaExclamationCircle
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { creatorPaymentGatewayAPIClient } from '@/API/creator/creatorPaymentGateway';
 
 // ============ INTERFACES ============
 interface GatewayTemplate {
@@ -17,6 +18,7 @@ interface GatewayTemplate {
   provider: string;
   logo?: string;
   color?: string;
+  templateUniqueCode: string;
   credentialFields: CredentialField[];
   settingFields: SettingField[];
   supportedMethods: string[];
@@ -49,6 +51,7 @@ interface GatewayConfigFormProps {
   initialData: any;
   onSubmit: (data: any) => void;
   onBack: () => void;
+  onClose: () => void;
 }
 
 // ============ STYLED COMPONENTS ============
@@ -264,17 +267,32 @@ const ErrorMessage = styled.span`
   font-weight: 500;
 `;
 
-const DisplayNameField = styled.div`
+const DescriptionField = styled.div`
   margin-bottom: 20px;
 `;
 
-const DisplayNameInput = styled(Input)`
-  font-size: 0.95rem;
-  padding: 12px 16px;
-  border-width: 2px;
+const DescriptionInput = styled(Input)`
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid ${props => props.$hasError ? '#ef4444' : '#e2e8f0'};
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: all 0.2s ease;
+  color: #000;
   
   &:focus {
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    outline: none;
+    border-color: ${props => props.$hasError ? '#ef4444' : '#6366f1'};
+    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)'};
+  }
+  
+  &::placeholder {
+    color: #9ca3af;
+  }
+  
+  &[type="password"] {
+    padding-right: 44px;
   }
 `;
 
@@ -374,20 +392,58 @@ const ValidationInfo = styled.div`
   }
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const ErrorText = styled.div<{ $success?: boolean }>`
+  color: ${props => props.$success ? '#10b981' : '#ef4444'};
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: ${fadeIn} 0.2s ease;
+
+  min-height: 16px;
+  
+  @media (max-height: 800px) {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    bottom: -20px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-top: 3px;
+    font-size: 0.7rem;
+    bottom: -18px;
+  }
+`;
+
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
 // ============ COMPONENTE PRINCIPAL ============
 export default function GatewayConfigForm({ 
   template, 
   initialData, 
   onSubmit, 
+  onClose,
   onBack 
 }: GatewayConfigFormProps) {
   const [formData, setFormData] = useState({
     credentials: new Map(),
-    settings: new Map()
+    settings: new Map(),
+    description: ''
   });
   
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   // Inicializar campos com valores padrão
   useEffect(() => {
@@ -416,7 +472,6 @@ export default function GatewayConfigForm({
       }
       return newData;
     });
-
     // Limpar erro do campo quando o usuário digitar
     if (errors[fieldName]) {
       setErrors(prev => {
@@ -425,6 +480,7 @@ export default function GatewayConfigForm({
         return newErrors;
       });
     }
+
   };
 
   const togglePasswordVisibility = (fieldName: string) => {
@@ -457,13 +513,26 @@ export default function GatewayConfigForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setIsLoading(true);
     console.log(formData);
     
     if (validateForm()) {
-      onSubmit(formData);
+      const result = await creatorPaymentGatewayAPIClient.integrateGateway({
+        templateUniqueCode: template.templateUniqueCode,
+        credentials: Array.from(formData.credentials.entries()),
+        settings: Array.from(formData.settings.entries()),
+        templateCode: template.templateCode,
+        description: formData.description
+      });
+      if(result.success){
+        onClose();
+        setIsLoading(false);
+      }else{
+        console.error('Error integrating gateway', result.message);
+        setIsLoading(false);
+      }
     }
   };
 
@@ -524,7 +593,16 @@ export default function GatewayConfigForm({
           )}
         </InputContainer>
 
-        {hasError && <ErrorMessage>{errors[field.name]}</ErrorMessage>}
+        {hasError ? (
+          <ErrorText>
+            <ErrorIcon />
+            {errors[field.name]}
+          </ErrorText>
+        ) : (
+          <>
+          &nbsp;
+          </>
+        )}
       </FormField>
     );
   };
@@ -549,6 +627,30 @@ export default function GatewayConfigForm({
       </GatewayPreview>
 
       <form onSubmit={handleSubmit}>
+        
+        {/* Implementação do campo de descrição */}
+        <FormSection>
+          <SectionHeader>
+            <SectionTitle>
+              <FaInfoCircle />
+              Descrição Personalizada
+            </SectionTitle>
+          </SectionHeader>
+          <SectionDescription>
+            Defina uma descrição personalizada para este gateway (opcional)
+          </SectionDescription>
+          <SectionBody>
+            <DescriptionField>
+              <FieldLabel>Descrição</FieldLabel>
+              <DescriptionInput
+                type="text"
+                placeholder="Ex: Gateway principal para pagamentos com cartão de crédito"
+                value={formData.description || ''}
+                onChange={(e) => setFormData(prev => ({...prev, description: e.target.value}))}
+              />
+            </DescriptionField>
+          </SectionBody>
+        </FormSection>
 
         {template.credentialFields.length > 0 && (
           <FormSection>
@@ -569,7 +671,7 @@ export default function GatewayConfigForm({
           </FormSection>
         )}
 
-        {/* {template.settingFields.length > 0 && (
+        {template.settingFields.length > 0 && (
           <FormSection>
             <SectionHeader>
               <SectionTitle>
@@ -586,7 +688,7 @@ export default function GatewayConfigForm({
               </FieldGrid>
             </SectionBody>
           </FormSection>
-        )} */}
+        )}
 
         <FormActions>
           <ValidationInfo>

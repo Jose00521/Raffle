@@ -404,6 +404,7 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
 
         <ModalBody>
           {step === 1 && (
+            
             <AdvancedGatewayDropdown
               templates={gatewayTemplates}
               onSelect={handleTemplateSelect}
@@ -417,6 +418,7 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
               initialData={gatewayData}
               onSubmit={handleFormSubmit}
               onBack={() => setStep(1)}
+              onClose={handleClose}
             />
           )}
         </ModalBody>

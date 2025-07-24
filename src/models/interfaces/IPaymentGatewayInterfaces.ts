@@ -43,6 +43,33 @@ export interface IUserPaymentGateway {
   updatedAt: Date;
 }
 
+
+export interface IUserPaymentGatewayRequest {
+  _id?: string;
+  userId: mongoose.Types.ObjectId | string;
+  gatewayCode: string;
+  templateUniqueCode: string;
+  description: string;
+  // Referência ao template do gateway
+  templateRef: mongoose.Types.ObjectId | string; // Referência ao PaymentGatewayTemplate
+  templateCode: string; // Código do template para busca rápida
+  
+  isDefault: boolean; // Gateway principal do usuário
+  status: PaymentGatewayStatus;
+  
+  // Configurações específicas do gateway (valores dinâmicos baseados no template)
+  credentials: Record<string, any>; // Campos definidos no template (criptografados conforme necessário)
+  settings: Record<string, any>; // Configurações definidas no template
+  
+  // Metadados
+  displayName: string; // Nome amigável para o usuário
+  lastValidatedAt?: Date;
+  validationError?: string;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Interface base para implementação de gateways
 export interface IPaymentGateway {
   readonly type: PaymentGatewayType;

@@ -2,14 +2,14 @@ import logger from "@/lib/logger/logger";
 
 import { IPaymentGatewayAdapter } from "./interfaces/IPaymentGatewayAdapter";
 import { IPaymentPattern, IPaymentResult, IPaymentResultData } from "@/models/interfaces/IPaymentInterfaces";
-import { IPaymentGhostRequest, IPaymentGhostResponse } from './interfaces/IGhostPayV1Interfaces'
+import { IGhostsCredentials, IPaymentGhostRequest, IPaymentGhostResponse } from './interfaces/IGhostPayV1Interfaces'
 
 import { maskCEP, maskCPF, maskEmail, maskNumber, maskPhone, maskStreet, maskComplement } from "@/utils/maskUtils";
 
 
 class GhostPayAdapterV1 implements IPaymentGatewayAdapter {
 
-    constructor(private readonly credentials: any) {}
+    constructor(private readonly credentials: IGhostsCredentials) {}
 
     public async createPixPayment(data: IPaymentPattern): Promise<IPaymentResult> {
     const dataToSend = this.getPixProcessorRequestFormat(data);
@@ -28,12 +28,12 @@ class GhostPayAdapterV1 implements IPaymentGatewayAdapter {
       }
     });
 
-    const response = await fetch(`${process.env.GH_URL}/api/v1/transaction.purchase`, {
+    const response = await fetch(`${this.credentials.apiConfig.baseUrl}/api/v1/transaction.purchase`, {
       method: 'POST',
       body: JSON.stringify(dataToSend),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `${this.credentials.secretKey}`,
+        'Authorization': `${this.credentials.keys.secret_key}`,
       },
     });
 

@@ -1,7 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { IDBConnection } from "../lib/dbConnect";
 import { ApiResponse, createErrorResponse, createSuccessResponse } from "../utils/errorHandler/api";
-import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
+import { IPayment, IPaymentGhostResponse, IPaymentGhostWebhookPost, IPaymentPaginationRequestServer, IPaymentPaginationResponse, IPaymentPattern, IPaymentResultData, PaymentStatusEnum } from "@/models/interfaces/IPaymentInterfaces";
 import { ApiError } from "../utils/errorHandler/ApiError";
 import Payment from "@/models/Payment";
 import Campaign from "@/models/Campaign";
@@ -24,14 +24,16 @@ export interface IPaymentRepository {
     getLatestPaymentsByCreatorId(pagination: Partial<IPaymentPaginationRequestServer>): Promise<ApiResponse<Partial<IPaymentPaginationResponse> | null>>;
 
     createInitialPixPaymentAttempt(data: {
-        gateway: string;
+        templateCode: string;
+        templateRef: string;
+        templateName: string;
         body: IPaymentPattern;
         idempotencyKey?: string;
     }): Promise<ApiResponse<IPayment> | ApiResponse<null>>;
 
     updatePixPaymentToPending(data: {
         paymentCode: string;
-        gatewayResponse: IPaymentGhostResponse;
+        gatewayResponse: IPaymentResultData;
     }): Promise<ApiResponse<{
         pixCode: string;
         pixQrCode: string;
@@ -281,11 +283,13 @@ export class PaymentRepository implements IPaymentRepository {
     }
 
     async createInitialPixPaymentAttempt(data: {
-        gateway: string;
-        body: IPaymentPattern;
+        templateCode: string;
+        templateRef: string;
+        templateName: string;
+        body: IPaymentPattern;  
         idempotencyKey?: string; // 🎯 Chave de idempotência (padrão Stripe)
     }) {
-        const { gateway, body, idempotencyKey } = data;
+        const { templateCode, templateRef, templateName, body, idempotencyKey } = data;
 
         try {
             await this.db.connect();
@@ -352,7 +356,9 @@ export class PaymentRepository implements IPaymentRepository {
                 creatorId: campaign.createdBy,
                 paymentMethod: body.paymentMethod,
                 status: PaymentStatusEnum.INITIALIZED,
-                paymentProcessor: gateway,
+                templateCode: templateCode,
+                templateRef: templateRef,
+                paymentProcessor: templateName,
                 customerInfo: {
                     name: body.name,
                     email: maskEmail(body.email),
@@ -528,7 +534,7 @@ export class PaymentRepository implements IPaymentRepository {
 
     async updatePixPaymentToPending(data: {
         paymentCode: string;
-        gatewayResponse: IPaymentGhostResponse;
+        gatewayResponse: IPaymentResultData;
     }): Promise<ApiResponse<{
         pixCode: string;
         paymentCode: string;
@@ -569,20 +575,17 @@ export class PaymentRepository implements IPaymentRepository {
         const updateData = {
             pixCode: gatewayResponse.pixCode,
             status: PaymentStatusEnum.PENDING,
-            processorTransactionId: gatewayResponse.id,
-            amountReceived: gatewayResponse.amountSeller/100 || 0,
+            processorTransactionId: gatewayResponse.processorTransactionId,
+            amountReceived: gatewayResponse.amountReceived/100 || 0,
             taxSeller: gatewayResponse.taxSeller || 0,
             taxPlatform: gatewayResponse.taxPlatform || 0,
+            paymentCode: gatewayResponse.paymentCode,
             approvedAt: gatewayResponse.approvedAt ? new Date(gatewayResponse.approvedAt) : undefined,
-            expiresAt: gatewayResponse.expiresAt ? new Date(gatewayResponse.expiresAt) : undefined,
         };
 
         // 2. Adiciona os campos de data condicionalmente
         if (gatewayResponse.approvedAt) {
             updateData.approvedAt = new Date(gatewayResponse.approvedAt);
-        }
-        if (gatewayResponse.expiresAt) {
-            updateData.expiresAt = new Date(gatewayResponse.expiresAt);
         }
 
         // 3. Executa a busca e atualização em uma única chamada atômica
