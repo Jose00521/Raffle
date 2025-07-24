@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ============ INTERFACES ============
 interface GatewayTemplate {
   _id: string;
+  templateUniqueCode: string;
   templateCode: string;
   name: string;
   description: string;

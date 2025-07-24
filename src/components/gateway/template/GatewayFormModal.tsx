@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import { FaPlus, FaTrash, FaImage, FaLink, FaLock, FaUnlock, FaInfoCircle, FaQuestionCircle, FaTag, FaBuilding, FaCode, FaPercent, FaListAlt, FaTimes, FaEdit, FaCreditCard, FaQrcode, FaFileInvoice, FaPaypal, FaBitcoin, FaUniversity, FaGlobe, FaPalette, FaCog, FaClock, FaRedo, FaSpinner, FaExclamationCircle } from 'react-icons/fa';
-import Modal from '../ui/Modal';
-import FormInput from '../common/FormInput';
-import FormTextArea from '../common/FormTextArea';
-import FormColorInput from '../common/FormColorInput';
-import CustomDropdown from '../common/CustomDropdown';
-import InputCheckbox from '../common/InputCheckbox';
+import Modal from '../../ui/Modal';
+import FormInput from '../../common/FormInput';
+import FormTextArea from '../../common/FormTextArea';
+import FormColorInput from '../../common/FormColorInput';
+import CustomDropdown from '../../common/CustomDropdown';
+import InputCheckbox from '../../common/InputCheckbox';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { PaymentGatewayTemplateStatus } from '@/mocks/gatewayMocks';
 import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateAPIClient';

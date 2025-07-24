@@ -11,6 +11,7 @@ import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateA
 // ============ INTERFACES ============
 interface GatewayTemplate {
   _id: string;
+  templateUniqueCode: string;
   templateCode: string;
   name: string;
   description: string;
@@ -302,193 +303,11 @@ const SecurityNotice = styled.div`
   }
 `;
 
-// ============ DADOS MOCK ============
-const mockGatewayTemplates: GatewayTemplate[] = [
-  {
-    _id: '1',
-    templateCode: 'MERCADO_PAGO_V1',
-    name: 'Mercado Pago',
-    description: 'Gateway oficial do Mercado Pago para processar pagamentos PIX e cartão',
-    provider: 'MercadoPago',
-    logo: '/images/gateways/mercadopago.png',
-    color: '#009EE3',
-    documentation: 'https://dev.mercadopago.com.br',
-    status: 'ACTIVE',
-    isPublic: true,
-    credentialFields: [
-      {
-        name: 'publicKey',
-        label: 'Chave Pública',
-        type: 'TEXT',
-        required: true,
-        placeholder: 'APP_USR_xxxxxxxxx',
-        description: 'Chave pública fornecida pelo Mercado Pago',
-        isSecret: false
-      },
-      {
-        name: 'accessToken',
-        label: 'Access Token',
-        type: 'PASSWORD',
-        required: true,
-        placeholder: 'APP_USR_xxxxxxxxx',
-        description: 'Token de acesso para autenticar',
-        isSecret: true
-      }
-    ],
-    settingFields: [
-    //   {
-    //     name: 'environment',
-    //     label: 'Ambiente',
-    //     type: 'SELECT',
-    //     required: true,
-    //     options: [
-    //       { value: 'sandbox', label: 'Sandbox (Testes)' },
-    //       { value: 'production', label: 'Produção' }
-    //     ],
-    //     defaultValue: 'sandbox'
-    //   }
-    ],
-    supportedMethods: ['PIX', 'CREDIT_CARD'],
-    currency: 'BRL',
-    country: 'BR'
-  },
-  {
-    _id: '2',
-    templateCode: 'GHOSTSPAY_V1',
-    name: 'GhostsPay',
-    description: 'Gateway brasileiro com foco em PIX e pagamentos instantâneos',
-    provider: 'GhostsPay',
-    logo: '/images/gateways/ghostspay.png',
-    color: '#2D1B69',
-    documentation: 'https://docs.ghostspay.com',
-    status: 'ACTIVE',
-    isPublic: true,
-    credentialFields: [
-      {
-        name: 'secretKey',
-        label: 'Secret Key',
-        type: 'PASSWORD',
-        required: true,
-        placeholder: 'ghost_sk_xxxxxxxxx',
-        description: 'Chave secreta do GhostsPay',
-        isSecret: true
-      }
-    ],
-    settingFields: [
-    //   {
-    //     name: 'webhookUrl',
-    //     label: 'URL do Webhook',
-    //     type: 'TEXT',
-    //     required: false,
-    //     placeholder: 'https://seusite.com/webhook',
-    //     description: 'URL para receber notificações'
-    //   }
-    ],
-    supportedMethods: ['PIX'],
-    currency: 'BRL',
-    country: 'BR'
-  },
-  {
-    _id: '3',
-    templateCode: 'STRIPE_V1',
-    name: 'Stripe',
-    description: 'Gateway internacional com suporte global e alta conversão',
-    provider: 'Stripe',
-    logo: '/images/gateways/stripe.png',
-    color: '#635BFF',
-    documentation: 'https://stripe.com/docs',
-    status: 'ACTIVE',
-    isPublic: true,
-    credentialFields: [
-      {
-        name: 'publishableKey',
-        label: 'Publishable Key',
-        type: 'TEXT',
-        required: true,
-        placeholder: 'pk_test_xxxxxxxxx',
-        description: 'Chave pública do Stripe',
-        isSecret: false
-      },
-      {
-        name: 'secretKey',
-        label: 'Secret Key',
-        type: 'PASSWORD',
-        required: true,
-        placeholder: 'sk_test_xxxxxxxxx',
-        description: 'Chave secreta do Stripe',
-        isSecret: true
-      }
-    ],
-    settingFields: [
-    //   {
-    //     name: 'currency',
-    //     label: 'Moeda',
-    //     type: 'SELECT',
-    //     required: true,
-    //     options: [
-    //       { value: 'brl', label: 'Real (BRL)' },
-    //       { value: 'usd', label: 'Dólar (USD)' }
-    //     ],
-    //     defaultValue: 'brl'
-    //   }
-    ],
-    supportedMethods: ['CREDIT_CARD', 'PIX'],
-    currency: 'BRL',
-    country: 'BR'
-  },
-  {
-    _id: '4',
-    templateCode: 'PAGARME_V1',
-    name: 'Pagar.me',
-    description: 'Gateway internacional com suporte global e alta conversão',
-    provider: 'Pagar.me',
-    logo: '/images/gateways/pagarme.png',
-    color: '#635BFF',
-    documentation: 'https://pagar.me/docs',
-    status: 'ACTIVE',
-    isPublic: true,
-    credentialFields: [
-      {
-        name: 'publishableKey',
-        label: 'Publishable Key',
-        type: 'TEXT',
-        required: true,
-        placeholder: 'pk_test_xxxxxxxxx',
-        description: 'Chave pública do Pagar.me',
-        isSecret: false
-      },
-      {
-        name: 'secretKey',
-        label: 'Secret Key',
-        type: 'PASSWORD',
-        required: true,
-        placeholder: 'sk_test_xxxxxxxxx',
-        description: 'Chave secreta do Pagar.me',
-        isSecret: true
-      }
-    ],
-    settingFields: [
-    //   {
-    //     name: 'currency',
-    //     label: 'Moeda',
-    //     type: 'SELECT',
-    //     required: true,
-    //     options: [
-    //       { value: 'brl', label: 'Real (BRL)' },
-    //       { value: 'usd', label: 'Dólar (USD)' }
-    //     ],
-    //     defaultValue: 'brl'
-    //   }
-    ],
-    supportedMethods: ['CREDIT_CARD', 'PIX', 'BOLETO'],
-    currency: 'BRL',
-    country: 'BR'
-  }
-];
-
 // ============ COMPONENTE PRINCIPAL ============
 export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayConfigModalProps) {
   const [step, setStep] = useState(1);
+  const [isLoadingGateway, setIsLoadingGateway] = useState(false);
+  const [isSubmittingGatewayData, setIsSubmittingGatewayData] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<GatewayTemplate | null>(null);
   const [gatewayTemplates, setGatewayTemplates] = useState<GatewayTemplate[]>([]);
   const [gatewayData, setGatewayData] = useState({
@@ -499,9 +318,11 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
 
   useEffect(() => {
     const fetchGatewayTemplates = async () => {
+      setIsLoadingGateway(true);
       const result = await adminGatewayTemplateAPIClient.getAllGatewayTemplates();
       if(result.success){
         setGatewayTemplates(result.data);
+        setIsLoadingGateway(false);
       }
     }
     fetchGatewayTemplates();
@@ -517,14 +338,18 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
   };
 
   const handleFormSubmit = (formData: any) => {
+    setIsSubmittingGatewayData(true);
     const finalData = {
-      templateRef: selectedTemplate?._id,
+      templateUniqueCode: selectedTemplate?.templateUniqueCode,
       templateCode: selectedTemplate?.templateCode,
       ...formData
     };
+
+    console.log(finalData);
     
-    onSave(finalData);
-    handleClose();
+
+    
+    //handleClose();
   };
 
   const handleClose = () => {
