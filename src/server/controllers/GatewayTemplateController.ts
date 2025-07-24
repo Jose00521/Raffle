@@ -7,6 +7,7 @@ import { Session } from "next-auth";
 export interface IGatewayTemplateController {
     getAllGatewayTemplates(): Promise<ApiResponse<IPaymentGatewayTemplate[]>>;
     createGatewayTemplate(gatewayTemplate: Partial<IPaymentGatewayTemplate>, session: Session): Promise<ApiResponse<null> | ApiResponse<IPaymentGatewayTemplate>>;
+    verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -22,5 +23,9 @@ export class GatewayTemplateController implements IGatewayTemplateController {
 
     async createGatewayTemplate(gatewayTemplate: Partial<IPaymentGatewayTemplate>, session: Session): Promise<ApiResponse<null> | ApiResponse<IPaymentGatewayTemplate>> {
         return await this.gatewayTemplateService.createGatewayTemplate(gatewayTemplate, session);
+    }
+
+    async verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>> {
+        return await this.gatewayTemplateService.verifyIfAlreadyExists(templateCode, adminCode);
     }
 }

@@ -34,6 +34,8 @@ export enum PaymentStatusEnum {
     customerId: mongoose.Types.ObjectId | string;
     creatorId: mongoose.Types.ObjectId | string;
     processorTransactionId: string; // ID fornecido pelo processador de pagamento
+    templateCode: string;
+    templateRef: mongoose.Types.ObjectId | string;
     amount: number;
     taxSeller: number;
     taxPlatform: number;

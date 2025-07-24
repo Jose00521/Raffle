@@ -2,7 +2,7 @@ import logger from "@/lib/logger/logger";
 
 import { IPaymentGatewayAdapter } from "./interfaces/IPaymentGatewayAdapter";
 import { IPaymentPattern, IPaymentResult, IPaymentResultData } from "@/models/interfaces/IPaymentInterfaces";
-import { IPaymentGhostRequest, IPaymentGhostResponse } from './interfaces/IGhostPayInterfaces'
+import { IPaymentGhostRequest, IPaymentGhostResponse } from './interfaces/IGhostPayV1Interfaces'
 
 import { maskCEP, maskCPF, maskEmail, maskNumber, maskPhone, maskStreet, maskComplement } from "@/utils/maskUtils";
 

@@ -22,7 +22,7 @@ export interface IUserPaymentGateway {
   _id?: string;
   userId: mongoose.Types.ObjectId | string;
   gatewayCode: string;
-  
+  description: string;
   // Referência ao template do gateway
   templateRef: mongoose.Types.ObjectId | string; // Referência ao PaymentGatewayTemplate
   templateCode: string; // Código do template para busca rápida

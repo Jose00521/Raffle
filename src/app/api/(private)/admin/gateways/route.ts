@@ -31,6 +31,8 @@ export const POST = withAuth(async (request: NextRequest,{ session }: { session:
           ...convertFormDataToJSON(body)
         };
 
+        console.log(jsonData);
+
         const gatewayTemplateController = container.resolve(GatewayTemplateController);
 
         const result = await gatewayTemplateController.createGatewayTemplate(jsonData as Partial<IPaymentGatewayTemplate>, session);

@@ -12,6 +12,7 @@ import { uploadToS3 } from "@/lib/upload-service/client/uploadToS3";
 export interface IGatewayTemplateService {
     getAllGatewayTemplates(): Promise<ApiResponse<IPaymentGatewayTemplate[]>>;
     createGatewayTemplate(gatewayTemplate: Partial<IPaymentGatewayTemplate>, session: Session): Promise<ApiResponse<null> | ApiResponse<IPaymentGatewayTemplate>>;
+    verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -97,5 +98,9 @@ export class GatewayTemplateService implements IGatewayTemplateService {
                 cause: error as Error
             });
         }
+    }
+
+    async verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>> {
+        return await this.gatewayTemplateRepository.verifyIfAlreadyExists(templateCode, adminCode);
     }
 }

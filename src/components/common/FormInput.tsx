@@ -2,13 +2,14 @@
 
 import React, { useState, ReactNode, useEffect, useRef, useCallback, forwardRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FaEye, FaEyeSlash, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaInfoCircle, FaCheckCircle } from 'react-icons/fa';
 
 interface FormInputProps {
   id: string;
   name?: string;
   label?: string;
   icon?: ReactNode;
+  success?: string;
   placeholder?: string;
   type?: string;
   value?: string | number;
@@ -205,8 +206,8 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-const ErrorText = styled.div`
-  color: #ef4444;
+const ErrorText = styled.div<{ $success?: boolean }>`
+  color: ${props => props.$success ? '#10b981' : '#ef4444'};
   font-size: 0.8rem;
   margin-top: 6px;
   font-weight: 500;
@@ -234,6 +235,11 @@ const ErrorText = styled.div`
 `;
 
 const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
+const SuccessIcon = styled(FaCheckCircle)`
   min-width: 14px;
   min-height: 14px;
 `;
@@ -422,6 +428,7 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   name = id,
   label,
   icon,
+  success,
   placeholder,
   type = 'text',
   error,
@@ -440,6 +447,7 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | undefined>(error);
+  const [localSuccess, setLocalSuccess] = useState<string | undefined>(success);
   const [showTooltip, setShowTooltip] = useState(false);
   
   // Estado local para controlar o erro
@@ -454,6 +462,10 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
   useEffect(() => {
     setLocalError(error);
   }, [error]);
+
+  useEffect(() => {
+    setLocalSuccess(success);
+  }, [success]);
   
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
   
@@ -521,6 +533,18 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({
       ) : (
         <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
           <ErrorIcon />
+          &nbsp;
+        </ErrorText>
+      )}
+
+{localSuccess ? (
+        <ErrorText $success={!!localSuccess}>
+          <SuccessIcon />
+          {localSuccess}
+        </ErrorText>
+      ) : (
+        <ErrorText style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true" $success={!!localSuccess}>
+          <SuccessIcon />
           &nbsp;
         </ErrorText>
       )}

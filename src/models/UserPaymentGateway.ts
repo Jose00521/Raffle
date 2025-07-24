@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { IUserPaymentGateway, PaymentGatewayType, PaymentGatewayStatus } from './interfaces/IPaymentGatewayInterfaces';
+import { IUserPaymentGateway, PaymentGatewayStatus } from './interfaces/IPaymentGatewayInterfaces';
 import crypto from 'crypto';
 
 // Verificar se estamos no servidor
@@ -18,7 +18,10 @@ const UserPaymentGatewaySchema = isServer ? new mongoose.Schema<IUserPaymentGate
       required: true,
       unique: true
     },
-    
+    description: {
+      type: String,
+      required: true
+    },
     // Referência ao template do gateway
     templateRef: {
       type: mongoose.Schema.Types.ObjectId,

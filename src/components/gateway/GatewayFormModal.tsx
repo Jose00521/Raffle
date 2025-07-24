@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
-import { FaPlus, FaTrash, FaImage, FaLink, FaLock, FaUnlock, FaInfoCircle, FaQuestionCircle, FaTag, FaBuilding, FaCode, FaPercent, FaListAlt, FaTimes, FaEdit, FaCreditCard, FaQrcode, FaFileInvoice, FaPaypal, FaBitcoin, FaUniversity, FaGlobe, FaPalette, FaCog, FaClock, FaRedo } from 'react-icons/fa';
+import styled, { keyframes } from 'styled-components';
+import { FaPlus, FaTrash, FaImage, FaLink, FaLock, FaUnlock, FaInfoCircle, FaQuestionCircle, FaTag, FaBuilding, FaCode, FaPercent, FaListAlt, FaTimes, FaEdit, FaCreditCard, FaQrcode, FaFileInvoice, FaPaypal, FaBitcoin, FaUniversity, FaGlobe, FaPalette, FaCog, FaClock, FaRedo, FaSpinner } from 'react-icons/fa';
 import Modal from '../ui/Modal';
 import FormInput from '../common/FormInput';
 import FormTextArea from '../common/FormTextArea';
@@ -14,7 +14,8 @@ import { PaymentGatewayTemplateStatus } from '@/mocks/gatewayMocks';
 import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateAPIClient';
 import { toast } from 'react-toastify';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { GatewayTemplateForm, GatewayTemplateFormSchema } from '@/zod/gateway-template.schema';
+import { GatewayTemplateFormSchema } from '@/zod/gateway-template.schema';
+import debounce from 'lodash/debounce';
 
 // Enums
 export enum FieldType {
@@ -458,46 +459,18 @@ const AddMethodContainer = styled.div`
   margin-bottom: 1rem;
 `;
 
-const MethodConfigPanel = styled.div<{ $visible: boolean }>`
-  padding: 1rem;
-  background-color: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  display: ${props => props.$visible ? 'block' : 'none'};
+export const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 `;
 
-const ConfigPanelHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const ConfigPanelTitle = styled.h4`
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #334155;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-// Adicionar novos estilos para o campo de cor
-const ColorPreview = styled.div<{ $color: string }>`
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background-color: ${props => props.$color || '#CCCCCC'};
-  border: 1px solid #e2e8f0;
-  margin-left: 10px;
-`;
-
-const ColorInputContainer = styled.div`
-  display: flex;
-  align-items: center;
+export const LoadingSpinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(106, 17, 203, 0.3);
+  border-radius: 50%;
+  border-top-color: #6a11cb;
+  animation: ${spin} 1s linear infinite;
 `;
 
 // Componente Principal
@@ -509,6 +482,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
   isEditing = false
 }) => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
   // Variável de estado para armazenar o arquivo selecionado
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -557,6 +532,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     control, 
     register, 
     handleSubmit, 
+    setError,
     formState: { errors, isSubmitting }, 
     reset,
     trigger,
@@ -585,7 +561,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
   });
   
   // Resetar o formulário quando for aberto
-  useEffect(() => {
+  const resetForm = () => {
     if (isOpen) {
       reset(initialData || defaultValues);
       
@@ -598,7 +574,36 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
         setLogoPreview(initialData.logoUrl);
       }
     }
-  }, [isOpen, reset, initialData, isEditing]);
+  };
+
+  const verifyIfAlreadyExists = async (event: React.ChangeEvent<HTMLInputElement>)=>{
+    setSuccessMessage('');
+    const debouncedVerify = debounce(async () => {
+      const result = await adminGatewayTemplateAPIClient.verifyIfAlreadyExists(event.target.value);
+
+      if(result.success){
+
+        if(result.data){
+          setError('templateCode', {message: 'Nome de template já em uso'});
+
+          setIsVerifying(false);
+          }else{
+          setSuccessMessage('Nome de template disponível para uso');
+          setIsVerifying(false);
+        }
+
+      }else{
+        setError('templateCode', {message: 'Erro ao verificar se o template já existe'});
+        setIsVerifying(false);
+      }
+      }, 800);
+
+      const temaplateCodeIsValid = await trigger('templateCode');
+      if(temaplateCodeIsValid){
+        setIsVerifying(true);
+        debouncedVerify();
+      }
+  }
   
   // Lidar com a visualização prévia do logo
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -697,6 +702,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     if(result.success){
       toast.success('Gateway criado com sucesso');
       onClose();
+      resetForm();
       console.log(result.data);
     }else{
       toast.error('Erro ao criar gateway');
@@ -817,7 +823,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   placeholder="Ex: MercadoPago"
                   icon={<FaTag />}
                   required
-                  {...field}  
+                  {...field} 
                   error={errors.name?.message}
                 />
               )}
@@ -832,10 +838,19 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   id="templateCode"
                   label="Código do Template"
                   placeholder="Ex: MERCADOPAGO_V1"
-                  icon={<FaCode />}
+                  icon={isVerifying ? <LoadingSpinner /> : <FaCode />}
                   error={errors.templateCode?.message}
+                  success={successMessage}
                   required
                   {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    verifyIfAlreadyExists(e);
+                  }} 
+                  onBlur={(e) => {
+                    field.onBlur();
+                    verifyIfAlreadyExists(e);
+                  }}
                 />
               )}
             />

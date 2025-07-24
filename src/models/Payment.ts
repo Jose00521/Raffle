@@ -21,6 +21,17 @@ const PaymentSchema = isServer ? new mongoose.Schema<IPayment>(
       required: true,
       index: true
     },
+    templateCode: {
+      type: String,
+      required: true,
+      index: true
+    },
+    templateRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PaymentGatewayTemplate',
+      required: true,
+      index: true
+    },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

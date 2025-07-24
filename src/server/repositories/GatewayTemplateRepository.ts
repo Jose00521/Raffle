@@ -10,6 +10,7 @@ import { Admin } from "@/models/User";
 export interface IGatewayTemplateRepository {
     getAllGatewayTemplates(): Promise<ApiResponse<IPaymentGatewayTemplate[]>>;
     createGatewayTemplate(gatewayTemplate: Partial<IPaymentGatewayTemplate>, adminCode: string): Promise<ApiResponse<null> | ApiResponse<IPaymentGatewayTemplate>>;
+    verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>>;
 }
 
 @injectable()
@@ -62,7 +63,7 @@ export class GatewayTemplateRepository implements IGatewayTemplateRepository {
                     updatedBy: admin._id
                 });
     
-                gatewayTemplateModel.templateCode = generateEntityCode(gatewayTemplateModel._id, 'GT');
+                gatewayTemplateModel.templateUniqueCode = generateEntityCode(gatewayTemplateModel._id, 'GT');
     
                 //salva o usuário
                 await gatewayTemplateModel.save();
@@ -75,6 +76,41 @@ export class GatewayTemplateRepository implements IGatewayTemplateRepository {
             throw new ApiError({
                 success: false,
                 message: 'Erro ao criar criador',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async verifyIfAlreadyExists(templateCode: string, adminCode: string): Promise<ApiResponse<boolean> | ApiResponse<null>> {
+        try {
+            await this.db.connect();
+
+            console.log('templateCode',templateCode);
+            console.log('adminCode',adminCode);
+
+            const admin = await Admin!.findOne({
+                userCode: adminCode
+            });
+
+            if(!admin){
+                return createErrorResponse('Admin não encontrado', 404);
+            }
+
+            const gatewayTemplate = await PaymentGatewayTemplate!.findOne({
+                templateCode: templateCode,
+                createdBy: admin._id
+            });
+
+            if(gatewayTemplate){
+                return createSuccessResponse(true, 'Template de gateway encontrado com sucesso', 200);
+            }else{
+                return createSuccessResponse(false, 'Template de gateway não encontrado', 200);
+            }
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao verificar se o template já existe',
                 statusCode: 500,
                 cause: error as Error
             });

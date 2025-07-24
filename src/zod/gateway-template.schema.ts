@@ -82,8 +82,9 @@ const ApiConfigSchema = z.object({
 
 // Schema principal para o template de gateway de pagamento
 export const GatewayTemplateSchema = z.object({
-  templateCode: z.string().min(1, 'Código do template é obrigatório')
-    .regex(/^[A-Z0-9_]+$/, 'Use apenas letras maiúsculas, números e underscores')
+  templateCode: z.string().nonempty('Código do template é obrigatório')
+  .regex(/^[A-Z0-9_]+$/, 'Use apenas letras maiúsculas, números e underscores')
+    .min(3, 'Deve ter pelo menos 3 caracteres')
     .max(50, 'Máximo de 50 caracteres'),
   name: z.string().min(3, 'Nome é obrigatório e deve ter pelo menos 3 caracteres')
     .max(100, 'Máximo de 100 caracteres'),
@@ -95,7 +96,7 @@ export const GatewayTemplateSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE', 'DRAFT', 'PENDING', 'DEPRECATED'], {
     errorMap: () => ({ message: 'Status inválido' })
   }).default('DRAFT'),
-  documentationUrl: z.string().url('URL de documentação inválida').optional(),
+  documentation: z.string().url('URL de documentação inválida').optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Cor deve ser um valor hexadecimal válido'),
   isPublic: z.boolean().default(true),
   credentialFields: z.array(GatewayFieldSchema).default([]),
@@ -124,7 +125,7 @@ export const GatewayTemplateFormDataSchema = z.object({
   provider: z.string().min(1, 'Provedor é obrigatório'),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Versão deve seguir o formato semântico (ex: 1.0.0)'),
   status: z.string().refine((val) => ['ACTIVE', 'INACTIVE', 'DRAFT', 'PENDING', 'DEPRECATED'].includes(val)),
-  documentationUrl: z.string().optional(),
+  documentation: z.string().optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Cor deve ser um valor hexadecimal válido'),
   isPublic: z.string().transform(val => val === 'true'),
   logo: z.any().optional(), // FormData file
