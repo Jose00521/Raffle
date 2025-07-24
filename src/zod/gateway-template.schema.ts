@@ -99,7 +99,6 @@ export const GatewayTemplateSchema = z.object({
 // Esquema para recebimento de dados do formulário (com validação menos rígida para logo)
 export const GatewayTemplateFormSchema = GatewayTemplateSchema.extend({
   logo: z.instanceof(File, { message: 'Logo inválido' }).optional(),
-  logoUrl: z.string().optional()
 });
 
 // Tipos derivados do schema

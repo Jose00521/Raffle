@@ -13,6 +13,8 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { PaymentGatewayTemplateStatus } from '@/mocks/gatewayMocks';
 import { adminGatewayTemplateAPIClient } from '@/API/admin/adminGatewayTemplateAPIClient';
 import { toast } from 'react-toastify';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { GatewayTemplateForm, GatewayTemplateFormSchema } from '@/zod/gateway-template.schema';
 
 // Enums
 export enum FieldType {
@@ -23,6 +25,7 @@ export enum FieldType {
   PASSWORD = 'PASSWORD',
   EMAIL = 'EMAIL'
 }
+
 
 // Interfaces
 interface GatewayFormModalProps {
@@ -524,8 +527,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     settingFields: [],
     supportedMethods: [
       {
-        method: 'CREDIT_CARD',
-        displayName: 'Cartão de Crédito',
+        method: 'PIX',
+        displayName: 'Pix',
         enabled: true,
         fees: {
           percentage: 0,
@@ -548,6 +551,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     formState: { errors, isSubmitting }, 
     reset,
   } = useForm<GatewayFormData>({
+    mode: 'onChange',
+    resolver: zodResolver(GatewayTemplateFormSchema as any),
     defaultValues:  defaultValues
   });
   
