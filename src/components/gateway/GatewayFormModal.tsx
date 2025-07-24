@@ -559,10 +559,14 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     handleSubmit, 
     formState: { errors, isSubmitting }, 
     reset,
+    trigger,
   } = useForm<GatewayFormData>({
-    mode: 'onChange',
     resolver: zodResolver(GatewayTemplateFormSchema as any),
-    defaultValues:  defaultValues
+    defaultValues:  defaultValues,
+    mode:'all',
+    shouldFocusError: true,
+    reValidateMode: 'onBlur',
+    
   });
   
   const { fields: credentialFields, append: appendCredential, remove: removeCredential } = useFieldArray({
@@ -812,9 +816,9 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   label="Nome do Gateway"
                   placeholder="Ex: MercadoPago"
                   icon={<FaTag />}
-                  error={errors.name?.message}
                   required
-                  {...field}
+                  {...field}  
+                  error={errors.name?.message}
                 />
               )}
             />
