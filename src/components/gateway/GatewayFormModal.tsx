@@ -523,7 +523,16 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     documentation: '',
     color: '#6366f1', // Cor padrão roxa
     isPublic: true,
-    credentialFields: [],
+    credentialFields: [{
+      name: '',
+      label: '',
+      type: FieldType.TEXT,
+      required: false,
+      placeholder: '',
+      description: '',
+      group: 'credentials',
+      isSecret: false
+    }],
     settingFields: [],
     supportedMethods: [
       {
@@ -1089,8 +1098,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                 </FieldHeader>
                 
                 <FormRow>
-                  <Controller
-                    name={`credentialFields.${index}.name` as const}
+                  <Controller 
+                    name={`credentialFields.${index}.name`}
                     control={control}
                     rules={{ required: 'Nome é obrigatório' }}
                     render={({ field }) => (
@@ -1099,6 +1108,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                         label="Nome Técnico"
                         placeholder="Ex: api_key"
                         icon={<FaCode />}
+                        error={errors.credentialFields?.[index]?.name?.message}
                         required
                         {...field}
                       />
@@ -1115,6 +1125,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                         label="Rótulo de Exibição"
                         placeholder="Ex: Chave de API"
                         icon={<FaTag />}
+                        error={errors.credentialFields?.[index]?.label?.message}
                         required
                         {...field}
                       />
@@ -1126,6 +1137,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   <Controller
                     name={`credentialFields.${index}.type`}
                     control={control}
+                    rules={{ required: 'Rótulo de exibição é obrigatório' }}
                     render={({ field }) => (
                       <CustomDropdown
                         id={`credentialFields.${index}.type`}
@@ -1174,12 +1186,14 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                 <Controller
                   name={`credentialFields.${index}.placeholder` as const}
                   control={control}
+                  rules={{ required: 'Placeholder é obrigatório' }}
                   render={({ field }) => (
                     <FormInput
                       id={`credentialFields.${index}.placeholder`}
                       label="Placeholder"
                       placeholder="Digite aqui o placeholder do campo"
                       icon={<FaInfoCircle />}
+                      error={errors.credentialFields?.[index]?.placeholder?.message}
                       {...field}
                     />
                   )}
@@ -1188,12 +1202,14 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                 <Controller
                   name={`credentialFields.${index}.description` as const}
                   control={control}
+                  rules={{ required: 'Descrição é obrigatória' }}
                   render={({ field }) => (
                     <FormInput
                       id={`credentialFields.${index}.description`}
                       label="Descrição/Ajuda"
                       placeholder="Ex: Encontre esta chave no dashboard do provedor"
                       icon={<FaInfoCircle />}
+                      error={errors.credentialFields?.[index]?.description?.message}
                       {...field}
                     />
                   )}

@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { FieldType } from '@/components/gateway/GatewayFormModal';
+
+// Definir nosso próprio enum em vez de importar para evitar problemas de importação
+export enum FieldType {
+  TEXT = 'TEXT',
+  NUMBER = 'NUMBER',
+  BOOLEAN = 'BOOLEAN',
+  SELECT = 'SELECT',
+  PASSWORD = 'PASSWORD',
+  EMAIL = 'EMAIL'
+}
 
 // Enum para status dos templates de gateway de pagamento
 export enum PaymentGatewayTemplateStatus {
@@ -17,18 +26,19 @@ const FieldOptionSchema = z.object({
 });
 
 // Validação para campos de credenciais e configurações
+// Usar z.enum em vez de z.nativeEnum para evitar problemas com valores nulos
 const GatewayFieldSchema = z.object({
   name: z.string().min(1, 'O nome técnico é obrigatório')
     .regex(/^[a-zA-Z0-9_]+$/, 'Use apenas letras, números e underscores')
     .max(50, 'Máximo de 50 caracteres'),
   label: z.string().min(1, 'O rótulo é obrigatório')
     .max(100, 'Máximo de 100 caracteres'),
-  type: z.nativeEnum(FieldType, {
+  type: z.enum(['TEXT', 'NUMBER', 'BOOLEAN', 'SELECT', 'PASSWORD', 'EMAIL'], {
     errorMap: () => ({ message: 'Tipo de campo inválido' })
   }),
   required: z.boolean().default(false),
-  placeholder: z.string().optional(),
-  description: z.string().optional(),
+  placeholder: z.string().min(1, 'O placeholder é obrigatório'),
+  description: z.string().min(1, 'A descrição é obrigatória'),
   group: z.enum(['credentials', 'settings'], {
     errorMap: () => ({ message: 'Grupo deve ser credentials ou settings' })
   }),
@@ -82,9 +92,9 @@ export const GatewayTemplateSchema = z.object({
     .max(100, 'Máximo de 100 caracteres'),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Versão deve seguir o formato semântico (ex: 1.0.0)')
     .default('1.0.0'),
-  status: z.nativeEnum(PaymentGatewayTemplateStatus, {
+  status: z.enum(['ACTIVE', 'INACTIVE', 'DRAFT', 'PENDING', 'DEPRECATED'], {
     errorMap: () => ({ message: 'Status inválido' })
-  }).default(PaymentGatewayTemplateStatus.DRAFT),
+  }).default('DRAFT'),
   documentationUrl: z.string().url('URL de documentação inválida').optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Cor deve ser um valor hexadecimal válido'),
   isPublic: z.boolean().default(true),
@@ -98,7 +108,8 @@ export const GatewayTemplateSchema = z.object({
 
 // Esquema para recebimento de dados do formulário (com validação menos rígida para logo)
 export const GatewayTemplateFormSchema = GatewayTemplateSchema.extend({
-  logo: z.instanceof(File, { message: 'Logo inválido' }).optional(),
+  logo: z.any().optional(),
+  logoUrl: z.string().optional()
 });
 
 // Tipos derivados do schema
@@ -112,7 +123,7 @@ export const GatewayTemplateFormDataSchema = z.object({
   description: z.string().optional(),
   provider: z.string().min(1, 'Provedor é obrigatório'),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Versão deve seguir o formato semântico (ex: 1.0.0)'),
-  status: z.string().refine((val) => Object.values(PaymentGatewayTemplateStatus).includes(val as PaymentGatewayTemplateStatus)),
+  status: z.string().refine((val) => ['ACTIVE', 'INACTIVE', 'DRAFT', 'PENDING', 'DEPRECATED'].includes(val)),
   documentationUrl: z.string().optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Cor deve ser um valor hexadecimal válido'),
   isPublic: z.string().transform(val => val === 'true'),
