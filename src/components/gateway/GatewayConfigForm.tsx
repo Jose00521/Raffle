@@ -76,12 +76,12 @@ const BackButton = styled.button`
   }
 `;
 
-const GatewayPreview = styled.div`
+const GatewayPreview = styled.div<{ $color?: string }>`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: ${props => props.$color+'10' || '#6366f1'};
   border-radius: 10px;
   border: 1px solid #e2e8f0;
 `;
@@ -538,7 +538,7 @@ export default function GatewayConfigForm({
         Voltar para seleção
       </BackButton>
 
-      <GatewayPreview>
+      <GatewayPreview $color={template.color}>
         <GatewayLogo $color={template.color}>
           <img src={template.logo} alt={template.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
         </GatewayLogo>

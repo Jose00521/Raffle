@@ -284,15 +284,15 @@ const DocumentationLink = styled.a`
   }
 `;
 
-const SelectButton = styled.button<{ $selected?: boolean }>`
+const SelectButton = styled.button<{ $selected?: boolean, $selectedColor?: string }>`
   position: absolute;
   top: 20px;
   right: 20px;
   width: 32px;
   height: 32px;
-  border: 2px solid ${props => props.$selected ? '#6366f1' : '#e2e8f0'};
+  border: 2px solid ${props => props.$selected ? props.$selectedColor || '#6366f1' : '#e2e8f0'};
   border-radius: 50%;
-  background: ${props => props.$selected ? '#6366f1' : 'white'};
+  background: ${props => props.$selected ? props.$selectedColor || '#6366f1' : 'white'};
   color: ${props => props.$selected ? 'white' : '#94a3b8'};
   cursor: pointer;
   display: flex;
@@ -302,7 +302,7 @@ const SelectButton = styled.button<{ $selected?: boolean }>`
   
   &:hover {
     border-color: #6366f1;
-    background: ${props => props.$selected ? '#5855eb' : '#f8fafc'};
+    background: ${props => props.$selected ? props.$selectedColor || '#6366f1' : '#f8fafc'};
   }
 `;
 
@@ -454,7 +454,7 @@ export default function AdvancedGatewayDropdown({
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ x: 4 }}
                 >
-                  <SelectButton $selected={selectedTemplate?.templateCode === template.templateCode}>
+                  <SelectButton $selectedColor={selectedTemplate?.color} $selected={selectedTemplate?.templateCode === template.templateCode}>
                     {selectedTemplate?.templateCode === template.templateCode && <FaCheck size={12} />}
                   </SelectButton>
 
