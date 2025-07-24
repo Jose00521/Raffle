@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { FaPlus, FaTrash, FaImage, FaLink, FaLock, FaUnlock, FaInfoCircle, FaQuestionCircle, FaTag, FaBuilding, FaCode, FaPercent, FaListAlt, FaTimes, FaEdit, FaCreditCard, FaQrcode, FaFileInvoice, FaPaypal, FaBitcoin, FaUniversity, FaGlobe, FaPalette, FaCog, FaClock, FaRedo, FaSpinner } from 'react-icons/fa';
+import styled, { css, keyframes } from 'styled-components';
+import { FaPlus, FaTrash, FaImage, FaLink, FaLock, FaUnlock, FaInfoCircle, FaQuestionCircle, FaTag, FaBuilding, FaCode, FaPercent, FaListAlt, FaTimes, FaEdit, FaCreditCard, FaQrcode, FaFileInvoice, FaPaypal, FaBitcoin, FaUniversity, FaGlobe, FaPalette, FaCog, FaClock, FaRedo, FaSpinner, FaExclamationCircle } from 'react-icons/fa';
 import Modal from '../ui/Modal';
 import FormInput from '../common/FormInput';
 import FormTextArea from '../common/FormTextArea';
@@ -214,15 +214,16 @@ const Button = styled.button`
   transition: all 0.2s ease;
 `;
 
-const PrimaryButton = styled(Button)`
+const PrimaryButton = styled(Button)<{ $disabled?: boolean }>`
 background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   color: white;
   border: none;
-  
-  &:disabled {
-    background-color: #93c5fd;
+  ${props => props.$disabled && css`
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    opacity: 0.5;
     cursor: not-allowed;
-  }
+  `}
+
 `;
 
 const SecondaryButton = styled(Button)`
@@ -264,12 +265,6 @@ const IconButton = styled.button`
   }
 `;
 
-const ErrorMessage = styled.p`
-  color: #ef4444;
-  font-size: 0.75rem;
-  margin: 0.25rem 0 0 0;
-`;
-
 const HelpText = styled.p`
   font-size: 0.75rem;
   color: #64748b;
@@ -294,22 +289,6 @@ const Logo = styled.img`
   padding: 0.5rem;
 `;
 
-const PaymentMethodGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-`;
-
-const PaymentMethodCard = styled.div`
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-`;
-
 const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -317,51 +296,6 @@ const ModalFooter = styled.div`
   padding-top: 1.5rem;
   border-top: 1px solid #e2e8f0;
   margin-top: 1rem;
-`;
-
-const Switch = styled.label`
-  position: relative;
-  display: inline-block;
-  width: 3rem;
-  height: 1.5rem;
-`;
-
-const SwitchInput = styled.input`
-  opacity: 0;
-  width: 0;
-  height: 0;
-  
-  &:checked + span {
-    background-color: #3b82f6;
-  }
-  
-  &:checked + span:before {
-    transform: translateX(1.5rem);
-  }
-`;
-
-const Slider = styled.span`
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #cbd5e1;
-  transition: 0.2s;
-  border-radius: 34px;
-  
-  &:before {
-    position: absolute;
-    content: "";
-    height: 1rem;
-    width: 1rem;
-    left: 0.25rem;
-    bottom: 0.25rem;
-    background-color: white;
-    transition: 0.2s;
-    border-radius: 50%;
-  }
 `;
 
 // Adicionar novos estilos para o sistema de tags
@@ -473,6 +407,41 @@ export const LoadingSpinner = styled.div`
   animation: ${spin} 1s linear infinite;
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const ErrorText = styled.div<{ $success?: boolean }>`
+  color: ${props => props.$success ? '#10b981' : '#ef4444'};
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: ${fadeIn} 0.2s ease;
+  min-height: 16px;
+  margin-top: 6px;
+  
+  @media (max-height: 800px) {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    bottom: -20px;
+  }
+  
+  @media (max-height: 700px) {
+    margin-top: 3px;
+    font-size: 0.7rem;
+    bottom: -18px;
+  }
+`;
+
+const ErrorIcon = styled(FaExclamationCircle)`
+  min-width: 14px;
+  min-height: 14px;
+`;
+
 // Componente Principal
 const GatewayFormModal: React.FC<GatewayFormModalProps> = ({ 
   isOpen, 
@@ -533,7 +502,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     register, 
     handleSubmit, 
     setError,
-    formState: { errors, isSubmitting }, 
+    formState: { errors, isSubmitting ,isValid}, 
     reset,
     trigger,
   } = useForm<GatewayFormData>({
@@ -621,6 +590,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     } else {
       setLogoFile(null);
       setLogoPreview(null);
+      setError('logo', {message: 'Logo é obrigatória'});
     }
   };
   
@@ -686,6 +656,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
       console.log('Anexando logo:', logoFile);
     } else {
       console.log('Nenhum logo foi selecionado');
+      setError('logo', {message: 'Logo é obrigatória'});
     }
     
     // Verificar o que está no FormData
@@ -697,7 +668,8 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     formData.append('supportedMethods', JSON.stringify(data.supportedMethods));
     formData.append('apiConfig', JSON.stringify(data.apiConfig));
     
-    const result = await adminGatewayTemplateAPIClient.createGateway(formData);
+    if(isValid && logoFile){
+      const result = await adminGatewayTemplateAPIClient.createGateway(formData);
 
     if(result.success){
       toast.success('Gateway criado com sucesso');
@@ -707,6 +679,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
     }else{
       toast.error('Erro ao criar gateway');
       console.error(result);
+    }
     }
   };
   
@@ -928,6 +901,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   id="documentation"
                   label="Link da Documentação"
                   placeholder="https://developers.mercadopago.com"
+                  error={errors.documentation?.message}
                   icon={<FaLink />}
                   {...field}
                 />
@@ -956,6 +930,12 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                 backgroundColor: 'white'
               }}
             />
+            {errors.logo && (
+              <ErrorText>
+                <ErrorIcon />
+                {errors.logo.message}
+              </ErrorText>
+            )}
             
             {logoPreview && (
               <ImagePreview>
@@ -963,6 +943,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
               </ImagePreview>
             )}
             <HelpText>Recomendado: 150x60px, formato PNG com fundo transparente</HelpText>
+
           </FormField>
 
           <FormRow>
@@ -976,6 +957,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
+                  error={errors.color?.message}
                   defaultColor="#6366f1"
                   helpText="Escolha uma cor para identificação visual do gateway"
                 />
@@ -1036,6 +1018,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   id="apiConfig.testBaseUrl"
                   label="URL Base da API de Teste (Sandbox)"
                   placeholder="https://sandbox-api.gateway.com/v1"
+                  error={errors.apiConfig?.testBaseUrl?.message}
                   icon={<FaGlobe />}
                   {...field}
                 />
@@ -1053,6 +1036,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   label="Versão da API"
                   placeholder="Ex: v1"
                   icon={<FaCode />}
+                  error={errors.apiConfig?.apiVersion?.message}
                   {...field}
                 />
               )}
@@ -1070,6 +1054,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   type="number"
                   placeholder="30000"
                   icon={<FaClock />}
+                  error={errors.apiConfig?.timeout?.message}
                   {...field}
                 />
               )}
@@ -1085,6 +1070,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                   type="number"
                   placeholder="3"
                   icon={<FaRedo />}
+                  error={errors.apiConfig?.retries?.message}
                   {...field}
                 />
               )}
@@ -1236,6 +1222,18 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
               </DynamicField>
             ))}
           </FieldList>
+          {errors.credentialFields && (
+            <ErrorText>
+              {
+                errors.credentialFields.message ?(
+                  <ErrorIcon />
+                ):(
+                  <></> 
+                )
+              }
+              {errors.credentialFields.message}
+            </ErrorText>
+          )}
           
           <ButtonGroup>
             <SecondaryButton type="button" onClick={addCredentialField}>
@@ -1277,6 +1275,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                         id={`settingFields.${index}.name`}
                         label="Nome Técnico"
                         placeholder="Ex: sandbox_mode"
+                        error={errors.settingFields?.[index]?.name?.message}
                         icon={<FaCode />}
                         required
                         {...field}
@@ -1293,6 +1292,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                         id={`settingFields.${index}.label`}
                         label="Rótulo de Exibição"
                         placeholder="Ex: Modo Sandbox"
+                        error={errors.settingFields?.[index]?.label?.message}
                         icon={<FaTag />}
                         required
                         {...field}
@@ -1327,6 +1327,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                           <InputCheckbox
                             id={`settingFields.${index}.required`}
                             label="Obrigatório"
+                            error={errors.settingFields?.[index]?.required?.message}
                             checked={value}
                             onChange={(e) => onChange(e.target.checked)}
                           />
@@ -1345,6 +1346,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
                       label="Descrição/Ajuda"
                       placeholder="Ex: Ative para usar o ambiente de testes"
                       icon={<FaInfoCircle />}
+                      error={errors.settingFields?.[index]?.description?.message}
                       {...field}
                     />
                   )}
@@ -1464,7 +1466,7 @@ const GatewayFormModal: React.FC<GatewayFormModalProps> = ({
           <SecondaryButton type="button" onClick={onClose}>
             Cancelar
           </SecondaryButton>
-          <PrimaryButton type="submit" disabled={isSubmitting}>
+          <PrimaryButton type="submit" $disabled={!isValid || !logoFile || isSubmitting}>
             {isSubmitting ? 'Salvando...' : isEditing ? 'Atualizar Gateway' : 'Adicionar Gateway'}
           </PrimaryButton>
         </ModalFooter>

@@ -99,7 +99,7 @@ export const GatewayTemplateSchema = z.object({
   documentation: z.string().url('URL de documentação inválida').optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Cor deve ser um valor hexadecimal válido'),
   isPublic: z.boolean().default(true),
-  credentialFields: z.array(GatewayFieldSchema).default([]),
+  credentialFields: z.array(GatewayFieldSchema).min(1, 'Pelo menos um campo de credencial é obrigatório'),
   settingFields: z.array(GatewayFieldSchema).default([]),
   supportedMethods: z.array(PaymentMethodSchema)
     .min(1, 'Pelo menos um método de pagamento deve ser suportado')
