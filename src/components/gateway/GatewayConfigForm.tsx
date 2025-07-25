@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { 
   FaArrowLeft, FaEye, FaEyeSlash, FaShieldAlt, 
-  FaCheck, FaInfoCircle, FaCog, FaKey, FaLock, FaExclamationCircle
+  FaCheck, FaInfoCircle, FaCog, FaKey, FaLock, FaExclamationCircle,
+  FaSpinner
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { creatorPaymentGatewayAPIClient } from '@/API/creator/creatorPaymentGateway';
+import { LoadingSpinner } from '@/styles/registration.styles';
 
 // ============ INTERFACES ============
 interface GatewayTemplate {
@@ -51,7 +53,7 @@ interface GatewayConfigFormProps {
   initialData: any;
   onSubmit: (data: any) => void;
   onBack: () => void;
-  onClose: () => void;
+  onClose: (createdGateway: boolean) => void;
 }
 
 // ============ STYLED COMPONENTS ============
@@ -346,7 +348,7 @@ const SecondaryButton = styled.button`
   }
 `;
 
-const PrimaryButton = styled.button<{ $disabled?: boolean }>`
+const PrimaryButton = styled.button<{ $disabled?: boolean, $loading?: boolean }>`
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -527,7 +529,7 @@ export default function GatewayConfigForm({
         description: formData.description
       });
       if(result.success){
-        onClose();
+        onClose(true);
         setIsLoading(false);
       }else{
         console.error('Error integrating gateway', result.message);
@@ -702,9 +704,8 @@ export default function GatewayConfigForm({
               Voltar
             </SecondaryButton>
 
-            <PrimaryButton type="submit" $disabled={!isFormValid}>
-              <FaCheck />
-              Salvar Gateway
+            <PrimaryButton type="submit" $disabled={!isFormValid} $loading={isLoading}>
+              {isLoading ? <><LoadingSpinner /> Salvando...</> : <><FaCheck /> Salvar Gateway</>}
             </PrimaryButton>
           </ActionButtons>
         </FormActions>

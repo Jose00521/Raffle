@@ -797,20 +797,20 @@ export default function GatewaysPage() {
   // Simular dados para desenvolvimento
   useEffect(() => {
     setIsLoading(true);
-    const fetchGateways = async () => {
-      const response = await creatorPaymentGatewayAPIClient.getMyGateways();
-      console.log('response', response);
-      if(response.success){
-        setUserGateways(response.data || []);
-        setIsLoading(false);
-      }else{
-        toast.error(response.message || 'Erro ao buscar gateways');
-        setIsLoading(false);
-      }
-    };
-
     fetchGateways();
   }, []);
+
+  const fetchGateways = async () => {
+    const response = await creatorPaymentGatewayAPIClient.getMyGateways();
+    console.log('response', response);
+    if(response.success){
+      setUserGateways(response.data || []);
+      setIsLoading(false);
+    }else{
+      toast.error(response.message || 'Erro ao buscar gateways');
+      setIsLoading(false);
+    }
+  };
 
   const handleSetDefault = async (gatewayId: string) => {
     try {
@@ -831,11 +831,14 @@ export default function GatewaysPage() {
 
   const handleDeleteGateway = async (gatewayId: string) => {
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setUserGateways(prev => prev.filter(gateway => gateway.gatewayCode !== gatewayId));
-      toast.success('Gateway removido com sucesso!');
+      console.log('gatewayId', gatewayId);
+      const response = await creatorPaymentGatewayAPIClient.deleteGateway(gatewayId);
+      if(response.success){
+        toast.success('Gateway removido com sucesso!');
+        setUserGateways(prev => prev.filter(gateway => gateway.gatewayCode !== gatewayId));
+      }else{
+        toast.error(response.message || 'Erro ao remover gateway');
+      }
     } catch (error) {
       toast.error('Erro ao remover gateway');
     }
@@ -855,6 +858,13 @@ export default function GatewaysPage() {
       toast.success('Credenciais validadas com sucesso!');
     } catch (error) {
       toast.error('Erro na validação das credenciais');
+    }
+  };
+
+  const handleCloseConfigModal = (createdGateway: boolean = false) => {
+    setShowConfigModal(false);
+    if(createdGateway){
+      fetchGateways();
     }
   };
 
@@ -923,7 +933,7 @@ export default function GatewaysPage() {
             <RefreshButton
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => window.location.reload()}
+              onClick={() => fetchGateways()}
             >
               <FaSync />
             </RefreshButton>
@@ -1207,7 +1217,7 @@ export default function GatewaysPage() {
         {/* Modal de Configuração */}
         <GatewayConfigModal
           isOpen={showConfigModal}
-          onClose={() => setShowConfigModal(false)}
+          onClose={handleCloseConfigModal}
           onSave={handleAddGateway}
         />
       </PageContainer>

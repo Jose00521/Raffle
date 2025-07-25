@@ -9,6 +9,7 @@ export interface ICreatorPaymentGatewayService {
     getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway>>;
     getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
     setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
+    deleteGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
 }
 
 
@@ -30,6 +31,10 @@ export class CreatorPaymentGatewayService {
 
     async getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>> {
         return await this.creatorPaymentGatewayRepository.getMyGateways(userCode);
+    }
+
+    async deleteGateway(userCode: string, gatewayCode: string) {
+        return await this.creatorPaymentGatewayRepository.deleteGateway(userCode, gatewayCode);
     }
 
     async setAsDefaultGateway(userCode: string, gatewayCode: string) {

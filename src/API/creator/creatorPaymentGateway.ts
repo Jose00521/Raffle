@@ -23,6 +23,16 @@ export const creatorPaymentGatewayAPIClient = {
         return result.json();
     },
 
+    deleteGateway: async (gatewayCode: string) => {
+        const result = await fetch(`/api/creator/gateways/${gatewayCode}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        return result.json();
+    },
+
     setAsDefaultGateway: async (gatewayCode: string) => {
         const result = await fetch(`/api/creator/gateways/default`, {
             method: 'PUT',

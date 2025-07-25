@@ -54,7 +54,7 @@ interface SettingField {
 
 interface GatewayConfigModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (createdGateway: boolean) => void;
   onSave: (gatewayData: any) => void;
 }
 
@@ -317,16 +317,18 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
   });
 
   useEffect(() => {
-    const fetchGatewayTemplates = async () => {
-      setIsLoadingGateway(true);
-      const result = await adminGatewayTemplateAPIClient.getAllGatewayTemplates();
-      if(result.success){
-        setGatewayTemplates(result.data);
-        setIsLoadingGateway(false);
-      }
-    }
     fetchGatewayTemplates();
   }, []);
+
+
+  const fetchGatewayTemplates = async () => {
+    setIsLoadingGateway(true);
+    const result = await adminGatewayTemplateAPIClient.getAllGatewayTemplates();
+    if(result.success){
+      setGatewayTemplates(result.data);
+      setIsLoadingGateway(false);
+    }
+  }
 
   const handleTemplateSelect = (template: GatewayTemplate) => {
     setSelectedTemplate(template);
@@ -352,15 +354,17 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
     //handleClose();
   };
 
-  const handleClose = () => {
-    // setStep(1);
-    // setSelectedTemplate(null);
-    // setGatewayData({
-    //   displayName: '',
-    //   credentials: new Map(),
-    //   settings: new Map()
-    // });
-    onClose();
+  const handleClose = (createdGateway: boolean = false) => {
+    if(createdGateway){
+      setStep(1);
+      setSelectedTemplate(null);
+      setGatewayData({
+        displayName: '',
+        credentials: new Map(),
+        settings: new Map()
+      });
+    }
+    onClose(createdGateway);
   };
 
   const canProceed = step === 1 ? selectedTemplate !== null : true;
@@ -380,7 +384,7 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
               </ModalSubtitle>
             </HeaderContent>
             
-            <CloseButton onClick={handleClose}>
+            <CloseButton onClick={() => handleClose(false)}>
               <FaTimes />
             </CloseButton>
           </HeaderTop>
@@ -431,7 +435,7 @@ export default function GatewayConfigModal({ isOpen, onClose, onSave }: GatewayC
             </SecurityNotice>
             
             <FooterActions>
-              <SecondaryButton onClick={handleClose}>
+              <SecondaryButton onClick={() => handleClose(false)}>
                 Cancelar
               </SecondaryButton>
               

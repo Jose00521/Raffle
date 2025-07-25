@@ -14,6 +14,7 @@ export interface ICreatorPaymentGatewayRepository {
     getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway> | ApiResponse<null>>;
     getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
     setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
+    deleteGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
 }
 
 
@@ -128,6 +129,40 @@ export class CreatorPaymentGatewayRepository implements ICreatorPaymentGatewayRe
             throw new ApiError({
                 success: false,
                 message: 'Erro ao buscar gateways do criador',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async deleteGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>> {
+        try {
+            await this.db.connect();
+
+            const creator = await Creator.findOne({userCode})
+
+            if(!creator){
+                return createErrorResponse('Criador não encontrado', 404);
+            }
+
+            const gateway = await UserPaymentGateway!.findOne({gatewayCode, userId: creator._id})
+
+            if(!gateway){
+                return createErrorResponse('Gateway não encontrado', 404);
+            }
+
+            if(gateway?.isDefault){
+                return createErrorResponse('Gateway padrão não pode ser deletado', 400);
+            }
+
+            await UserPaymentGateway!.deleteOne({gatewayCode, userId: creator._id})
+
+            return createSuccessResponse(null, 'Gateway deletado com sucesso', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao deletar gateway',
                 statusCode: 500,
                 cause: error as Error
             });
