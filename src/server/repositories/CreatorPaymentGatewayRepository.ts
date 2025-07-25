@@ -12,6 +12,8 @@ import PaymentGatewayTemplate from "@/models/PaymentGatewayTemplate";
 export interface ICreatorPaymentGatewayRepository {
     integrateGateway(data: Partial<IUserPaymentGatewayRequest>, userCode: string): Promise<ApiResponse<null> | ApiResponse<IUserPaymentGateway>>;
     getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway> | ApiResponse<null>>;
+    getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
+    setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
 }
 
 
@@ -100,6 +102,64 @@ export class CreatorPaymentGatewayRepository implements ICreatorPaymentGatewayRe
             throw new ApiError({
                 success: false,
                 message: 'Erro ao buscar gateway padrão',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>> {
+        try {
+            await this.db.connect();
+
+            const creator = await Creator.findOne({userCode})
+
+            if(!creator){
+                return createErrorResponse('Criador não encontrado', 404);
+            }
+
+            const gateways = await UserPaymentGateway!.find({userId: creator._id}, '-_id -credentials')
+            .populate('userId','-_id')
+            .populate('templateRef','-_id')
+
+            return createSuccessResponse(gateways as IUserPaymentGateway[], 'Gateways encontrados', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao buscar gateways do criador',
+                statusCode: 500,
+                cause: error as Error
+            });
+        }
+    }
+
+    async setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>> {
+        try {
+            await this.db.connect();
+
+            const creator = await Creator.findOne({userCode})
+
+            if(!creator){
+                return createErrorResponse('Criador não encontrado', 404);
+            }
+
+            const gateway = await UserPaymentGateway!.findOne({gatewayCode})
+
+            if(!gateway){
+                return createErrorResponse('Gateway não encontrado', 404);
+            }
+
+            await UserPaymentGateway!.updateMany({userId: creator._id, isDefault: true}, {isDefault: false})
+
+            await UserPaymentGateway!.updateOne({gatewayCode}, {isDefault: true})
+
+            return createSuccessResponse(null, 'Gateway padrão atualizado com sucesso', 200);
+
+        } catch (error) {
+            throw new ApiError({
+                success: false,
+                message: 'Erro ao atualizar gateway padrão',
                 statusCode: 500,
                 cause: error as Error
             });

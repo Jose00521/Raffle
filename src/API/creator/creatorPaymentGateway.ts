@@ -9,6 +9,30 @@ export const creatorPaymentGatewayAPIClient = {
             }
         });
         return result.json();
+    },
+
+
+    getMyGateways: async () => {
+        const result = await fetch(`/api/creator/gateways`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        return result.json();
+    },
+
+    setAsDefaultGateway: async (gatewayCode: string) => {
+        const result = await fetch(`/api/creator/gateways/default`, {
+            method: 'PUT',
+            body: JSON.stringify({ gatewayCode }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }); 
+
+        return result.json();
     }
 
 }

@@ -7,6 +7,8 @@ import { ApiResponse } from "../utils/errorHandler/api";
 export interface ICreatorPaymentGatewayService {
     integrateGateway(data: Partial<IUserPaymentGateway>, userCode: string): Promise<ApiResponse<null> | ApiResponse<IUserPaymentGateway>>;
     getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway>>;
+    getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
+    setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
 }
 
 
@@ -24,5 +26,13 @@ export class CreatorPaymentGatewayService {
 
     async getDefaultPaymentGateway(userCode: string) {
         return await this.creatorPaymentGatewayRepository.getDefaultPaymentGateway(userCode);
+    }
+
+    async getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>> {
+        return await this.creatorPaymentGatewayRepository.getMyGateways(userCode);
+    }
+
+    async setAsDefaultGateway(userCode: string, gatewayCode: string) {
+        return await this.creatorPaymentGatewayRepository.setAsDefaultGateway(userCode, gatewayCode);
     }
 }

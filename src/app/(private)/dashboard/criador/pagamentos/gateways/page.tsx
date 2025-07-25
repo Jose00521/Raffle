@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
 import { toast } from 'react-toastify';
 import GatewayConfigModal from '@/components/gateway/GatewayConfigModal';
+import { creatorPaymentGatewayAPIClient } from '@/API/creator/creatorPaymentGateway';
+import { IPaymentGatewayTemplate } from '@/models/interfaces/IPaymentGatewayTemplateInterfaces';
 
 // ============ INTERFACES ============
 interface GatewayTemplate {
@@ -64,13 +66,13 @@ interface UserGateway {
   templateCode: string;
   isDefault: boolean;
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING_VALIDATION' | 'ERROR';
-  displayName: string;
   lastValidatedAt?: Date;
   validationError?: string;
   credentials: Record<string, any>;
   settings: Record<string, any>;
   createdAt: Date;
   template?: GatewayTemplate;
+  description?: string;
 }
 
 // ============ STYLED COMPONENTS ============
@@ -289,8 +291,8 @@ const GatewayCard = styled(motion.div)<{ $isDefault?: boolean; $status?: string 
 
 const DefaultBadge = styled.div`
   position: absolute;
-  top: 16px;
-  right: 16px;
+  bottom: 100px !important;
+  right: 16px !important; /* Movido para o canto inferior direito */
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
   padding: 6px 12px;
@@ -320,7 +322,6 @@ const GatewayLogo = styled.div<{ $color?: string }>`
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: ${props => props.$color || '#6366f1'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,16 +339,35 @@ const GatewayName = styled.h3`
   line-height: 1.2;
 `;
 
+const GatewayDescription = styled.p`
+  font-size: 0.7rem;
+  color: ${({ theme }) => theme.colors?.text?.secondary || '#6b7280'};
+  margin: 10px 0 10px 0;
+  font-style: italic;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+`;
+
 const GatewayDisplayName = styled.p`
   font-size: 0.85rem;
   color: ${({ theme }) => theme.colors?.text?.secondary || '#6b7280'};
-  margin: 0 0 8px 0;
-  font-style: italic;
+  margin: 10px 0 10px 0;
   line-height: 1.3;
-  max-width: 200px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 `;
 
 const GatewayProvider = styled.p`
@@ -776,124 +796,34 @@ export default function GatewaysPage() {
 
   // Simular dados para desenvolvimento
   useEffect(() => {
-    // Simular carregamento
-    setTimeout(() => {
-      // Dados mockados para desenvolvimento
-      setUserGateways([
-        {
-          _id: '1',
-          gatewayCode: 'USR_MP_001',
-          templateRef: 'mp1',
-          templateCode: 'MERCADO_PAGO_V1',
-          isDefault: true,
-          status: 'ACTIVE',
-          displayName: 'Minha Conta Principal MP',
-          lastValidatedAt: new Date(),
-          credentials: {},
-          settings: {},
-          createdAt: new Date(),
-          template: {
-            _id: 'mp1',
-            templateCode: 'MERCADO_PAGO_V1',
-            name: 'Mercado Pago',
-            description: 'Gateway oficial do Mercado Pago para processar pagamentos PIX e cartão',
-            provider: 'MercadoPago',
-            logo: '',
-            color: '#009EE3',
-            documentation: 'https://dev.mercadopago.com.br',
-            status: 'ACTIVE',
-            isPublic: true,
-            credentialFields: [],
-            settingFields: [],
-            supportedMethods: ['PIX', 'CREDIT_CARD'],
-            currency: 'BRL',
-            country: 'BR'
-          }
-        },
-        {
-          _id: '2',
-          gatewayCode: 'USR_GP_001',
-          templateRef: 'gp1',
-          templateCode: 'GHOSTSPAY_V1',
-          isDefault: false,
-          status: 'ERROR',
-          displayName: 'GhostsPay Backup',
-          validationError: 'Credenciais inválidas',
-          credentials: {},
-          settings: {},
-          createdAt: new Date(),
-          template: {
-            _id: 'gp1',
-            templateCode: 'GHOSTSPAY_V1',
-            name: 'GhostsPay',
-            description: 'Gateway brasileiro com foco em PIX e pagamentos instantâneos',
-            provider: 'GhostsPay',
-            logo: '',
-            color: '#2D1B69',
-            documentation: 'https://docs.ghostspay.com',
-            status: 'ACTIVE',
-            isPublic: true,
-            credentialFields: [],
-            settingFields: [],
-            supportedMethods: ['PIX'],
-            currency: 'BRL',
-            country: 'BR'
-          }
-        }
-      ]);
+    setIsLoading(true);
+    const fetchGateways = async () => {
+      const response = await creatorPaymentGatewayAPIClient.getMyGateways();
+      console.log('response', response);
+      if(response.success){
+        setUserGateways(response.data || []);
+        setIsLoading(false);
+      }else{
+        toast.error(response.message || 'Erro ao buscar gateways');
+        setIsLoading(false);
+      }
+    };
 
-      setAvailableGateways([
-        {
-          _id: 'stripe1',
-          templateCode: 'STRIPE_V1',
-          name: 'Stripe',
-          description: 'Gateway internacional com suporte global e alta conversão',
-          provider: 'Stripe',
-          logo: '',
-          color: '#635BFF',
-          documentation: 'https://stripe.com/docs',
-          status: 'ACTIVE',
-          isPublic: true,
-          credentialFields: [],
-          settingFields: [],
-          supportedMethods: ['CREDIT_CARD', 'PIX'],
-          currency: 'BRL',
-          country: 'BR'
-        },
-        {
-          _id: 'pagarme1',
-          templateCode: 'PAGARME_V1',
-          name: 'Pagar.me',
-          description: 'Gateway brasileiro com taxas competitivas e integração simples',
-          provider: 'PagarMe',
-          logo: '',
-          color: '#18A0FB',
-          documentation: 'https://docs.pagar.me',
-          status: 'ACTIVE',
-          isPublic: true,
-          credentialFields: [],
-          settingFields: [],
-          supportedMethods: ['PIX', 'CREDIT_CARD', 'BILLET'],
-          currency: 'BRL',
-          country: 'BR'
-        }
-      ]);
-
-      setIsLoading(false);
-    }, 1500);
+    fetchGateways();
   }, []);
 
   const handleSetDefault = async (gatewayId: string) => {
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setUserGateways(prev => prev.map(gateway => ({
-        ...gateway,
-        isDefault: gateway._id === gatewayId
-      })));
-      
-      toast.success('Gateway principal alterado com sucesso!');
+      const response = await creatorPaymentGatewayAPIClient.setAsDefaultGateway(gatewayId);
+      if(response.success){
+        toast.success('Gateway principal alterado com sucesso!');
+        setUserGateways(prev => prev.map(gateway => ({
+          ...gateway,
+          isDefault: gateway.gatewayCode === gatewayId
+        })));
+      }else{
+        toast.error(response.message || 'Erro ao alterar gateway principal');
+      }
     } catch (error) {
       toast.error('Erro ao alterar gateway principal');
     }
@@ -904,7 +834,7 @@ export default function GatewaysPage() {
       // Simular API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setUserGateways(prev => prev.filter(gateway => gateway._id !== gatewayId));
+      setUserGateways(prev => prev.filter(gateway => gateway.gatewayCode !== gatewayId));
       toast.success('Gateway removido com sucesso!');
     } catch (error) {
       toast.error('Erro ao remover gateway');
@@ -917,7 +847,7 @@ export default function GatewaysPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       setUserGateways(prev => prev.map(gateway => 
-        gateway._id === gatewayId 
+        gateway.gatewayCode === gatewayId 
           ? { ...gateway, status: 'ACTIVE' as const, validationError: undefined, lastValidatedAt: new Date() }
           : gateway
       ));
@@ -937,7 +867,7 @@ export default function GatewaysPage() {
       templateCode: gatewayData.templateCode,
       isDefault: userGateways.length === 0, // Primeiro gateway vira padrão
       status: 'PENDING_VALIDATION',
-      displayName: gatewayData.displayName,
+      description: gatewayData.description,
       credentials: gatewayData.credentials,
       settings: gatewayData.settings,
       createdAt: new Date(),
@@ -1059,7 +989,7 @@ export default function GatewaysPage() {
                 <AnimatePresence>
                   {userGateways.map((gateway) => (
                     <GatewayCard
-                      key={gateway._id}
+                      key={gateway.gatewayCode}
                       $isDefault={gateway.isDefault}
                       $status={gateway.status}
                       initial={{ opacity: 0, y: 20 }}
@@ -1076,25 +1006,26 @@ export default function GatewaysPage() {
 
                       <GatewayHeader>
                         <GatewayInfo>
-                          <GatewayLogo $color={gateway.template?.color}>
-                            {gateway.template?.name.charAt(0) || 'G'}
+                          <GatewayLogo >
+                            <img src={(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.logo} alt={(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
                           </GatewayLogo>
-                          <GatewayName>{gateway.template?.name}</GatewayName>
-                          <GatewayDisplayName>"{gateway.displayName}"</GatewayDisplayName>
-                          <GatewayProvider>{gateway.template?.provider}</GatewayProvider>
+                          <GatewayName>{(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.name}</GatewayName>
+                          <GatewayDescription>{gateway.description}</GatewayDescription>
+                          <GatewayDisplayName>{(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.description}</GatewayDisplayName>
+                          <GatewayProvider>{(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.provider}</GatewayProvider>
                         </GatewayInfo>
 
                         <GatewayActions>
                           <MoreButton
                             onClick={() => setActiveDropdown(
-                              activeDropdown === gateway._id ? null : gateway._id
+                              activeDropdown === gateway.gatewayCode ? null : gateway.gatewayCode
                             )}
                           >
                             <FaEllipsisV />
                           </MoreButton>
 
                           <AnimatePresence>
-                            {activeDropdown === gateway._id && (
+                            {activeDropdown === gateway.gatewayCode && (
                               <ActionDropdown
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -1105,18 +1036,18 @@ export default function GatewaysPage() {
                                   Editar
                                 </DropdownItem>
                                 {!gateway.isDefault && (
-                                  <DropdownItem onClick={() => handleSetDefault(gateway._id)}>
+                                  <DropdownItem onClick={() => handleSetDefault(gateway.gatewayCode)}>
                                     <FaStar />
                                     Tornar Principal
                                   </DropdownItem>
                                 )}
-                                <DropdownItem onClick={() => handleValidateCredentials(gateway._id)}>
+                                <DropdownItem onClick={() => handleValidateCredentials(gateway.gatewayCode)}>
                                   <FaSync />
                                   Validar
                                 </DropdownItem>
                                 <DropdownItem 
                                   $danger 
-                                  onClick={() => handleDeleteGateway(gateway._id)}
+                                  onClick={() => handleDeleteGateway(gateway.gatewayCode)}
                                 >
                                   <FaTrash />
                                   Remover
@@ -1146,11 +1077,11 @@ export default function GatewaysPage() {
                       <GatewayFeatures>
                         <FeaturesLabel>Métodos Suportados</FeaturesLabel>
                         <FeaturesList>
-                          {gateway.template?.supportedMethods.map(method => (
-                            <FeatureTag key={method}>
-                              {method === 'PIX' ? 'PIX' : 
-                               method === 'CREDIT_CARD' ? 'Cartão' : 
-                               method === 'BILLET' ? 'Boleto' : method}
+                          {(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.supportedMethods.map((method: any) => (
+                            <FeatureTag key={method.method}>
+                              {method.method === 'PIX' ? 'PIX' : 
+                               method.method === 'CREDIT_CARD' ? 'Cartão' : 
+                               method.method === 'BILLET' ? 'Boleto' : method.method}
                             </FeatureTag>
                           ))}
                         </FeaturesList>
@@ -1158,14 +1089,14 @@ export default function GatewaysPage() {
 
                       <GatewayFooter>
                         <small style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                          Criado em {gateway.createdAt.toLocaleDateString('pt-BR')}
+                          Criado em {new Date(gateway.createdAt).toLocaleDateString('pt-BR')}
                         </small>
 
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          {gateway.template?.documentation && (
+                          {(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.documentation && (
                             <ActionButton
                               as="a"
-                              href={gateway.template.documentation}
+                              href={(gateway.templateRef as unknown as IPaymentGatewayTemplate)?.documentation}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
