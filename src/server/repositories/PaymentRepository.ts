@@ -16,7 +16,7 @@ import { IUser } from "@/models/interfaces/IUserInterfaces";
 import { BitMapService } from "@/services/BitMapService";
 import { NumberStatusEnum } from "@/models/interfaces/INumberStatusInterfaces";
 import NumberStatus from "@/models/NumberStatus";
-import { SecureDataUtils } from "@/utils/encryption";
+import { EncryptionService, SecureDataUtils, EncryptedData } from "@/utils/encryption";
 import mongoose from "mongoose";
 
 export interface IPaymentRepository {
@@ -175,7 +175,8 @@ export class PaymentRepository implements IPaymentRepository {
                     .populate('customerId', '-_id')
                     .skip(skip)
                     .limit(limit)
-                    .sort({ createdAt: -1 }),
+                    .sort({ createdAt: -1 })
+                    .lean(),
                 Payment!.countDocuments(query),
                 Campaign!.find({ createdBy: creator._id }, '-_id title campaignCode'),
                 this.countParticipantsByCreatorId(campaignId || '', creator._id, startDate || '', endDate || ''),
@@ -192,7 +193,21 @@ export class PaymentRepository implements IPaymentRepository {
                     skip
                 },
                 campaigns,
-                sales: payments,
+                sales: payments.map(payment => ({
+                    ...payment,
+                    cpf: SecureDataUtils.decryptCPF((payment.customerId as unknown as IUser).cpf_encrypted),
+                    phone: EncryptionService.decrypt((payment.customerId as unknown as IUser).phone_encrypted),
+                    email: EncryptionService.decrypt((payment.customerId as unknown as IUser).email_encrypted),
+                    address: {
+                        zipCode: (payment.customerId as unknown as IUser).address?.zipCode_encrypted ? SecureDataUtils.decryptZipCode((payment.customerId as unknown as IUser).address.zipCode_encrypted as EncryptedData) : '',
+                        street: (payment.customerId as unknown as IUser).address?.street_encrypted ? SecureDataUtils.decryptStreet((payment.customerId as unknown as IUser).address.street_encrypted as EncryptedData) : '',
+                        number: (payment.customerId as unknown as IUser).address?.number_encrypted ? SecureDataUtils.decryptNumber((payment.customerId as unknown as IUser).address.number_encrypted as EncryptedData) : '',
+                        complement: (payment.customerId as unknown as IUser).address?.complement_encrypted ? SecureDataUtils.decryptComplement((payment.customerId as unknown as IUser).address.complement_encrypted as EncryptedData) : '',
+                        city: (payment.customerId as unknown as IUser).address?.city,
+                        state: (payment.customerId as unknown as IUser).address?.state,
+                        neighborhood: (payment.customerId as unknown as IUser).address?.neighborhood,
+                    }
+                })),
                 stats
             }, 'Pagamentos buscados com sucesso', 200);
 

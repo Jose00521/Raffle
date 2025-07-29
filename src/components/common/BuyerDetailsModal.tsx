@@ -23,6 +23,7 @@ import { SiPix } from 'react-icons/si';
 import { IoMdOpen } from 'react-icons/io';
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/formatNumber';
+import { formatCPF, formatPhone } from '@/utils/formatters';
 
 interface BuyerDetailsModalProps {
   isOpen: boolean;
@@ -608,7 +609,7 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
               <BuyerName>{buyer.customerInfo?.name}</BuyerName>
               <BuyerContact>
                 <FaEnvelope size={14} />
-                {buyer.customerInfo?.email}
+                {buyer.email}
                 <ActionButtonsContainer>
                   <TooltipWrapper>
                     <ActionButton href={`mailto:${buyer.customerInfo?.email}`} target="_blank" rel="noopener noreferrer">
@@ -624,14 +625,26 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
                   </TooltipWrapper>
                 </ActionButtonsContainer>
               </BuyerContact>
-              {buyer.customerInfo?.phone && (
+              <BuyerContact>
+                <FaIdCard size={14} />
+                {formatCPF(buyer.cpf)}
+                <ActionButtonsContainer>
+                  <TooltipWrapper>
+                    <ActionButton onClick={() => copyToClipboard(formatCPF(buyer.cpf) || '')}>
+                      <FaIdCard size={12} />
+                      <Tooltip>Copiar CPF</Tooltip>
+                    </ActionButton>
+                  </TooltipWrapper> 
+                </ActionButtonsContainer>
+              </BuyerContact>
+              {buyer.phone && (
                 <BuyerContact>
                   <FaPhone size={14} />
-                  {buyer.customerInfo?.phone}
+                  {formatPhone(buyer.phone)}
                   <ActionButtonsContainer>
                     <TooltipWrapper>
                       <ActionButton 
-                        href={`https://wa.me/${formatPhoneForWhatsApp(buyer.customerInfo?.phone || '')}`} 
+                        href={`https://wa.me/${formatPhoneForWhatsApp(buyer.phone || '')}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
@@ -671,10 +684,10 @@ const BuyerDetailsModal: React.FC<BuyerDetailsModalProps> = ({ isOpen, onClose, 
               <DetailRow>
                 <DetailLabel><FaMapMarkerAlt size={14} /> Endereço:</DetailLabel>
                 <DetailValue>
-                  {buyer.billingInfo?.address}, {buyer.billingInfo?.city}, {buyer.billingInfo?.zipCode} - {buyer.billingInfo?.state}
+                  {buyer.address?.street}, {buyer.address?.number}, {buyer.address?.complement}, {buyer.address?.neighborhood}, {buyer.address?.city}, {buyer.address?.zipCode} - {buyer.address?.state}
                   <TooltipWrapper>
                     <ActionButton 
-                      href={getMapUrl(buyer.billingInfo || '')} 
+                      href={getMapUrl(`${buyer.address?.street}, ${buyer.address?.number}, ${buyer.address?.neighborhood}, ${buyer.address?.city}, ${buyer.address?.zipCode} - ${buyer.address?.state}`)} 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >

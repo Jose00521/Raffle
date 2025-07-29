@@ -14,7 +14,7 @@ const TAG_LENGTH = 16; // Para autenticação GCM
 /**
  * Interface para dados criptografados
  */
-interface EncryptedData {
+export interface EncryptedData {
   encrypted: string;      // Dados criptografados em base64
   iv: string;            // Vetor de inicialização
   tag: string;           // Tag de autenticação GCM
