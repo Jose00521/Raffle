@@ -221,11 +221,47 @@ export const prepareUpdateDataForApi = (
       case 'minNumbersPerUser':
       case 'maxNumbersPerUser':
       case 'winnerPositions':
-      case 'enablePackages':
       case 'numberPackages':
-        updatedFields[field] = data[field as keyof RaffleFormUpdateData];
+        updatedFields[field] = data.enablePackages ? (() => {
+          // Primeiro, encontrar o maior desconto entre os pacotes ativos
+          const activePackages = data.numberPackages.filter(pkg => pkg.isActive !== false);
+          const maxDiscount = activePackages.length > 0 
+            ? Math.max(...activePackages.map(pkg => (data.individualNumberPrice * pkg.quantity) * (1 - pkg.discount / 100))) 
+            : 0;
+          
+          console.log('📊 Processando pacotes - Maior desconto encontrado:', maxDiscount + '%');
+          
+          return data.numberPackages.map(pkg => {
+            // Calculate the correct price based on individualNumberPrice and discount
+            const originalPrice = data.individualNumberPrice * pkg.quantity;
+            const discountedPrice = originalPrice * (1 - pkg.discount / 100);
+            
+            // Definir highlight=true apenas para o pacote com maior desconto (e que esteja ativo)
+            const shouldHighlight = discountedPrice === maxDiscount && 
+                                   (pkg.isActive !== false) && 
+                                   maxDiscount > 0;
+            
+            if (shouldHighlight) {
+              console.log(`🌟 Pacote "${pkg.name}" marcado como destaque (${pkg.discount}% desconto)`);
+            }
+            
+            return {
+              name: pkg.name, // Preserve custom package name
+              description: pkg.description || `Pacote com ${pkg.quantity} números`,
+              quantity: pkg.quantity,
+              price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
+              discount: pkg.discount,
+              isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+              highlight: shouldHighlight, // Automaticamente destacar o maior desconto
+              order: pkg.order || 1,
+              maxPerUser: pkg.maxPerUser
+            };
+          });
+        })() : [];
         break;
-
+        case 'enablePackages':
+          updatedFields[field] = data[field as keyof RaffleFormUpdateData];
+        break;
         case 'coverImage':
         case 'images':
             if (!updatedFields.coverImage && data.coverImage) {
