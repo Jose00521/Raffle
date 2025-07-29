@@ -213,32 +213,17 @@ export const prepareUpdateDataForApi = (
   fieldsChanged.forEach(field => {
     switch (field) {
       case 'title':
-        updatedFields.title = data.title;
-        break;
-      case 'description':
-        updatedFields.description = data.description;
-        break;
+      case 'description': 
       case 'regulation':
-        updatedFields.regulation = data.regulation;
-        break;
       case 'status':
-        updatedFields.status = data.status;
-        break;
       case 'canceled':
-        updatedFields.canceled = data.canceled;
-        break;
       case 'isScheduled':
-        updatedFields.isScheduled = data.isScheduled;
-        break;
       case 'minNumbersPerUser':
-        updatedFields.minNumbersPerUser = data.minNumbersPerUser;
-        break;
       case 'maxNumbersPerUser':
-        updatedFields.maxNumbersPerUser = data.maxNumbersPerUser;
-        break;
       case 'winnerPositions':
-        updatedFields.winnerPositions = data.winnerPositions;
-        break;
+      case 'enablePackages':
+        updatedFields[field] = data[field as keyof RaffleFormUpdateData];
+      break;
       case 'numberPackages':
         updatedFields.numberPackages = data.enablePackages ? (() => {
           // Primeiro, encontrar o maior desconto entre os pacotes ativos
@@ -280,9 +265,6 @@ export const prepareUpdateDataForApi = (
             };
           });
         })() : [];
-        break;
-        case 'enablePackages':
-          updatedFields.enablePackages = data.enablePackages;
         break;
         case 'coverImage':
           updatedFields.coverImage = data.coverImage;
