@@ -226,18 +226,22 @@ export const prepareUpdateDataForApi = (
           // Primeiro, encontrar o maior desconto entre os pacotes ativos
           const activePackages = data.numberPackages.filter(pkg => pkg.isActive !== false);
           const maxDiscount = activePackages.length > 0 
-            ? Math.max(...activePackages.map(pkg => (data.individualNumberPrice * pkg.quantity) * (1 - pkg.discount / 100))) 
+            ? Math.max(...activePackages.map(pkg => (data.individualNumberPrice * pkg.quantity) * ( pkg.discount / 100))) 
             : 0;
           
-          console.log('📊 Processando pacotes - Maior desconto encontrado:', maxDiscount + '%');
+          console.log('📊 Processando pacotes - Maior desconto encontrado:', maxDiscount);
           
           return data.numberPackages.map(pkg => {
             // Calculate the correct price based on individualNumberPrice and discount
             const originalPrice = data.individualNumberPrice * pkg.quantity;
             const discountedPrice = originalPrice * (1 - pkg.discount / 100);
+
+            console.log('originalPrice', originalPrice);
+            console.log('discountedPrice', Math.round(discountedPrice));
+            console.log('maxDiscount', Math.round(originalPrice - maxDiscount));
             
             // Definir highlight=true apenas para o pacote com maior desconto (e que esteja ativo)
-            const shouldHighlight = discountedPrice === maxDiscount && 
+            const shouldHighlight = Math.round(discountedPrice) === Math.round(originalPrice - maxDiscount) && 
                                    (pkg.isActive !== false) && 
                                    maxDiscount > 0;
             
