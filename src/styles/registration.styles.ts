@@ -24,6 +24,14 @@ export const spin = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
+export const ContentArea = styled.div`
+  padding: 2rem;
+  
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+`;
+
 // Container e Header
 export const FormContainer = styled.div`
   background: #fff;

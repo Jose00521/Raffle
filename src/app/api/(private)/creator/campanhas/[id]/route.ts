@@ -17,6 +17,7 @@ export const GET = withAuth(async (request: NextRequest, { params, session }: { 
         const campaign = await campaignController.getCampaignById(id, userCode);
         return NextResponse.json(campaign);
     } catch (error) {
+        console.error('Erro ao buscar campanha por ID:', error);
         return NextResponse.json(createErrorResponse('Erro ao buscar campanha por ID:', 500), { status: 500 });
     }
 }, { allowedRoles: ['creator'] });

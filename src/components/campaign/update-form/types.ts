@@ -177,11 +177,13 @@ export interface SchedulingSectionProps extends BaseSectionProps {
 
 // Props para InstantPrizesSection
 export interface InstantPrizesSectionProps extends BaseSectionProps {
+  instantPrizesInitialData: any;
   setValue: any;
   watch: any;
   totalNumbers: number;
   hasBasicRequirements: boolean;
   basicRequirementsMessage: string;
+  disabled: boolean;
 }
 
 // Props para CombosSection
@@ -201,11 +203,12 @@ export interface PrizesSectionProps extends BaseSectionProps {
 }
 
 // Props para FormActions
-export interface FormActionsProps {
+export interface  FormActionsProps {
   onCancel: () => void;
   onReset: () => void;
   hasChanges: boolean;
   isSubmitting: boolean;
+  isValid: boolean;
 }
 
 // Props para ChangesSummary

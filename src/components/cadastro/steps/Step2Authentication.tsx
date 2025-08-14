@@ -12,10 +12,7 @@ import {
   StepContentTitle,
   FormRow,
   FormGroup,
-  PasswordContainer,
-  PasswordStrengthMeter,
-  PasswordStrengthIndicator,
-  PasswordStrengthText
+  PasswordContainer
 } from '../../../styles/registration.styles';
 
 import { useHookFormMask } from 'use-mask-input';
@@ -42,7 +39,7 @@ const Step2Authentication: React.FC = () => {
     passwordStrength
   } = usePasswordField(password);
 
-  const { passwordsMatch } = usePasswordConfirmation({
+  usePasswordConfirmation({
     password: {
       text: 'senha',
       value: password,
@@ -131,10 +128,9 @@ const Step2Authentication: React.FC = () => {
             type="password"
             placeholder="Confirme sua senha"
             isPassword
-            error={
-              errors.confirmarSenha?.message as string }
             required
             {...register('confirmarSenha')}
+            error={errors.confirmarSenha?.message as string }
           />
         </FormGroup>
       </FormRow>

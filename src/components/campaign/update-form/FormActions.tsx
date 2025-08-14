@@ -19,7 +19,7 @@ const ActionsContainer = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger', $disabled?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,7 +32,8 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'dange
   border: none;
   cursor: pointer;
   min-width: 120px;
-  
+  opacity: ${({ $disabled }) => $disabled ? 0.7 : 1};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
   background: ${({ $variant }) => {
     switch ($variant) {
       case 'primary': return 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
@@ -79,7 +80,8 @@ const FormActions: React.FC<FormActionsProps> = ({
   onCancel, 
   onReset, 
   hasChanges, 
-  isSubmitting 
+  isSubmitting,
+  isValid
 }) => {
   return (
     <ActionsContainer>
@@ -93,7 +95,7 @@ const FormActions: React.FC<FormActionsProps> = ({
       </ActionButton>
       
       <ActionButton
-        type="button"
+        type="button" 
         onClick={onReset}
         disabled={isSubmitting || !hasChanges}
       >
@@ -104,7 +106,8 @@ const FormActions: React.FC<FormActionsProps> = ({
       <ActionButton
         type="submit"
         $variant="primary"
-        disabled={isSubmitting || !hasChanges}
+        $disabled={isSubmitting || !hasChanges || !isValid}
+        disabled={isSubmitting || !hasChanges || !isValid}
       >
         <FaSave />
         {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}

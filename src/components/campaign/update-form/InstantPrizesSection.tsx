@@ -88,7 +88,7 @@ const RequirementAlert = styled.div<{ $type: 'warning' | 'info' | 'error' }>`
 const DisabledSection = styled.div<{ $disabled: boolean }>`
   position: relative;
   pointer-events: ${({ $disabled }) => $disabled ? 'none' : 'auto'};
-  opacity: ${({ $disabled }) => $disabled ? '0.6' : '1'};
+  opacity: ${({ $disabled }) => $disabled ? '0.9' : '1'};
   filter: ${({ $disabled }) => $disabled ? 'grayscale(0.3)' : 'none'};
   transition: all 0.3s ease;
   
@@ -160,6 +160,7 @@ const ErrorText = styled.p`
  * Componente para a seção de prêmios instantâneos do formulário
  */
 const InstantPrizesSection: React.FC<InstantPrizesSectionProps> = ({ 
+  instantPrizesInitialData,
   control, 
   setValue, 
   watch, 
@@ -167,7 +168,8 @@ const InstantPrizesSection: React.FC<InstantPrizesSectionProps> = ({
   hasBasicRequirements, 
   basicRequirementsMessage, 
   isSubmitting,
-  errors
+  errors,
+  disabled
 }) => {
   const instantPrizes = watch('instantPrizes') || [];
   const prizeCategories = watch('prizeCategories');
@@ -199,6 +201,7 @@ const InstantPrizesSection: React.FC<InstantPrizesSectionProps> = ({
           control={control}
           render={({ field }) => (
             <PrizeConfigForm
+              instantPrizesInitialData={instantPrizesInitialData}
               totalNumbers={totalNumbers}
               onPrizeConfigChange={config => {
                 field.onChange(config);
@@ -206,7 +209,7 @@ const InstantPrizesSection: React.FC<InstantPrizesSectionProps> = ({
               onPrizesGenerated={prizes => {
                 setValue('instantPrizes', prizes);
               }}
-              disabled={isSubmitting || !hasBasicRequirements}
+              disabled={isSubmitting || disabled}
             />
           )}
         />

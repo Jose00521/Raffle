@@ -10,6 +10,7 @@ import creatorCampaignAPI from '@/API/creator/creatorCampaignAPIClient';
 import { toast } from 'react-toastify';
 import RaffleFormFieldsUpdateOptimized from '@/components/campaign/RaffleFormFieldsUpdateOptimized';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import InstantPrize from '@/models/InstantPrize';
 
 // Styled components
 const PageContainer = styled.div`
@@ -232,6 +233,15 @@ const getStatusLabel = (status: string) => {
   }
 };
 
+export interface InstantPrizeCategory {
+  id: string;
+  name: string;
+  prizes: typeof InstantPrize[];
+  description: string;
+  total: number;
+  hasMore: boolean;
+}
+
 export default function EditCampaignPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -254,7 +264,10 @@ export default function EditCampaignPage() {
       const response = await creatorCampaignAPI.getCampaignById(id as string);
       
       if (response.success && response.data) {
-        setCampaign(response.data);
+
+        console.log('############################### response.data.instantPrizes ###########################################', setInstantPrizesConfigFormFormat(response.data.instantPrizes.categories));
+
+        setCampaign({...response.data, instantPrizes: setInstantPrizesConfigFormFormat(response.data.instantPrizes.categories)});
         console.log('✅ Campanha carregada:', response.data);
       } else {
         throw new Error(response.message || 'Erro ao carregar campanha');
@@ -267,6 +280,126 @@ export default function EditCampaignPage() {
       setLoading(false);
     }
   };
+
+  const setInstantPrizesConfigFormFormat = (instantPrizes: InstantPrizeCategory[]) => {
+    const prizeConfig = {};
+    if(instantPrizes.length > 0){
+      const diamante = instantPrizes.find(category => category.id === 'diamante');
+      const master = instantPrizes.find(category => category.id === 'master');
+      const premiado = instantPrizes.find(category => category.id === 'premiado');
+
+      if(diamante){
+        Object.assign(prizeConfig, {
+          diamante: {
+            active: true,
+            quantity: diamante.total,
+            value: null,
+            individualPrizes: prizesFormatInstantPrizes(diamante.prizes)
+          }
+        });
+      }else{
+        Object.assign(prizeConfig, {
+          diamante: {
+            active: false,
+            quantity: 0,
+            value: null,
+            individualPrizes: []
+          }
+        });
+      }
+
+      if(master){
+        Object.assign(prizeConfig, {
+          master: {
+            active: true,
+            quantity: master.total,
+            value: null,
+            individualPrizes: prizesFormatInstantPrizes(master.prizes)
+          }
+        });
+      }else{
+        Object.assign(prizeConfig, {
+          master: {
+            active: false,
+            quantity: 0,
+            value: null,
+            individualPrizes: []
+          }
+        });
+      }
+
+      console.log('############################### premiado ###########################################', premiado);
+      if(premiado){
+        Object.assign(prizeConfig, {
+          premiado: {
+            active: true,
+            quantity: premiado.total,
+            value: null,
+            individualPrizes: prizesFormatInstantPrizes(premiado.prizes)
+          }
+        });
+      }else{
+        Object.assign(prizeConfig, {
+          premiado: {
+            active: false,
+            quantity: 0,
+            value: null,
+            individualPrizes: []
+          }
+        });
+      }
+    }
+
+    console.log('############################### prizeConfig ###########################################', prizeConfig);
+
+    return prizeConfig;
+  }
+
+
+  const prizesFormatInstantPrizes = (instantPrizes: any[]) => {
+    // Verifica se há prêmios para agrupar
+    if (!instantPrizes || instantPrizes.length === 0) {
+      return [];
+    }
+
+    // Agrupa os prêmios em dinheiro por valor
+    const moneyPrizes = instantPrizes
+      .filter(prize => prize.type === 'money')
+      .reduce((acc, prize) => {
+        const value = prize.value;
+        // Se já existe um grupo para este valor, incrementa a quantidade
+        if (acc[value]) {
+          acc[value].quantity += 1;
+        } else {
+          // Senão, cria um novo grupo
+          acc[value] = {
+            type: 'money',
+            value: value,
+            quantity: 1,
+            items: [prize] // Mantém referência aos itens originais
+          };
+        }
+        return acc;
+      }, {});
+
+    // Converte o objeto de grupos para um array
+    const groupedMoneyPrizes = Object.values(moneyPrizes);
+
+    // Mantém os prêmios físicos individuais
+    const itemPrizes = instantPrizes
+      .filter(prize => prize.type === 'item')
+      .map(prize => ({
+        type: 'item',
+        quantity: 1,
+        value: prize.value,
+        prizeRef: prize.prizeRef,
+        physicalPrize: prize.physicalPrize,
+        items: [prize]
+      }));
+
+    // Combina os dois tipos de prêmios
+    return [...itemPrizes,...groupedMoneyPrizes];
+  }
 
   // Carregar campanha quando o componente montar
   useEffect(() => {

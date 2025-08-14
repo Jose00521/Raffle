@@ -28,7 +28,7 @@ export const raffleUpdateFormSchema = z.object({
   isScheduled: z.boolean(),
   scheduledActivationDate: z.string().optional(),
   prizeCategories: z.any().optional(),
-  instantPrizes: z.array(z.any()),
+  instantPrizes: z.array(z.any()).optional(),
   winnerPositions: z.number().min(1, 'Pelo menos um vencedor é necessário').max(5, 'Máximo de 5 vencedores permitidos'),
   prizeDistribution: z.array(
     z.object({

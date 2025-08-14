@@ -99,7 +99,7 @@ const FormContent: React.FC = () => {
         </StepItem>
       </StepIndicator>
       
-      <Form onSubmit={form.handleSubmit(onSubmit)}>
+      <Form onSubmit={form.handleSubmit(onSubmit)} autoComplete="off">
         <StepsContainer $step={step} $isSliding={isSliding}>
           {/* Etapa 1: Informações Pessoais */}
           <MemoizedStep1Personal />
@@ -108,7 +108,11 @@ const FormContent: React.FC = () => {
           <MemoizedStep2Authentication />
 
           {/* Etapa 3: Endereço */}
-          <MemoizedStep3Address />
+          {
+            (step === 3 || step === 4) && (
+              <MemoizedStep3Address />
+            )
+          }
 
           {/* Etapa 4: Revisão e Confirmação */}
           <MemoizedStep4Confirmation />

@@ -21,6 +21,7 @@ interface FormContextType {
   step: number;
   isSliding: boolean;
   isSubmitting: boolean;
+  validateStep: (currentStep: number) => Promise<boolean>;
   handleNextStep: () => Promise<void>;
   handlePrevStep: () => void;
   setStep: (step: number) => void;
@@ -40,10 +41,15 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const form = useForm<RegisterFormData>({resolver: zodResolver(registerUserSchema), 
     mode: 'all',
-    delayError: 200,
-    criteriaMode: 'firstError',
     defaultValues: {
-      termsAgreement: false
+      termsAgreement: false,
+      senha: '',
+      confirmarSenha: '',
+      telefone: '',
+      confirmarTelefone: '',
+      cep: '',
+      logradouro: '',
+      numero: '',
     }
   });
 
@@ -112,6 +118,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Função para ir para a próxima etapa
   const handleNextStep = async () => {
     const isStepValid = await validateStep(step);
+
+    console.log('isStepValid', isStepValid)
     
     if (isStepValid) {
       setIsSliding(true);
@@ -220,6 +228,7 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSubmitting,
         handleNextStep,
         handlePrevStep,
+        validateStep,
         setStep,
         setIsSubmitting,
         onSubmit

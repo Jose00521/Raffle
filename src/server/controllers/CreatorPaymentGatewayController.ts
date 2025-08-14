@@ -6,16 +6,16 @@ import { IPaymentGatewayTemplate } from "@/models/interfaces/IPaymentGatewayTemp
 
 export interface ICreatorPaymentGatewayController {
     integrateGateway(data: Partial<IUserPaymentGateway>, userCode: string): Promise<ApiResponse<null> | ApiResponse<IUserPaymentGateway>>;
-    getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway>>;
-    getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[]>>;
-    getAvailableGateways(): Promise<ApiResponse<IPaymentGatewayTemplate[]>>;
+    getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway | null>>;
+    getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
+    // getAvailableGateways(): Promise<ApiResponse<IPaymentGatewayTemplate[]>>;
     setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
     deleteGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
 }
 
 
 @injectable()
-export class CreatorPaymentGatewayController {
+export class CreatorPaymentGatewayController implements ICreatorPaymentGatewayController {
 
     constructor(
         @inject('creatorPaymentGatewayService')  private creatorPaymentGatewayService: ICreatorPaymentGatewayService

@@ -170,10 +170,10 @@ const FormContent: React.FC = () => {
           <MemoizedStep2PersonalInfo />
 
           {/* Etapa 3: Informações da Empresa (somente para PJ) ou endereço (PF) */}
-          {accountType === 'company' ? <MemoizedStep3CompanyInfo /> : <MemoizedStep4Address />}
+          {accountType === 'company' ? <MemoizedStep3CompanyInfo /> : ((step === 3 || step === 5) && <MemoizedStep4Address />) }
 
           {/* Etapa 4: Endereço (PJ) ou Acesso (PF) */}
-          {accountType === 'company' ? <MemoizedStep4Address /> : <MemoizedStep5Access />}
+          {accountType === 'company' ? ((step === 4 || step === 5) && <MemoizedStep4Address />) :  <MemoizedStep5Access />}
 
           {/* Etapa 5: Acesso (apenas para PJ) */}
           <MemoizedStep5Access />

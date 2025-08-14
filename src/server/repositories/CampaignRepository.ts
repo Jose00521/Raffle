@@ -19,6 +19,7 @@ import InstantPrize from '@/models/InstantPrize';
 import { BitMapModel } from '@/models/BitMapModel';
 import Prize from '@/models/Prize';
 import { BitMapService } from '@/services/BitMapService';
+import type { InstantPrizeRepositoryInterface } from './InstantPrizeRepository';
 // Interface atualizada para prêmios instantâneos no novo formato do frontend
 interface InstantPrizeData {
   type: 'money' | 'item';
@@ -57,6 +58,7 @@ export class CampaignRepository implements ICampaignRepository {
   constructor(
     @inject('db') private db: IDBConnection,
     @inject(CampaignDataProcessorService) private dataProcessor: CampaignDataProcessorService,
+    @inject('instantPrizeRepository') private instantPrizeRepository: InstantPrizeRepositoryInterface,
     @inject('logger') private logger: Logger
   ) {
 
@@ -121,13 +123,16 @@ export class CampaignRepository implements ICampaignRepository {
         return createErrorResponse('Usuário não encontrado', 404);
       }
 
-      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id},'-_id')
+      const campaign = await Campaign.findOne({campaignCode: id, createdBy: user?._id})
       .populate('createdBy', 'name email userCode')
       .populate('prizeDistribution.prizes', '-_id -categoryId -createdBy')
       .lean() as ICampaign | null;
 
-      return createSuccessResponse(campaign as ICampaign, 'Campanha encontrada com sucesso', 200);
+      const instantPrizes = await this.instantPrizeRepository.buscarPremiosInstantaneos(campaign?._id?.toString() || '',1,10);
+
+      return createSuccessResponse({...campaign, instantPrizes} as ICampaign, 'Campanha encontrada com sucesso', 200);
     } catch (error) {
+      console.error('Erro ao buscar campanha por ID:', error);
       throw new ApiError({
         success: false,
         message: 'Erro ao buscar campanha por ID:',

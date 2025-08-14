@@ -51,6 +51,7 @@ import { GatewayTemplateController } from '../controllers/GatewayTemplateControl
 import { CreatorPaymentGatewayRepository, ICreatorPaymentGatewayRepository } from '../repositories/CreatorPaymentGatewayRepository';
 import { CreatorPaymentGatewayService, ICreatorPaymentGatewayService } from '../services/CreatorPaymentGatewayService';
 import { ICreatorPaymentGatewayController, CreatorPaymentGatewayController } from '../controllers/CreatorPaymentGatewayController';
+import { InstantPrizeRepository, InstantPrizeRepositoryInterface } from '../repositories/InstantPrizeRepository';
 
 
 // Register dependencies
@@ -59,6 +60,9 @@ container.register<Logger>('logger', { useValue: logger });
 container.register<IUserRepository>('userRepository', { useClass: UserRepository });
 container.register<IUserService>('userService', { useClass: UserService });;
 container.register<IUserController>('userController', { useClass: UserController });
+
+container.register<InstantPrizeRepositoryInterface>('instantPrizeRepository', { useClass: InstantPrizeRepository });
+
 container.register<ICampaignService>('campaignService', { useClass: CampaignService });
 container.register<ICampaignRepository>('campaignRepository', { useClass: CampaignRepository });
 container.register<ICampaignController>('campaignController', { useClass: CampaignController });
@@ -89,7 +93,6 @@ container.register<ICreatorPaymentGatewayRepository>('creatorPaymentGatewayRepos
 container.register<ICreatorPaymentGatewayService>('creatorPaymentGatewayService', { useClass: CreatorPaymentGatewayService });
 container.register<ICreatorPaymentGatewayController>('creatorPaymentGatewayController', { useClass: CreatorPaymentGatewayController });
 container.register<SSEvents>('sseEvents', { useClass: SSEvents });
-
 // Registrar o serviço SSEvents
 container.register('SSEvents', {
   useFactory: (dependencyContainer) => {

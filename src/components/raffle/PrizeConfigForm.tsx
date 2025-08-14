@@ -4,6 +4,7 @@ import { FaGem, FaTrophy, FaAward, FaPlus, FaTimes, FaEdit, FaMoneyBillWave, FaG
 import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
 import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
 import PrizeSelectorModal from '../prize/PrizeSelectorModal';
+import { formatCurrency } from '@/utils/formatters';
 
 // Interface para prêmio individual (físico ou dinheiro)
 interface IndividualPrize {
@@ -14,6 +15,7 @@ interface IndividualPrize {
   prizeId?: string; // Para prêmios físicos
   name?: string; // Para prêmios físicos
   image?: string; // Para prêmios físicos
+  physicalPrize?: IPrize; // Para prêmios físicos
 }
 
 interface PrizeCategory {
@@ -24,6 +26,7 @@ interface PrizeCategory {
 }
 
 interface PrizeConfigProps {
+  instantPrizesInitialData: any;
   totalNumbers: number;
   onPrizeConfigChange: (config: PrizeCategoriesConfig) => void;
   onPrizesGenerated?: (prizes: InstantPrize[]) => void;
@@ -133,12 +136,13 @@ const MoneyPrizeModal: React.FC<MoneyPrizeModalProps> = ({ isOpen, onClose, onSa
 };
 
 const PrizeConfigForm: React.FC<PrizeConfigProps> = ({ 
+  instantPrizesInitialData,
   totalNumbers, 
   onPrizeConfigChange,
   onPrizesGenerated,
   disabled = false
 }) => {
-  const [prizeConfig, setPrizeConfig] = useState<PrizeCategoriesConfig>({
+  const [prizeConfig, setPrizeConfig] = useState<PrizeCategoriesConfig>(instantPrizesInitialData || {
     diamante: { active: false, quantity: 0, value: 2000, individualPrizes: [] },
     master: { active: false, quantity: 0, value: 1000, individualPrizes: [] },
     premiado: { active: false, quantity: 0, value: 500, individualPrizes: [] }
@@ -526,25 +530,6 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
     usedNumbersRef.current.add(randomNum);
     return randomNum;
   };
-  
-  // Função legada para compatibilidade - não é mais usada diretamente
-  const generatePrizes = () => {
-    // Primeiro, limpar todos os números usados
-    usedNumbersRef.current.clear();
-    
-    // Gerar para cada categoria ativa
-    if (prizeConfig.diamante.active) {
-      generatePrizesForCategory('diamante', prizeConfig.diamante.quantity, prizeConfig.diamante.value);
-    }
-    
-    if (prizeConfig.master.active) {
-      generatePrizesForCategory('master', prizeConfig.master.quantity, prizeConfig.master.value);
-    }
-    
-    if (prizeConfig.premiado.active) {
-      generatePrizesForCategory('premiado', prizeConfig.premiado.quantity, prizeConfig.premiado.value);
-    }
-  };
 
   // Funções para expandir/colapsar as listas de números
   const showMoreDiamante = () => {
@@ -650,22 +635,22 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
               <>
                 <IndividualPrizesList>
                   {prizeConfig.diamante.individualPrizes.map((individualPrize: IndividualPrize) => (
-                    <IndividualPrizeCard key={individualPrize.id} $type={individualPrize.type}>
+                    <IndividualPrizeCard key={individualPrize.id + '-' + Math.random().toString(36).substring(2, 15)} $type={individualPrize.type}>
                       <PrizeCardContent>
                         {individualPrize.type === 'item' ? (
                           <>
                             <PrizeCardImage>
-                              {individualPrize.image && (
+                              {individualPrize.physicalPrize && (
                                 <img 
-                                  src={typeof individualPrize.image === 'string' ? individualPrize.image : undefined} 
-                                  alt={individualPrize.name || 'Prize image'} 
+                                  src={typeof individualPrize.physicalPrize.image === 'string' ? individualPrize.physicalPrize.image : undefined} 
+                                  alt={individualPrize.physicalPrize.name || 'Prize image'} 
                                 />
                               )}
                             </PrizeCardImage>
                             <PrizeCardInfo>
-                              <PrizeCardName>{individualPrize.name}</PrizeCardName>
+                              <PrizeCardName>{individualPrize.physicalPrize?.name || 'Prize image'}</PrizeCardName>
                               <PrizeCardValue>
-                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                                <FaGift /> Valor: {formatCurrency(parseFloat(individualPrize.physicalPrize?.value || '0'))}
                               </PrizeCardValue>
                               <PrizeCardQuantity>
                                 Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
@@ -678,7 +663,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                               <FaMoneyBillWave /> Prêmio em Dinheiro
                             </PrizeCardName>
                             <PrizeCardValue>
-                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                              {formatCurrency(parseFloat(individualPrize.value.toString()))} cada
                             </PrizeCardValue>
                             <PrizeCardQuantity>
                               Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
@@ -728,7 +713,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                 <CategorySummary>
                   <SummaryText>
                     <strong>Total: {prizeConfig.diamante.quantity} prêmios</strong> • 
-                    <strong>Valor total: R$ {calculateCategoryTotals(prizeConfig.diamante).totalValue.toLocaleString('pt-BR')}</strong>
+                    <strong>Valor total: R$ {formatCurrency(calculateCategoryTotals(prizeConfig.diamante).totalValue)}</strong>
                   </SummaryText>
                 </CategorySummary>
               </>
@@ -740,7 +725,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
         {prizeConfig.diamante.active && generatedPrizes.diamante.length > 0 && (
           <PrizeListContainer>
             <PrizeCategoryHeader $category="diamante">
-              <i className="fas fa-gem"></i> Números Diamante - R$ {prizeConfig.diamante.value.toLocaleString('pt-BR')}
+              <i className="fas fa-gem"></i> Números Diamante - {formatCurrency(parseFloat(prizeConfig.diamante.value.toString()))}
               <PrizeCounter>({generatedPrizes.diamante.length} números)</PrizeCounter>
             </PrizeCategoryHeader>
             <PrizeGridWrapper $expanded={visibleDiamante >= generatedPrizes.diamante.length}>
@@ -816,7 +801,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
               <>
                 <IndividualPrizesList>
                   {prizeConfig.master.individualPrizes.map((individualPrize: IndividualPrize) => (
-                    <IndividualPrizeCard key={individualPrize.id} $type={individualPrize.type}>
+                    <IndividualPrizeCard key={individualPrize.id + '-' + Math.random().toString(36).substring(2, 15)} $type={individualPrize.type}>
                       <PrizeCardContent>
                         {individualPrize.type === 'item' ? (
                           <>
@@ -831,7 +816,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                             <PrizeCardInfo>
                               <PrizeCardName>{individualPrize.name}</PrizeCardName>
                               <PrizeCardValue>
-                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                                <FaGift /> Valor: {formatCurrency(parseFloat(individualPrize.value.toString()))}
                               </PrizeCardValue>
                               <PrizeCardQuantity>
                                 Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
@@ -844,7 +829,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                               <FaMoneyBillWave /> Prêmio em Dinheiro
                             </PrizeCardName>
                             <PrizeCardValue>
-                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                              {formatCurrency(parseFloat(individualPrize.value.toString()))} cada
                             </PrizeCardValue>
                             <PrizeCardQuantity>
                               Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
@@ -894,7 +879,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                 <CategorySummary>
                   <SummaryText>
                     <strong>Total: {prizeConfig.master.quantity} prêmios</strong> • 
-                    <strong>Valor total: R$ {calculateCategoryTotals(prizeConfig.master).totalValue.toLocaleString('pt-BR')}</strong>
+                    <strong>Valor total: {formatCurrency(calculateCategoryTotals(prizeConfig.master).totalValue)}</strong>
                   </SummaryText>
                 </CategorySummary>
               </>
@@ -906,7 +891,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
         {prizeConfig.master.active && generatedPrizes.master.length > 0 && (
           <PrizeListContainer>
             <PrizeCategoryHeader $category="master">
-              <i className="fas fa-trophy"></i> Números Master - R$ {prizeConfig.master.value.toLocaleString('pt-BR')}
+                <i className="fas fa-trophy"></i> Números Master - {formatCurrency(parseFloat(prizeConfig.master.value.toString()))}
               <PrizeCounter>({generatedPrizes.master.length} números)</PrizeCounter>
             </PrizeCategoryHeader>
             <PrizeGridWrapper $expanded={visibleMaster >= generatedPrizes.master.length}>
@@ -997,7 +982,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                             <PrizeCardInfo>
                               <PrizeCardName>{individualPrize.name}</PrizeCardName>
                               <PrizeCardValue>
-                                <FaGift /> Valor: R$ {individualPrize.value.toLocaleString('pt-BR')}
+                                <FaGift /> Valor: {formatCurrency(parseFloat(individualPrize.value.toString()))}
                               </PrizeCardValue>
                               <PrizeCardQuantity>
                                 Quantidade: {individualPrize.quantity} unidade{individualPrize.quantity > 1 ? 's' : ''}
@@ -1010,7 +995,7 @@ const PrizeConfigForm: React.FC<PrizeConfigProps> = ({
                               <FaMoneyBillWave /> Prêmio em Dinheiro
                             </PrizeCardName>
                             <PrizeCardValue>
-                              R$ {individualPrize.value.toLocaleString('pt-BR')} cada
+                              {formatCurrency(parseFloat(individualPrize.value.toString()))} cada
                             </PrizeCardValue>
                             <PrizeCardQuantity>
                               Quantidade: {individualPrize.quantity} prêmio{individualPrize.quantity > 1 ? 's' : ''}
@@ -1127,6 +1112,7 @@ const Container = styled.div<{ $disabled: boolean }>`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 1.5rem;   
   opacity: ${({ $disabled }) => $disabled ? 0.7 : 1};
+  pointer-events: ${({ $disabled }) => $disabled ? 'none' : 'auto'};
   transition: opacity 0.3s ease;
 `;
 

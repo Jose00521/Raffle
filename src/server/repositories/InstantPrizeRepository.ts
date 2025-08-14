@@ -7,7 +7,57 @@ import { NumberStatusEnum } from '@/models/interfaces/INumberStatusInterfaces';
 import mongoose from 'mongoose';
 
 
-export class InstantPrizeRepository {
+export interface GroupedInstantPrize {
+    id: string;
+    type: 'money' | 'item';
+    quantity: number;
+    value: number;
+    prizeId?: string; // Para prêmios físicos
+}
+
+export interface CategorySummary {
+    active: boolean;
+    quantity: number;
+    value: number;
+    individualPrizes: GroupedInstantPrize[];
+}
+
+export interface GroupedInstantPrizesResponse {
+    [categoryName: string]: CategorySummary;
+}
+
+export interface InstantPrizeRepositoryInterface {
+    buscarPremiosInstantaneos(campaignId: string, page: number, limit: number): Promise<InstantPrizeResponse>;
+    buscarPremiosInstantaneosPorCategoria(campaignId: string, categoryId: string, page: number, limit: number): Promise<InstantPrizeCategoryResponse>;
+}
+export interface InstantPrizeResponse {
+    categories: Array<InstantPrizeCategory>;
+}
+
+export interface InstantPrizeCategory {
+    id: string;
+    name: string;
+    prizes: typeof InstantPrize[];
+    description: string;
+    total: number;
+    hasMore: boolean;
+}
+
+
+export interface InstantPrizeCategoryResponse {
+    premios: typeof InstantPrize[];
+    paginacao: {
+        total: number;
+        pagina: number;
+        limite: number;
+        totalPaginas: number;
+    };
+}
+
+
+
+@injectable()
+export class InstantPrizeRepository implements InstantPrizeRepositoryInterface {
     private db: IDBConnection;
 
     constructor(
@@ -17,105 +67,110 @@ export class InstantPrizeRepository {
     }
 
 
-    async buscarPrêmiosInstantâneos(campaignId: string, page: number = 1, limit: number = 10) {
+    async buscarPremiosInstantaneos(campaignId: string, page: number = 1, limit: number = 10): Promise<InstantPrizeResponse> {
           // Versão otimizada para milhões de registros - limita dados antes do agrupamento principal
           await this.db.connect();
           
+          console.log("buscarPremiosInstantaneos chamado com ID:", campaignId);
+          
+          if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+            console.log("ID de campanha inválido:", campaignId);
+            return { categories: [] };
+          }
+          
+          try {
+            // Simplificando a consulta para maior eficiência
             const categoriasPremios = await InstantPrize.aggregate([
                 // 1. Filtra por campanha
                 { 
                     $match: { campaignId: new mongoose.Types.ObjectId(campaignId) }
                 },
-                // 2. Agrupa por categoria para contar e pré-selecionar documentos
-                {
-                    $group: { 
-                        _id: '$categoryId', 
-                        count: { $sum: 1 },
-                        // Pega apenas os N documentos mais recentes por categoria
-                        docs: { 
-                            $push: { 
-                                _id: '$_id', 
-                                categoryId: '$categoryId',
-                                number: '$number',
-                                name: '$name',
-                                description: '$description',
-                                createdAt: '$createdAt',
-                                // Inclua os outros campos necessários, mas evite campos grandes desnecessários
-                            } 
-                        }
-                    }
-                },
-                // 3. Adiciona campo com os documentos limitados por categoria
-                {
-                    $project: {
-                        _id: 1,
-                        count: 1,
-                        limitedDocs: { $slice: ['$docs', 0, limit] },
-                    }
-                },
-                // 4. "Desmembra" para processar cada documento individualmente
-                {
-                    $unwind: '$limitedDocs'
-                },
-                // 5. Busca os IDs dos prêmios pré-selecionados para obter dados completos
+                // 2. Lookup para buscar informações dos prêmios físicos quando type=item
                 {
                     $lookup: {
-                        from: 'instant_prizes',
-                        localField: 'limitedDocs._id',
-                        foreignField: '_id', 
-                        as: 'premioCompleto'
+                        from: 'prizes',
+                        let: { prizeRef: "$prizeRef", tipo: "$type" },
+                        pipeline: [
+                            { 
+                                $match: { 
+                                    $expr: { 
+                                        $and: [
+                                            { $eq: ["$$tipo", "item"] },
+                                            { $eq: ["$_id", { $toObjectId: "$$prizeRef" }] }
+                                        ]
+                                    } 
+                                }
+                            }
+                        ],
+                        as: 'physicalPrize'
                     }
                 },
-                // 6. Desmembra o resultado do lookup
+                // 3. Adiciona o prêmio físico diretamente como um campo
                 {
-                    $unwind: '$premioCompleto'
+                    $addFields: {
+                        physicalPrize: { $arrayElemAt: ["$physicalPrize", 0] }
+                    }
                 },
-                // 7. Busca informações da categoria
+                // 4. Lookup para categoria
                 {
                     $lookup: {
                         from: 'instant_prize_categories',
-                        localField: '_id', // categoryId do agrupamento
+                        localField: 'categoryId',
                         foreignField: '_id',
                         as: 'categoryInfo'
                     }
                 },
-                // 8. Desmembra as informações da categoria
+                // 5. Desfaz array da categoria
                 {
-                    $unwind: '$categoryInfo'
-                },
-                // 9. Reagrupa tudo por categoria
-                {
-                    $group: {
-                        _id: '$_id', // categoryId
-                        categoryName: { $first: '$categoryInfo.nome' },
-                        count: { $first: '$count' }, // total de prêmios nesta categoria
-                        premios: { $push: '$premioCompleto' } // array com prêmios completos
+                    $unwind: {
+                        path: '$categoryInfo',
+                        preserveNullAndEmptyArrays: true
                     }
                 },
-                // 10. Formata o resultado final
+                // 6. Agrupa por categoria
+                {
+                    $group: {
+                        _id: '$categoryId',
+                        name: { $first: '$categoryInfo.name' },
+                        description: { $first: '$categoryInfo.description' },
+                        count: { $sum: 1 },
+                        prizes: { $push: '$$ROOT' }
+                    }
+                },
+                // 7. Formata resultado final
                 {
                     $project: {
                         _id: 1,
-                        categoryName: 1,
+                        name: 1,
+                        description: { $ifNull: ['$description', ''] },
                         count: 1,
-                        premios: 1,
+                        prizes: 1,
                         hasMore: { $gt: ['$count', limit] }
                     }
                 }
             ]);
             
-            return {
-                categorias: categoriasPremios.map(cat => ({
-                    id: cat._id,
-                    nome: cat.categoryName,
-                    premios: cat.premios,
-                    total: cat.count,
-                    hasMore: cat.hasMore
-                }))
-            };
+            console.log("Categorias encontradas:", categoriasPremios.length);
+
+            const categories = categoriasPremios.map(cat => ({
+                id: cat._id,
+                name: cat.name,
+                description: cat.description,
+                prizes: cat.prizes,
+                total: cat.count,
+                hasMore: cat.hasMore
+            }));
+
+            console.log("############################### categories ###########################################", categories);
+            
+            return { categories };
+          } catch (error) {
+            console.error("Erro ao buscar prêmios instantâneos:", error);
+            return { categories: [] };
+          }
     }
 
-    async buscarPrêmiosInstantâneosPorCategoria(campaignId: string, categoryId: string, page: number = 1, limit: number = 10) {
+    async buscarPremiosInstantaneosPorCategoria(campaignId: string, categoryId: string, page: number = 1, limit: number = 10): Promise<InstantPrizeCategoryResponse> {
         try {
             await this.db.connect();
   
@@ -126,15 +181,42 @@ export class InstantPrizeRepository {
             // Busca apenas contagem e prêmios, sem tocar na campanha
             const [totalPremios, premios] = await Promise.all([
               InstantPrize.countDocuments({ campaignId, categoryId }),
-              InstantPrize.find({ campaignId, categoryId })
-                .sort({ createdAt: -1 })
-                .skip((page - 1) * limit)
-                .limit(limit)
-                .lean()
+              InstantPrize.aggregate([
+                { $match: { campaignId: new mongoose.Types.ObjectId(campaignId), categoryId } },
+                // Lookup para popular referências de prêmios físicos
+                {
+                    $lookup: {
+                        from: 'prizes',
+                        let: { prizeRef: "$prizeRef", tipo: "$type" },
+                        pipeline: [
+                            { 
+                                $match: { 
+                                    $expr: { 
+                                        $and: [
+                                            { $eq: ["$$tipo", "item"] },
+                                            { $eq: ["$_id", { $toObjectId: "$$prizeRef" }] }
+                                        ]
+                                    } 
+                                }
+                            }
+                        ],
+                        as: 'physicalPrize'
+                    }
+                },
+                // Adiciona o prêmio físico diretamente como um campo
+                {
+                    $addFields: {
+                        physicalPrize: { $arrayElemAt: ["$physicalPrize", 0] }
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                { $skip: (page - 1) * limit },
+                { $limit: limit }
+              ])
             ]);
             
             return {
-              premios,
+              premios: premios as unknown as typeof InstantPrize[],
               paginacao: {
                 total: totalPremios,
                 pagina: page,
@@ -145,7 +227,7 @@ export class InstantPrizeRepository {
             
             
         } catch (error) {
-            console.error('Erro ao buscar prêmios instantâneos:', error);
+            console.error('Erro ao buscar prêmios instantâneos por categoria:', error);
             throw error;
         }
     }

@@ -65,6 +65,7 @@ export const CreatorFormProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const form = useForm<CreatorFormData>({
     resolver: zodResolver(creatorFormSchema),
     mode: 'all',
+    reValidateMode: 'onChange',
     defaultValues: createDefaultValues()
   });
 

@@ -20,12 +20,6 @@ import {
   prepareUpdateDataForApi
 } from './update-form';
 
-// Componentes para seleção e criação de prêmios
-import PrizeSelectorModal from '../prize/PrizeSelectorModal';
-import PrizeCreatorModal from '../prize/PrizeCreatorModal';
-import creatorPrizeAPIClient from '@/API/creator/creatorPrizeAPIClient';
-import { IPrize } from '@/models/interfaces/IPrizeInterfaces';
-
 // Utilitários externos
 import { formatCurrency } from '@/utils/formatNumber';
 
@@ -33,7 +27,6 @@ import { formatCurrency } from '@/utils/formatNumber';
 import type { 
   RaffleFormUpdateData, 
   InstantPrizesPayload,
-  PrizeDistribution,
   FieldChanges
 } from './update-form';
 import { ICampaign } from '@/models/interfaces/ICampaignInterfaces';
@@ -180,7 +173,11 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
       winners: initialData.winners || [],
       enablePackages: initialData.enablePackages,
       numberPackages: initialData.numberPackages || [],
-      instantPrizes: initialData.instantPrizes || [],
+
+
+      //realização de prêmios instantâneos
+      
+      //instantPrizes: initialData.instantPrizes || [],
       prizeCategories: initialData.prizeCategories || {
         diamante: { active: false, quantity: 10, value: 2000 },
         master: { active: false, quantity: 20, value: 1000 },
@@ -193,7 +190,7 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
       images: images,
       coverImage: coverImage,
       mainPrize: initialData.mainPrize || '',
-      valuePrize: initialData.valuePrize || ''
+      valuePrize: initialData.valuePrize || '',
     } as RaffleFormUpdateData;
   }, [initialData]);
 
@@ -225,7 +222,7 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
     setValue, 
     getValues,
     reset,
-    formState: { errors, isDirty, dirtyFields } 
+    formState: { errors, isDirty, dirtyFields, isValid } 
   } = methods;
 
   // Observar campos principais para cálculos automáticos
@@ -462,8 +459,10 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
             )}
           >
             <InstantPrizesSection 
+              instantPrizesInitialData={initialData.instantPrizes}
               control={control}
               setValue={setValue}
+              disabled={true}
               watch={watch}
               totalNumbers={totalNumbers}
               hasBasicRequirements={Boolean(hasBasicRequirements)}
@@ -477,6 +476,7 @@ const RaffleFormFieldsUpdateOptimized: React.FC<RaffleFormFieldsUpdateOptimizedP
           <FormActions 
             onCancel={onCancel}
             onReset={handleReset}
+            isValid={isValid}
             hasChanges={isDirty}
             isSubmitting={isSubmitting}
           />

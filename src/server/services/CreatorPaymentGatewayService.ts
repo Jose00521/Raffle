@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/errorHandler/api";
 
 export interface ICreatorPaymentGatewayService {
     integrateGateway(data: Partial<IUserPaymentGateway>, userCode: string): Promise<ApiResponse<null> | ApiResponse<IUserPaymentGateway>>;
-    getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway>>;
+    getDefaultPaymentGateway(userCode: string): Promise<ApiResponse<IUserPaymentGateway | null>>;
     getMyGateways(userCode: string): Promise<ApiResponse<IUserPaymentGateway[] | null>>;
     setAsDefaultGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
     deleteGateway(userCode: string, gatewayCode: string): Promise<ApiResponse<null>>;
@@ -14,7 +14,7 @@ export interface ICreatorPaymentGatewayService {
 
 
 @injectable()
-export class CreatorPaymentGatewayService {
+export class CreatorPaymentGatewayService implements ICreatorPaymentGatewayService {
 
     constructor(
         @inject('creatorPaymentGatewayRepository')  private creatorPaymentGatewayRepository: ICreatorPaymentGatewayRepository
