@@ -35,7 +35,7 @@ export const COMMON_EMAIL_DOMAINS = [
   'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'aol.com', 
   'live.com', 'msn.com', 'icloud.com', 'me.com', 'mac.com',
   'protonmail.com', 'zoho.com', 'yandex.com', 'mail.ru', 'gmx.com', 
-  'web.de', 'mail.com', 'fastmail.com', 'tutanota.com',
+  'web.de', 'mail.com', 'fastmail.com', 'tutanota.com','proton.me',
   
   // Principais provedores brasileiros
   'uol.com.br', 'bol.com.br', 'globo.com', 'ig.com.br', 'terra.com.br', 

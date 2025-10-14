@@ -134,7 +134,7 @@ app.prepare().then(async () => {
       logger.error(`Erro de conexão Socket.IO: ${err.message}`);
     });
     
-  } catch (error) {
+  } catch (error: any) {
     logger.error('❌ Erro ao inicializar serviços:', error);
     process.exit(1);
   }

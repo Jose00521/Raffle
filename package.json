@@ -17,7 +17,7 @@
     "cleanup-invites": "tsx src/scripts/cleanup-admin-invites.ts"
   },
   "dependencies": {
-    "@auth/core": "^0.34.2",
+    "@auth/core": "^0.41.0",
     "@auth/prisma-adapter": "^2.9.1",
     "@aws-sdk/client-s3": "^3.821.0",
     "@aws-sdk/lib-storage": "^3.817.0",
@@ -56,8 +56,8 @@
     "lucide-react": "^0.511.0",
     "mongodb": "^6.16.0",
     "mongoose": "^8.14.2",
-    "next": "15.3.2",
-    "next-auth": "^4.24.11",
+    "next": "^15.5.5",
+    "next-auth": "^4.24.7",
     "node-cron": "^4.1.0",
     "pino": "^9.7.0",
     "react": "^19.0.0",
