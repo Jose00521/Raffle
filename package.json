@@ -57,7 +57,7 @@
     "mongodb": "^6.16.0",
     "mongoose": "^8.14.2",
     "next": "^15.5.5",
-    "next-auth": "^4.24.7",
+    "next-auth": "^5.0.0-beta.29",
     "node-cron": "^4.1.0",
     "pino": "^9.7.0",
     "react": "^19.0.0",
