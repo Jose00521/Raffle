@@ -22,8 +22,12 @@ export function withAuth(
 ) {
     return async (
         request: NextRequest,
-        context: { params: any }
+        context: { params: Promise<any> | any }
       ) => {
+        // 🔍 RESOLVER params if it's a promise (Next.js 15)
+        const params = await context.params;
+        const resolvedContext = { ...context, params };
+
         // 🔍 VALIDAÇÃO automática
         logger.info("Verificando sessão");
         const session = await getServerSession(nextAuthOptions);
@@ -60,7 +64,7 @@ export function withAuth(
 
             logger.info("Passando sessão validada para o handler")
             // ✅ Passar sessão validada para o handler
-            return handler(request, { ...context, session });
+            return handler(request, { ...resolvedContext, session });
           }else{
             if (!options.allowedRoles.includes(session.user.role as UserRole)) {
               return NextResponse.json(
@@ -71,10 +75,12 @@ export function withAuth(
 
             logger.info("Passando sessão validada para o handler")
             // ✅ Passar sessão validada para o handler
-            return handler(request, { ...context, session });
+            return handler(request, { ...resolvedContext, session });
           }
         }
 
+        // Se não houver papéis especificados, apenas passa a sessão
+        return handler(request, { ...resolvedContext, session });
       };
 }
 

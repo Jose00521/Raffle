@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { verifyToken } from '@/lib/auth/jwtUtils';
-import { headers } from 'next/headers';
+
 import { rateLimit } from '@/lib/rateLimit';
 import { createErrorResponse } from '@/server/utils/errorHandler/api';
 import logger from '@/lib/logger/logger';
@@ -122,10 +122,10 @@ export async function GET(request: NextRequest) {
         
         const isValid = await verifyToken(tokenString);
 
-        logger.info('[validate-token] Token processado', { 
+        logger.info({ 
           valid: !!isValid,
           hasExp: !!(isValid?.exp)
-        });
+        }, '[validate-token] Token processado');
         
         if (!isValid) {
           logger.warn(`[validate-token] Token inválido para IP: ${ip.substring(0, 8)}***, User-Agent: ${userAgent.substring(0, 20)}***`);
@@ -157,10 +157,10 @@ export async function GET(request: NextRequest) {
           logger.info('[validate-token] Token válido, sem aviso de expiração');
         }
       } catch (tokenError) {
-        logger.error(`[validate-token] Erro ao verificar token:`, { 
+        logger.error({ 
           error: tokenError instanceof Error ? tokenError.message : 'Erro desconhecido',
           ip: ip.substring(0, 8) + '***'
-        });
+        }, `[validate-token] Erro ao verificar token:`);
         const errorResponse = NextResponse.json(
           createErrorResponse('Erro na verificação do token', 401),
           { status: 401 }
@@ -186,9 +186,9 @@ export async function GET(request: NextRequest) {
     );
     return addSecurityHeaders(successResponse);
   } catch (error) {
-    logger.error('[validate-token] Erro ao validar token:', { 
+    logger.error({ 
       error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
+    }, '[validate-token] Erro ao validar token:');
     const errorResponse = NextResponse.json(
       createErrorResponse('Erro ao validar token', 500),
       { status: 500 }
